@@ -1,0 +1,48 @@
+services:
+  spring-boot-app:
+    image: "localhost:5000/vempain/vempain-admin:${ENV_VEMPAIN_ADMIN_VERSION}"
+    container_name: "${ENV_VEMPAIN_TYPE}_vempain_admin_app"
+    ports:
+      - "8888:8080"
+    restart: always
+    environment:
+      - spring.profiles.active=prod
+      - spring.admin-datasource.url=jdbc:mariadb://mariadb:3306/${ENV_VEMPAIN_ADMIN_DB_NAME}?useSSL=false
+      - spring.admin-datasource.username=${ENV_VEMPAIN_ADMIN_DB_NAME}
+      - spring.admin-datasource.password=${ENV_VEMPAIN_ADMIN_DB_PASSWORD}
+      - spring.site-datasource.url=jdbc:mariadb://${ENV_VEMPAIN_SITE_DB_ADDRESS}:3306/${ENV_VEMPAIN_SITE_DB_NAME}?useSSL=false
+      - spring.site-datasource.username=${ENV_VEMPAIN_SITE_DB_USER}
+      - spring.site-datasource.password=${ENV_VEMPAIN_SITE_DB_PASSWORD}
+      - vempain.app.jwtSecret=your_jwt_secret_here
+      - vempain.app.jwtExpirationMs=86400000
+      - vempain.test=false
+      - vempain.admin.file.converted-directory=/vempain_admin/converted
+      - vempain.admin.ssh.user=${ENV_VEMPAIN_SITE_SSH_USER}
+      - vempain.admin.ssh.config-dir=/vempain_admin/vempain/.ssh
+      - vempain.site.ssh.address=${ENV_VEMPAIN_SITE_SSH_ADDRESS}
+      - vempain.site.ssh.port=${ENV_VEMPAIN_SITE_SSH_PORT}
+      - vempain.site.ssh.user=${ENV_VEMPAIN_SITE_SSH_USER}
+      - vempain.site.www-root=${ENV_VEMPAIN_SITE_WWW_ROOT}
+      - vempain.app.frontend-url=https://${ENV_VEMPAIN_ADMIN_HOSTNAME}
+    depends_on:
+      - mariadb
+    volumes:
+      - ${ENV_VEMPAIN_ADMIN_CONVERTED_DIR}:/vempain_admin/converted
+      - ${ENV_VEMPAIN_ADMIN_SSH_CONFIG_DIR}:/vempain_admin/vempain/.ssh
+
+  mariadb:
+    image: mariadb:11
+    container_name: "${ENV_VEMPAIN_TYPE}_vempain_admin_db"
+    ports:
+      - "8306:3306"
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${ENV_VEMPAIN_ADMIN_DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${ENV_VEMPAIN_ADMIN_DB_NAME}
+      MYSQL_USER: ${ENV_VEMPAIN_ADMIN_DB_USER}
+      MYSQL_PASSWORD: ${ENV_VEMPAIN_ADMIN_DB_PASSWORD}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
+volumes:
+  mariadb_data:

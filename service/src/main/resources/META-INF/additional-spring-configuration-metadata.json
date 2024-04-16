@@ -1,0 +1,98 @@
+{
+  "properties": [
+    {
+      "name": "vempain.developer.name",
+      "type": "java.lang.String",
+      "description": "Vempain developer name."
+    },
+    {
+      "name": "vempain.developer.url",
+      "type": "java.lang.String",
+      "description": "Vempain developer web-site."
+    },
+    {
+      "name": "vempain.developer.email",
+      "type": "java.lang.String",
+      "description": "Vempain developer email address."
+    },
+    {
+      "name": "vempain.devel",
+      "type": "java.lang.Boolean",
+      "description": "Is this a development environment."
+    },
+    {
+      "name": "vempain.test",
+      "type": "java.lang.Boolean",
+      "description": "Are we running tests."
+    },
+    {
+      "name": "vempain.type",
+      "type": "java.lang.String",
+      "description": "Description for vempain.type."
+    },
+    {
+      "name": "vempain.description",
+      "type": "java.lang.String",
+      "description": "Vempain description."
+    },
+    {
+      "name": "vempain.version",
+      "type": "java.lang.String",
+      "description": "Version of the Vempain service."
+    },
+    {
+      "name": "vempain.license",
+      "type": "java.lang.String",
+      "description": "Licence under which Vempain software is distributed."
+    },
+    {
+      "name": "spring.servlet.session.timeout",
+      "type": "java.lang.Integer",
+      "description": "Session time-out, in seconds."
+    },
+    {
+      "name": "vempain.app.jwtSecret",
+      "type": "java.lang.String",
+      "description": "JWT secret passphrase, base64 encoded."
+    },
+    {
+      "name": "vempain.app.jwtExpirationMs",
+      "type": "java.lang.Long",
+      "description": "JWT timeout in milliseconds."
+    },
+    {
+      "name": "vempain.admin.file.converted-directory",
+      "type": "java.lang.String",
+      "description": "Main directory where Vempain stores the files of various types on admin side."
+    },
+    {
+      "name": "vempain.admin.file.thumbnail-size",
+      "type": "java.lang.Integer",
+      "description": "Size in pixels of the thumbnails that are generated from files on admin side."
+    },
+    {
+      "name": "vempain.admin.file.image-format",
+      "type": "java.lang.String",
+      "description": "Format used to store images on admin side, see Thumbnailator for supported formats."
+    },
+    {
+      "name": "vempain.admin.ssh.user",
+      "type": "java.lang.String",
+      "description": "Vempain Admin site SSH user name."
+    },
+    {
+      "name": "vempain.admin.ssh.private-key",
+      "type": "java.lang.String",
+      "description": "Path to ssh private key file on admin-side."
+    },
+    {
+      "name": "vempain.admin.ssh.config-dir",
+      "type": "java.lang.String",
+      "description": "Path to admin .sshd directory."
+    },
+    {
+      "name": "vempain.site.www-root",
+      "type": "java.lang.String",
+      "description": "Path to website on the remote site-server."
+    }
+  ] }

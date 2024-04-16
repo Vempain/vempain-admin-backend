@@ -1,0 +1,18 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  admin-datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+  site-datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+
+logging:
+  level:
+    root: INFO
+    org:
+      springframework:
+        web: WARN
+      hibernate:
+        SQL: WARN

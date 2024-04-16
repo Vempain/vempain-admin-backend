@@ -1,0 +1,51 @@
+package fi.poltsi.vempain.admin.api.request;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+
+@EqualsAndHashCode
+@ToString
+@Getter
+@Setter
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+@Schema(description = "Request to process files in a directory")
+public class FileProcessRequest {
+	@NotNull
+	@Schema(description = "Source directory path on admin server side, relative to configured root", example = "/path/to/images")
+	private String  sourceDirectory;
+	@NotNull
+	@Schema(description = "Destination directory path on site server side, relative to configured root", example = "/path/to/images")
+	private String  destinationDirectory;
+	@NotNull
+	@Schema(description = "Toggle whether a gallery should also be created", example = "true")
+	private boolean generateGallery;
+	@Schema(description = "Short name of the gallery, if it should be created", example = "A gallery")
+	private String  galleryShortname;
+	@Schema(description = "Description of the gallery, if it should be created", example = "A pleasant gallery")
+	private String  galleryDescription;
+	@NotNull
+	@Schema(description = "Toggle whether a page should also be created", example = "true")
+	private boolean generatePage;
+	@Schema(description = "Page title, if it should be created", example = "A gallery page")
+	private String  pageTitle;
+	@Schema(description = "Path of the gallery page, if it should be created", example = "/path/to/page")
+	private String  pagePath;
+	@Schema(description = "Gallery page body this is located above the gallery component itself, if it should be created", example = "A pleasant gallery")
+	private String  pageBody;
+	@Schema(description = "Form ID of the gallery page, if it should be created", example = "1")
+	private Long  pageFormId;
+}

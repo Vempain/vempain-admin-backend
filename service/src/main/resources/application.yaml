@@ -1,0 +1,124 @@
+### Common settings ###
+spring:
+  application:
+    name: Vempain Admin
+  servlet:
+    session:
+      timeout: 600
+  session:
+    store-type: jdbc
+    jdbc:
+      table-name: server_sessions
+      cleanup-cron: "5 * * * * *"
+      initialize-schema: always
+  admin-datasource:
+    url: jdbc:tc:mariadb:latest:///vempain_admin"
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    username: test
+    password: test
+  site-datasource:
+    url: jdbc:tc:mariadb:latest:///vempain_site"
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    username: test
+    password: test
+  jpa:
+    database-platform: org.hibernate.dialect.MariaDBDialect
+    show-sql: false
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+server:
+  port: 8080
+  forward-headers-strategy: native
+  servlet:
+    context-path: /api
+
+actuator:
+  enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+management:
+  server:
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: [ "*", "openapi", "swagger-ui" ]
+    enabled-by-default: true
+
+springdoc:
+  show-login-endpoint: true
+  swagger-ui:
+    operationsSorter: alpha
+    tagsSorter: alpha
+  show-actuator: true
+  api-docs:
+    enabled: true
+    resolve-schema-properties: true
+  use-management-port: true
+
+logging:
+  level:
+    root: WARN
+    fi:
+      poltsi: INFO
+
+vempain:
+  developer:
+    name: "Paul-Erik Törrönen"
+    url: "https://poltsi.fi/"
+    email: "poltsi@poltsi.fi"
+  type: "Vempain Admin backend service"
+  description: "Vempain admin backend serves the REST API for the frontend"
+  version: 0.1.0
+  license: "GPL 2.0"
+  license-url: "https://www.gnu.org/licenses/old-licenses/gpl-2.0.html"
+  app:
+    frontend-url: override-me
+    jwtSecret: override-me
+    jwtExpirationMs: 86400000
+  test: true
+  admin:
+    file:
+      image-format: "jpeg"
+      thumbnail-size: 250
+      converted-directory: override-me
+    ssh:
+      user: override-me
+      config-dir: override-me
+      private-key: "${vempain.admin.ssh.config-dir}/id_ed25519"
+  site:
+    www-root: override-me
+    # This is the minimum dimension, if the original image size is 2800x5600 then the site image size is 1400x2800
+    image-size: 1400
+    thumb-directory: ".thumb"
+    ssh:
+      user: override-me
+      address: override-me
+      port: override-me
+  cors:
+    allowed-origins: ${vempain.app.frontend-url}
+    cors-pattern: '/**'
+    max-age: 3600
+
+---
+### Local machine ###
+
+spring:
+  config:
+    activate:
+      on-profile: local
+    import: classpath:local.yml
+
+---
+### Production server ###
+
+spring:
+  config:
+    activate:
+      on-profile: prod
+    import: classpath:prod.yml
