@@ -112,7 +112,7 @@ spring:
   config:
     activate:
       on-profile: local
-    import: classpath:local.yml
+    import: classpath:local.yaml
 
 ---
 ### Production server ###
@@ -121,4 +121,4 @@ spring:
   config:
     activate:
       on-profile: prod
-    import: classpath:prod.yml
+    import: classpath:prod.yaml
