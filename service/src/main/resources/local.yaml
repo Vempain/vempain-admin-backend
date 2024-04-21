@@ -3,11 +3,6 @@ spring:
     activate:
       on-profile: local
 
-  admin-datasource:
-    driver-class-name: org.mariadb.jdbc.Driver
-  site-datasource:
-    driver-class-name: org.mariadb.jdbc.Driver
-
 logging:
   level:
     root: INFO

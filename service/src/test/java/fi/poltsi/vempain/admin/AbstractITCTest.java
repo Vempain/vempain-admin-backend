@@ -32,6 +32,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -43,12 +44,7 @@ import static fi.poltsi.vempain.tools.LocalFileTools.createAndVerifyDirectory;
 import static fi.poltsi.vempain.tools.LocalFileTools.removeDirectory;
 
 @Slf4j
-@SpringBootTest(properties = {"vempain.admin.file.converted-directory=/var/tmp/vempain-converted",
-							  "vempain.admin.file.image-format=jpeg",
-							  "vempain.site.www-root=/var/tmp/vempain-www",
-							  "vempain.site.thumb-directory=.thumb",
-							  "vempain.site.image-size=800",
-							  "vempain.admin.file.thumbnail-size=250"})
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ExtendWith(MockitoExtension.class)
@@ -106,6 +102,10 @@ public abstract class AbstractITCTest {
 	@Autowired
 	protected JschClient                   jschClient;
 
+	@Value("${vempain.site.www-root}")
+	private String siteWwwRoot;
+	@Value("${vempain.site.ssh.home-dir}")
+	private String siteSshHomeDir;
 	@BeforeEach
 	void setUp() {
 		// Check the state of the database
@@ -212,6 +212,8 @@ public abstract class AbstractITCTest {
 		log.info("Cleaning up directories");
 		removeDirectory("/var/tmp/vempain-converted");
 		createAndVerifyDirectory(Path.of("/var/tmp/vempain-converted"));
+		log.info("Site WWW-root is: {}", siteWwwRoot);
+		log.info("Site SSH home directory is: {}", siteSshHomeDir);
 		removeDirectory("/var/tmp/vempain-www");
 		createAndVerifyDirectory(Path.of("/var/tmp/vempain-www"));
 		log.info("=============================================================");

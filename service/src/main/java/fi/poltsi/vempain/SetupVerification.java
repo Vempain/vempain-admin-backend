@@ -34,11 +34,12 @@ class SetupVerification implements ApplicationContextAware {
 											 {"vempain.admin.file.thumbnail-size", TYPE_NUMBER},
 											 {"vempain.admin.file.converted-directory", TYPE_PATH},
 											 {"vempain.admin.ssh.user", TYPE_STRING},
-											 {"vempain.admin.ssh.config-dir", TYPE_PATH},
+											 {"vempain.admin.ssh.home-dir", TYPE_PATH},
 											 {"vempain.admin.ssh.private-key", TYPE_PATH},
 											 {"vempain.site.ssh.address", TYPE_STRING},
 											 {"vempain.site.ssh.port", TYPE_NUMBER},
 											 {"vempain.site.ssh.user", TYPE_STRING},
+											 {"vempain.site.ssh.home-dir", TYPE_STRING}, // This needs to be a string because it is located on the remote
 											 {"vempain.site.www-root", TYPE_STRING},
 											 {"vempain.site.image-size", TYPE_NUMBER},
 											 {"spring.admin-datasource.url", TYPE_STRING},
@@ -52,10 +53,13 @@ class SetupVerification implements ApplicationContextAware {
 	public void checkEssentialConfigurations(ContextRefreshedEvent event) {
 		final Environment env = event.getApplicationContext().getEnvironment();
 		for (String[] keyPair : requiredKeys) {
-			log.info("Verifying that key {} is defined and not empty", keyPair[0]);
 			String value = env.getProperty(keyPair[0]);
+			log.info("Verifying that key {} is defined and not empty: {}", keyPair[0], value);
+
 			if (value == null || value.isEmpty()) {
 				closeApplication("Missing configuration value for key: " + keyPair[0]);
+			} else if (value.equals("override-me")) {
+				closeApplication("Configuration value for key " + keyPair[0] + " is still set to default value");
 			} else {
 				switch (keyPair[1]) {
 					case TYPE_NUMBER:

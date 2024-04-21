@@ -57,8 +57,8 @@ public class PublishService {
 	private int    siteSshPort;
 	@Value("${vempain.site.ssh.user}")
 	private String siteSshUser;
-	@Value("${vempain.admin.ssh.config-dir}")
-	private String adminSshConfigDir;
+	@Value("${vempain.admin.ssh.home-dir}")
+	private String adminSshHomeDir;
 	@Value("${vempain.admin.ssh.private-key}")
 	private String adminSshPrivateKey;
 
@@ -186,9 +186,9 @@ public class PublishService {
 		try {
 			log.info("Connecting to site-server {}", siteSshAddress);
 			log.debug("Connecting to site-server with user {}", siteSshUser);
-			log.debug("Using SSH config dir {}", adminSshConfigDir);
+			log.debug("Using SSH home dir {}", adminSshHomeDir);
 			log.debug("Using SSH private key {}", adminSshPrivateKey);
-			jschClient.connect(siteSshAddress, siteSshPort, siteSshUser, adminSshConfigDir, adminSshPrivateKey);
+			jschClient.connect(siteSshAddress, siteSshPort, siteSshUser, adminSshHomeDir, adminSshPrivateKey);
 			log.debug("Transferring files to site-server");
 			jschClient.transferFilesToSite(gallery.getCommonFiles(), fileThumbList);
 		} catch (JSchException e) {

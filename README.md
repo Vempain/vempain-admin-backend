@@ -18,26 +18,26 @@ docker build -t vempain_admin_backend
 docker run -dp 8080:8080 -e "SPRING_PROFILES_ACTIVE=local" vempain_admin
 ```
 
-## Setting up test environment
+## Setting up development environment
 
 ### Vempain user (for site SSH)
 
-The service uses SSH to transfer files to the remote web site. For testing one can do the same in localhost.
+The service uses SSH to transfer files to the remote web site. For testing one can do the same in localhost but a different user account.
 
-Run as root the following:
+There is a script at the root of the project called `testSetup.sh`. This will set up everything so that the test cases can be executed successfully.
+It uses the [application.properties](service/src/test/resources/application.properties) file to set up the test environment. Please read through the script
+to fully understand what it does. The script needs to be run as root, and it takes a single argument which your account on the machine. So, if you log on
+to your machine as elvis, then you would execute the following command:
 
 ```shell
-adduser vempain
-chown -R <your login>: /home/vempain
-mkdir /home/vempain/.ssh
-chmod 0700 /home/vempain/.ssh
-cp ~/.ssh/id_rsa ~/.ssh/id_rsa.pub ~vempain/.ssh/
-cp ~/.ssh/id_rsa.pub ~vempain/.ssh/authorized_keys
-chmod 0600 ~vempain/.ssh/*
+sudo ./testSetup.sh elvis
 ```
 
-Finally, you need to also modify the `/etc/passwd` and change the uid (3rd field) and gid (4th field) of the vempain user to that used by your own 
-account.
+To clean up the setup, you can use the `testCleanup.sh` script which requires root privileges, so you execute it as follows:
+
+```shell
+sudo ./testCleanup.sh
+```
 
 ### Required directories
 

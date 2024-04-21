@@ -86,9 +86,9 @@
       "description": "Path to ssh private key file on admin-side."
     },
     {
-      "name": "vempain.admin.ssh.config-dir",
+      "name": "vempain.admin.ssh.home-dir",
       "type": "java.lang.String",
-      "description": "Path to admin .sshd directory."
+      "description": "Path to admin home directory."
     },
     {
       "name": "vempain.site.www-root",

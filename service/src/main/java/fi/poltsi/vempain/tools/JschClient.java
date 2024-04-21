@@ -50,8 +50,8 @@ public class JschClient {
 		this.jsch = new JSch();
 	}
 
-	public void connect(String siteAddress, int sitePort, String siteUser, String adminSshConfigDir, String adminSshPrivateKey) throws JSchException {
-		var knownHostFile = adminSshConfigDir + File.separator + "known_hosts";
+	public void connect(String siteAddress, int sitePort, String siteUser, String adminSshHomeDir, String adminSshPrivateKey) throws JSchException {
+		var knownHostFile = adminSshHomeDir + File.separator + ".ssh" + File.separator + "known_hosts";
 		log.info("Adding known host file from: {}", knownHostFile);
 		jsch.setKnownHosts(knownHostFile);
 		jschSession = jsch.getSession(siteUser, siteAddress, sitePort);

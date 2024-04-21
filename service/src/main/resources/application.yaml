@@ -22,7 +22,6 @@ spring:
     username: test
     password: test
   jpa:
-    database-platform: org.hibernate.dialect.MariaDBDialect
     show-sql: false
     open-in-view: false
     hibernate:
@@ -89,8 +88,8 @@ vempain:
       converted-directory: override-me
     ssh:
       user: override-me
-      config-dir: override-me
-      private-key: "${vempain.admin.ssh.config-dir}/id_ed25519"
+      home-dir: override-me
+      private-key: "${vempain.admin.ssh.home-dir}/.ssh/id_ed25519"
   site:
     www-root: override-me
     # This is the minimum dimension, if the original image size is 2800x5600 then the site image size is 1400x2800
@@ -98,8 +97,9 @@ vempain:
     thumb-directory: ".thumb"
     ssh:
       user: override-me
+      home-dir: override-me
       address: override-me
-      port: override-me
+      port: 22
   cors:
     allowed-origins: ${vempain.app.frontend-url}
     cors-pattern: '/**'

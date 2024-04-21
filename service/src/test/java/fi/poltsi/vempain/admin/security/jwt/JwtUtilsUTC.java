@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.userdetails.User;
@@ -14,7 +13,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.ArrayList;
@@ -29,9 +27,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 @Slf4j
 @SpringBootTest
 @ExtendWith(SpringExtension.class)
-@EnableConfigurationProperties()
-@TestPropertySource(properties = {"vempain.app.jwtSecret=OUVENkFDQjk2REI2RTRFREE0QkQzREQ5RDRCRjhFM0YxNDA3MUJBQjVCNDExNEJBM0FFOEExMjI5MEUxRTQ5RAo=",
-                                  "vempain.app.jwtExpirationMs=86400000"})
 class JwtUtilsUTC {
 	@Autowired
     private JwtUtils                   jwtUtils;
