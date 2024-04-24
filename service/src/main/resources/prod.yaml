@@ -2,7 +2,7 @@ spring:
   config:
     activate:
       on-profile: prod
-
+  # These need to be in place so that application can find the drivers
   admin-datasource:
     driver-class-name: org.mariadb.jdbc.Driver
   site-datasource:
