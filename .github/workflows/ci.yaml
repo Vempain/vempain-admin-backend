@@ -33,7 +33,7 @@ jobs:
 
       - name: Run test setup
         shell: bash
-        run: ./testSetup.sh $(whoami) skipRootCheck
+        run: ./testSetup.sh --skip-root-check --skip-answers
 
       - name: Build with Gradle
         run: ./gradlew clean test

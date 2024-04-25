@@ -1,11 +1,19 @@
 #!/usr/bin/env bash
 
-DEVELOPER_NAME=$1
-SKIP_ROOT_CHECK=$2
-# Make sure the user gave the username parameter
+# Parse the options
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+    --developer-name) DEVELOPER_NAME="$2"; shift ;;
+    --skip-root-check) SKIP_ROOT_CHECK="true" ;;
+    --skip-answers) SKIP_ANSWERS="true" ;;
+    *) echo "Unknown parameter passed: $1"; exit 1 ;;
+  esac
+  shift
+done
+
+# Set the developer name to the current user if it is not set
 if [ -z "${DEVELOPER_NAME}" ]; then
-  echo "Usage: $0 <username>"
-  exit 1
+  DEVELOPER_NAME=$(whoami)
 fi
 
 # Make sure the username exists
@@ -26,16 +34,18 @@ uid=$(id -u "${DEVELOPER_NAME}")
 
 TEST_PROPERTY_FILE="service/src/test/resources/application.properties"
 
-echo "This script will setup the test environment for the project. It may delete the existing test directory and test file."
-echo "It uses the values from the ${TEST_PROPERTY_FILE} file to set up the environment. This"
-echo "includes users and directories. Please review the property file before running this script to fully understand the changes."
-echo
-echo "Do you want to continue? (y/n)"
-read answer
+if [ -z "${SKIP_ROOT_CHECK}" ]; then
+  echo "This script will setup the test environment for the project. It may delete the existing test directory and test file."
+  echo "It uses the values from the ${TEST_PROPERTY_FILE} file to set up the environment. This"
+  echo "includes users and directories. Please review the property file before running this script to fully understand the changes."
+  echo
+  echo "Do you want to continue? (y/n)"
+  read answer
 
-if [ "$answer" == "${answer#[Yy]}" ] ;then
+  if [ "$answer" == "${answer#[Yy]}" ] ;then
     echo "Test environment setup cancelled! Exiting..."
     exit 0
+  fi
 fi
 
 # Read the property file
@@ -51,13 +61,15 @@ while IFS='=' read -r key value; do
   echo "Set ${key}='${value}'"
 done < "${TEST_PROPERTY_FILE}"
 
-# Make sure the user wants to run the script
-echo "These are the settings the script will use. Do you want to continue? (y/n)"
-read answer
+if [ -z "${SKIP_ROOT_CHECK}" ]; then
+  # Make sure the user wants to run the script
+  echo "These are the settings the script will use. Do you want to continue? (y/n)"
+  read answer
 
-if [ "$answer" == "${answer#[Yy]}" ] ;then
+  if [ "$answer" == "${answer#[Yy]}" ] ;then
     echo "Test environment setup cancelled! Exiting..."
     exit 0
+  fi
 fi
 
 # Check if vempain_admin_ssh_user user exists, if not, create it
