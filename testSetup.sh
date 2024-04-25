@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 DEVELOPER_NAME=$1
+SKIP_ROOT_CHECK=$2
 # Make sure the user gave the username parameter
 if [ -z "${DEVELOPER_NAME}" ]; then
   echo "Usage: $0 <username>"
@@ -13,8 +14,8 @@ if ! id "${DEVELOPER_NAME}" &>/dev/null; then
   exit 1
 fi
 
-# Check that this script is being run as root
-if [ "$EUID" -ne 0 ]; then
+# Check that this script is being run as root, except if the SKIP_ROOT_CHECK variable is set
+if [ -z "${SKIP_ROOT_CHECK}" ] && [ "$EUID" -ne 0 ]; then
   echo "Please run this script as root"
   exit 1
 fi
