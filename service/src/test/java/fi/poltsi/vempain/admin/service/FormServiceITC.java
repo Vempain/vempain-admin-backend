@@ -42,7 +42,7 @@ class FormServiceITC extends AbstractITCTest {
 		testITCTools.generateForms(initCount);
 
 		try {
-			Form form = formService.findById(testITCTools.getFormIdList().get(0));
+			Form form = formService.findById(testITCTools.getFormIdList().getFirst());
 			testITCTools.assertForm(form);
 		} catch (VempainEntityNotFoundException e) {
 			fail("There should have been a form to be found");
@@ -66,8 +66,8 @@ class FormServiceITC extends AbstractITCTest {
 		testITCTools.generateForms(initCount);
 
 		try {
-			formService.delete(testITCTools.getFormIdList().get(0));
-			testITCTools.getFormIdList().remove(0);
+			formService.delete(testITCTools.getFormIdList().getFirst());
+			testITCTools.getFormIdList().removeFirst();
 		} catch (Exception e) {
 			fail("Failed to remove form by ID");
 		}

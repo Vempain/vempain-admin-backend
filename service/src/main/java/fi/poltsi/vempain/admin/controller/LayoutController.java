@@ -55,14 +55,14 @@ public class LayoutController implements LayoutAPI {
 		layoutName = layoutName.trim();
 
 		if (layoutName.isBlank()) {
-			log.error("The given layout name is empty or malformed: " + layoutName);
+			log.error("The given layout name is empty or malformed: {}", layoutName);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_NAME_IN_REQUEST);
 		}
 
 		try {
 			return ResponseEntity.ok(layoutService.findLayoutResponseByLayoutNameByUser(layoutName));
 		} catch (VempainLayoutException e) {
-			log.error("Failed to fetch layout with given layout name: " + layoutName);
+			log.error("Failed to fetch layout with given layout name: {}", layoutName);
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND);
 		}
 	}

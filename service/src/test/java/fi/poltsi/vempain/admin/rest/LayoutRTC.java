@@ -72,11 +72,11 @@ class LayoutRTC {
 		List<AclResponse> aclResponses = layoutResponse.getAcls();
 		assertFalse(aclResponses.isEmpty());
 		assertEquals(1, aclResponses.size());
-		assertTrue(aclResponses.get(0).isReadPrivilege());
-		assertTrue(aclResponses.get(0).isModifyPrivilege());
-		assertFalse(aclResponses.get(0).isCreatePrivilege());
-		assertFalse(aclResponses.get(0).isDeletePrivilege());
-		assertEquals(1, aclResponses.get(0).getUser());
-		assertNull(aclResponses.get(0).getUnit());
+		assertTrue(aclResponses.getFirst().isReadPrivilege());
+		assertTrue(aclResponses.getFirst().isModifyPrivilege());
+		assertFalse(aclResponses.getFirst().isCreatePrivilege());
+		assertFalse(aclResponses.getFirst().isDeletePrivilege());
+		assertEquals(1, aclResponses.getFirst().getUser());
+		assertNull(aclResponses.getFirst().getUnit());
 	}
 }

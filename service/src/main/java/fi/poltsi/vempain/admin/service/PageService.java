@@ -193,8 +193,8 @@ public class PageService extends AbstractService {
 
 			return save(page);
 		} catch (Exception e) {
-			log.error("Failed to update page to database: " + request);
-			log.error("Exception message: " + e.getMessage());
+			log.error("Failed to update page to database: {}", request);
+			log.error("Exception message: {}", e.getMessage());
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, VempainMessages.INTERNAL_ERROR);
 		}
 	}

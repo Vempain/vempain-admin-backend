@@ -210,19 +210,19 @@ public class AclService {
         } catch (Exception e) {
             switch (e.getMessage()) {
                 case "New ACL ID is invalid" -> {
-                    log.error("Generated ACL ID is invalid: " + aclId);
+					log.error("Generated ACL ID is invalid: {}", aclId);
                     throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid ACL ID");
                 }
                 case "No ACL to save" -> {
-                    log.error("Object request did not contain a valid ACL request list: " + aclRequests);
+					log.error("Object request did not contain a valid ACL request list: {}", aclRequests);
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request contains no ACL list");
                 }
                 case "Trying to save an ACL ID that already exists" -> {
-                    log.error("Object request contained an already existing ACL ID: " + aclRequests);
+					log.error("Object request contained an already existing ACL ID: {}", aclRequests);
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request contains already existing ACL ID");
                 }
                 default -> {
-                    log.error("Storing ACL list failed for unknown reason: " + e.getMessage());
+					log.error("Storing ACL list failed for unknown reason: {}", e.getMessage());
                     throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unknown error");
                 }
             }

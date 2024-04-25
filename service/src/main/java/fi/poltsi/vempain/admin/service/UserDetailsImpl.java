@@ -24,8 +24,8 @@ public class UserDetailsImpl implements UserDetails {
 	private final Long id;
 	private final String loginName;
 	private final String nickName;
-	private final String email;
-	private Set<Unit> units;
+	private final String    email;
+	private final Set<Unit> units;
 
 	@JsonIgnore
 	private final String password;

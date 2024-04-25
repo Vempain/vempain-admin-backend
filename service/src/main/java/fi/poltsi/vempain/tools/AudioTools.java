@@ -9,7 +9,7 @@ import java.io.IOException;
 
 public class AudioTools {
 	public static long getAudioLength(File audioFile) {
-		AudioInputStream audioInputStream  = null;
+		AudioInputStream audioInputStream;
 		try {
 			audioInputStream = AudioSystem.getAudioInputStream(audioFile);
 		} catch (UnsupportedAudioFileException | IOException e) {

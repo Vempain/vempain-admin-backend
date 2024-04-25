@@ -30,7 +30,7 @@ class UserRepositoryITC extends AbstractITCTest {
 	@Test
 	@Transactional
 	@DisplayName("Create and lock a user")
-	void createAndLockUserOk() throws InterruptedException {
+	void createAndLockUserOk() {
 		var userId = testITCTools.generateUser();
 		var optionalUser = userRepository.findById(userId);
 		assertTrue(optionalUser.isPresent());

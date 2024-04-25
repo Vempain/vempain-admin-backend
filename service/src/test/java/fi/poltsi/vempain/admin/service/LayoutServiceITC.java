@@ -34,7 +34,7 @@ class LayoutServiceITC extends AbstractITCTest {
 	}
 
 	@Test
-	void getAllLayouts() throws VempainLayoutException, VempainAbstractException {
+	void getAllLayouts() {
 		testITCTools.generateLayouts(initCount);
 		Iterable<Layout> layouts = layoutService.findAll();
 		Assertions.assertNotNull(layouts);
@@ -46,15 +46,15 @@ class LayoutServiceITC extends AbstractITCTest {
 	}
 
 	@Test
-	void findById() throws VempainLayoutException, VempainEntityNotFoundException, VempainAbstractException {
+	void findById() throws VempainEntityNotFoundException {
 		testITCTools.generateLayouts(initCount);
-		Layout layout = layoutService.findById(testITCTools.getLayoutIdList().get(0));
+		Layout layout = layoutService.findById(testITCTools.getLayoutIdList().getFirst());
 		assertNotNull(layout);
 		assertLayout(layout);
 	}
 
 	@Test
-	void findByNonExistingLayoutId() throws VempainLayoutException, VempainAbstractException {
+	void findByNonExistingLayoutId() {
 		testITCTools.generateLayouts(initCount);
 		try {
 			long   nonExistId = Collections.max(testITCTools.getLayoutIdList()) + 1;
@@ -67,7 +67,7 @@ class LayoutServiceITC extends AbstractITCTest {
 	}
 
 	@Test
-	void findByLayoutName() throws VempainLayoutException, VempainAbstractException {
+	void findByLayoutName() throws VempainLayoutException {
 		var userId = testITCTools.generateUser();
 		var aclId  = testITCTools.generateAcl(userId, null, true, true, true, true);
 		var layout = Layout.builder()
@@ -98,9 +98,9 @@ class LayoutServiceITC extends AbstractITCTest {
 	}
 
 	@Test
-	void delete() throws VempainLayoutException, VempainAbstractException {
+	void delete() {
 		testITCTools.generateLayouts(initCount);
-		long layoutId = testITCTools.getLayoutIdList().get(0);
+		long layoutId = testITCTools.getLayoutIdList().getFirst();
 
 		try {
 			layoutService.delete(layoutId);

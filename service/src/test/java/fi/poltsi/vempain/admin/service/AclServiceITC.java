@@ -58,7 +58,7 @@ class AclServiceITC extends AbstractITCTest {
 		var aclIds = testITCTools.generateAcls(initCount);
 		assertNotNull(aclIds);
 		assertEquals(initCount, aclIds.size());
-		var acls = aclService.findAclByAclId(aclIds.get(0));
+		var acls = aclService.findAclByAclId(aclIds.getFirst());
 		assertNotNull(acls);
 		assertEquals(2L, acls.size());
 
@@ -87,13 +87,13 @@ class AclServiceITC extends AbstractITCTest {
 		testITCTools.generateAcls(initCount);
 
 		try {
-			Long aclId = testITCTools.getAclIdList().get(0);
+			Long aclId = testITCTools.getAclIdList().getFirst();
 			aclService.deleteByAclId(aclId);
 		} catch (VempainEntityNotFoundException e) {
 			fail("Should have been able to delete Acl with id: " + (initCount - 1));
 		}
 
-		testITCTools.getAclIdList().remove(0);
+		testITCTools.getAclIdList().removeFirst();
 		Iterable<Acl> acls = aclService.findAll();
 		assertEquals((7 * initCount - 1), StreamSupport.stream(acls.spliterator(), false).count());
 	}
@@ -125,7 +125,7 @@ class AclServiceITC extends AbstractITCTest {
 	void updateOk() {
 		var aclList = testITCTools.generateAcls(initCount);
 		assertFalse(aclList.isEmpty());
-		var acls = aclService.findAclByAclId(aclList.get(0));
+		var acls = aclService.findAclByAclId(aclList.getFirst());
 		assertNotNull(acls);
 		assertEquals(2L, acls.size());
 
@@ -138,7 +138,7 @@ class AclServiceITC extends AbstractITCTest {
 			fail("Updating ACL should have succeeded");
 		}
 
-		var checkAcls = aclService.findAclByAclId(aclList.get(0));
+		var checkAcls = aclService.findAclByAclId(aclList.getFirst());
 		assertNotNull(checkAcls);
 		assertEquals(2L, checkAcls.size());
 
@@ -189,7 +189,7 @@ class AclServiceITC extends AbstractITCTest {
 	@Test
 	void updateFailsWithNullUserAndUnit() {
 		var aclIdList = testITCTools.generateAcls(initCount);
-		Iterable<Acl> acls = aclService.findAclByAclId(aclIdList.get(0));
+		Iterable<Acl> acls = aclService.findAclByAclId(aclIdList.getFirst());
 
 		for (Acl acl : acls) {
 			// Update with both null user and unit

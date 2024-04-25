@@ -64,6 +64,7 @@ public class PublishService {
 
 	//////////// Pages
 
+	@Transactional
 	public void publishAllPages() throws VempainEntityNotFoundException {
 		var pages = pageService.findAllByUser();
 
@@ -264,6 +265,7 @@ public class PublishService {
 		return sitePageRepository.findById(pageId);
 	}
 
+	@Transactional
 	public void publishAllGalleries() throws VempainEntityNotFoundException {
 		var galleries = fileService.findAllGalleries();
 

@@ -20,7 +20,6 @@ import fi.poltsi.vempain.admin.entity.file.Gallery;
 import fi.poltsi.vempain.admin.entity.file.GalleryFile;
 import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
-import fi.poltsi.vempain.admin.exception.VempainFileExeption;
 import fi.poltsi.vempain.admin.repository.file.FileAudioPageableRepository;
 import fi.poltsi.vempain.admin.repository.file.FileCommonPageableRepository;
 import fi.poltsi.vempain.admin.repository.file.FileDocumentPageableRepository;
@@ -203,7 +202,7 @@ public class FileService extends AbstractService {
 		try {
 			aclId = aclService.createNewAcl(userId, null, true, true, true, true);
 		} catch (VempainAclException e) {
-			log.error("Storing ACL list failed for unknown reason: " + e.getMessage());
+			log.error("Storing ACL list failed for unknown reason: {}", e.getMessage());
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, RESPONSE_STATUS_EXCEPTION_MESSAGE);
 		}
 
@@ -326,7 +325,7 @@ public class FileService extends AbstractService {
 					processUploadFile(multipartFile.getInputStream(), multipartFile.getOriginalFilename(), destinationDirectory,
 									  usedId, galleryId, sortOrder);
 				} catch (IOException e) {
-					log.error("Failed to process file: " + multipartFile.getOriginalFilename(), e);
+					log.error("Failed to process file: {}", multipartFile.getOriginalFilename(), e);
 					throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, RESPONSE_STATUS_EXCEPTION_MESSAGE);
 				}
 			} else {
@@ -343,10 +342,10 @@ public class FileService extends AbstractService {
 		try (OutputStream output = new FileOutputStream(sourceFile, false)) {
 			inputStream.transferTo(output);
 		} catch (FileNotFoundException e) {
-			log.error("Failed to create file: " + originalFilename, e);
+			log.error("Failed to create file: {}", originalFilename, e);
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, RESPONSE_STATUS_EXCEPTION_MESSAGE);
 		} catch (IOException e) {
-			log.error("Failed to save file: " + originalFilename, e);
+			log.error("Failed to save file: {}", originalFilename, e);
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, RESPONSE_STATUS_EXCEPTION_MESSAGE);
 		}
 
@@ -363,7 +362,7 @@ public class FileService extends AbstractService {
 	 */
 
 	public List<FileCommon> addFilesFromDirectory(FileProcessRequest fileProcessRequest) throws VempainEntityNotFoundException,
-																								IOException, VempainFileExeption, VempainAclException {
+																								IOException, VempainAclException {
 		// String sourceDirectory, String siteDirectory, boolean createGallery,
 		// String galleryName, String galleryDescription
 		var sourcePath = Path.of(convertedDirectory + File.separator + fileProcessRequest.getSourceDirectory());
@@ -481,7 +480,7 @@ public class FileService extends AbstractService {
 		try {
 			aclId = aclService.createNewAcl(userId, null, true, true, true, true);
 		} catch (VempainAclException e) {
-			log.error("Storing ACL list failed for unknown reason: " + e.getMessage());
+			log.error("Storing ACL list failed for unknown reason: {}", e.getMessage());
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, RESPONSE_STATUS_EXCEPTION_MESSAGE);
 		}
 
@@ -921,7 +920,7 @@ public class FileService extends AbstractService {
 
 		// If the length of the relative path now is 0, then skip adding it to the list
 		if (relativePath.isEmpty()) {
-			log.debug("Skipping empty path after removing main import directory: {}", newPath.toString());
+			log.debug("Skipping empty path after removing main import directory: {}", newPath);
 			return;
 		}
 

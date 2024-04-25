@@ -55,7 +55,7 @@ class ComponentControllerITC extends AbstractITCTest {
 	@DisplayName("Test updating a component")
 	void updateComponent() throws VempainComponentException, VempainAbstractException {
 		testITCTools.generateComponents(initCount);
-		ResponseEntity<ComponentResponse> response = componentController.getComponentById(testITCTools.getComponentIdList().get(0));
+		ResponseEntity<ComponentResponse> response = componentController.getComponentById(testITCTools.getComponentIdList().getFirst());
 		assertNotNull(response);
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		ComponentResponse componentResponse = response.getBody();
@@ -70,7 +70,7 @@ class ComponentControllerITC extends AbstractITCTest {
 			assertNotNull(componentResponse.getAcls());
 			var userId = testITCTools.generateUser();
 			AclRequest aclRequest = AclRequest.builder()
-											  .aclId(componentResponse.getAcls().get(0).getAclId())
+											  .aclId(componentResponse.getAcls().getFirst().getAclId())
 											  .user(userId)
 											  .unit(null)
 											  .createPrivilege(true)
@@ -92,7 +92,7 @@ class ComponentControllerITC extends AbstractITCTest {
 
 		componentController.updateComponent(request);
 
-		ResponseEntity<ComponentResponse> updatedResponse = componentController.getComponentById(testITCTools.getComponentIdList().get(0));
+		ResponseEntity<ComponentResponse> updatedResponse = componentController.getComponentById(testITCTools.getComponentIdList().getFirst());
 		assertNotNull(updatedResponse);
 		assertEquals(HttpStatus.OK, updatedResponse.getStatusCode());
 		ComponentResponse updatedComponent = updatedResponse.getBody();

@@ -35,7 +35,7 @@ public class DeleteService {
 		var optionalLayout = layoutRepository.findById(layoutId);
 
 		if (optionalLayout.isEmpty()) {
-			log.error("Layout not found: " + layoutId);
+			log.error("Layout not found: {}", layoutId);
 			throw new VempainEntityNotFoundException("Layout not found by id: " + layoutId, "layout");
 		}
 
@@ -61,7 +61,7 @@ public class DeleteService {
 		var optionalComponent = componentRepository.findById(componentId);
 
 		if (optionalComponent.isEmpty()) {
-			log.error("Component not found: " + componentId);
+			log.error("Component not found: {}", componentId);
 			throw new VempainEntityNotFoundException("Component not found by id: " + componentId, "component");
 		}
 
@@ -89,7 +89,7 @@ public class DeleteService {
 		var optionalForm = formRepository.findById(formId);
 
 		if (optionalForm.isEmpty()) {
-			log.error("Form not found: " + formId);
+			log.error("Form not found: {}", formId);
 			throw new VempainEntityNotFoundException("Form not found by id: " + formId, "page");
 		}
 
@@ -123,7 +123,7 @@ public class DeleteService {
 		var page = pageRepository.findById(pageId);
 
 		if (page == null) {
-			log.error("Page not found: " + pageId);
+			log.error("Page not found: {}", pageId);
 			throw new VempainEntityNotFoundException("Page not found by id: " + pageId, "page");
 		}
 

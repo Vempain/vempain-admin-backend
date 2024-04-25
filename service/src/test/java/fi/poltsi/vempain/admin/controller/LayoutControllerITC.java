@@ -91,7 +91,8 @@ class LayoutControllerITC extends AbstractITCTest {
 		log.info("Layout response: {}", layoutResponse);
 		assertTrue(layoutResponse.getId() > 0L);
 		assertNotNull(layoutResponse.getAcls());
-		assertTrue(!layoutResponse.getAcls().isEmpty());
+		assertFalse(layoutResponse.getAcls()
+								  .isEmpty());
 		assertEquals(layoutName, layoutResponse.getLayoutName());
 		assertEquals(layoutStructure, layoutResponse.getStructure());
 		assertEquals(userId, layoutResponse.getCreator());

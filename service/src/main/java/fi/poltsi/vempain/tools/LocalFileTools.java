@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Comparator;
 
 @Slf4j
 @UtilityClass
@@ -86,7 +87,7 @@ public class LocalFileTools {
 	public static void removeDirectory(String directory) {
 		try {
 			Files.walk(Path.of(directory))
-					.sorted((a, b) -> b.compareTo(a))
+					.sorted(Comparator.reverseOrder())
 					.map(Path::toFile)
 					.forEach(File::delete);
 		} catch (IOException e) {

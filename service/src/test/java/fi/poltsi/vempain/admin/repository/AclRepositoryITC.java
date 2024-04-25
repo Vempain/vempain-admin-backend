@@ -57,8 +57,8 @@ class AclRepositoryITC extends AbstractITCTest {
 		List<Acl> aclList = aclRepository.getAclByAclId(aclId);
 		assertNotNull(aclList);
 		assertEquals(1, aclList.size());
-		assertEquals(aclId, aclList.get(0).getAclId());
-		log.info("Found acl from database with ID: {}", aclList.get(0).getAclId());
+		assertEquals(aclId, aclList.getFirst().getAclId());
+		log.info("Found acl from database with ID: {}", aclList.getFirst().getAclId());
 		aclRepository.deleteAclsByAclId(aclId);
 		List<Acl> emptyAclList = aclRepository.getAclByAclId(aclId);
 		assertNotNull(emptyAclList);

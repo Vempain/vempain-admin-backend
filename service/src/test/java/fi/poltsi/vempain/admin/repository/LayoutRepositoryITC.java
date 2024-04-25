@@ -42,7 +42,7 @@ class LayoutRepositoryITC extends AbstractITCTest {
 	@Test
 	void findById() {
 		var layoutIds = testITCTools.generateLayouts(initCount);
-		Optional<Layout> optionalLayout = layoutRepository.findById(layoutIds.get(0));
+		Optional<Layout> optionalLayout = layoutRepository.findById(layoutIds.getFirst());
 		assertTrue(optionalLayout.isPresent());
 		assertLayout(optionalLayout.get());
 	}
@@ -50,7 +50,7 @@ class LayoutRepositoryITC extends AbstractITCTest {
 	@Test
 	void findByLayoutName() {
 		var layoutIds = testITCTools.generateLayouts(initCount);
-		var layout = layoutRepository.findById(layoutIds.get(0));
+		var layout = layoutRepository.findById(layoutIds.getFirst());
 		assertTrue(layout.isPresent());
 		var layoutName = layout.get().getLayoutName();
 		Optional<Layout> optionalLayout = layoutRepository.findByLayoutName(layoutName);
@@ -61,7 +61,7 @@ class LayoutRepositoryITC extends AbstractITCTest {
 	@Test
 	void deleteLayoutById() {
 		var layoutIds = testITCTools.generateLayouts(initCount);
-		var layout = layoutRepository.findById(layoutIds.get(0));
+		var layout = layoutRepository.findById(layoutIds.getFirst());
 		assertTrue(layout.isPresent());
 		var layoutName = layout.get().getLayoutName();
 		Optional<Layout> optionalLayout = layoutRepository.findByLayoutName(layoutName);

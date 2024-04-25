@@ -45,14 +45,14 @@ class ComponentServiceITC extends AbstractITCTest {
 	@Test
 	void findByIdOk() throws VempainComponentException, VempainAbstractException {
 		testITCTools.generateComponents(initCount);
-		Component component = componentService.findById(testITCTools.getComponentIdList().get(0));
+		Component component = componentService.findById(testITCTools.getComponentIdList().getFirst());
 		assertComponent(component);
 	}
 
 	@Test
 	void deleteByIdOk() throws VempainEntityNotFoundException, VempainComponentException, VempainAbstractException {
 		testITCTools.generateComponents(initCount);
-		Long componentId = testITCTools.getComponentIdList().get(0);
+		Long componentId = testITCTools.getComponentIdList().getFirst();
 		long aclId       = componentService.findById(componentId).getAclId();
 
 		componentService.deleteById(componentId);

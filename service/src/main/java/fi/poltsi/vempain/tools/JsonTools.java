@@ -149,7 +149,7 @@ public class JsonTools {
 			for (String key : location.getValue()) {
 				if (jsonObject.has(location.getKey()) && jsonObject.getJSONObject(location.getKey()).has(key)) {
 
-					Number number = null;
+					Number number;
 					try {
 						number = jsonObject.getJSONObject(location.getKey()).getNumber(key);
 						return number;

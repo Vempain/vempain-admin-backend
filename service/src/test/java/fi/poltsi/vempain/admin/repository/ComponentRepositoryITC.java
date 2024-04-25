@@ -48,7 +48,7 @@ class ComponentRepositoryITC extends AbstractITCTest {
 	@Test
 	void findByIdOk() throws VempainComponentException, VempainAbstractException {
 		testITCTools.generateComponents(initCount);
-		Long                componentId       = testITCTools.getComponentIdList().get(0);
+		Long                componentId       = testITCTools.getComponentIdList().getFirst();
 		Optional<Component> optionalComponent = componentRepository.findById(componentId);
 		assertTrue(optionalComponent.isPresent());
 		Component component = optionalComponent.get();
@@ -65,7 +65,7 @@ class ComponentRepositoryITC extends AbstractITCTest {
 	@Test
 	void findByCompNameOk() throws VempainComponentException, VempainAbstractException {
 		testITCTools.generateComponents(initCount);
-		Long                componentId       = testITCTools.getComponentIdList().get(0);
+		Long                componentId       = testITCTools.getComponentIdList().getFirst();
 		Optional<Component> optionalComponent = componentRepository.findById(componentId);
 		assertTrue(optionalComponent.isPresent());
 		Component component  = optionalComponent.get();
@@ -84,7 +84,7 @@ class ComponentRepositoryITC extends AbstractITCTest {
 	@Test
 	void deleteComponentByIdOk() throws VempainComponentException, VempainAbstractException {
 		testITCTools.generateComponents(initCount);
-		Long                componentId       = testITCTools.getComponentIdList().get(0);
+		Long                componentId       = testITCTools.getComponentIdList().getFirst();
 		Optional<Component> optionalComponent = componentRepository.findById(componentId);
 		assertTrue(optionalComponent.isPresent());
 		Component component = optionalComponent.get();

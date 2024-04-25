@@ -334,8 +334,8 @@ class AccessServiceUTC {
 		List<Acl> acls = TestUTCTools.generateAclList(1L, 1L);
 
 		// This is the user-specific ACL
-		acls.get(0).setReadPrivilege(userPermissions.get(0));
-		acls.get(0).setModifyPrivilege(userPermissions.get(1));
+		acls.getFirst().setReadPrivilege(userPermissions.get(0));
+		acls.getFirst().setModifyPrivilege(userPermissions.get(1));
 		acls.get(0).setCreatePrivilege(userPermissions.get(2));
 		acls.get(0).setDeletePrivilege(userPermissions.get(3));
 		// This is the unit-specific ACL

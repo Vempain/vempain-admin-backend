@@ -62,6 +62,7 @@ public class DuplicateFileRemovalSchedule {
 
 		for (FileThumb iteratingThumb : fileThumbs) {
 			var optionalFileCommon = fileService.findCommonById(iteratingThumb.getParentId());
+
 			if (optionalFileCommon.isEmpty()) {
 				log.info("Removing thumb file {} because it does not refer to valid common file", iteratingThumb);
 				fileService.deleteFileThumb(iteratingThumb);
@@ -74,6 +75,9 @@ public class DuplicateFileRemovalSchedule {
 				duplicates.add(iteratingThumb);
 			}
 		}
+
+		// TODO Remove the duplicates
+		log.info("Found {} duplicates for thumb file {}", duplicates.size(), fileThumb);
 	}
 
 	private void deduplicateCommonFile(FileCommon fileCommon) {

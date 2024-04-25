@@ -140,7 +140,7 @@ public class LayoutService extends AbstractService {
 								   .modified(Instant.now())
 								   .build();
 				var newLayout = save(layout);
-				log.info("Layout ID: " + newLayout.getId());
+				log.info("Layout ID: {}", newLayout.getId());
 				log.info("Adding layout:\n{}", newLayout);
 				return newLayout;
 			} catch (VempainAclException e) {
@@ -163,7 +163,7 @@ public class LayoutService extends AbstractService {
 		try {
 			layout = findById(layoutRequest.getId());
 		} catch (VempainEntityNotFoundException e) {
-			log.error("User attempted to update non-existing layout: " + layoutRequest);
+			log.error("User attempted to update non-existing layout: {}", layoutRequest);
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND);
 		}
 
@@ -185,8 +185,8 @@ public class LayoutService extends AbstractService {
 			layout.setModified(Instant.now());
 			return save(layout);
 		} catch (Exception e) {
-			log.error("Failed to update layout to database: " + layoutRequest);
-			log.error("Exception message: " + e.getMessage());
+			log.error("Failed to update layout to database: {}", layoutRequest);
+			log.error("Exception message: {}", e.getMessage());
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, VempainMessages.INTERNAL_ERROR);
 		}
 	}

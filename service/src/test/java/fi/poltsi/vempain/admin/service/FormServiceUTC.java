@@ -481,7 +481,7 @@ class FormServiceUTC {
 		when(componentService.findById(anyLong())).thenReturn(Component.builder().build());
 
 		AclResponse aclResponse = AclResponse.builder().build();
-		when(aclService.getAclResponses(formRequest.getAcls().get(0).getAclId())).thenReturn(Collections.singletonList(aclResponse));
+		when(aclService.getAclResponses(formRequest.getAcls().getFirst().getAclId())).thenReturn(Collections.singletonList(aclResponse));
 
 		ArrayList<FormComponent> formComponents = new ArrayList<>();
 

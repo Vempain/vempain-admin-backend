@@ -11,7 +11,6 @@ import fi.poltsi.vempain.admin.api.response.file.FileVideoResponse;
 import fi.poltsi.vempain.admin.entity.file.FileCommon;
 import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
-import fi.poltsi.vempain.admin.exception.VempainFileExeption;
 import fi.poltsi.vempain.admin.rest.file.FileAPI;
 import fi.poltsi.vempain.admin.service.file.FileService;
 import lombok.RequiredArgsConstructor;
@@ -87,7 +86,7 @@ public class FileController implements FileAPI {
 			}
 
 			return ResponseEntity.ok(fileCommonResponseList);
-		} catch (VempainEntityNotFoundException | VempainFileExeption | IOException | VempainAclException e) {
+		} catch (VempainEntityNotFoundException | IOException | VempainAclException e) {
 			log.error("Failed to import files with request {}", fileProcessRequest, e);
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, VempainMessages.INTERNAL_ERROR);
 		}

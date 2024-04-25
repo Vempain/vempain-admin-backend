@@ -151,7 +151,7 @@ public class JschClient {
 		createRecursivelySiteDirectory(testDir, subDirList);
 	}
 
-	private boolean siteDirectoryExists(String siteDirectory) throws SftpException {
+	private boolean siteDirectoryExists(String siteDirectory) {
 		try {
 			channelSftp.lstat(siteDirectory);
 			return true;

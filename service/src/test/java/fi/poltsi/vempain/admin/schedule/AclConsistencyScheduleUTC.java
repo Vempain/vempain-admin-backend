@@ -104,8 +104,8 @@ class AclConsistencyScheduleUTC {
     void getAclSetFromServicesComponentAclFail() {
         setupSingleObjects();
         List<Component> components = TestUTCTools.generateComponentList(2L);
-        components.get(0).setAclId(1L);
-        components.get(0).setAclId(2L);
+        components.getFirst().setAclId(1L);
+        components.getFirst().setAclId(2L);
         when(componentService.findAll()).thenReturn(components);
 
         try {
@@ -195,23 +195,23 @@ class AclConsistencyScheduleUTC {
         when(componentService.findAll()).thenReturn(components);
 
         List<Form> forms = TestUTCTools.generateFormList(1L);
-        forms.get(0).setAclId(2L);
+        forms.getFirst().setAclId(2L);
         when(formService.findAll()).thenReturn(forms);
 
         List<Layout> layouts = TestUTCTools.generateLayoutList(1L);
-        layouts.get(0).setAclId(3L);
+        layouts.getFirst().setAclId(3L);
         when(layoutService.findAll()).thenReturn(layouts);
 
         List<Page> pages = TestUTCTools.generatePageList(1L);
-        pages.get(0).setAclId(4L);
+        pages.getFirst().setAclId(4L);
         when(pageService.findAll()).thenReturn(pages);
 
         List<Unit> units = TestUTCTools.generateUnitList(1L);
-        units.get(0).setAclId(5L);
+        units.getFirst().setAclId(5L);
         when(unitService.findAll()).thenReturn(units);
 
         List<User> users = TestUTCTools.generateUserList(1L);
-        users.get(0).setAclId(6L);
+        users.getFirst().setAclId(6L);
         when(userService.findAll()).thenReturn(users);
     }
 }

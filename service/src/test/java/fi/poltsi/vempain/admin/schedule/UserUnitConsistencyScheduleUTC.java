@@ -36,7 +36,7 @@ class UserUnitConsistencyScheduleUTC {
 		List<Unit> units = TestUTCTools.generateUnitList(5L);
 
 		// We add a user with non-empty unit list
-		users.get(0).setUnits(Collections.singleton(units.get(0)));
+		users.getFirst().setUnits(Collections.singleton(units.getFirst()));
 
 		when(userService.findAll()).thenReturn(users);
 		when(unitService.findAll()).thenReturn(units);

@@ -1,6 +1,6 @@
 plugins {
     id 'java-library'
-    id "io.freefair.lombok" version "${lombokVersion}"
+    id "io.freefair.lombok" version "${ioFreeFairLombok}"
 }
 
 repositories {
@@ -13,7 +13,7 @@ jar {
 
 dependencies {
     // https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-annotations
-    implementation group: 'io.swagger.core.v3', name: 'swagger-annotations', version: '2.2.20'
+    implementation group: 'io.swagger.core.v3', name: 'swagger-annotations', version: '2.2.21'
     // https://mvnrepository.com/artifact/jakarta.validation/jakarta.validation-api
     implementation group: 'jakarta.validation', name: 'jakarta.validation-api', version: '3.0.2'
     // https://mvnrepository.com/artifact/org.springframework.data/spring-data-jpa

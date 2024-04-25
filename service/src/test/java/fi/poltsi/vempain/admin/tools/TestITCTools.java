@@ -506,7 +506,7 @@ public class TestITCTools {
 	/////////////////// Layouts end
 
 	/////////////////// Page start
-	public Long generatePage() throws VempainLayoutException, VempainAbstractException, VempainComponentException {
+	public Long generatePage() throws VempainAbstractException, VempainComponentException {
 		var  formId       = generateForm();
 		var  userId       = generateUser();
 		var  aclId        = generateAcl(userId, null, true, true, true, true);
