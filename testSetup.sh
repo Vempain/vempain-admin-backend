@@ -77,7 +77,7 @@ if id "${vempain_admin_ssh_user}" &>/dev/null; then
   echo "User ${vempain_admin_ssh_user} already exists"
 else
   echo "Creating user ${vempain_admin_ssh_user}"
-  adduser -m -o -u ${uid} -s /bin/bash -d "${vempain_admin_ssh_home_dir}" "${vempain_admin_ssh_user}"
+  useradd -m -o -u ${uid} -s /bin/bash -d "${vempain_admin_ssh_home_dir}" "${vempain_admin_ssh_user}"
 fi
 
 
@@ -140,7 +140,7 @@ if id "${vempain_site_ssh_user}" &>/dev/null; then
   echo "User ${vempain_site_ssh_user} already exists"
 else
   echo "Creating user ${vempain_site_ssh_user}"
-  adduser -m -o -u ${uid} -s /bin/bash -d "${vempain_site_ssh_home_dir}" "${vempain_site_ssh_user}"
+  useradd -m -o -u ${uid} -s /bin/bash -d "${vempain_site_ssh_home_dir}" "${vempain_site_ssh_user}"
 fi
 
 # If the .ssh directory does not exist for the vempain_site_ssh_user, create it
