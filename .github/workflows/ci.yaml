@@ -41,18 +41,6 @@ jobs:
       - name: Run tests with Gradle
         run: ./gradlew clean test
 
-      - name: List build tree
-        shell: bash
-        run: tree service/build/
-
-      - name: Test Report
-        uses: dorny/test-reporter@v1
-        if: success() || failure()
-        with:
-          name: Unit Tests
-          path: service/build/reports/jacoco/test/jacocoTestReport.xml
-          reporter: java-junit
-
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: success() || failure()
