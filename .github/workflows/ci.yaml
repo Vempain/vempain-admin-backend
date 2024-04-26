@@ -35,6 +35,9 @@ jobs:
         shell: bash
         run: sudo ./testSetup.sh --skip-root-check --skip-answers
 
+      - name: Build with Gradle
+        run: ./gradlew clean test
+
       - name: Test Report
         uses: dorny/test-reporter@v1
         if: success() || failure()
@@ -54,8 +57,6 @@ jobs:
           name: test-results
           path: test-results.zip
 
-      - name: Build with Gradle
-        run: ./gradlew clean test
   build-docker:
     name: Build and push Docker image
     needs: test
