@@ -77,7 +77,7 @@ if id "${vempain_admin_ssh_user}" &>/dev/null; then
   echo "User ${vempain_admin_ssh_user} already exists"
 else
   echo "Creating user ${vempain_admin_ssh_user}"
-  useradd -m -o -u ${uid} -s /bin/bash -d "${vempain_admin_ssh_home_dir}" "${vempain_admin_ssh_user}"
+  adduser -m -o -u ${uid} -s /bin/bash -d "${vempain_admin_ssh_home_dir}" "${vempain_admin_ssh_user}"
 fi
 
 
@@ -110,7 +110,7 @@ mkdir -p "${vempain_admin_ssh_home_dir}"
 # Make sure the .ssh directory exists for the vempain_admin_ssh_user
 if [ ! -d "${vempain_admin_ssh_home_dir}/.ssh" ]; then
   echo ".ssh directory does not exist for ${vempain_admin_ssh_user}, creating it"
-  mkdir "${vempain_admin_ssh_home_dir}/.ssh"
+  mkdir -p "${vempain_admin_ssh_home_dir}/.ssh"
 fi
 
 # Generate the ed25519 key pair for the vempain_admin_ssh_user
@@ -140,13 +140,13 @@ if id "${vempain_site_ssh_user}" &>/dev/null; then
   echo "User ${vempain_site_ssh_user} already exists"
 else
   echo "Creating user ${vempain_site_ssh_user}"
-  useradd -m -o -u ${uid} -s /bin/bash -d "${vempain_site_ssh_home_dir}" "${vempain_site_ssh_user}"
+  adduser -m -o -u ${uid} -s /bin/bash -d "${vempain_site_ssh_home_dir}" "${vempain_site_ssh_user}"
 fi
 
 # If the .ssh directory does not exist for the vempain_site_ssh_user, create it
 if [ ! -d "${vempain_site_ssh_home_dir}/.ssh" ]; then
   echo "${vempain_site_ssh_home_dir}/.ssh directory does not exist for ${vempain_site_ssh_user}, creating it"
-  mkdir "${vempain_site_ssh_home_dir}/.ssh"
+  mkdir -p "${vempain_site_ssh_home_dir}/.ssh"
 fi
 
 # Copy the admin user's public key to the vempain_site_ssh_user's authorized_keys file

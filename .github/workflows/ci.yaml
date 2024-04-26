@@ -31,6 +31,20 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
+      - name: Create vempain-admin user
+        shell: bash
+        run: |
+          iAm=$(whoami)
+          userUid=$(id -u ${iAm})
+          adduser -m -o -u ${userUid} -s /bin/bash  -d /var/tmp/vempain-admin vempain-admin
+
+      - name: Create vempain-site user
+        shell: bash
+        run: |
+          iAm=$(whoami)
+          userUid=$(id -u ${iAm})
+          adduser -m -o -u ${userUid} -s /bin/bash  -d /var/tmp/vempain-site vempain-site
+
       - name: Run test setup
         shell: bash
         run: ./testSetup.sh --skip-root-check --skip-answers
