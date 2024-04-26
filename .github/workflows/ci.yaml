@@ -35,8 +35,12 @@ jobs:
         shell: bash
         run: sudo ./testSetup.sh --skip-root-check --skip-answers
 
-      - name: Build with Gradle
+      - name: Run tests with Gradle
         run: ./gradlew clean test
+
+      - name: List test results tree
+        shell: bash
+        run: tree service/build/reports
 
       - name: Test Report
         uses: dorny/test-reporter@v1
@@ -46,16 +50,16 @@ jobs:
           path: service/build/reports/jacoco/test/jacocoTestReport.xml
           reporter: java-junit
 
-      - name: Zip test results
-        run: zip -r test-results.zip service/build/reports/tests/test/
-        if: success() || failure()
-
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: success() || failure()
         with:
           name: test-results
-          path: test-results.zip
+          path: service/build/reports
+          retention-days: 2
+          compression-level: 9
+          overwrite: true
+          if-no-files-found: warn
 
   build-docker:
     name: Build and push Docker image
