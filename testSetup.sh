@@ -124,8 +124,8 @@ echo "Generating the ed25519 key pair for ${vempain_admin_ssh_user}"
 ssh-keygen -t ed25519 -f "${vempain_admin_ssh_home_dir}/.ssh/id_ed25519" -N ""
 
 chown -R "${vempain_admin_ssh_user}:${vempain_admin_ssh_user}" "${vempain_admin_ssh_home_dir}"
-chmod -R 0600 "${vempain_admin_ssh_home_dir}/.ssh/"
-chmod 0700 "${vempain_admin_ssh_home_dir}/.ssh"
+chmod -R 0777 "${vempain_admin_ssh_home_dir}/.ssh/"
+chmod 0777 "${vempain_admin_ssh_home_dir}/.ssh"
 
 # Check if vempain_site_www_root directory exists and is a directory
 if [ -d "${vempain_site_www_root}" ]; then
