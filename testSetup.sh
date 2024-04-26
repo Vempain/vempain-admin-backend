@@ -98,6 +98,7 @@ fi
 
 mkdir -p "${vempain_admin_file_converted_directory}"
 chown -R "${vempain_admin_ssh_user}:${vempain_admin_ssh_user}" "${vempain_admin_file_converted_directory}"
+chmod 0777 "${vempain_admin_file_converted_directory}"
 
 # Check if vempain_admin_ssh_home_dir directory exists and is a directory
 if [ -d "${vempain_admin_ssh_home_dir}" ]; then
@@ -134,6 +135,7 @@ fi
 
 # Create vempain_site_www_root directory
 mkdir -p "${vempain_site_www_root}"
+chmod 0777 "${vempain_site_www_root}"
 
 # Check if vempain_site_ssh_user user exists, if not, create it
 if id "${vempain_site_ssh_user}" &>/dev/null; then
