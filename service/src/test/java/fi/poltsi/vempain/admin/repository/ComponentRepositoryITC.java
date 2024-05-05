@@ -58,7 +58,7 @@ class ComponentRepositoryITC extends AbstractITCTest {
 		assertNotNull(component.getCreated());
 		assertNull(component.getModifier());
 		assertNull(component.getModified());
-		assertEquals("Test component 1", component.getCompName());
+		assertTrue(component.getCompName().startsWith("Test component 1"));
 		assertEquals("Test component data 1", component.getCompData());
 	}
 

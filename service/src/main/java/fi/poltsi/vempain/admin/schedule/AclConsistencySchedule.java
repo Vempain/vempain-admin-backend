@@ -7,7 +7,7 @@ import fi.poltsi.vempain.admin.entity.Form;
 import fi.poltsi.vempain.admin.entity.Layout;
 import fi.poltsi.vempain.admin.entity.Page;
 import fi.poltsi.vempain.admin.entity.Unit;
-import fi.poltsi.vempain.admin.entity.User;
+import fi.poltsi.vempain.admin.entity.UserAccount;
 import fi.poltsi.vempain.admin.entity.file.FileCommon;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
 import fi.poltsi.vempain.admin.exception.VempainAbstractException;
@@ -246,7 +246,7 @@ public class AclConsistencySchedule {
 						case Layout inst -> layoutService.save(inst);
 						case Page inst -> pageService.save(inst);
 						case Unit inst -> unitService.save(inst);
-						case User inst -> userService.save(inst);
+						case UserAccount inst -> userService.save(inst);
 						default -> {
 						}
 					}

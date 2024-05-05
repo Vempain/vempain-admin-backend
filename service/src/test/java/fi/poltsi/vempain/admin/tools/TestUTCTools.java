@@ -16,7 +16,7 @@ import fi.poltsi.vempain.admin.entity.FormComponent;
 import fi.poltsi.vempain.admin.entity.Layout;
 import fi.poltsi.vempain.admin.entity.Page;
 import fi.poltsi.vempain.admin.entity.Unit;
-import fi.poltsi.vempain.admin.entity.User;
+import fi.poltsi.vempain.admin.entity.UserAccount;
 import fi.poltsi.vempain.admin.entity.UserUnit;
 import fi.poltsi.vempain.admin.entity.UserUnitId;
 import fi.poltsi.vempain.admin.entity.file.FileCommon;
@@ -215,7 +215,7 @@ public class TestUTCTools {
 	public static UserUnit generateUserUnit(long userId, long unitId) {
 		return UserUnit.builder()
 					   .id(generateUserUnitId(userId, unitId))
-					   .user(generateUser(userId))
+					   .userAccount(generateUser(userId))
 					   .unit(generateUnit(unitId))
 					   .build();
 	}
@@ -238,14 +238,14 @@ public class TestUTCTools {
 	}
 
 	// User
-	public static User generateUser(long userId) {
-		return User.builder()
-				   .id(userId)
-				   .build();
+	public static UserAccount generateUser(long userId) {
+		return UserAccount.builder()
+						  .id(userId)
+						  .build();
 	}
 
-	public static List<User> generateUserList(long count) {
-		ArrayList<User> users = new ArrayList<>();
+	public static List<UserAccount> generateUserList(long count) {
+		ArrayList<UserAccount> users = new ArrayList<>();
 		for (long i = 1; i <= count; i++) {
 			users.add(generateUser(i));
 		}

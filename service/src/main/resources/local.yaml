@@ -2,11 +2,6 @@ spring:
   config:
     activate:
       on-profile: local
-  # These need to be in place so that application can find the drivers
-  admin-datasource:
-    driver-class-name: org.mariadb.jdbc.Driver
-  site-datasource:
-    driver-class-name: org.mariadb.jdbc.Driver
 
 logging:
   level:

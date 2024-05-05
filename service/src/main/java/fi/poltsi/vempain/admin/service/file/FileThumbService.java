@@ -44,6 +44,11 @@ public class FileThumbService {
 
 	@Transactional
 	public void generateThumbFile(long fileCommonId) {
+		if (fileCommonId < 1) {
+			log.error("Common file ID {} is invalid", fileCommonId);
+			return;
+		}
+
 		var optionalFileCommon = fileCommonPageableRepository.findById(fileCommonId);
 
 		if (optionalFileCommon.isEmpty()) {
@@ -54,14 +59,13 @@ public class FileThumbService {
 		var fileCommon = optionalFileCommon.get();
 		var sourcePath = Path.of((convertedDirectory != null ? convertedDirectory : "") + File.separator + fileCommon.getConvertedFile());
 
-		generateThumbFile(sourcePath,
+		generateThumbFile(fileCommon.getId(), sourcePath,
 						  Path.of(fileCommon.getConvertedFile()).getParent(),
-						  FileClassEnum.getFileClassByMimetype(fileCommon.getMimetype()),
-						  fileCommon.getId());
+						  FileClassEnum.getFileClassByMimetype(fileCommon.getMimetype()));
 	}
 
 	@Transactional(propagation = Propagation.REQUIRED)
-	protected void generateThumbFile(Path sourceFile, Path destination, FileClassEnum fileClassEnum, long commonId) {
+	protected void generateThumbFile(long commonId, Path sourceFile, Path destination, FileClassEnum fileClassEnum) {
 		// We add the thumb class to the beginning of the relative path
 		var relativeDestinationPath = Path.of(FileClassEnum.THUMB.shortName + File.separator + destination);
 		var absoluteDestinationPath = Path.of(convertedDirectory + File.separator + relativeDestinationPath);
@@ -114,6 +118,7 @@ public class FileThumbService {
 			fileThumb.setSha1sum(sha1sum);
 		} else {
 			fileThumb = FileThumb.builder()
+								 .id(commonId)
 								 .filepath(relativeDestinationPath.toString())
 								 .filename(thumbDestinationFilename)
 								 .filesize(filesize)

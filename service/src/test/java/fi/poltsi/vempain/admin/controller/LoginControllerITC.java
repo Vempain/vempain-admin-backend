@@ -4,7 +4,7 @@ import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.api.Constants;
 import fi.poltsi.vempain.admin.api.request.LoginRequest;
 import fi.poltsi.vempain.admin.api.response.JwtResponse;
-import fi.poltsi.vempain.admin.entity.User;
+import fi.poltsi.vempain.admin.entity.UserAccount;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -24,8 +24,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
 class LoginControllerITC extends AbstractITCTest {
-	private   User             testUser;
-	private   String           testPassword;
+	private UserAccount testUserAccount;
+	private String      testPassword;
 	@Autowired
 	protected TestRestTemplate testRestTemplate;
 
@@ -36,11 +36,11 @@ class LoginControllerITC extends AbstractITCTest {
 		var userId       = testITCTools.generateUser();
 		var optionalUser = userService.findById(userId);
 		assertTrue(optionalUser.isPresent());
-		testUser = optionalUser.get();
-		testUser.setPassword(testUserAccountTools.encryptPassword(testPassword));
-		userService.save(testUser);
+		testUserAccount = optionalUser.get();
+		testUserAccount.setPassword(testUserAccountTools.encryptPassword(testPassword));
+		userService.save(testUserAccount);
 
-		ResponseEntity<JwtResponse> response = getLoginResponse(this.testUser.getLoginName(), this.testPassword);
+		ResponseEntity<JwtResponse> response = getLoginResponse(this.testUserAccount.getLoginName(), this.testPassword);
 
 		assertNotNull(response);
 		assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -52,8 +52,8 @@ class LoginControllerITC extends AbstractITCTest {
 
 		System.out.println("jwtResponse: " + jwtResponse);
 
-		Assertions.assertEquals(this.testUser.getEmail(), jwtResponse.getEmail());
-		Assertions.assertEquals(this.testUser.getLoginName(), jwtResponse.getLogin());
+		Assertions.assertEquals(this.testUserAccount.getEmail(), jwtResponse.getEmail());
+		Assertions.assertEquals(this.testUserAccount.getLoginName(), jwtResponse.getLogin());
 		assertTrue(jwtResponse.getUnits().isEmpty());
 	}
 
@@ -63,10 +63,10 @@ class LoginControllerITC extends AbstractITCTest {
 		var userId       = testITCTools.generateUser();
 		var optionalUser = userService.findById(userId);
 		assertTrue(optionalUser.isPresent());
-		this.testUser = optionalUser.get();
+		this.testUserAccount = optionalUser.get();
 
 		ResponseEntity<JwtResponse> response =
-				getLoginResponse(this.testUser.getLoginName(),
+				getLoginResponse(this.testUserAccount.getLoginName(),
 								 "wrong password");
 
 		assertNotNull(response);

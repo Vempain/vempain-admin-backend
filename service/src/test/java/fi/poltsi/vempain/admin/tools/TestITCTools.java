@@ -11,7 +11,7 @@ import fi.poltsi.vempain.admin.entity.Layout;
 import fi.poltsi.vempain.admin.entity.Page;
 import fi.poltsi.vempain.admin.entity.Subject;
 import fi.poltsi.vempain.admin.entity.Unit;
-import fi.poltsi.vempain.admin.entity.User;
+import fi.poltsi.vempain.admin.entity.UserAccount;
 import fi.poltsi.vempain.admin.entity.file.FileCommon;
 import fi.poltsi.vempain.admin.exception.ProcessingFailedException;
 import fi.poltsi.vempain.admin.exception.VempainAbstractException;
@@ -39,6 +39,7 @@ import fi.poltsi.vempain.tools.MetadataTools;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -341,7 +342,7 @@ public class TestITCTools {
 		var userId = generateUser();
 		var aclId  = generateAcl(userId, null, true, true, true, true);
 		Component component = Component.builder()
-									   .compName("Test component " + index)
+									   .compName("Test component " + index + RandomStringUtils.randomAlphanumeric(8))
 									   .compData("Test component data " + index)
 									   .locked(false)
 									   .aclId(aclId)
@@ -603,29 +604,27 @@ public class TestITCTools {
 	public Long generateUserWithId(long userId) {
 		var testUserAccountTools = new TestUserAccountTools();
 		var password             = testUserAccountTools.randomLongString();
-		var user = User.builder()
-					   .aclId(1L)
-					   .birthday(Instant.now()
-										.minus(20 * 365, ChronoUnit.DAYS))
-					   .created(Instant.now()
-									   .minus(1, ChronoUnit.HOURS))
-					   .creator(userId)
-					   .description("ITC generated user " + password)
-					   .email("first." + password + "@test.tld")
-					   .id(userId)
-					   .locked(false)
-					   .loginName(password)
-					   .modified(Instant.now())
-					   .modifier(userId)
-					   .name("Firstname " + password)
-					   .nick(password)
-					   .password(testUserAccountTools.encryptPassword(password))
-					   .pob("1111")
-					   .privacyType(PrivacyType.PRIVATE)
-					   .publiclyVisible(false)
-					   .street("")
-					   .units(null)
-					   .build();
+		var user = UserAccount.builder()
+							  .aclId(1L)
+							  .birthday(Instant.now().minus(20 * 365, ChronoUnit.DAYS))
+							  .created(Instant.now().minus(1, ChronoUnit.HOURS))
+							  .creator(userId)
+							  .description("ITC generated user " + password)
+							  .email("first." + password + "@test.tld")
+							  .id(userId)
+							  .locked(false)
+							  .loginName(password)
+							  .modified(Instant.now())
+							  .modifier(userId)
+							  .name("Firstname " + password)
+							  .nick(password)
+							  .password(testUserAccountTools.encryptPassword(password))
+							  .pob("1111")
+							  .privacyType(PrivacyType.PRIVATE)
+							  .isPublic(false)
+							  .street("")
+							  .units(null)
+							  .build();
 		var newUser = userService.save(user);
 		// Once we have generated a user, we can generate the ACL for the object
 		var userAclID = generateAcl(newUser.getId(), null, true, true, true, true);

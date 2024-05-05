@@ -5,7 +5,7 @@ import fi.poltsi.vempain.admin.api.request.UserRequest;
 import fi.poltsi.vempain.admin.api.response.AclResponse;
 import fi.poltsi.vempain.admin.api.response.UserResponse;
 import fi.poltsi.vempain.admin.entity.Acl;
-import fi.poltsi.vempain.admin.entity.User;
+import fi.poltsi.vempain.admin.entity.UserAccount;
 import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.repository.AclRepository;
 import fi.poltsi.vempain.admin.repository.UserRepository;
@@ -30,13 +30,13 @@ public class UserService {
 	private final UserRepository userRepository;
 	private final AclRepository  aclRepository;
 
-	public Iterable<User> findAll() {
+	public Iterable<UserAccount> findAll() {
 		return userRepository.findAll();
 	}
 
 	public UserResponse findUserResponseById(Long userId) {
 		var optionalUser = findById(userId);
-		var userResponse = optionalUser.map(User::getUserResponse).orElse(null);
+		var userResponse = optionalUser.map(UserAccount::getUserResponse).orElse(null);
 
 		if (userResponse != null) {
 			populateWithAcl(optionalUser.get().getAclId(), userResponse);
@@ -63,22 +63,22 @@ public class UserService {
 
 		var passwordHash = AuthTools.passwordHash(userRequest.getPassword());
 
-		var user = User.builder()
-					   .privacyType(userRequest.getPrivacyType())
-					   .publiclyVisible(userRequest.isPrivateUser())
-					   .name(userRequest.getName())
-					   .nick(userRequest.getNick())
-					   .loginName(userRequest.getLoginName())
-					   .email(userRequest.getEmail())
-					   .street(userRequest.getStreet())
-					   .pob(userRequest.getPob())
-					   .birthday(userRequest.getBirthday())
-					   .description(userRequest.getDescription())
-					   .password(passwordHash)
-					   .aclId(aclId)
-					   .creator(AuthTools.getCurrentUserId())
-					   .created(Instant.now())
-					   .build();
+		var user = UserAccount.builder()
+							  .privacyType(userRequest.getPrivacyType())
+							  .isPublic(userRequest.isPrivateUser())
+							  .name(userRequest.getName())
+							  .nick(userRequest.getNick())
+							  .loginName(userRequest.getLoginName())
+							  .email(userRequest.getEmail())
+							  .street(userRequest.getStreet())
+							  .pob(userRequest.getPob())
+							  .birthday(userRequest.getBirthday())
+							  .description(userRequest.getDescription())
+							  .password(passwordHash)
+							  .aclId(aclId)
+							  .creator(AuthTools.getCurrentUserId())
+							  .created(Instant.now())
+							  .build();
 
 		var newUser      = userRepository.save(user);
 		var userResponse = newUser.getUserResponse();
@@ -114,7 +114,7 @@ public class UserService {
 		user.setNick(userRequest.getNick());
 		user.setPob(userRequest.getPob());
 		user.setPrivacyType(userRequest.getPrivacyType());
-		user.setPubliclyVisible(userRequest.isPrivateUser());
+		user.setPublic(userRequest.isPrivateUser());
 		user.setStreet(userRequest.getStreet());
 
 		user.setModifier(AuthTools.getCurrentUserId());
@@ -126,11 +126,11 @@ public class UserService {
 		return userResponse;
 	}
 
-	public Optional<User> findById(Long userId) {
+	public Optional<UserAccount> findById(Long userId) {
 		return userRepository.findById(userId);
 	}
 
-	public Optional<User> findByLogin(String login) {
+	public Optional<UserAccount> findByLogin(String login) {
 		return userRepository.findByLoginName(login);
 	}
 
@@ -140,8 +140,8 @@ public class UserService {
 		userRepository.lockByUserId(userId);
 	}
 
-	public User save(User user) {
-		return userRepository.save(user);
+	public UserAccount save(UserAccount userAccount) {
+		return userRepository.save(userAccount);
 	}
 
 	public Long getNextAvailableUserId() {

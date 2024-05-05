@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class UserUnitUTC {
+class UserAccountUnitUTC {
     private UserUnit userUnit;
 
     @BeforeEach
@@ -34,7 +34,7 @@ class UserUnitUTC {
 
     @Test
     void getUserOk() {
-        assertEquals(1L, userUnit.getUser().getId());
+        assertEquals(1L, userUnit.getUserAccount().getId());
     }
 
     @Test
@@ -71,9 +71,9 @@ class UserUnitUTC {
 
     @Test
     void setUserOk() {
-        User newUser = TestUTCTools.generateUser(2L);
-        userUnit.setUser(newUser);
-        assertEquals(newUser, userUnit.getUser());
+        UserAccount newUserAccount = TestUTCTools.generateUser(2L);
+        userUnit.setUserAccount(newUserAccount);
+        assertEquals(newUserAccount, userUnit.getUserAccount());
     }
 
     @Test
@@ -85,7 +85,7 @@ class UserUnitUTC {
 
     @Test
     void builderOk() {
-        assertEquals(1L, userUnit.getUser().getId());
+        assertEquals(1L, userUnit.getUserAccount().getId());
         assertEquals(1L, userUnit.getUnit().getId());
     }
 }

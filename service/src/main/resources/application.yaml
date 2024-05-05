@@ -12,15 +12,15 @@ spring:
       cleanup-cron: "5 * * * * *"
       initialize-schema: always
   admin-datasource:
-    url: jdbc:tc:mariadb:latest:///vempain_admin"
-    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
-    username: test
-    password: test
+    url: jdbc:postgresql://localhost:5432/vempain_admin?currentSchema=vempain_admin&useSSL=false
+    driver-class-name: org.postgresql.Driver
+    username: vempain_admin
+    password: vempain_admin_password
   site-datasource:
-    url: jdbc:tc:mariadb:latest:///vempain_site"
-    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
-    username: test
-    password: test
+    url: jdbc:postgresql://localhost:5433/vempain_site?currentSchema=vempain_site&useSSL=false
+    driver-class-name: org.postgresql.Driver
+    username: vempain_site
+    password: vempain_site_password
   jpa:
     show-sql: false
     open-in-view: false

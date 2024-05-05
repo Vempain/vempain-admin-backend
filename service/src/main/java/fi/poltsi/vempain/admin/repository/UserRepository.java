@@ -1,6 +1,6 @@
 package fi.poltsi.vempain.admin.repository;
 
-import fi.poltsi.vempain.admin.entity.User;
+import fi.poltsi.vempain.admin.entity.UserAccount;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -10,21 +10,21 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface UserRepository extends CrudRepository<User, Long> {
-	Optional<User> findByName(String name);
+public interface UserRepository extends CrudRepository<UserAccount, Long> {
+	Optional<UserAccount> findByName(String name);
 
-	Optional<User> findByLoginName(String loginName);
+	Optional<UserAccount> findByLoginName(String loginName);
 
-	Optional<User> findById(Long id);
+	Optional<UserAccount> findById(Long id);
 
 	@Modifying
-	@Query(value = "UPDATE User SET locked = true WHERE id = :id")
+	@Query(value = "UPDATE UserAccount SET locked = true WHERE id = :id")
 	void lockByUserId(@Param("id") long id);
 
-	@Query("SELECT CASE WHEN MAX(id) IS NULL THEN 1 ELSE (MAX(id) + 1) END AS next FROM User")
+	@Query("SELECT CASE WHEN MAX(id) IS NULL THEN 1 ELSE (MAX(id) + 1) END AS next FROM UserAccount")
 	Long getNextAvailableUserId();
 
 	@Modifying
-	@Query(value = "UPDATE User SET locked = :locked WHERE id = :userId")
+	@Query(value = "UPDATE UserAccount SET locked = :locked WHERE id = :userId")
 	void updateLockedByUserId(@Param("userId") Long userId, @Param("locked") boolean locked);
 }

@@ -114,7 +114,7 @@ htpasswd -bnBC 12 "" testPassword  | tr -d ':'
 Take the output which is the encoded password and run the following SQL:
 
 ```sql
-UPDATE `user` SET password='<encoded password>' WHERE id=1;
+UPDATE user_account SET password='<encoded password>' WHERE id=1;
 ```
 
 ## Running production

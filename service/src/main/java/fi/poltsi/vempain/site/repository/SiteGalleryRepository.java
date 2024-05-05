@@ -11,19 +11,24 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public interface SiteGalleryRepository extends ListPagingAndSortingRepository<SiteGallery, Long>, CrudRepository<SiteGallery, Long> {
+	@Modifying
+	@Transactional
 	@Query(nativeQuery = true, value = "INSERT INTO gallery_file (gallery_id, file_id, sort_order) VALUES (:galleryId, :fileId, :sortOrder)")
 	void saveGalleryFile(@Param("galleryId") long galleryId, @Param("fileId") long fileId, @Param("sortOrder") long sortOrder);
 
 	@Modifying
+	@Transactional
 	@Query(value = "INSERT INTO gallery (id, description, shortname, creator, created, modifier, modified) " +
 				   "VALUES (:#{#siteGallery.id}, :#{#siteGallery.description}, :#{#siteGallery.shortname}, " +
 				   ":#{#siteGallery.creator}, :#{#siteGallery.created}, :#{#siteGallery.modifier}, " +
 				   ":#{#siteGallery.modified}) " +
-				   "ON DUPLICATE KEY UPDATE " +
-				   "description = VALUES(description), shortname = VALUES(shortname), " +
-				   "creator = VALUES(creator), created = VALUES(created), modifier = VALUES(modifier), " +
-				   "modified = VALUES(modified)",
+				   "ON CONFLICT (id) DO UPDATE " +  // Specify the conflict resolution on id column
+				   "SET description = :#{#siteGallery.description}, " +
+				   "shortname = :#{#siteGallery.shortname}, " +
+				   "creator = :#{#siteGallery.creator}, " +
+				   "created = :#{#siteGallery.created}, " +
+				   "modifier = :#{#siteGallery.modifier}, " +
+				   "modified = :#{#siteGallery.modified}",
 		   nativeQuery = true)
-	@Transactional
 	void saveGallery(@Param("siteGallery") SiteGallery siteGallery);
 }

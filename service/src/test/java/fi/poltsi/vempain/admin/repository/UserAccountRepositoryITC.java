@@ -2,7 +2,7 @@ package fi.poltsi.vempain.admin.repository;
 
 import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.api.response.PrivacyType;
-import fi.poltsi.vempain.admin.entity.User;
+import fi.poltsi.vempain.admin.entity.UserAccount;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
-class UserRepositoryITC extends AbstractITCTest {
+class UserAccountRepositoryITC extends AbstractITCTest {
 	@Test
 	@DisplayName("Make sure all injections are in place")
 	void injectedComponentsAreNotNull() {
@@ -40,7 +40,7 @@ class UserRepositoryITC extends AbstractITCTest {
 		assertEquals(userId, user.getCreator());
 		assertNotNull(user.getModifier());
 		assertNotNull(user.getModified());
-		Assertions.assertFalse(user.isPubliclyVisible());
+		Assertions.assertFalse(user.isPublic());
 		assertEquals(PrivacyType.PRIVATE, user.getPrivacyType());
 		assertNotNull(user.getBirthday());
 		assertNotNull(user.getCreated());
@@ -64,26 +64,26 @@ class UserRepositoryITC extends AbstractITCTest {
 	@DisplayName("Fail to create a user without a nick")
 	void failUserCreation() {
 		var password = testUserAccountTools.encryptPassword(testUserAccountTools.randomLongString());
-		var user = User.builder()
-					   .aclId(1L)
-					   .birthday(Instant.now().minus(20 * 365, ChronoUnit.DAYS))
-					   .created(Instant.now().minus(1, ChronoUnit.HOURS))
-					   .creator(1L)
-					   .description("ITC generated user " + password)
-					   .email("first." + password + "@test.tld")
-					   .id(1L)
-					   .locked(false)
-					   .loginName(password)
-					   .modified(Instant.now())
-					   .modifier(1L)
-					   .name("Firstname " + password)
-					   .password(testUserAccountTools.encryptPassword(password))
-					   .pob("1111")
-					   .privacyType(PrivacyType.PRIVATE)
-					   .publiclyVisible(false)
-					   .street("")
-					   .units(null)
-					   .build();
+		var user = UserAccount.builder()
+							  .aclId(1L)
+							  .birthday(Instant.now().minus(20 * 365, ChronoUnit.DAYS))
+							  .created(Instant.now().minus(1, ChronoUnit.HOURS))
+							  .creator(1L)
+							  .description("ITC generated user " + password)
+							  .email("first." + password + "@test.tld")
+							  .id(1L)
+							  .locked(false)
+							  .loginName(password)
+							  .modified(Instant.now())
+							  .modifier(1L)
+							  .name("Firstname " + password)
+							  .password(testUserAccountTools.encryptPassword(password))
+							  .pob("1111")
+							  .privacyType(PrivacyType.PRIVATE)
+							  .isPublic(false)
+							  .street("")
+							  .units(null)
+							  .build();
 
 		DataIntegrityViolationException dive =
 				assertThrows(DataIntegrityViolationException.class,
@@ -92,6 +92,6 @@ class UserRepositoryITC extends AbstractITCTest {
 		assertNotNull(dive);
 		assertNotNull(dive.getMessage());
 		log.info("dive.getMessage: {}", dive.getMessage());
-		assertTrue(dive.getMessage().contains("Column 'nick' cannot be null"));
+		assertTrue(dive.getMessage().contains("null value in column \"nick\" of relation \"user_account\" violates not-null constraint"));
 	}
 }

@@ -3,7 +3,7 @@ package fi.poltsi.vempain.admin.service;
 import fi.poltsi.vempain.admin.VempainMessages;
 import fi.poltsi.vempain.admin.entity.Acl;
 import fi.poltsi.vempain.admin.entity.Unit;
-import fi.poltsi.vempain.admin.entity.User;
+import fi.poltsi.vempain.admin.entity.UserAccount;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
@@ -98,14 +98,14 @@ public class AccessService {
 		return aclListContainsPermission(permissionList, user, acls);
 	}
 
-	protected boolean aclListContainsPermission(List<Boolean> permissionList, User user, List<Acl> acls) {
+	protected boolean aclListContainsPermission(List<Boolean> permissionList, UserAccount userAccount, List<Acl> acls) {
 		for (Acl acl : acls) {
 			if (acl.getUserId() != null &&
-				acl.getUserId() == user.getId() &&
+				acl.getUserId() == userAccount.getId() &&
 				hasPermissions(acl, permissionList)) {
 				return true;
 			} else if (acl.getUnitId() != null) {
-				for (Unit unit : user.getUnits()) {
+				for (Unit unit : userAccount.getUnits()) {
 					if (unit.getId() == acl.getUnitId() &&
 						hasPermissions(acl, permissionList)) {
 						return true;
@@ -125,7 +125,7 @@ public class AccessService {
 		return result;
 	}
 
-	private User getUser() {
+	private UserAccount getUser() {
 		var auth = SecurityContextHolder.getContext().getAuthentication();
 
 		if (auth != null) {
@@ -138,7 +138,7 @@ public class AccessService {
 				return null;
 			}
 
-			Optional<User> user = userService.findById(userDetails.getId());
+			Optional<UserAccount> user = userService.findById(userDetails.getId());
 
 			return user.orElse(null);
 		}

@@ -34,13 +34,13 @@ import java.util.Set;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "user")
+@Table(name = "user_account")
 @ToString(callSuper = true)
-public class User extends AbstractVempainEntity {
-	@Column(name = "public", nullable = false)
-	private boolean     publiclyVisible;
+public class UserAccount extends AbstractVempainEntity {
+	@Column(name = "public_account", nullable = false)
+	private boolean isPublic;
 	@Column(name = "name", nullable = false)
-	private String      name;
+	private String  name;
 	@Column(name = "nick", nullable = false, unique = true)
 	private String      nick;
 	@Column(name = "login_name", nullable = false, unique = true)
@@ -80,7 +80,7 @@ public class User extends AbstractVempainEntity {
 						   .pob(this.pob)
 						   .email(this.email)
 						   .privacyType(this.privacyType)
-						   .privateUser(this.publiclyVisible)
+						   .privateUser(this.isPublic)
 						   .acls(null)
 						   .creator(this.creator)
 						   .created(this.created)

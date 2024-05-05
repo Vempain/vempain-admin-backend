@@ -7,7 +7,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class UserDetailsImplUTC {
+class UserAccountDetailsImplUTC {
 
     @Test
     void testEqualsOk() {

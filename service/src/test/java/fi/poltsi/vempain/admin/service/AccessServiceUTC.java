@@ -3,7 +3,7 @@ package fi.poltsi.vempain.admin.service;
 import fi.poltsi.vempain.admin.VempainMessages;
 import fi.poltsi.vempain.admin.entity.Acl;
 import fi.poltsi.vempain.admin.entity.Unit;
-import fi.poltsi.vempain.admin.entity.User;
+import fi.poltsi.vempain.admin.entity.UserAccount;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,10 +51,10 @@ class AccessServiceUTC {
 		when(environment.getProperty("vempain.test")).thenReturn("false");
 		when(securityContext.getAuthentication()).thenReturn(authentication);
 		SecurityContextHolder.setContext(securityContext);
-		User            user        = TestUTCTools.generateUser(1L);
-		UserDetailsImpl userDetails = UserDetailsImpl.build(user);
+		UserAccount     userAccount = TestUTCTools.generateUser(1L);
+		UserDetailsImpl userDetails = UserDetailsImpl.build(userAccount);
 		when(authentication.getPrincipal()).thenReturn(userDetails);
-		when(userService.findById(1L)).thenReturn(Optional.of(user));
+		when(userService.findById(1L)).thenReturn(Optional.of(userAccount));
 	}
 
 	@Test
@@ -71,12 +71,12 @@ class AccessServiceUTC {
 
 	@Test
 	void hasReadPermissionViaUnitOk() {
-		User       user  = TestUTCTools.generateUser(1L);
-		List<Unit> units = TestUTCTools.generateUnitList(3L);
-		user.setUnits(new HashSet<>(units));
-		UserDetailsImpl userDetails = UserDetailsImpl.build(user);
+		UserAccount userAccount = TestUTCTools.generateUser(1L);
+		List<Unit>  units       = TestUTCTools.generateUnitList(3L);
+		userAccount.setUnits(new HashSet<>(units));
+		UserDetailsImpl userDetails = UserDetailsImpl.build(userAccount);
 		when(authentication.getPrincipal()).thenReturn(userDetails);
-		when(userService.findById(1L)).thenReturn(Optional.of(user));
+		when(userService.findById(1L)).thenReturn(Optional.of(userAccount));
 
 		Acl acl = TestUTCTools.generateAcl(1L, 1L, null, 1L);
 		when(aclService.findAclByAclId(1L)).thenReturn(Collections.singletonList(acl));
@@ -208,35 +208,35 @@ class AccessServiceUTC {
 	@Test
 	void aclListContainsPermissionOk() {
 		List<Boolean> permissionList = Arrays.asList(true, false, false, false);
-		User        user           = TestUTCTools.generateUser(1L);
-		List<Acl>   acls           = TestUTCTools.generateAclList(1L, 4L);
-		assertTrue(accessService.aclListContainsPermission(permissionList, user, acls));
+		UserAccount   userAccount    = TestUTCTools.generateUser(1L);
+		List<Acl>     acls           = TestUTCTools.generateAclList(1L, 4L);
+		assertTrue(accessService.aclListContainsPermission(permissionList, userAccount, acls));
 	}
 
 	@Test
 	void aclListContainsPermissionNoneFail() {
 		List<Boolean> permissionList = Arrays.asList(true, false, false, false);
-		User        user           = TestUTCTools.generateUser(5L);
-		List<Acl>   acls           = TestUTCTools.generateAclList(1L, 4L);
-		assertFalse(accessService.aclListContainsPermission(permissionList, user, acls));
+		UserAccount   userAccount    = TestUTCTools.generateUser(5L);
+		List<Acl>     acls           = TestUTCTools.generateAclList(1L, 4L);
+		assertFalse(accessService.aclListContainsPermission(permissionList, userAccount, acls));
 	}
 
 	@Test
 	void aclListContainsPermissionNoneListFail() {
 		List<Boolean> permissionList = Arrays.asList(false, false, false, false);
-		User        user           = TestUTCTools.generateUser(5L);
-		List<Acl>   acls           = TestUTCTools.generateAclList(1L, 4L);
-		assertFalse(accessService.aclListContainsPermission(permissionList, user, acls));
+		UserAccount   userAccount    = TestUTCTools.generateUser(5L);
+		List<Acl>     acls           = TestUTCTools.generateAclList(1L, 4L);
+		assertFalse(accessService.aclListContainsPermission(permissionList, userAccount, acls));
 	}
 
 	@Test
 	void aclListContainsPermissionUnitOk() {
 		List<Boolean> permissionList = Arrays.asList(true, false, false, false);
-		User        user           = TestUTCTools.generateUser(5L);
-		Unit        unit           = TestUTCTools.generateUnit(1L);
-		user.getUnits().add(unit);
+		UserAccount   userAccount    = TestUTCTools.generateUser(5L);
+		Unit          unit           = TestUTCTools.generateUnit(1L);
+		userAccount.getUnits().add(unit);
 		List<Acl> acls = TestUTCTools.generateAclList(1L, 4L);
-		assertTrue(accessService.aclListContainsPermission(permissionList, user, acls));
+		assertTrue(accessService.aclListContainsPermission(permissionList, userAccount, acls));
 	}
 
 	@Test
@@ -328,9 +328,9 @@ class AccessServiceUTC {
 
 	private void testPermissions(List<Boolean> permissionList, List<Boolean> userPermissions, List<Boolean> groupPermissions,
 								 long userId, long unitId, boolean expectedResult) {
-		User user = TestUTCTools.generateUser(userId);
-		Unit unit = TestUTCTools.generateUnit(unitId);
-		user.getUnits().add(unit);
+		UserAccount userAccount = TestUTCTools.generateUser(userId);
+		Unit        unit        = TestUTCTools.generateUnit(unitId);
+		userAccount.getUnits().add(unit);
 		List<Acl> acls = TestUTCTools.generateAclList(1L, 1L);
 
 		// This is the user-specific ACL
@@ -343,6 +343,6 @@ class AccessServiceUTC {
 		acls.get(1).setModifyPrivilege(groupPermissions.get(1));
 		acls.get(1).setCreatePrivilege(groupPermissions.get(2));
 		acls.get(1).setDeletePrivilege(groupPermissions.get(3));
-		assertEquals(expectedResult, accessService.aclListContainsPermission(permissionList, user, acls));
+		assertEquals(expectedResult, accessService.aclListContainsPermission(permissionList, userAccount, acls));
 	}
 }

@@ -23,7 +23,6 @@ public class FileImage extends AbstractFileImageEntity implements Serializable, 
 	public FileImageResponse toResponse() {
 		return FileImageResponse.builder()
 								.id(this.getId())
-								.parentId(this.getParentId())
 								.width(this.getWidth())
 								.height(this.getHeight())
 								.common(this.getFileCommon().toResponse())

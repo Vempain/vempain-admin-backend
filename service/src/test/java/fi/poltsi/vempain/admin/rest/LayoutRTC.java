@@ -41,7 +41,7 @@ class LayoutRTC {
 			    {
 			      "permission_id": 32634545,
 			      "acl_id": 32500773,
-			      "user": 1,
+			      "userAccount": 1,
 			      "unit": null,
 			      "read_privilege": 0,
 			      "modify_privilege": 0,

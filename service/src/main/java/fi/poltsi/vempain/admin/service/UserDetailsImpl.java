@@ -2,7 +2,7 @@ package fi.poltsi.vempain.admin.service;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import fi.poltsi.vempain.admin.entity.Unit;
-import fi.poltsi.vempain.admin.entity.User;
+import fi.poltsi.vempain.admin.entity.UserAccount;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
@@ -43,19 +43,19 @@ public class UserDetailsImpl implements UserDetails {
 		this.authorities = authorities;
 	}
 
-	public static UserDetailsImpl build(User user) {
-		List<GrantedAuthority> authorities = user.getUnits().stream()
-												 .map(unit -> new SimpleGrantedAuthority(unit.getName()))
-												 .collect(Collectors.toList());
+	public static UserDetailsImpl build(UserAccount userAccount) {
+		List<GrantedAuthority> authorities = userAccount.getUnits().stream()
+														.map(unit -> new SimpleGrantedAuthority(unit.getName()))
+														.collect(Collectors.toList());
 
-		var units = user.getUnits();
+		var units = userAccount.getUnits();
 
 		return new UserDetailsImpl(
-				user.getId(),
-				user.getLoginName(),
-				user.getNick(),
-				user.getEmail(),
-				user.getPassword(),
+				userAccount.getId(),
+				userAccount.getLoginName(),
+				userAccount.getNick(),
+				userAccount.getEmail(),
+				userAccount.getPassword(),
 				units,
 				authorities);
 	}
