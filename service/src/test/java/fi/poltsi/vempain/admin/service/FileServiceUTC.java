@@ -14,7 +14,6 @@ import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.admin.service.file.FileThumbService;
 import fi.poltsi.vempain.admin.service.file.GalleryFileService;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -77,10 +76,6 @@ class FileServiceUTC {
 									  fileThumbPageableRepository,
 									  galleryRepository, galleryFileService, accessService, subjectRepository, fileThumbService, subjectService,
 									  pageService, pageGalleryService);
-	}
-
-	@AfterEach
-	void tearDown() {
 	}
 
 	@Test
@@ -196,77 +191,5 @@ class FileServiceUTC {
 		} catch (Exception e) {
 			fail("Should not have received an exception", e);
 		}
-	}
-
-	@Test
-	void getFileClassesOk() {
-	}
-
-	@Test
-	void findAllFileCommonOk() {
-	}
-
-	@Test
-	void findAllCommonAsResponseForUserOk() {
-	}
-
-	@Test
-	void findAllPageableFileCommonOk() {
-	}
-
-	@Test
-	void findCommonByIdOk() {
-	}
-
-	@Test
-	void saveFileCommonOk() {
-	}
-
-	@Test
-	void findAllFileSubjectsOk() {
-	}
-
-	@Test
-	void removeFileSubjectsOk() {
-	}
-
-	@Test
-	void findAllByFileCommonIdOk() {
-	}
-
-	@Test
-	void getImageFilesOk() {
-	}
-
-	@Test
-	void findAllImagesAsResponseForUserOk() {
-	}
-
-	@Test
-	void getDuplicateImageFilesOk() {
-	}
-
-	@Test
-	void findAllFileImagesByFilepathFilenameOk() {
-	}
-
-	@Test
-	void findImageByIdOk() {
-	}
-
-	@Test
-	void deleteFileImageOk() {
-	}
-
-	@Test
-	void findAllFileThumbsByFilepathFilenameOk() {
-	}
-
-	@Test
-	void getDuplicateThumbFilesOk() {
-	}
-
-	@Test
-	void deleteFileThumbOk() {
 	}
 }

@@ -51,8 +51,4 @@ class FileCommonPageableRepositoryITC extends AbstractITCTest {
 
 		assertEquals(1, subjects.size());
 	}
-
-	@Test
-	void getSubjectsByFileIdList() {
-	}
 }

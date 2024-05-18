@@ -615,10 +615,6 @@ public class FileService extends AbstractService {
 		}
 	}
 
-	private void generateApplicationFile(Path file) {
-		// Document: Get page number
-	}
-
 	public void deleteFile(long id) {
 		// All the auxiliary data (thumb, image, document etc) should be deleted as CASCADE of deleting the FileCommon row
 		// Remove the thumb file from filesystem

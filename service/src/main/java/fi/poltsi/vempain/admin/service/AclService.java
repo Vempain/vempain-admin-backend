@@ -288,7 +288,4 @@ public class AclService {
         save(acl);
         return acl.getAclId();
     }
-
-	public void generateDefaultAcls() {
-	}
 }

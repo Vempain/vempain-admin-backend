@@ -6,7 +6,6 @@ import fi.poltsi.vempain.admin.repository.file.FileThumbPageableRepository;
 import fi.poltsi.vempain.admin.service.file.FileThumbService;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,10 +47,6 @@ class FileThumbServiceUTC {
 		fileThumbService.setThumbnailSize(250);
 	}
 
-	@AfterEach
-	void tearDown() {
-	}
-
 	@Test
 	void generateThumbFileOk() {
 		var commonId = 1L;
@@ -78,11 +73,4 @@ class FileThumbServiceUTC {
 		assertTrue(Files.exists(thumbFile), "Thumb file should exist: " + thumbFile);
 	}
 
-	@Test
-	void testGenerateThumbFileOk() {
-	}
-
-	@Test
-	void deleteOk() {
-	}
 }
