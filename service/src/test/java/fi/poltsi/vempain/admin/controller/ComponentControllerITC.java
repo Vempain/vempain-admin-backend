@@ -6,9 +6,7 @@ import fi.poltsi.vempain.admin.api.request.ComponentRequest;
 import fi.poltsi.vempain.admin.api.response.ComponentResponse;
 import fi.poltsi.vempain.admin.exception.VempainAbstractException;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
-import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,11 +26,6 @@ class ComponentControllerITC extends AbstractITCTest {
 	private final long initCount = 10;
 	@Autowired
 	ComponentController componentController;
-
-	@AfterEach
-	void tearDown() throws VempainEntityNotFoundException {
-		testITCTools.deleteComponents();
-	}
 
 	@Test
 	@DisplayName("Get all components")
@@ -54,8 +47,8 @@ class ComponentControllerITC extends AbstractITCTest {
 	@Test
 	@DisplayName("Test updating a component")
 	void updateComponent() throws VempainComponentException, VempainAbstractException {
-		testITCTools.generateComponents(initCount);
-		ResponseEntity<ComponentResponse> response = componentController.getComponentById(testITCTools.getComponentIdList().getFirst());
+		var componentIds = testITCTools.generateComponents(initCount);
+		ResponseEntity<ComponentResponse> response = componentController.getComponentById(componentIds.getFirst());
 		assertNotNull(response);
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		ComponentResponse componentResponse = response.getBody();
@@ -92,7 +85,7 @@ class ComponentControllerITC extends AbstractITCTest {
 
 		componentController.updateComponent(request);
 
-		ResponseEntity<ComponentResponse> updatedResponse = componentController.getComponentById(testITCTools.getComponentIdList().getFirst());
+		ResponseEntity<ComponentResponse> updatedResponse = componentController.getComponentById(componentIds.getFirst());
 		assertNotNull(updatedResponse);
 		assertEquals(HttpStatus.OK, updatedResponse.getStatusCode());
 		ComponentResponse updatedComponent = updatedResponse.getBody();

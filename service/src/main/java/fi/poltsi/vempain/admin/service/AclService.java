@@ -6,6 +6,7 @@ import fi.poltsi.vempain.admin.entity.Acl;
 import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.repository.AclRepository;
+import fi.poltsi.vempain.admin.repository.UnitRepository;
 import fi.poltsi.vempain.admin.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,8 +26,9 @@ import java.util.stream.StreamSupport;
 public class AclService {
     private final AclRepository aclRepository;
 	private final UserRepository userRepository;
+	private final UnitRepository unitRepository;
 
-    public Iterable<Acl> findAll() {
+	public Iterable<Acl> findAll() {
         return aclRepository.findAll();
     }
 
@@ -35,7 +37,16 @@ public class AclService {
     }
 
     public long getNextAclId() {
-        return aclRepository.getNextAvailableAclId();
+		var acls = aclRepository.findAll();
+
+		for (Acl acl : acls) {
+			log.info("Current list of acls in database: permission ID {} ACL ID {} User ID {} Unit ID {}",
+					 acl.getPermissionId(), acl.getAclId(), acl.getUserId(), acl.getUnitId());
+		}
+
+		var nextAclId = aclRepository.getNextAvailableAclId();
+		log.info("Next available ACL ID: {}", nextAclId);
+        return nextAclId;
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
@@ -71,6 +82,8 @@ public class AclService {
         aclRepository.update(acl.getPermissionId(), acl.getUserId(), acl.getUnitId(), acl.isReadPrivilege(), acl.isModifyPrivilege(), acl.isCreatePrivilege(), acl.isDeletePrivilege());
     }
 
+	// TODO This does not currently work, we should also pass the old ACL ID for the object so that we can delete the old ACLs in case where all the requested
+	// ACLs are new
     @Transactional(propagation = Propagation.REQUIRED)
     public void updateFromRequestList(List<AclRequest> requests) throws VempainAclException {
         if (requests == null || requests.isEmpty()) {
@@ -80,27 +93,32 @@ public class AclService {
 
         long aclId = requests.getFirst().getAclId();
 
-        for (AclRequest request : requests) {
+		// If the first entry has an aclId of 0L, then they all are new and we need to fetch a new ACL ID, see the TODO above
+		if (aclId < 1) {
+			aclId = aclRepository.getNextAvailableAclId();
+		}
+
+		for (AclRequest request : requests) {
 			// If this is a new ACL, we do not need to verify it, rather we set it
 			if (request.getAclId() == 0L) {
 				request.setAclId(aclId);
 			} else if (request.getAclId() != aclId) {
-                throw new VempainAclException("List of ACL request does not have all the same aclId");
-            }
+				throw new VempainAclException("List of ACL request does not have all the same aclId");
+			}
+		}
 
-            verifyAcl(request.getAclId(), request.getUser(), request.getUnit(), request.isCreatePrivilege(),
-                      request.isReadPrivilege(), request.isModifyPrivilege(), request.isDeletePrivilege());
-        }
+		// We replace the old ACLs with the new ones
+		try {
+			deleteByAclId(aclId);
+		} catch (VempainEntityNotFoundException e) {
+			log.warn("When updating ACLs from request, previous ones were not found. This is not necessarily a bug as we also use this to" +
+					 "create new ACLs");
+		}
 
-        // We replace the old ACLs with the new ones
-        try {
-            deleteByAclId(aclId);
-        } catch (VempainEntityNotFoundException e) {
-            log.warn("When updating ACLs from request, previous ones were not found. This is not necessarily a bug as we also use this to" +
-                     "create new ACLs");
-        }
+		for (AclRequest request : requests) {
+			verifyAcl(request.getAclId(), request.getUser(), request.getUnit(), request.isCreatePrivilege(),
+					  request.isReadPrivilege(), request.isModifyPrivilege(), request.isDeletePrivilege());
 
-        for (AclRequest request : requests) {
             var acl = Acl.builder()
                          .aclId(request.getAclId())
                          .userId(request.getUser())
@@ -184,15 +202,25 @@ public class AclService {
         }
 
 		if (userId != null) {
+			log.info("User ID needs to be checked: {}", userId);
 			var optionalUser = userRepository.findById(userId);
 
 			if (optionalUser.isEmpty()) {
-				log.error("User does not exist:: {}", userId);
-				throw new VempainAclException("Invalid user ID");
+				log.error("User does not exist: {}", userId);
+				throw new VempainAclException("Invalid user ID given in the ACL");
 			}
 		}
 
-        if (!createPrivilege &&
+		if (unitId != null) {
+			var optionalUnit = unitRepository.findById(unitId);
+
+			if (optionalUnit.isEmpty()) {
+				log.error("Unit does not exist: {}", unitId);
+				throw new VempainAclException("Invalid unit ID given in the ACL");
+			}
+		}
+
+		if (!createPrivilege &&
             !modifyPrivilege &&
             !readPrivilege &&
             !deletePrivilege) {
@@ -260,4 +288,7 @@ public class AclService {
         save(acl);
         return acl.getAclId();
     }
+
+	public void generateDefaultAcls() {
+	}
 }

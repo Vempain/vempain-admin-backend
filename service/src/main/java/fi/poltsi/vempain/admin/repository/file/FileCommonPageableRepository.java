@@ -39,8 +39,5 @@ public interface FileCommonPageableRepository extends PagingAndSortingRepository
 	@Query(value = "SELECT CONCAT(fc.siteFilepath, '/', fc.siteFilename) FROM FileCommon fc WHERE fc.id = :id")
 	String getFilePathByParentId(Long id);
 
-	@Query(value = "SELECT * FROM file_common fc GROUP BY fc.site_filename , fc.site_filepath HAVING COUNT(*) > 1", nativeQuery = true)
-	List<FileCommon> findAllDuplicates();
-
 	Optional<FileCommon> findByConvertedFile(String sourceFile);
 }

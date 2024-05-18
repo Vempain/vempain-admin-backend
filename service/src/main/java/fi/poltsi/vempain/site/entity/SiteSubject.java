@@ -19,6 +19,8 @@ public class SiteSubject {
 	@Id
 	@Column(name = "id")
 	protected long    id;
+	@Column(name = "subject_id")
+	private long   subjectId;
 	@Column(name = "subject", nullable = false)
 	private   String subject;
 	@Column(name = "subject_de", nullable = false)

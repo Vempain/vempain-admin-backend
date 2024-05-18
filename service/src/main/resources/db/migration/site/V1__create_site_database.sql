@@ -1,26 +1,27 @@
 CREATE TABLE page
 (
-	id        BIGINT       NOT NULL,
-	acl_id    BIGINT       DEFAULT NULL,
+	id        BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	page_id   BIGINT                      NOT NULL,
+	acl_id    BIGINT                      DEFAULT NULL,
 	body      TEXT,
-	header    VARCHAR(512) NOT NULL,
-	indexlist BOOLEAN      NOT NULL,
-	parent_id BIGINT       DEFAULT NULL,
-	path      VARCHAR(255) NOT NULL,
-	secure    BOOLEAN      NOT NULL,
-	title     VARCHAR(512) NOT NULL,
-	creator   VARCHAR(512) NOT NULL,
+	header    VARCHAR(512)                NOT NULL,
+	indexlist BOOLEAN                     NOT NULL,
+	parent_id BIGINT                      DEFAULT NULL,
+	path      VARCHAR(255)                NOT NULL,
+	secure    BOOLEAN                     NOT NULL,
+	title     VARCHAR(512)                NOT NULL,
+	creator   VARCHAR(512)                NOT NULL,
 	created   TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-	modifier  VARCHAR(512) DEFAULT NULL,
+	modifier  VARCHAR(512)                DEFAULT NULL,
 	modified  TIMESTAMP WITHOUT TIME ZONE DEFAULT NULL,
 	published TIMESTAMP WITHOUT TIME ZONE DEFAULT NULL,
-	cache     TEXT         DEFAULT NULL,
-	CONSTRAINT pk_page_id PRIMARY KEY (id)
+	cache     TEXT                        DEFAULT NULL
 );
 
 CREATE TABLE file
 (
-	id       BIGINT       NOT NULL,
+	id       BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	file_id  BIGINT       NOT NULL,
 	comment  TEXT DEFAULT NULL,
 	path     VARCHAR(512) NOT NULL,
 	mimetype VARCHAR(255) NOT NULL,
@@ -28,19 +29,18 @@ CREATE TABLE file
 	height   INT  DEFAULT NULL,
 	length   INT  DEFAULT NULL,
 	pages    INT  DEFAULT NULL,
-	metadata TEXT DEFAULT NULL,
-	CONSTRAINT pk_file_id PRIMARY KEY (id)
+	metadata TEXT DEFAULT NULL
 );
 
 CREATE TABLE subject
 (
-	id         BIGINT NOT NULL,
+	id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	subject_id BIGINT NOT NULL,
 	subject    VARCHAR(255) DEFAULT NULL,
 	subject_de VARCHAR(255) DEFAULT NULL,
 	subject_en VARCHAR(255) DEFAULT NULL,
 	subject_fi VARCHAR(255) DEFAULT NULL,
-	subject_se VARCHAR(255) DEFAULT NULL,
-	CONSTRAINT pk_subject_id PRIMARY KEY (id)
+	subject_se VARCHAR(255) DEFAULT NULL
 );
 
 CREATE TABLE file_subject
@@ -59,14 +59,14 @@ CREATE TABLE page_subject
 
 CREATE TABLE gallery
 (
-	id          BIGINT NOT NULL,
-	shortname   VARCHAR(255) DEFAULT NULL,
-	description VARCHAR(255) DEFAULT NULL,
-	creator     BIGINT NOT NULL,
+	id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	gallery_id  BIGINT                      NOT NULL,
+	shortname   VARCHAR(255)                DEFAULT NULL,
+	description VARCHAR(255)                DEFAULT NULL,
+	creator     BIGINT                      NOT NULL,
 	created     TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-	modifier    BIGINT       DEFAULT NULL,
-	modified    TIMESTAMP WITHOUT TIME ZONE DEFAULT NULL,
-	CONSTRAINT pk_gallery_id PRIMARY KEY (id)
+	modifier    BIGINT                      DEFAULT NULL,
+	modified    TIMESTAMP WITHOUT TIME ZONE DEFAULT NULL
 );
 
 CREATE TABLE gallery_file

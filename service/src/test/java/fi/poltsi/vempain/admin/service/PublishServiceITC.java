@@ -18,12 +18,12 @@ class PublishServiceITC extends AbstractITCTest {
 	private Long pageId;
 
 	@Test
-	void publishOk() {
-		testSetup();
+	void publishPageOk() {
+		var testPageId = testSetup();
 
 		try {
-			publishService.publishPage(pageId);
-			var optionalSitePage = sitePageRepository.findById(pageId);
+			var sitePageId = publishService.publishPage(testPageId);
+			var optionalSitePage = sitePageRepository.findById(sitePageId);
 			assertTrue(optionalSitePage.isPresent());
 			var sitePage = optionalSitePage.get();
 			log.info("Site page: {}", sitePage);
@@ -33,7 +33,7 @@ class PublishServiceITC extends AbstractITCTest {
 	}
 
 	@Test
-	void deleteOk() {
+	void deletePageOk() {
 		testSetup();
 		publishService.deletePage(pageId);
 		var optionalSitePage = publishService.fetchSitePage(pageId);
@@ -56,7 +56,7 @@ class PublishServiceITC extends AbstractITCTest {
 		assertEquals(referenceDateTime, originalDateTime);
 	}
 
-	void testSetup() {
+	private long testSetup() {
 		try {
 			pageId = testITCTools.generatePage();
 			log.info("Created test page with ID: {}", pageId);
@@ -66,5 +66,6 @@ class PublishServiceITC extends AbstractITCTest {
 
 		var checkPage = pageRepository.findById(pageId);
 		assertTrue(checkPage.isPresent());
+		return pageId;
 	}
 }

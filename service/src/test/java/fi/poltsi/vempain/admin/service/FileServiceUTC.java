@@ -133,6 +133,7 @@ class FileServiceUTC {
 
 		for (int i = 0; i < 4; i++) {
 			FileCommon fileCommon = FileCommon.builder()
+											  .id(Integer.toUnsignedLong(i))
 											  .fileClassId(1L)
 											  .aclId(i)
 											  .convertedFile("/source/file/" + i + ".jpg")

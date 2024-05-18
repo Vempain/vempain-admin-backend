@@ -7,7 +7,6 @@ import fi.poltsi.vempain.admin.exception.VempainAbstractException;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -22,11 +21,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 @Slf4j
 class ComponentServiceITC extends AbstractITCTest {
 	private final long initCount  = 10L;
-
-	@AfterEach
-	void tearDown() throws VempainEntityNotFoundException {
-		testITCTools.deleteComponents();
-	}
 
 	@Test
 	void findAllOk() throws VempainComponentException, VempainAbstractException {
@@ -44,15 +38,15 @@ class ComponentServiceITC extends AbstractITCTest {
 
 	@Test
 	void findByIdOk() throws VempainComponentException, VempainAbstractException {
-		testITCTools.generateComponents(initCount);
-		Component component = componentService.findById(testITCTools.getComponentIdList().getFirst());
+		var componentIds = testITCTools.generateComponents(initCount);
+		Component component = componentService.findById(componentIds.getFirst());
 		assertComponent(component);
 	}
 
 	@Test
 	void deleteByIdOk() throws VempainEntityNotFoundException, VempainComponentException, VempainAbstractException {
-		testITCTools.generateComponents(initCount);
-		Long componentId = testITCTools.getComponentIdList().getFirst();
+		var componentIds = testITCTools.generateComponents(initCount);
+		Long componentId = componentIds.getFirst();
 		long aclId       = componentService.findById(componentId).getAclId();
 
 		componentService.deleteById(componentId);
@@ -110,8 +104,6 @@ class ComponentServiceITC extends AbstractITCTest {
 																			 "Component name is not set" + "\": " + e.getMessage());
 		} catch (Exception e) {
 			fail("Should have only received a VempainComponentException when component name is invalid: " + e.getMessage());
-		} finally {
-			testITCTools.deleteAcl(aclId);
 		}
 	}
 
@@ -135,9 +127,6 @@ class ComponentServiceITC extends AbstractITCTest {
 			assertTrue(e.getMessage().contains("Creator is missing or invalid"));
 		} catch (Exception e) {
 			fail("Should have only received a VempainAbstractException when component creator is null: " + e.getMessage());
-		} finally {
-			log.info("Removing unused ACL ID: {}", aclId);
-			testITCTools.deleteAcl(aclId);
 		}
 	}
 
@@ -161,8 +150,6 @@ class ComponentServiceITC extends AbstractITCTest {
 			assertTrue(e.getMessage().contains("Created datetime is missing"));
 		} catch (Exception e) {
 			fail("Should have only received a VempainAbstractException when component creator is null: " + e.getMessage());
-		} finally {
-			testITCTools.deleteAcl(aclId);
 		}
 	}
 
@@ -187,8 +174,6 @@ class ComponentServiceITC extends AbstractITCTest {
 			assertTrue(e.getMessage().contains("Created datetime is more recent than modified"));
 		} catch (Exception e) {
 			fail("Should have only received a VempainAbstractException when component created is more recent than modified: " + e.getMessage());
-		} finally {
-			testITCTools.deleteAcl(aclId);
 		}
 	}
 
@@ -213,8 +198,6 @@ class ComponentServiceITC extends AbstractITCTest {
 			assertTrue(e.getMessage().contains("Creator is missing or invalid"));
 		} catch (Exception e) {
 			fail("Should have only received a VempainAbstractException when component creator is invalid: " + e.getMessage());
-		} finally {
-			testITCTools.deleteAcl(aclId);
 		}
 	}
 
@@ -239,8 +222,6 @@ class ComponentServiceITC extends AbstractITCTest {
 			assertTrue(e.getMessage().contains("Entity modifier is invalid"));
 		} catch (Exception e) {
 			fail("Should have only received a VempainAbstractException when component modifier is invalid: " + e.getMessage());
-		} finally {
-			testITCTools.deleteAcl(aclId);
 		}
 	}
 

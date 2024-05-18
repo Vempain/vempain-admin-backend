@@ -6,7 +6,9 @@ import fi.poltsi.vempain.site.repository.SiteSubjectRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -15,17 +17,22 @@ import java.util.List;
 public class SiteSubjectService {
 	private final SiteSubjectRepository siteSubjectRepository;
 
-	public void saveAllFromAdminSubject(List<Subject> subjects) {
+	public List<SiteSubject> saveAllFromAdminSubject(List<Subject> subjects) {
+		var siteSubjects = new ArrayList<SiteSubject>();
+
 		for (Subject subject : subjects) {
-			saveFromAdminSubject(subject);
+			siteSubjects.add(saveFromAdminSubject(subject));
 		}
+
+		return siteSubjects;
 	}
 
 	public SiteSubject saveFromAdminSubject(Subject subject) {
 		var siteSubject = siteSubjectRepository.findBySubject(subject.getSubjectName());
 
 		if (siteSubject != null) {
-			siteSubject.setSubject(subject.getSubjectName());
+			siteSubject.setSubjectId(subject.getId());
+			// We update the existing site subject translations
 			siteSubject.setSubjectDe(subject.getSubjectNameDe());
 			siteSubject.setSubjectEn(subject.getSubjectNameEn());
 			siteSubject.setSubjectFi(subject.getSubjectNameFi());
@@ -33,7 +40,7 @@ public class SiteSubjectService {
 			return siteSubjectRepository.save(siteSubject);
 		} else {
 			var newSiteSubject = SiteSubject.builder()
-											.id(subject.getId())
+											.subjectId(subject.getId())
 											.subject(subject.getSubjectName())
 											.subjectDe(subject.getSubjectNameDe())
 											.subjectEn(subject.getSubjectNameEn())
@@ -44,19 +51,10 @@ public class SiteSubjectService {
 		}
 	}
 
-	public void saveSiteFileSubject(long fileId, List<Subject> subjects) {
-		for (Subject subject : subjects) {
-			var siteSubject = siteSubjectRepository.findBySubject(subject.getSubjectName());
-			var siteSubjectId = 0L;
-
-			if (siteSubject == null) {
-				var newSiteSubject = saveFromAdminSubject(subject);
-				siteSubjectId = newSiteSubject.getId();
-			} else {
-				siteSubjectId = siteSubject.getId();
-			}
-
-			siteSubjectRepository.saveSiteFileSubject(fileId, siteSubjectId);
+	@Transactional
+	public void saveSiteFileSubject(long fileId, List<SiteSubject> siteSubjects) {
+		for (var siteSubject : siteSubjects) {
+			siteSubjectRepository.saveSiteFileSubject(fileId, siteSubject.getId());
 		}
 	}
 }

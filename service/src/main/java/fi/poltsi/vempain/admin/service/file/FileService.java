@@ -214,12 +214,12 @@ public class FileService extends AbstractService {
 								 .aclId(aclId)
 								 .locked(false)
 								 .build();
-		galleryRepository.save(gallery);
+		var newGallery = galleryRepository.save(gallery);
 
 		long sortOrder = 0;
 
 		for (FileCommon fileCommon : fileCommonList) {
-			galleryFileService.addGalleryFile(gallery.getId(), fileCommon.getId(), sortOrder);
+			galleryFileService.addGalleryFile(newGallery.getId(), fileCommon.getId(), sortOrder);
 			sortOrder++;
 		}
 
@@ -237,11 +237,6 @@ public class FileService extends AbstractService {
 	// FileCommon
 	public Iterable<FileCommon> findAllFileCommon() {
 		return fileCommonPageableRepository.findAll();
-	}
-
-
-	public List<FileCommon> getDuplicateCommonFiles() {
-		return fileCommonPageableRepository.findAllDuplicates();
 	}
 
 	public List<FileCommonResponse> findAllCommonAsResponseForUser(int pageNumber, int pageSize) {

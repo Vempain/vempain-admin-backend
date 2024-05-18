@@ -18,17 +18,5 @@ public interface SiteGalleryRepository extends ListPagingAndSortingRepository<Si
 
 	@Modifying
 	@Transactional
-	@Query(value = "INSERT INTO gallery (id, description, shortname, creator, created, modifier, modified) " +
-				   "VALUES (:#{#siteGallery.id}, :#{#siteGallery.description}, :#{#siteGallery.shortname}, " +
-				   ":#{#siteGallery.creator}, :#{#siteGallery.created}, :#{#siteGallery.modifier}, " +
-				   ":#{#siteGallery.modified}) " +
-				   "ON CONFLICT (id) DO UPDATE " +  // Specify the conflict resolution on id column
-				   "SET description = :#{#siteGallery.description}, " +
-				   "shortname = :#{#siteGallery.shortname}, " +
-				   "creator = :#{#siteGallery.creator}, " +
-				   "created = :#{#siteGallery.created}, " +
-				   "modifier = :#{#siteGallery.modifier}, " +
-				   "modified = :#{#siteGallery.modified}",
-		   nativeQuery = true)
-	void saveGallery(@Param("siteGallery") SiteGallery siteGallery);
+	void deleteByGalleryId(long galleryId);
 }

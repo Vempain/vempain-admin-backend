@@ -2,6 +2,8 @@ package fi.poltsi.vempain.site.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -17,8 +19,12 @@ import lombok.NoArgsConstructor;
 @Table(name = "file")
 public class SiteFile {
 	@Id
+	@GeneratedValue(strategy= GenerationType.IDENTITY)
 	@Column(name = "id")
 	protected long    id;
+
+	@Column(name = "file_id")
+	protected long    fileId;
 
 	@Column(name = "comment")
 	private   String comment;

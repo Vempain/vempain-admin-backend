@@ -15,16 +15,15 @@ public interface UserRepository extends CrudRepository<UserAccount, Long> {
 
 	Optional<UserAccount> findByLoginName(String loginName);
 
-	Optional<UserAccount> findById(Long id);
+	Optional<UserAccount> findById(long id);
 
 	@Modifying
 	@Query(value = "UPDATE UserAccount SET locked = true WHERE id = :id")
 	void lockByUserId(@Param("id") long id);
 
-	@Query("SELECT CASE WHEN MAX(id) IS NULL THEN 1 ELSE (MAX(id) + 1) END AS next FROM UserAccount")
-	Long getNextAvailableUserId();
-
 	@Modifying
 	@Query(value = "UPDATE UserAccount SET locked = :locked WHERE id = :userId")
 	void updateLockedByUserId(@Param("userId") Long userId, @Param("locked") boolean locked);
+
+	Optional<UserAccount> findByAclId(long aclId);
 }

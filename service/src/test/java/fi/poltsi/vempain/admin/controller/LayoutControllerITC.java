@@ -4,11 +4,7 @@ import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.api.request.AclRequest;
 import fi.poltsi.vempain.admin.api.request.LayoutRequest;
 import fi.poltsi.vempain.admin.api.response.LayoutResponse;
-import fi.poltsi.vempain.admin.exception.ProcessingFailedException;
-import fi.poltsi.vempain.admin.exception.VempainAclException;
-import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,11 +27,6 @@ class LayoutControllerITC extends AbstractITCTest {
 	private final long initCount = 10;
 	@Autowired
 	LayoutController layoutController;
-
-	@AfterEach
-	void tearDownAfterEach() throws VempainAclException, ProcessingFailedException, VempainEntityNotFoundException {
-		testITCTools.deleteLayouts();
-	}
 
 	@Test
 	@DisplayName("Get all layouts")
@@ -95,7 +86,8 @@ class LayoutControllerITC extends AbstractITCTest {
 								  .isEmpty());
 		assertEquals(layoutName, layoutResponse.getLayoutName());
 		assertEquals(layoutStructure, layoutResponse.getStructure());
-		assertEquals(userId, layoutResponse.getCreator());
+		// The creator is always 1 because we don't have the session context without actual JWT
+		assertEquals(1L, layoutResponse.getCreator());
 	}
 
 	@Test
@@ -124,9 +116,9 @@ class LayoutControllerITC extends AbstractITCTest {
 	@Test
 	@DisplayName("Update an existing layout")
 	void updateLayoutOk() {
-		testITCTools.generateLayouts(initCount);
+		var layoutIdList = testITCTools.generateLayouts(initCount);
 		// Fetch it first by name
-		ResponseEntity<LayoutResponse> layoutResponseEntity1 = layoutController.getLayoutById(testITCTools.getLayoutIdList().get(1));
+		ResponseEntity<LayoutResponse> layoutResponseEntity1 = layoutController.getLayoutById(layoutIdList.get(0));
 		assertNotNull(layoutResponseEntity1);
 		assertEquals(HttpStatus.OK, layoutResponseEntity1.getStatusCode());
 		LayoutResponse layoutResponse1 = layoutResponseEntity1.getBody();

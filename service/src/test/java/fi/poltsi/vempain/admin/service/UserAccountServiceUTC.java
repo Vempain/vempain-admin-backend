@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
+import static fi.poltsi.vempain.admin.api.Constants.ADMIN_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -49,8 +50,8 @@ class UserAccountServiceUTC {
 
     @Test
     void findByIdOk() {
-        UserAccount userAccount = TestUTCTools.generateUser(1L);
-        when(userRepository.findById(1L)).thenReturn(Optional.of(userAccount));
+        UserAccount userAccount = TestUTCTools.generateUser(ADMIN_ID);
+        when(userRepository.findById(ADMIN_ID)).thenReturn(Optional.of(userAccount));
 
         try {
             Optional<UserAccount> returnUser = userService.findById(1L);

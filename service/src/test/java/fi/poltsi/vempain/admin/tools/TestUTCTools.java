@@ -53,7 +53,7 @@ public class TestUTCTools {
 				  .build();
 	}
 
-	public static List<Acl> generateAclList(long aclId, Long count) {
+	public static List<Acl> generateAclList(long aclId, Long count, boolean units) {
 		ArrayList<Acl> acls = new ArrayList<>();
 
 		Long permissionId = 1L;
@@ -62,12 +62,19 @@ public class TestUTCTools {
 			Acl aclUser = generateAcl(permissionId, aclId, i, null);
 			acls.add(aclUser);
 			permissionId++;
-			Acl aclUnit = generateAcl(permissionId, aclId, null, i);
-			acls.add(aclUnit);
-			permissionId++;
+
+			if (units) {
+				Acl aclUnit = generateAcl(permissionId, aclId, null, i);
+				acls.add(aclUnit);
+				permissionId++;
+			}
 		}
 
 		return acls;
+	}
+
+	public static List<Acl> generateAclList(long aclId, Long count) {
+		return generateAclList(aclId, count, true);
 	}
 
 	public static List<AclRequest> generateAclRequestList(long aclId, Long count) {
@@ -239,6 +246,7 @@ public class TestUTCTools {
 
 	// User
 	public static UserAccount generateUser(long userId) {
+		log.info("Creating user with ID: {}", userId);
 		return UserAccount.builder()
 						  .id(userId)
 						  .build();

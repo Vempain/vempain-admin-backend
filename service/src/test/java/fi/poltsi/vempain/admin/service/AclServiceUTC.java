@@ -5,13 +5,16 @@ import fi.poltsi.vempain.admin.entity.Acl;
 import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.repository.AclRepository;
+import fi.poltsi.vempain.admin.repository.UnitRepository;
 import fi.poltsi.vempain.admin.repository.UserRepository;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -21,6 +24,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static fi.poltsi.vempain.admin.api.Constants.ADMIN_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -29,23 +33,29 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 
 @Slf4j
+@ExtendWith(MockitoExtension.class)
 class AclServiceUTC {
 	private final static long itemCount = 10L;
 
 	@Mock
-	AclRepository aclRepository;
+	AclRepository  aclRepository;
 	@Mock
 	UserRepository userRepository;
+	@Mock
+	UnitRepository unitRepository;
 
+	@InjectMocks
 	private AclService aclService;
 
 	@BeforeEach
 	void setUp() {
-		MockitoAnnotations.openMocks(this);
-		aclService = new AclService(aclRepository, userRepository);
+		reset(aclRepository);
+		reset(userRepository);
+		reset(unitRepository);
 	}
 
 	@Test
@@ -55,7 +65,8 @@ class AclServiceUTC {
 
 		Iterable<Acl> aclIterable = aclService.findAll();
 		assertNotNull(aclIterable);
-		assertEquals((itemCount * 2), StreamSupport.stream(aclIterable.spliterator(), false).count());
+		assertEquals((itemCount * 2), StreamSupport.stream(aclIterable.spliterator(), false)
+												   .count());
 	}
 
 	@Test
@@ -63,7 +74,8 @@ class AclServiceUTC {
 		List<Acl> acls = TestUTCTools.generateAclList(1L, 4L);
 		when(aclRepository.getAclByAclId(1L)).thenReturn(acls);
 		Iterable<Acl> aclIterable = aclService.findAclByAclId(1L);
-		assertEquals(8, StreamSupport.stream(aclIterable.spliterator(), false).count());
+		assertEquals(8, StreamSupport.stream(aclIterable.spliterator(), false)
+									 .count());
 	}
 
 	@Test
@@ -77,7 +89,8 @@ class AclServiceUTC {
 	void deleteByAclIdOk() {
 		List<Acl> acls = TestUTCTools.generateAclList(1L, 5L);
 		when(aclRepository.getAclByAclId(1L)).thenReturn(acls);
-		doNothing().when(aclRepository).deleteAclsByAclId(1L);
+		doNothing().when(aclRepository)
+				   .deleteAclsByAclId(1L);
 
 		try {
 			aclService.deleteByAclId(1L);
@@ -116,10 +129,10 @@ class AclServiceUTC {
 
 	@Test
 	void saveOk() {
-		Acl acl = TestUTCTools.generateAcl(1L, 1L, 1L, null);
+		Acl acl = TestUTCTools.generateAcl(1L, 1L, ADMIN_ID, null);
 		when(aclRepository.save(acl)).thenReturn(acl);
-		var optionalUser = Optional.of(TestUTCTools.generateUser(1L));
-		when(userRepository.findById(anyLong())).thenReturn(optionalUser);
+		var optionalUser = Optional.of(TestUTCTools.generateUser(ADMIN_ID));
+		when(userRepository.findById(ADMIN_ID)).thenReturn(optionalUser);
 
 		try {
 			aclService.save(acl);
@@ -130,8 +143,8 @@ class AclServiceUTC {
 
 	@Test
 	void saveWithOnePermissionYesOk() {
-		var optionalUser = Optional.of(TestUTCTools.generateUser(1L));
-		when(userRepository.findById(anyLong())).thenReturn(optionalUser);
+		var optionalUser = Optional.of(TestUTCTools.generateUser(ADMIN_ID));
+		when(userRepository.findById(ADMIN_ID)).thenReturn(optionalUser);
 
 		Integer[] trigger = {1, 2, 3, 4};
 
@@ -164,7 +177,8 @@ class AclServiceUTC {
 			aclService.save(acl);
 			fail("No aclId should have caused an exception");
 		} catch (VempainAclException e) {
-			assertTrue(e.getMessage().contains("Incorrect aclId value"));
+			assertTrue(e.getMessage()
+						.contains("Incorrect aclId value"));
 		}
 	}
 
@@ -176,7 +190,8 @@ class AclServiceUTC {
 			aclService.save(acl);
 			fail("No aclId should have caused an exception");
 		} catch (VempainAclException e) {
-			assertTrue(e.getMessage().contains("Incorrect aclId value"));
+			assertTrue(e.getMessage()
+						.contains("Incorrect aclId value"));
 		}
 	}
 
@@ -195,7 +210,8 @@ class AclServiceUTC {
 			aclService.save(acl);
 			fail("No aclId should have caused an exception");
 		} catch (VempainAclException e) {
-			assertTrue(e.getMessage().contains("Incorrect aclId value"));
+			assertTrue(e.getMessage()
+						.contains("Incorrect aclId value"));
 		}
 	}
 
@@ -228,7 +244,7 @@ class AclServiceUTC {
 	@Test
 	void saveWithAllPermissionsNoFail() {
 		var optionalUser = Optional.of(TestUTCTools.generateUser(1L));
-		when(userRepository.findById(anyLong())).thenReturn(optionalUser);
+		when(userRepository.findById(ADMIN_ID)).thenReturn(optionalUser);
 
 		Acl acl = TestUTCTools.generateAcl(1L, 1L, 1L, null);
 		acl.setReadPrivilege(false);
@@ -247,10 +263,11 @@ class AclServiceUTC {
 
 	@Test
 	void updateOk() {
-		doNothing().when(aclRepository).update(1L, 1L, null, true, true, true, true);
+		doNothing().when(aclRepository)
+				   .update(1L, 1L, null, true, true, true, true);
 		Acl acl          = TestUTCTools.generateAcl(1L, 1L, 1L, null);
-		var optionalUser = Optional.of(TestUTCTools.generateUser(1L));
-		when(userRepository.findById(anyLong())).thenReturn(optionalUser);
+		var optionalUser = Optional.of(TestUTCTools.generateUser(acl.getUserId()));
+		when(userRepository.findById(acl.getUserId())).thenReturn(optionalUser);
 
 		try {
 			aclService.update(acl);
@@ -261,9 +278,9 @@ class AclServiceUTC {
 
 	@Test
 	void updateNoPermissionIdFail() {
-		Acl acl          = TestUTCTools.generateAcl(null, 1L, 1L, null);
-		var optionalUser = Optional.of(TestUTCTools.generateUser(1L));
-		when(userRepository.findById(anyLong())).thenReturn(optionalUser);
+		Acl acl          = TestUTCTools.generateAcl(null, 1L, ADMIN_ID, null);
+		var optionalUser = Optional.of(TestUTCTools.generateUser(ADMIN_ID));
+		when(userRepository.findById(ADMIN_ID)).thenReturn(optionalUser);
 
 		try {
 			aclService.update(acl);
@@ -275,12 +292,12 @@ class AclServiceUTC {
 
 	@Test
 	void updateFromRequestListOk() {
-		List<Acl>        acls         = TestUTCTools.generateAclList(1L, 5L);
+		List<Acl>        acls         = TestUTCTools.generateAclList(1L, 5L, false);
 		List<AclRequest> requests     = new ArrayList<>();
-		var              optionalUser = Optional.of(TestUTCTools.generateUser(1L));
-		when(userRepository.findById(anyLong())).thenReturn(optionalUser);
 
 		for (Acl acl : acls) {
+			var              optionalUser = Optional.of(TestUTCTools.generateUser(acl.getUserId()));
+			when(userRepository.findById(acl.getUserId())).thenReturn(optionalUser);
 			requests.add(AclRequest.builder()
 								   .permissionId(acl.getPermissionId())
 								   .aclId(acl.getAclId())
@@ -291,7 +308,9 @@ class AclServiceUTC {
 								   .createPrivilege(acl.isCreatePrivilege())
 								   .deletePrivilege(acl.isDeletePrivilege())
 								   .build());
-			when(aclRepository.getAclByAclId(acl.getAclId())).thenReturn(acls.stream().filter(a -> a.getAclId() == acl.getAclId()).collect(Collectors.toList()));
+			when(aclRepository.getAclByAclId(acl.getAclId())).thenReturn(acls.stream()
+																			 .filter(a -> a.getAclId() == acl.getAclId())
+																			 .collect(Collectors.toList()));
 		}
 
 		doNothing().when(aclRepository).deleteAclsByAclId(anyLong());
@@ -306,7 +325,7 @@ class AclServiceUTC {
 
 	@Test
 	void updateFromRequestListNoPriorAclsOk() {
-		List<Acl>        acls     = TestUTCTools.generateAclList(1L, 5L);
+		List<Acl>        acls     = TestUTCTools.generateAclList(1L, 5L, false);
 		List<AclRequest> requests = new ArrayList<>();
 
 		for (Acl acl : acls) {
@@ -321,12 +340,11 @@ class AclServiceUTC {
 								   .deletePrivilege(acl.isDeletePrivilege())
 								   .build());
 			when(aclRepository.getAclByAclId(acl.getAclId())).thenReturn(new ArrayList<>());
+			var optionalUser = Optional.of(TestUTCTools.generateUser(1L));
+			when(userRepository.findById(acl.getUserId())).thenReturn(optionalUser);
 		}
 
-		doNothing().when(aclRepository).deleteAclsByAclId(anyLong());
 		when(aclRepository.save(any(Acl.class))).thenAnswer(a -> a.getArgument(0));
-		var optionalUser = Optional.of(TestUTCTools.generateUser(1L));
-		when(userRepository.findById(anyLong())).thenReturn(optionalUser);
 
 		try {
 			aclService.updateFromRequestList(requests);
@@ -357,9 +375,6 @@ class AclServiceUTC {
 
 	@Test
 	void updateFromRequestListMultipleAclIdFail() {
-		var optionalUser = Optional.of(TestUTCTools.generateUser(1L));
-		when(userRepository.findById(anyLong())).thenReturn(optionalUser);
-
 		List<Acl>        acls     = setupAclList(2L);
 		List<AclRequest> requests = new ArrayList<>();
 
@@ -374,7 +389,6 @@ class AclServiceUTC {
 								   .createPrivilege(acl.isCreatePrivilege())
 								   .deletePrivilege(acl.isDeletePrivilege())
 								   .build());
-			when(aclRepository.getAclByAclId(acl.getAclId())).thenReturn(acls.stream().filter(a -> a.getAclId() == acl.getAclId()).collect(Collectors.toList()));
 		}
 
 		try {
@@ -387,12 +401,13 @@ class AclServiceUTC {
 
 	@Test
 	void saveAclRequestsOk() {
-		List<Acl>        acls         = TestUTCTools.generateAclList(1L, 4L);
-		List<AclRequest> requests     = new ArrayList<>();
-		var              optionalUser = Optional.of(TestUTCTools.generateUser(1L));
-		when(userRepository.findById(anyLong())).thenReturn(optionalUser);
+		List<Acl>        acls     = TestUTCTools.generateAclList(1L, 4L, false);
+		List<AclRequest> requests = new ArrayList<>();
 
 		for (Acl acl : acls) {
+			var optionalUser = Optional.of(TestUTCTools.generateUser(acl.getUserId()));
+			when(userRepository.findById(acl.getUserId())).thenReturn(optionalUser);
+
 			requests.add(AclRequest.builder()
 								   .permissionId(null)
 								   .aclId(acl.getAclId())
@@ -457,14 +472,14 @@ class AclServiceUTC {
 
 	@Test
 	void saveNewAclForObjectOk() {
-		List<Acl>        acls        = TestUTCTools.generateAclList(1L, 10L);
+		List<Acl>        acls        = TestUTCTools.generateAclList(1L, 10L, false);
 		List<AclRequest> aclRequests = TestUTCTools.generateAclRequestListFromAcl(acls);
 		when(aclRepository.getNextAvailableAclId()).thenReturn(1L);
 		when(aclRepository.getAclByAclId(1L)).thenReturn(new ArrayList<>());
-		var optionalUser = Optional.of(TestUTCTools.generateUser(1L));
-		when(userRepository.findById(anyLong())).thenReturn(optionalUser);
 
 		for (Acl acl : acls) {
+			var optionalUser = Optional.of(TestUTCTools.generateUser(acl.getUserId()));
+			when(userRepository.findById(acl.getUserId())).thenReturn(optionalUser);
 			when(aclRepository.save(acl)).thenReturn(acl);
 		}
 
@@ -508,9 +523,15 @@ class AclServiceUTC {
 
 	@Test
 	void saveNewAclForObjectRuntimeExceptionFail() {
-		List<Acl>        acls        = TestUTCTools.generateAclList(1L, 10L);
+		List<Acl>        acls        = TestUTCTools.generateAclList(1L, 1L, false);
 		List<AclRequest> aclRequests = TestUTCTools.generateAclRequestListFromAcl(acls);
 		when(aclRepository.getNextAvailableAclId()).thenReturn(1L);
+
+		for (var acl : acls) {
+			var optionalUser = Optional.of(TestUTCTools.generateUser(acl.getUserId()));
+			when(userRepository.findById(acl.getUserId())).thenReturn(optionalUser);
+		}
+
 		doThrow(new RuntimeException("Test exception")).when(aclRepository).save(any());
 
 		try {

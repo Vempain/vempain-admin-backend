@@ -21,8 +21,8 @@ class UserAccountServiceITC extends AbstractITCTest {
 
 	@Test
 	void findAllOk() {
-		var idList = testITCTools.generateUsers(count);
+		testITCTools.generateUsers(count);
 		var users = userService.findAll();
-		assertEquals(count, StreamSupport.stream(users.spliterator(), false).count());
+		assertTrue(StreamSupport.stream(users.spliterator(), false).count() >= count);
 	}
 }

@@ -8,6 +8,7 @@ import fi.poltsi.vempain.admin.exception.ProcessingFailedException;
 import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.repository.PageRepository;
+import fi.poltsi.vempain.site.entity.SitePage;
 import fi.poltsi.vempain.site.repository.SitePageRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -235,11 +236,15 @@ public class PageService extends AbstractService {
 
 	public PageResponse populateResponse(Page page) {
 		var response = page.toResponse();
-		var publishedPage = sitePageRepository.findById(page.getId());
-		publishedPage.ifPresent(sitePage -> response.setPublished(sitePage.getPublished()));
-
+		response.setPublished(whenIsPagePublished(page.getId()));
 		response.setAcls(aclService.getAclResponses(page.getAclId()));
 		return response;
+	}
 
+	public Instant whenIsPagePublished(long pageId) {
+		var publishedPage = sitePageRepository.findById(pageId);
+
+		return publishedPage.map(SitePage::getPublished)
+							.orElse(null);
 	}
 }

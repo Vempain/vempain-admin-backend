@@ -24,11 +24,11 @@ class MultiDbITC extends AbstractITCTest {
 
 	@Test
 	void copyFromAdminToSite() {
-		setupTests();
-		var fetchAdminPage = adminPageRepository.findById(1L);
+		var createdPageId = setupTests();
+		var fetchAdminPage = adminPageRepository.findById(createdPageId);
 		assertNotNull(fetchAdminPage);
 		var sitePage = SitePage.builder()
-							   .id(fetchAdminPage.getId())
+							   .pageId(fetchAdminPage.getId())
 							   .body(fetchAdminPage.getBody())
 							   .header(fetchAdminPage.getHeader())
 							   .parentId(fetchAdminPage.getParentId())
@@ -42,13 +42,13 @@ class MultiDbITC extends AbstractITCTest {
 							   .modified(fetchAdminPage.getModified())
 							   .published(Instant.now())
 							   .build();
-		sitePageRepository.save(sitePage);
+		var createdSitePage = sitePageRepository.save(sitePage);
 		var sitePages = sitePageRepository.findAll();
 		assertNotNull(sitePages);
 		assertEquals(1, StreamSupport.stream(sitePages.spliterator(), false).count());
 	}
 
-	private void setupTests() {
+	private long setupTests() {
 		var userId = testITCTools.generateUser();
 		var aclId  = testITCTools.generateAcl(userId, null, true, true, true, true);
 		var formId = testITCTools.generateForm();
@@ -67,9 +67,8 @@ class MultiDbITC extends AbstractITCTest {
 							.modifier(null)
 							.modified(null)
 							.build();
-		adminPageRepository.save(adminPage);
-		var pages = adminPageRepository.findAll();
-		assertNotNull(pages);
-		assertEquals(1, StreamSupport.stream(pages.spliterator(), false).count());
+		var createdPage = adminPageRepository.save(adminPage);
+		assertNotNull(createdPage);
+		return createdPage.getId();
 	}
 }

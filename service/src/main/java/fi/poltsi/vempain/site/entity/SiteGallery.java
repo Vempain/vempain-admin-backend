@@ -26,6 +26,9 @@ public class SiteGallery {
 	@Column(name = "id")
 	private   long    id;
 
+	@Column(name = "gallery_id")
+	private long galleryId;
+
 	@Size(min = 2, max = 2000, message = "Description should be between 2 and 2000 characters")
 	@Column(name = "description")
 	private String description;

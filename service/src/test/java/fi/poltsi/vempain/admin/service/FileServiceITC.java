@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 
+import static fi.poltsi.vempain.admin.api.Constants.ADMIN_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -24,7 +25,6 @@ class FileServiceITC extends AbstractITCTest {
 
 	@Test
 	void addFilesFromDirectoryWithGalleryOk() throws VempainEntityNotFoundException, IOException, VempainFileExeption, VempainAclException {
-		var userId = testITCTools.generateUser();
 		// The path is relative to service-directory
 		var source           = "image/Test/another";
 		var destination      = "Test/another";
@@ -48,14 +48,14 @@ class FileServiceITC extends AbstractITCTest {
 		var    gallery     = fileService.findGalleryByShortname(galleryShortname);
 		String galleryJson = objectMapper.writeValueAsString(gallery);
 		log.info("Gallery: {}", galleryJson);
-		assertEquals(userId, gallery.getCreator());
+		assertEquals(ADMIN_ID, gallery.getCreator());
 		assertEquals(numberOfFiles, gallery.getCommonFiles().size());
 
 		for (var fileCommon1 : gallery.getCommonFiles()) {
 			var optionalFileCommon = fileService.findCommonById(fileCommon1.getId());
 			assertTrue(optionalFileCommon.isPresent());
 			var fileCommon = optionalFileCommon.get();
-			assertEquals(userId, fileCommon.getCreator());
+			assertEquals(ADMIN_ID, fileCommon.getCreator());
 		}
 	}
 }

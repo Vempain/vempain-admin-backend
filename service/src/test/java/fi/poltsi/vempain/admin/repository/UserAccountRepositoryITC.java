@@ -31,7 +31,7 @@ class UserAccountRepositoryITC extends AbstractITCTest {
 	@Transactional
 	@DisplayName("Create and lock a user")
 	void createAndLockUserOk() {
-		var userId = testITCTools.generateUser();
+		var userId       = testITCTools.generateUser();
 		var optionalUser = userRepository.findById(userId);
 		assertTrue(optionalUser.isPresent());
 		var user = optionalUser.get();
@@ -47,7 +47,8 @@ class UserAccountRepositoryITC extends AbstractITCTest {
 		assertNotNull(user.getDescription());
 		assertNotNull(user.getLoginName());
 		assertNotNull(user.getModified());
-		assertFalse(user.getPob().isEmpty(), "User POB length should have been > 0, now it is empty");
+		assertFalse(user.getPob()
+						.isEmpty(), "User POB length should have been > 0, now it is empty");
 
 		// Lock user
 		String loginName = user.getLoginName();
@@ -60,38 +61,45 @@ class UserAccountRepositoryITC extends AbstractITCTest {
 		assertTrue(lockedUser.isLocked(), "The user should have been locked");
 	}
 
+	@Transactional
 	@Test
-	@DisplayName("Fail to create a user without a nick")
-	void failUserCreation() {
+	void failUserCreationMissingNick() {
 		var password = testUserAccountTools.encryptPassword(testUserAccountTools.randomLongString());
-		var user = UserAccount.builder()
-							  .aclId(1L)
-							  .birthday(Instant.now().minus(20 * 365, ChronoUnit.DAYS))
-							  .created(Instant.now().minus(1, ChronoUnit.HOURS))
-							  .creator(1L)
-							  .description("ITC generated user " + password)
-							  .email("first." + password + "@test.tld")
-							  .id(1L)
-							  .locked(false)
-							  .loginName(password)
-							  .modified(Instant.now())
-							  .modifier(1L)
-							  .name("Firstname " + password)
-							  .password(testUserAccountTools.encryptPassword(password))
-							  .pob("1111")
-							  .privacyType(PrivacyType.PRIVATE)
-							  .isPublic(false)
-							  .street("")
-							  .units(null)
-							  .build();
-
+		var userAccount = UserAccount.builder()
+									 .aclId(1L)
+									 .birthday(Instant.now().minus(20 * 365, ChronoUnit.DAYS))
+									 .created(Instant.now().minus(1, ChronoUnit.HOURS))
+									 .creator(1L)
+									 .description("ITC generated user " + password)
+									 .email("first." + password + "@test.tld")
+									 .id(1L)
+									 .locked(false)
+									 .loginName(password)
+									 .modified(Instant.now())
+									 .modifier(1L)
+									 .name("Firstname " + password)
+									 .password(testUserAccountTools.encryptPassword(password))
+									 .pob("1111")
+									 .privacyType(PrivacyType.PRIVATE)
+									 .isPublic(false)
+									 .street("")
+									 .units(null)
+									 .build();
 		DataIntegrityViolationException dive =
 				assertThrows(DataIntegrityViolationException.class,
-							 () -> userRepository.save(user),
+							 () -> {
+								 // When we have these auxiliary lines of code here, the test works
+								 log.info("Creating user account: {}", userAccount); // Aux
+								 var newUser = userRepository.save(userAccount);
+								 log.info("newUser: {}", newUser); // Aux
+								 var users = userRepository.findAll(); // Aux
+								 log.info("users: {}", users); // Aux
+							 },
 							 "Expected SQLIntegrityConstraintViolationException because of incomplete user information");
 		assertNotNull(dive);
 		assertNotNull(dive.getMessage());
 		log.info("dive.getMessage: {}", dive.getMessage());
-		assertTrue(dive.getMessage().contains("null value in column \"nick\" of relation \"user_account\" violates not-null constraint"));
+		assertTrue(dive.getMessage()
+					   .contains("null value in column \"nick\" of relation \"user_account\" violates not-null constraint"));
 	}
 }

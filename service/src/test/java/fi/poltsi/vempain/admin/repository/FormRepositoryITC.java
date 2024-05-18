@@ -2,11 +2,9 @@ package fi.poltsi.vempain.admin.repository;
 
 import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.entity.Form;
-import fi.poltsi.vempain.admin.exception.ProcessingFailedException;
 import fi.poltsi.vempain.admin.exception.VempainAbstractException;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,12 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class FormRepositoryITC extends AbstractITCTest {
 	private final long initCount = 10;
 
-	@AfterEach
-	void tearDown() throws ProcessingFailedException {
-		testITCTools.deleteForms();
-		testITCTools.checkDatabase();
-	}
-
 	@Test
 	void findAll() {
 		testITCTools.generateForms(initCount);
@@ -42,8 +34,8 @@ class FormRepositoryITC extends AbstractITCTest {
 
 	@Test
 	void findByIdOk() {
-		testITCTools.generateForms(initCount);
-		var optionalForm = formRepository.findById(testITCTools.getFormIdList().get(1));
+		var formIds = testITCTools.generateForms(initCount);
+		var optionalForm = formRepository.findById(formIds.getFirst());
 		assertTrue(optionalForm.isPresent());
 		assertForm(optionalForm.get());
 	}
