@@ -118,7 +118,7 @@ class LayoutControllerITC extends AbstractITCTest {
 	void updateLayoutOk() {
 		var layoutIdList = testITCTools.generateLayouts(initCount);
 		// Fetch it first by name
-		ResponseEntity<LayoutResponse> layoutResponseEntity1 = layoutController.getLayoutById(layoutIdList.get(0));
+		ResponseEntity<LayoutResponse> layoutResponseEntity1 = layoutController.getLayoutById(layoutIdList.getFirst());
 		assertNotNull(layoutResponseEntity1);
 		assertEquals(HttpStatus.OK, layoutResponseEntity1.getStatusCode());
 		LayoutResponse layoutResponse1 = layoutResponseEntity1.getBody();

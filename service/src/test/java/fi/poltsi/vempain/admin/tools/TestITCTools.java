@@ -489,6 +489,7 @@ public class TestITCTools {
 	/////////////////// FileSubject start
 	/////////////////// FileSubject end
 	/////////////////// User start
+	@Transactional
 	public Long generateUser() {
 		var testUserAccountTools = new TestUserAccountTools();
 		var password             = testUserAccountTools.randomLongString();
