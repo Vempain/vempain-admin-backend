@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -30,53 +31,50 @@ public class LoginController implements LoginAPI {
 	@Override
 	public ResponseEntity<JwtResponse> authenticateUser(LoginRequest loginRequest) {
 		log.info("LoginController::authenticateUser called");
+		Authentication authentication;
 
 		try {
-			var authentication = authenticationManager.authenticate(
-					new UsernamePasswordAuthenticationToken(loginRequest.getLogin(),
-															loginRequest.getPassword()));
-
-			var optionalUser = userService.findByLogin(loginRequest.getLogin());
-
-			if (optionalUser.isEmpty()) {
-				log.info("LoginController::authenticateUser Could not find user: {}", loginRequest.getLogin());
-				return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-			}
-
-			var user = optionalUser.get();
-
-			if (user.isLocked()) {
-				// If the user is locked, then we behave like it does not exist
-				log.info("Locked user tried to login: {}", loginRequest.getLogin());
-				return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-			}
-
-			SecurityContextHolder.getContext().setAuthentication(authentication);
-			String jwt = jwtUtils.generateJwtToken(authentication);
-
-			UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-			var units = userDetails.getUnits();
-
-			var unitResponses = new ArrayList<UnitResponse>();
-
-			for (var unit : units) {
-				unitResponses.add(unit.getUnitResponse());
-			}
-
-			return ResponseEntity.ok(JwtResponse.builder()
-												.login(userDetails.getUsername())
-												.nickname(userDetails.getNickName())
-												.email(userDetails.getEmail())
-												.id(userDetails.getId())
-												.units(unitResponses)
-												.token(jwt)
-												.build());
+			authentication = authenticationManager.authenticate(
+					new UsernamePasswordAuthenticationToken(loginRequest.getLogin(), loginRequest.getPassword()));
 		} catch (BadCredentialsException e) {
-			log.error("LoginController::authenticateUser Caught bad credentials");
-
-			return ResponseEntity
-					.notFound()
-					.build();
+			log.warn("User {} attempted to log in but the authentication failed: {}", loginRequest.getLogin(), e.getMessage());
+			return ResponseEntity.notFound().build();
 		}
+
+		var optionalUser = userService.findByLogin(loginRequest.getLogin());
+
+		if (optionalUser.isEmpty()) {
+			log.info("LoginController::authenticateUser Could not find user: {}", loginRequest.getLogin());
+			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+		}
+
+		var user = optionalUser.get();
+
+		if (user.isLocked()) {
+			// If the user is locked, then we behave like it does not exist
+			log.info("Locked user tried to login: {}", loginRequest.getLogin());
+			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+		}
+
+		SecurityContextHolder.getContext().setAuthentication(authentication);
+		String jwt = jwtUtils.generateJwtToken(authentication);
+
+		UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+		var             units       = userDetails.getUnits();
+
+		var unitResponses = new ArrayList<UnitResponse>();
+
+		for (var unit : units) {
+			unitResponses.add(unit.getUnitResponse());
+		}
+
+		return ResponseEntity.ok(JwtResponse.builder()
+											.login(userDetails.getUsername())
+											.nickname(userDetails.getNickName())
+											.email(userDetails.getEmail())
+											.id(userDetails.getId())
+											.units(unitResponses)
+											.token(jwt)
+											.build());
 	}
 }

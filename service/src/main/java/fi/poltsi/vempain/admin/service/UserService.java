@@ -144,10 +144,6 @@ public class UserService {
 		return userRepository.save(userAccount);
 	}
 
-	public Long getNextAvailableUserId() {
-		return userRepository.getNextAvailableUserId();
-	}
-
 	private void populateWithAcl(long aclId, UserResponse userResponse) {
 		var acls         = aclRepository.getAclByAclId(aclId);
 		var aclResponses = new ArrayList<AclResponse>();
