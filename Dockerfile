@@ -7,6 +7,6 @@ RUN adduser -D -h /vempain_admin/vempain -u 6666 -H vempain
 
 USER vempain
 
-ADD service/build/libs/vempain-admin-*.jar /app.jar
+ADD service/build/libs/vempain-admin-backend-*.jar /app.jar
 
 ENTRYPOINT ["java","-jar","/app.jar"]
