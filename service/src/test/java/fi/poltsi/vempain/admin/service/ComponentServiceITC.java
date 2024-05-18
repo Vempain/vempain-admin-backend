@@ -85,7 +85,7 @@ class ComponentServiceITC extends AbstractITCTest {
 	}
 
 	@Test
-	void saveWithNoCompNameFail() throws VempainEntityNotFoundException {
+	void saveWithNoCompNameFail() {
 		var userId = testITCTools.generateUser();
 		long aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
 		Component component = Component.builder()
@@ -108,7 +108,7 @@ class ComponentServiceITC extends AbstractITCTest {
 	}
 
 	@Test
-	void saveWithNoCreatorFail() throws VempainEntityNotFoundException {
+	void saveWithNoCreatorFail() {
 		var userId = testITCTools.generateUser();
 		var unitId = testITCTools.generateUnit();
 		var aclId  = testITCTools.generateAcl(null, unitId, false, true, false, true);
@@ -131,7 +131,7 @@ class ComponentServiceITC extends AbstractITCTest {
 	}
 
 	@Test
-	void saveWithNoCreatedFail() throws VempainEntityNotFoundException {
+	void saveWithNoCreatedFail() {
 		var userId = testITCTools.generateUser();
 		var unitId = testITCTools.generateUnit();
 		long aclId = testITCTools.generateAcl(null, unitId, false, true, false, false);
@@ -154,7 +154,7 @@ class ComponentServiceITC extends AbstractITCTest {
 	}
 
 	@Test
-	void saveCreatedNewerThanModifiedFail() throws VempainEntityNotFoundException {
+	void saveCreatedNewerThanModifiedFail() {
 		var userId = testITCTools.generateUser();
 		var unitId = testITCTools.generateUnit();
 		long aclId = testITCTools.generateAcl(null, unitId, false, false, false, true);
@@ -178,7 +178,7 @@ class ComponentServiceITC extends AbstractITCTest {
 	}
 
 	@Test
-	void saveInvalidCreatorFail() throws VempainEntityNotFoundException {
+	void saveInvalidCreatorFail() {
 		var userId = testITCTools.generateUser();
 		var unitId = testITCTools.generateUnit();
 		long aclId = testITCTools.generateAcl(null, unitId, false, false, true, true);
@@ -202,7 +202,7 @@ class ComponentServiceITC extends AbstractITCTest {
 	}
 
 	@Test
-	void saveInvalidModifierFail() throws VempainEntityNotFoundException {
+	void saveInvalidModifierFail() {
 		var userId = testITCTools.generateUser();
 		var unitId = testITCTools.generateUnit();
 		long aclId = testITCTools.generateAcl(null, unitId, true, false, true, true);

@@ -233,7 +233,7 @@ class LayoutServiceITC extends AbstractITCTest {
 	}
 
 	@Test
-	void saveFailWithNoCreator() throws VempainEntityNotFoundException {
+	void saveFailWithNoCreator() {
 		var  userId = testITCTools.generateUser();
 		long aclId  = testITCTools.generateAcl(userId, null, true, true, true, true);
 		Layout layout = Layout.builder()
@@ -309,7 +309,7 @@ class LayoutServiceITC extends AbstractITCTest {
 	}
 
 	@Test
-	void saveFailWithNoModified() throws VempainEntityNotFoundException {
+	void saveFailWithNoModified() {
 		var userId = testITCTools.generateUser();
 		var aclId  = testITCTools.generateAcl(userId, null, true, true, true, true);
 		Layout layout = Layout.builder()
@@ -335,7 +335,7 @@ class LayoutServiceITC extends AbstractITCTest {
 	}
 
 	@Test
-	void saveFailWithCreatedLaterThanModified() throws VempainEntityNotFoundException {
+	void saveFailWithCreatedLaterThanModified() {
 		var  userId = testITCTools.generateUser();
 		long aclId  = testITCTools.generateAcl(userId, null, true, true, true, true);
 		Layout layout = Layout.builder()

@@ -17,8 +17,6 @@ public interface AclRepository extends ListPagingAndSortingRepository<Acl, Long>
 	@Query("FROM Acl ORDER BY aclId ASC")
 	List<Acl> findAll();
 
-	List<Acl> findAllByAclIdOrderByAclId(long aclId);
-
 	List<Acl> getAclByAclId(long id);
 
 	@Modifying

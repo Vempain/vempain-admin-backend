@@ -5,7 +5,6 @@ import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.api.request.FileProcessRequest;
 import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
-import fi.poltsi.vempain.admin.exception.VempainFileExeption;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +23,7 @@ class FileServiceITC extends AbstractITCTest {
 	private ObjectMapper objectMapper;
 
 	@Test
-	void addFilesFromDirectoryWithGalleryOk() throws VempainEntityNotFoundException, IOException, VempainFileExeption, VempainAclException {
+	void addFilesFromDirectoryWithGalleryOk() throws VempainEntityNotFoundException, IOException, VempainAclException {
 		// The path is relative to service-directory
 		var source           = "image/Test/another";
 		var destination      = "Test/another";

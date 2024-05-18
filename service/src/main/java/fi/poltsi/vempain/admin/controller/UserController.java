@@ -64,7 +64,7 @@ public class UserController implements UserAPI {
 	@Override
 	public ResponseEntity<UserResponse> updateUser(Long userId, UserRequest userRequest) {
 		var userResponse = userService.updateUser(userId, userRequest);
-		return null;
+		return ResponseEntity.ok(userResponse);
 	}
 
 	@ExceptionHandler(RuntimeException.class)

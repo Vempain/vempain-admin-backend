@@ -6,6 +6,7 @@ import fi.poltsi.vempain.admin.api.request.LoginRequest;
 import fi.poltsi.vempain.admin.api.response.JwtResponse;
 import fi.poltsi.vempain.admin.entity.UserAccount;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -30,15 +31,12 @@ class LoginControllerITC extends AbstractITCTest {
 	void loginOk() {
 		String testPassword = testUserAccountTools.randomLongString();
 		var testUserId = testITCTools.generateUser(testPassword);
-		log.info("Fetching test account from database");
-		var testUsers = userService.findAll();
-		assertNotNull(testUsers);
-		log.info("Existing user accounts: {}", testUsers);
+		var testUser = userService.findById(testUserId).orElseThrow();
+		assertNotNull(testUser);
 
 		ResponseEntity<JwtResponse> response = getLoginResponse(testPassword, testPassword);
 
 		assertNotNull(response);
-		log.info("response: " + response);
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 
 		JwtResponse jwtResponse = response.getBody();
@@ -46,10 +44,8 @@ class LoginControllerITC extends AbstractITCTest {
 		assertNotNull(jwtResponse);
 		assertNotNull(jwtResponse.getToken());
 
-		log.info("jwtResponse: " + jwtResponse);
-
-		// Assertions.assertEquals(testUser.getEmail(), jwtResponse.getEmail());
-		// Assertions.assertEquals(testUser.getLoginName(), jwtResponse.getLogin());
+		Assertions.assertEquals(testUser.getEmail(), jwtResponse.getEmail());
+		Assertions.assertEquals(testUser.getLoginName(), jwtResponse.getLogin());
 		assertTrue(jwtResponse.getUnits().isEmpty());
 	}
 

@@ -223,8 +223,7 @@ public class TestITCTools {
 							.build();
 	}
 
-	public Map<Long, List<Long>> generateFormComponent(long formId, long componentCount) throws VempainComponentException, VempainAbstractException,
-																								VempainEntityNotFoundException {
+	public Map<Long, List<Long>> generateFormComponent(long formId, long componentCount) throws VempainComponentException, VempainAbstractException {
 		var  componentIds = generateComponents(componentCount);
 		long sortOrder    = 0L;
 		var  map          = new HashMap<Long, List<Long>>();
