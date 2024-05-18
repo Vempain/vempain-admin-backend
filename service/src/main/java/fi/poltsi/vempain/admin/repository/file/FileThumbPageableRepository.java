@@ -9,11 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface FileThumbPageableRepository extends PagingAndSortingRepository<FileThumb, Long>,
-													 CrudRepository<FileThumb, Long> {
-	@Query(nativeQuery = true, value = "SELECT * FROM file_thumb ft GROUP BY ft.filename , ft.filepath HAVING COUNT(*) > 1")
-	Iterable<FileThumb> findAllDuplicates();
-
+public interface FileThumbPageableRepository extends PagingAndSortingRepository<FileThumb, Long>, CrudRepository<FileThumb, Long> {
 	Iterable<FileThumb> findAllByFilepathAndFilename(String filepath, String filename);
 
 	Optional<FileThumb> findFileThumbByParentId(Long parentId);

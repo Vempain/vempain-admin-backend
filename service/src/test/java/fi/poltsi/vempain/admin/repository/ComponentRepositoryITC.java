@@ -47,7 +47,6 @@ class ComponentRepositoryITC extends AbstractITCTest {
 		assertTrue(optionalComponent.isPresent());
 		Component component = optionalComponent.get();
 		assertNotNull(component);
-		log.info("Component: {}", component);
 		assertNotNull(component.getCreator());
 		assertNotNull(component.getCreated());
 		assertNull(component.getModifier());
@@ -66,7 +65,6 @@ class ComponentRepositoryITC extends AbstractITCTest {
 		String    compName   = component.getCompName();
 		Component component2 = componentRepository.findByCompName(component.getCompName());
 		assertNotNull(component2);
-		log.info("Component: {}", component2);
 		assertNotNull(component2.getCreator());
 		assertNotNull(component2.getCreated());
 		assertNull(component2.getModifier());

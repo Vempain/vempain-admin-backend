@@ -412,7 +412,7 @@ public class TestUTCTools {
 				throw new IOException("Converted file already exists");
 			}
 		} catch (IOException e) {
-			log.error("Failed to copy image file from resource as test converted file: {}", e);
+			log.error("Failed to copy image file from resource as test converted file: {}", absoluteConvertedPath, e);
 			return null;
 		}
 

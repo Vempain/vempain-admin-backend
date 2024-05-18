@@ -66,6 +66,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -824,8 +825,25 @@ public class FileService extends AbstractService {
 		return fileThumbPageableRepository.findAllByFilepathAndFilename(filepath, filename);
 	}
 
-	public Iterable<FileThumb> getDuplicateThumbFiles() {
-		return fileThumbPageableRepository.findAllDuplicates();
+	public List<FileThumb> getDuplicateThumbFiles() {
+		var thumbFiles = fileThumbPageableRepository.findAll();
+
+		var thumbFileMap = new HashMap<String, FileThumb>();
+		var duplicates   = new ArrayList<FileThumb>();
+
+		for (FileThumb thumbFile : thumbFiles) {
+			var key = thumbFile.getFilepath() + File.separator + thumbFile.getFilename();
+
+			if (thumbFileMap.containsKey(key)) {
+				log.info("Duplicate thumb file: {}", thumbFile);
+				duplicates.add(thumbFile);
+				duplicates.add(thumbFileMap.get(key));
+			} else {
+				thumbFileMap.put(key, thumbFile);
+			}
+		}
+
+		return duplicates;
 	}
 
 	public void deleteFileThumb(FileThumb fileThumb) {

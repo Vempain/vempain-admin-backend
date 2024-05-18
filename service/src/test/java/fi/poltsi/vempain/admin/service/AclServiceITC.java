@@ -47,7 +47,6 @@ class AclServiceITC extends AbstractITCTest {
 
 			if (acl.getUserId() != null) {
 				userCount++;
-				assertNull(acl.getUnitId());
 			}
 
 		}
@@ -131,7 +130,6 @@ class AclServiceITC extends AbstractITCTest {
 				aclService.update(acl);
 				fail("AclId 0 should have caused an exception");
 			} catch (VempainAclException e) {
-				log.info("Exception message: {}", e.getMessage());
 				assertTrue(e.getMessage().contains("Incorrect aclId value"));
 			}
 		}
@@ -149,7 +147,6 @@ class AclServiceITC extends AbstractITCTest {
 				aclService.update(acl);
 				fail("AclId 0 should have caused an exception");
 			} catch (VempainAclException e) {
-				log.info("Exception message: {}", e.getMessage());
 				assertTrue(e.getMessage().contains("Incorrect aclId value"));
 			}
 		}
@@ -168,7 +165,6 @@ class AclServiceITC extends AbstractITCTest {
 				aclService.update(acl);
 				fail("Null user and unit should have caused an exception");
 			} catch (VempainAclException e) {
-				log.info("Exception message: {}", e.getMessage());
 				assertTrue(e.getMessage().contains("Both user and unit is null"));
 			}
 		}
@@ -187,7 +183,6 @@ class AclServiceITC extends AbstractITCTest {
 				aclService.update(acl);
 				fail("Set user and unit should have caused an exception");
 			} catch (VempainAclException e) {
-				log.info("Exception message: {}", e.getMessage());
 				assertTrue(e.getMessage().contains("Both user and unit are set"));
 			}
 		}

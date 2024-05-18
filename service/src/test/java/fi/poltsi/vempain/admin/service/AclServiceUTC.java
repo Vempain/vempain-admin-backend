@@ -223,7 +223,6 @@ class AclServiceUTC {
 			aclService.save(acl);
 			fail("Null user and unit should have caused an exception");
 		} catch (VempainAclException e) {
-			log.info("Exception message: {}", e.getMessage());
 			assertEquals("Both user and unit is null", e.getMessage());
 		}
 	}
@@ -236,7 +235,6 @@ class AclServiceUTC {
 			aclService.save(acl);
 			fail("Setting both user and unit to non-null should have caused an exception");
 		} catch (VempainAclException e) {
-			log.info("Exception message: {}", e.getMessage());
 			assertEquals("Both user and unit are set", e.getMessage());
 		}
 	}
@@ -256,7 +254,6 @@ class AclServiceUTC {
 			aclService.save(acl);
 			fail("All-NO permission should have caused an exception");
 		} catch (VempainAclException e) {
-			log.info("Exception message: {}", e.getMessage());
 			assertEquals("All permissions set to false, this acl does not make any sense", e.getMessage());
 		}
 	}
