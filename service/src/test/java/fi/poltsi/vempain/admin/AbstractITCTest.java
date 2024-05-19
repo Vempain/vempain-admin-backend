@@ -24,7 +24,6 @@ import fi.poltsi.vempain.admin.service.UnitService;
 import fi.poltsi.vempain.admin.service.UserService;
 import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.admin.tools.TestITCTools;
-import fi.poltsi.vempain.admin.tools.TestUserAccountTools;
 import fi.poltsi.vempain.site.repository.SitePageRepository;
 import fi.poltsi.vempain.tools.JschClient;
 import jakarta.persistence.EntityManager;
@@ -54,8 +53,6 @@ import static fi.poltsi.vempain.tools.LocalFileTools.removeDirectory;
 public abstract class AbstractITCTest {
 	@Autowired
 	protected TestITCTools                 testITCTools;
-	@Autowired
-	protected TestUserAccountTools         testUserAccountTools;
 	@Autowired
 	private EntityManager				  entityManager;
 	// Services

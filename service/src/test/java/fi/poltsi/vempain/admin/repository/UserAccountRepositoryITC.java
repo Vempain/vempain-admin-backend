@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
+import static fi.poltsi.vempain.admin.tools.TestUserAccountTools.encryptPassword;
+import static fi.poltsi.vempain.admin.tools.TestUserAccountTools.randomPassword;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -64,7 +66,7 @@ class UserAccountRepositoryITC extends AbstractITCTest {
 	@Transactional
 	@Test
 	void failUserCreationMissingNick() {
-		var password = testUserAccountTools.encryptPassword(testUserAccountTools.randomLongString());
+		var password = randomPassword(15);
 		var userAccount = UserAccount.builder()
 									 .aclId(1L)
 									 .birthday(Instant.now().minus(20 * 365, ChronoUnit.DAYS))
@@ -78,7 +80,7 @@ class UserAccountRepositoryITC extends AbstractITCTest {
 									 .modified(Instant.now())
 									 .modifier(1L)
 									 .name("Firstname " + password)
-									 .password(testUserAccountTools.encryptPassword(password))
+									 .password(encryptPassword(password))
 									 .pob("1111")
 									 .privacyType(PrivacyType.PRIVATE)
 									 .isPublic(false)

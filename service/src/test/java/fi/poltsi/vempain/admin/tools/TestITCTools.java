@@ -59,6 +59,7 @@ import java.util.stream.Stream;
 
 import static fi.poltsi.vempain.admin.api.Constants.ADMIN_ID;
 import static fi.poltsi.vempain.admin.api.FileClassEnum.getFileClassByMimetype;
+import static fi.poltsi.vempain.admin.tools.TestUserAccountTools.encryptPassword;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -492,13 +493,12 @@ public class TestITCTools {
 	@Transactional
 	public Long generateUser() {
 		var testUserAccountTools = new TestUserAccountTools();
-		var password             = testUserAccountTools.randomLongString();
+		var password             = testUserAccountTools.randomPassword(16);
 		return generateUser(password);
 	}
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public Long generateUser(String password) {
-		var testUserAccountTools = new TestUserAccountTools();
 		// Note that here the user ID used to generate the ACL refers to the admin
 		var aclId = generateAcl(ADMIN_ID, null, true, true, true, true);
 		var user = UserAccount.builder()
@@ -514,7 +514,7 @@ public class TestITCTools {
 							  .modifier(ADMIN_ID)
 							  .name("Firstname " + password)
 							  .nick(password)
-							  .password(testUserAccountTools.encryptPassword(password))
+							  .password(encryptPassword(password))
 							  .pob("1111")
 							  .privacyType(PrivacyType.PRIVATE)
 							  .isPublic(false)

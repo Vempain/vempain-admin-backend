@@ -3,18 +3,31 @@ package fi.poltsi.vempain.admin.tools;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Component;
+
+import java.security.SecureRandom;
 
 @Slf4j
-@Component
 public class TestUserAccountTools {
+	private static final String CHAR_POOL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+[]{}|;:,.<>?";
 
-	public String encryptPassword(String password) {
-		BCryptPasswordEncoder pwdEncryptor = new BCryptPasswordEncoder(12);
+	public static String encryptPassword(String password) {
+		var pwdEncryptor = new BCryptPasswordEncoder(12);
 		return pwdEncryptor.encode(password);
 	}
 
-	public String randomLongString() {
+	public static String randomLongString() {
 		return RandomStringUtils.randomAlphanumeric(14);
+	}
+
+	public static String randomPassword(int length) {
+		SecureRandom secureRandom = new SecureRandom();
+		StringBuilder stringBuilder = new StringBuilder(length);
+
+		for (int i = 0; i < length; i++) {
+			int randomIndex = secureRandom.nextInt(CHAR_POOL.length());
+			stringBuilder.append(CHAR_POOL.charAt(randomIndex));
+		}
+
+		return stringBuilder.toString();
 	}
 }

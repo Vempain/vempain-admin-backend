@@ -16,6 +16,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 
+import static fi.poltsi.vempain.admin.tools.TestUserAccountTools.randomPassword;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -29,7 +30,7 @@ class LoginControllerITC extends AbstractITCTest {
 
 	@Test
 	void loginOk() {
-		String testPassword = testUserAccountTools.randomLongString();
+		String testPassword = randomPassword(16);
 		var testUserId = testITCTools.generateUser(testPassword);
 		var testUser = userService.findById(testUserId).orElseThrow();
 		assertNotNull(testUser);
@@ -56,9 +57,7 @@ class LoginControllerITC extends AbstractITCTest {
 		assertTrue(optionalUser.isPresent());
 		UserAccount testUserAccount = optionalUser.get();
 
-		ResponseEntity<JwtResponse> response =
-				getLoginResponse(testUserAccount.getLoginName(),
-								 "wrong password");
+		ResponseEntity<JwtResponse> response =getLoginResponse(testUserAccount.getLoginName(),"wrong password");
 
 		assertNotNull(response);
 		assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());

@@ -24,9 +24,9 @@ import java.util.ArrayList;
 @AllArgsConstructor // This has to be all args constructor, because of the AuthenticationManager
 @RestController
 public class LoginController implements LoginAPI {
-	private final UserService userService;
-	AuthenticationManager authenticationManager;
-	JwtUtils              jwtUtils;
+	private final UserService           userService;
+	private       AuthenticationManager authenticationManager;
+	private       JwtUtils              jwtUtils;
 
 	@Override
 	public ResponseEntity<JwtResponse> authenticateUser(LoginRequest loginRequest) {
@@ -34,11 +34,10 @@ public class LoginController implements LoginAPI {
 		Authentication authentication;
 
 		try {
-			authentication = authenticationManager.authenticate(
-					new UsernamePasswordAuthenticationToken(loginRequest.getLogin(), loginRequest.getPassword()));
+			authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getLogin(), loginRequest.getPassword()));
 		} catch (BadCredentialsException e) {
 			log.warn("User {} attempted to log in but the authentication failed: {}", loginRequest.getLogin(), e.getMessage());
-			return ResponseEntity.notFound().build();
+			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 		}
 
 		var optionalUser = userService.findByLogin(loginRequest.getLogin());
