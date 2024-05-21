@@ -27,7 +27,7 @@ import java.time.Instant;
 @AllArgsConstructor
 public abstract class AbstractVempainEntity implements Serializable {
 	@Id
-	@GeneratedValue(strategy= GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
 	protected Long    id;
 	@Basic

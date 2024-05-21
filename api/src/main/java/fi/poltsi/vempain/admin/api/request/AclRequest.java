@@ -25,9 +25,9 @@ import lombok.ToString;
 @Schema(description = "Request depicting an ACL permission for either an user or unit")
 public class AclRequest {
 	@Schema(description = "Permission ID, not used for new objects", example = "1")
-	Long  permissionId;
+	Long id;
 	@Schema(description = "ACL ID, not used for new objects", example = "1")
-	Long  aclId;
+	Long aclId;
 	@Schema(description = "Alternative user information, must be null if unit is set", example = "{Long}")
 	Long  user;
 	@Schema(description = "Alternative unit information, must be null if user is set", example = "{Long}")

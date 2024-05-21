@@ -7,7 +7,7 @@ setup_database_container() {
     local port="$4"
 
     local container_name="dev_${db_name}"
-    local volume_name="${db_name}_volume"
+    local volume_name="${container_name}_volume"
 
     docker rm -f "${container_name}"
     docker volume rm "${volume_name}"

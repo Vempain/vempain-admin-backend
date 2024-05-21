@@ -40,9 +40,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class TestUTCTools {
 
 	// Acl
-	public static Acl generateAcl(Long permissionId, long aclId, Long userId, Long unitId) {
+	public static Acl generateAcl(Long id, long aclId, Long userId, Long unitId) {
 		return Acl.builder()
-				  .permissionId(permissionId)
+				  .id(id)
 				  .aclId(aclId)
 				  .userId(userId)
 				  .unitId(unitId)
@@ -56,17 +56,17 @@ public class TestUTCTools {
 	public static List<Acl> generateAclList(long aclId, Long count, boolean units) {
 		ArrayList<Acl> acls = new ArrayList<>();
 
-		Long permissionId = 1L;
+		Long id = 1L;
 
 		for (long i = 1L; i <= count; i++) {
-			Acl aclUser = generateAcl(permissionId, aclId, i, null);
+			Acl aclUser = generateAcl(id, aclId, i, null);
 			acls.add(aclUser);
-			permissionId++;
+			id++;
 
 			if (units) {
-				Acl aclUnit = generateAcl(permissionId, aclId, null, i);
+				Acl aclUnit = generateAcl(id, aclId, null, i);
 				acls.add(aclUnit);
-				permissionId++;
+				id++;
 			}
 		}
 
@@ -87,7 +87,7 @@ public class TestUTCTools {
 
 		for (Acl acl : acls) {
 			requests.add(AclRequest.builder()
-								   .permissionId(acl.getPermissionId())
+								   .id(acl.getId())
 								   .aclId(acl.getAclId())
 								   .user(acl.getUserId())
 								   .unit(acl.getUnitId())
@@ -273,7 +273,7 @@ public class TestUTCTools {
 	public static Page generatePage(long index) {
 		return Page.builder()
 				   .id(index)
-				   .parentId(0)
+				   .parentId(1L)
 				   .header("Test header")
 				   .title("Test title")
 				   .formId(1L)

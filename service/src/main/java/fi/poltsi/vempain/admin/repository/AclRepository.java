@@ -21,8 +21,8 @@ public interface AclRepository extends ListPagingAndSortingRepository<Acl, Long>
 
 	@Modifying
 	@Query(value = "UPDATE Acl SET userId = :userId, unitId = :unitId, readPrivilege = :readPriv, modifyPrivilege = :modifyPriv, createPrivilege = :createPriv, deletePrivilege = :deletePriv " +
-				   "WHERE permissionId = :permissionId")
-	void update(Long permissionId, Long userId, Long unitId, boolean readPriv, boolean modifyPriv, boolean createPriv, boolean deletePriv);
+				   "WHERE id = :id")
+	void update(Long id, Long userId, Long unitId, boolean readPriv, boolean modifyPriv, boolean createPriv, boolean deletePriv);
 
 	@Modifying
 	void deleteAclsByAclId(long aclId);
@@ -37,7 +37,7 @@ public interface AclRepository extends ListPagingAndSortingRepository<Acl, Long>
 				   " HAVING COUNT(*) > 1", nativeQuery = true)
 	List<Long> findAclIdWithDuplicates();
 
-	void deleteByPermissionId(Long permissionId);
+	void deleteById(Long id);
 
 	void deleteAllByUnitId(long unitId);
 }

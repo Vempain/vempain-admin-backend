@@ -25,7 +25,7 @@ import java.time.Instant;
 @Table(name = "page")
 public class Page extends AbstractVempainEntity {
 	@Column(name = "parent_id")
-	private long    parentId;
+	private Long    parentId;
 	@Column(name = "form_id", nullable = false)
 	private long    formId;
 	@Column(name = "path", nullable = false)

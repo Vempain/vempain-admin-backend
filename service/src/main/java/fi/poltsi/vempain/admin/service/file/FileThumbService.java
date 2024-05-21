@@ -118,7 +118,6 @@ public class FileThumbService {
 			fileThumb.setSha1sum(sha1sum);
 		} else {
 			fileThumb = FileThumb.builder()
-								 .id(commonId)
 								 .filepath(relativeDestinationPath.toString())
 								 .filename(thumbDestinationFilename)
 								 .filesize(filesize)

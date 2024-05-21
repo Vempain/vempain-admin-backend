@@ -3,7 +3,6 @@ package fi.poltsi.vempain.admin.controller;
 import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.api.response.AclResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +21,6 @@ class AclControllerITC extends AbstractITCTest {
 	private AclController aclController;
 
 	@Test
-	@DisplayName("Fetch all ACL")
 	void getAllAclOk() {
 		testITCTools.generateAcls(initCount);
 		ResponseEntity<List<AclResponse>> responses = aclController.getAllAcl();
@@ -33,7 +31,6 @@ class AclControllerITC extends AbstractITCTest {
 	}
 
 	@Test
-	@DisplayName("Fetch an ACL")
 	void getAclOk() {
 		var aclIds = testITCTools.generateAcls(initCount);
 		ResponseEntity<List<AclResponse>> responses = aclController.getAcl(aclIds.getFirst());

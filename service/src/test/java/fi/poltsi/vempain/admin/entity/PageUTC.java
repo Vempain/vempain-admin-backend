@@ -141,7 +141,7 @@ class PageUTC {
 
     @Test
     void allArgsConstructorOk() {
-        Page newPage = new Page(0, 1L, "/index", true, true, "Test title", "Test header", "Test body", null);
+        Page newPage = new Page(0L, 1L, "/index", true, true, "Test title", "Test header", "Test body", null);
         assertNull(newPage.getCreator());
     }
 }

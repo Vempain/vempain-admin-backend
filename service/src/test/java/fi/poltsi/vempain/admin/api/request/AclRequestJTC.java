@@ -20,7 +20,7 @@ class AclRequestJTC {
 	@Test
 	void aclRequestTest() throws IOException {
 		AclRequest aclRequest = AclRequest.builder()
-										  .permissionId(1L)
+										  .id(1L)
 										  .aclId(1L)
 										  .user(1L)
 										  .unit(null)
@@ -31,7 +31,7 @@ class AclRequestJTC {
 										  .build();
 		JsonContent<AclRequest> result = this.jacksonTester.write(aclRequest);
 
-		assertThat(result).hasJsonPathNumberValue("@.permission_id")
+		assertThat(result).hasJsonPathNumberValue("@.id")
 						  .hasJsonPathNumberValue("@.acl_id")
 						  .hasJsonPathNumberValue("@.user")
 						  .hasEmptyJsonPathValue("@.unit_id")

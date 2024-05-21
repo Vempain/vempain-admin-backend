@@ -1,5 +1,6 @@
 package fi.poltsi.vempain.admin.tools;
 
+import fi.poltsi.vempain.admin.api.AccountStatus;
 import fi.poltsi.vempain.admin.api.response.ComponentResponse;
 import fi.poltsi.vempain.admin.api.response.LayoutResponse;
 import fi.poltsi.vempain.admin.api.response.PrivacyType;
@@ -262,7 +263,8 @@ public class TestITCTools {
 									   .locked(false)
 									   .aclId(aclId)
 									   .creator(userId)
-									   .created(Instant.now().minus(1, ChronoUnit.HOURS))
+									   .created(Instant.now()
+													   .minus(1, ChronoUnit.HOURS))
 									   .modifier(null)
 									   .modified(null)
 									   .build();
@@ -503,8 +505,10 @@ public class TestITCTools {
 		var aclId = generateAcl(ADMIN_ID, null, true, true, true, true);
 		var user = UserAccount.builder()
 							  .aclId(aclId)
-							  .birthday(Instant.now().minus(20 * 365, ChronoUnit.DAYS))
-							  .created(Instant.now().minus(1, ChronoUnit.HOURS))
+							  .birthday(Instant.now()
+											   .minus(20 * 365, ChronoUnit.DAYS))
+							  .created(Instant.now()
+											  .minus(1, ChronoUnit.HOURS))
 							  .creator(ADMIN_ID)
 							  .description("ITC generated user " + password)
 							  .email("first." + password + "@test.tld")
@@ -520,6 +524,7 @@ public class TestITCTools {
 							  .isPublic(false)
 							  .street("")
 							  .units(null)
+							  .status(AccountStatus.ACTIVE)
 							  .build();
 
 		var newUser = userService.save(user);

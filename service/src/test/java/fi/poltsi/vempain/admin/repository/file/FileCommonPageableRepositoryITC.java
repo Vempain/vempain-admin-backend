@@ -13,15 +13,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class FileCommonPageableRepositoryITC extends AbstractITCTest {
 	@Autowired
-	private SubjectRepository            subjectRepository;
+	private SubjectRepository subjectRepository;
 	@Autowired
-	private SubjectService               subjectService;
+	private SubjectService    subjectService;
 
 	@Test
 	void getSubjectsByFileId() {
 		var userId = testITCTools.generateUser();
 
 		var subject = Subject.builder()
+							 .subjectName("subjectName")
 							 .subjectNameDe("de")
 							 .subjectNameEn("en")
 							 .subjectNameFi("fi")

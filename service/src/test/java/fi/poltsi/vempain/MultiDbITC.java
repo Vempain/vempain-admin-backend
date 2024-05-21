@@ -54,6 +54,7 @@ class MultiDbITC extends AbstractITCTest {
 		var formId = testITCTools.generateForm();
 		var adminPage = Page.builder()
 							.aclId(aclId)
+							.parentId(null)
 							.formId(formId)
 							.header("Test header")
 							.title("Test title")

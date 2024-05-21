@@ -1,6 +1,7 @@
 package fi.poltsi.vempain.admin.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import fi.poltsi.vempain.admin.api.AccountStatus;
 import fi.poltsi.vempain.admin.api.response.PrivacyType;
 import fi.poltsi.vempain.admin.api.response.UserResponse;
 import jakarta.persistence.Column;
@@ -38,28 +39,42 @@ import java.util.Set;
 @ToString(callSuper = true)
 public class UserAccount extends AbstractVempainEntity {
 	@Column(name = "public_account", nullable = false)
-	private boolean isPublic;
+	private boolean       isPublic;
+
 	@Column(name = "name", nullable = false)
-	private String  name;
+	private String        name;
+
 	@Column(name = "nick", nullable = false, unique = true)
-	private String      nick;
+	private String        nick;
+
 	@Column(name = "login_name", nullable = false, unique = true)
-	private String      loginName;
+	private String        loginName;
+
 	@Column(name = "password", nullable = false)
-	private String      password;
+	private String        password;
+
 	@Enumerated(EnumType.STRING)
-	@Column(name = "priv_type", nullable = false, columnDefinition = "enum('PRIVATE','GROUP','PUBLIC')")
-	private PrivacyType privacyType;
+	@Column(name = "priv_type", nullable = false)
+	private PrivacyType   privacyType;
+
 	@Column(name = "email", nullable = false, unique = true)
-	private String      email;
+	private String        email;
+
 	@Column(name = "street")
-	private String      street;
+	private String        street;
+
 	@Column(name = "pob")
-	private String      pob;
+	private String        pob;
+
 	@Column(name = "birthday", nullable = false)
-	private Instant     birthday;
+	private Instant       birthday;
+
 	@Column(name = "description")
-	private String      description;
+	private String        description;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "status", nullable = false)
+	private AccountStatus status;
 
 	@ManyToMany(fetch = FetchType.EAGER)
 	@JoinTable(name = "user_unit", joinColumns = @JoinColumn(name = "user_id"),
@@ -81,6 +96,7 @@ public class UserAccount extends AbstractVempainEntity {
 						   .email(this.email)
 						   .privacyType(this.privacyType)
 						   .privateUser(this.isPublic)
+						   .status(this.status)
 						   .acls(null)
 						   .creator(this.creator)
 						   .created(this.created)

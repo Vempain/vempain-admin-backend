@@ -47,6 +47,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -414,7 +416,8 @@ public class FileService extends AbstractService {
 		return commonFileList;
 	}
 
-	private FileCommon processCommonFile(Path relativeSourceFile, String siteDirectory, Long userId, Long galleryId, long sortOrder) {
+	@Transactional(propagation = Propagation.REQUIRED)
+	protected FileCommon processCommonFile(Path relativeSourceFile, String siteDirectory, Long userId, Long galleryId, long sortOrder) {
 		// Check first if the file already exists in the database
 		var alreadyExists = fileCommonPageableRepository.findByConvertedFile(relativeSourceFile.toString());
 
@@ -522,7 +525,7 @@ public class FileService extends AbstractService {
 				// Get the length of the audio file
 				var length = getAudioLength(absolutePath.toFile());
 				var fileAudio = FileAudio.builder()
-										 .id(fileCommon.getId())
+										 .parentId(fileCommon.getId())
 										 .length(length)
 										 .build();
 				fileAudioPageableRepository.save(fileAudio);
@@ -530,7 +533,7 @@ public class FileService extends AbstractService {
 			case DOCUMENT -> {
 				// TODO create a document tool which can get the document specific characteristics
 				var fileDocument = FileDocument.builder()
-											   .id(fileCommon.getId())
+											   .parentId(fileCommon.getId())
 											   .pages(0L)
 											   .build();
 				fileDocumentPageableRepository.save(fileDocument);
@@ -538,7 +541,6 @@ public class FileService extends AbstractService {
 			case IMAGE -> {
 				var dimensions = getImageDimensions(absolutePath);
 				var fileImage = FileImage.builder()
-										 .id(fileCommon.getId())
 										 .parentId(fileCommon.getId())
 										 .height(dimensions.height)
 										 .width(dimensions.width)
@@ -549,7 +551,7 @@ public class FileService extends AbstractService {
 				var videoLength    = getVideoLength(jsonObject);
 				var videDimensions = getVideoDimensions(jsonObject);
 				var fileVideo = FileVideo.builder()
-										 .id(fileCommon.getId())
+										 .parentId(fileCommon.getId())
 										 .height(videDimensions.height)
 										 .width(videDimensions.width)
 										 .length(videoLength)

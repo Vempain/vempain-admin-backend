@@ -119,7 +119,7 @@ public class AclConsistencySchedule {
 							var aclB = aclList.get(j);
 							if (aclA.equals(aclB)) {
 								log.info("Removing duplicate ACL: {}", aclB);
-								aclService.deleteByPermissionId(aclB.getPermissionId());
+								aclService.deleteById(aclB.getId());
 							}
 						}
 					}

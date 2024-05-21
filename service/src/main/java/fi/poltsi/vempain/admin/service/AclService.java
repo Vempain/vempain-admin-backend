@@ -41,7 +41,7 @@ public class AclService {
 
 		for (Acl acl : acls) {
 			log.info("Current list of acls in database: permission ID {} ACL ID {} User ID {} Unit ID {}",
-					 acl.getPermissionId(), acl.getAclId(), acl.getUserId(), acl.getUnitId());
+					 acl.getId(), acl.getAclId(), acl.getUserId(), acl.getUnitId());
 		}
 
 		var nextAclId = aclRepository.getNextAvailableAclId();
@@ -74,12 +74,12 @@ public class AclService {
     public void update(Acl acl) throws VempainAclException {
         verifyAcl(acl.getAclId(), acl.getUserId(), acl.getUnitId(), acl.isCreatePrivilege(), acl.isReadPrivilege(), acl.isModifyPrivilege(), acl.isDeletePrivilege());
 
-        if (acl.getPermissionId() == null) {
+        if (acl.getId() == null) {
             log.error("Updating an ACL with no permission ID fails: {}", acl);
                 throw new VempainAclException("Trying to update ACL with no permission ID");
         }
 
-        aclRepository.update(acl.getPermissionId(), acl.getUserId(), acl.getUnitId(), acl.isReadPrivilege(), acl.isModifyPrivilege(), acl.isCreatePrivilege(), acl.isDeletePrivilege());
+        aclRepository.update(acl.getId(), acl.getUserId(), acl.getUnitId(), acl.isReadPrivilege(), acl.isModifyPrivilege(), acl.isCreatePrivilege(), acl.isDeletePrivilege());
     }
 
 	// TODO This does not currently work, we should also pass the old ACL ID for the object so that we can delete the old ACLs in case where all the requested
@@ -268,8 +268,8 @@ public class AclService {
 	}
 
     @Transactional(propagation = Propagation.REQUIRED)
-    public void deleteByPermissionId(Long permissionId) {
-        aclRepository.deleteByPermissionId(permissionId);
+    public void deleteById(Long id) {
+        aclRepository.deleteById(id);
     }
 
     @Transactional(propagation = Propagation.REQUIRED)

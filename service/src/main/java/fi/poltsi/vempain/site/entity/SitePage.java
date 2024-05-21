@@ -27,7 +27,7 @@ public class SitePage {
 	@Column(name = "page_id")
 	protected long    pageId;
 	@Column(name = "parent_id")
-	private   long   parentId;
+	private   Long   parentId;
 	@Column(name = "path", nullable = false)
 	private   String path;
 	@Column(name = "secure", nullable = false)

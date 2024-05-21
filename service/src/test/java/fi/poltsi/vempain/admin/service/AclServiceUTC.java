@@ -274,7 +274,7 @@ class AclServiceUTC {
 	}
 
 	@Test
-	void updateNoPermissionIdFail() {
+	void updateNoIdFail() {
 		Acl acl          = TestUTCTools.generateAcl(null, 1L, ADMIN_ID, null);
 		var optionalUser = Optional.of(TestUTCTools.generateUser(ADMIN_ID));
 		when(userRepository.findById(ADMIN_ID)).thenReturn(optionalUser);
@@ -296,7 +296,7 @@ class AclServiceUTC {
 			var              optionalUser = Optional.of(TestUTCTools.generateUser(acl.getUserId()));
 			when(userRepository.findById(acl.getUserId())).thenReturn(optionalUser);
 			requests.add(AclRequest.builder()
-								   .permissionId(acl.getPermissionId())
+								   .id(acl.getId())
 								   .aclId(acl.getAclId())
 								   .user(acl.getUserId())
 								   .unit(acl.getUnitId())
@@ -327,7 +327,7 @@ class AclServiceUTC {
 
 		for (Acl acl : acls) {
 			requests.add(AclRequest.builder()
-								   .permissionId(acl.getPermissionId())
+								   .id(acl.getId())
 								   .aclId(acl.getAclId())
 								   .user(acl.getUserId())
 								   .unit(acl.getUnitId())
@@ -377,7 +377,7 @@ class AclServiceUTC {
 
 		for (Acl acl : acls) {
 			requests.add(AclRequest.builder()
-								   .permissionId(acl.getPermissionId())
+								   .id(acl.getId())
 								   .aclId(acl.getAclId())
 								   .user(acl.getUserId())
 								   .unit(acl.getUnitId())
@@ -406,7 +406,7 @@ class AclServiceUTC {
 			when(userRepository.findById(acl.getUserId())).thenReturn(optionalUser);
 
 			requests.add(AclRequest.builder()
-								   .permissionId(null)
+								   .id(null)
 								   .aclId(acl.getAclId())
 								   .user(acl.getUserId())
 								   .unit(acl.getUnitId())
@@ -545,12 +545,12 @@ class AclServiceUTC {
 
 	private List<Acl> setupAclList(long counter) {
 		ArrayList<Acl> acls          = new ArrayList<>();
-		long           aclIdx        = 1;
-		long           permissionIdx = 1;
+		long           aclIdx        = 1L;
+		long           idx = 1L;
 
 		for (long i = 0; i < counter; i++) {
 			acls.add(Acl.builder()
-						.permissionId(permissionIdx)
+						.id(idx)
 						.aclId(aclIdx)
 						.userId(1L)
 						.unitId(null)
@@ -559,9 +559,9 @@ class AclServiceUTC {
 						.modifyPrivilege(true)
 						.deletePrivilege(true)
 						.build());
-			permissionIdx++;
+			idx++;
 			acls.add(Acl.builder()
-						.permissionId(permissionIdx)
+						.id(idx)
 						.aclId(aclIdx)
 						.userId(1L)
 						.unitId(null)
@@ -570,7 +570,7 @@ class AclServiceUTC {
 						.modifyPrivilege(true)
 						.deletePrivilege(true)
 						.build());
-			permissionIdx++;
+			idx++;
 			aclIdx++;
 		}
 		return acls;
