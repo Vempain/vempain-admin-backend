@@ -8,9 +8,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Repository
 public interface SitePageRepository extends CrudRepository<SitePage, Long> {
 	SitePage findByPath(String path);
+
+	Optional<SitePage> findByPageId(long pageId);
 
 	void deletePageById(long id);
 

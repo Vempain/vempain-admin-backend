@@ -8,7 +8,6 @@ import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.repository.PageRepository;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
-import fi.poltsi.vempain.site.repository.SitePageRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -36,15 +35,13 @@ class PageServiceUTC {
     AclService aclService;
     @Mock
     AccessService      accessService;
-	@Mock
-	SitePageRepository sitePageRepository;
 
     private PageService pageService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        pageService = new PageService(aclService, accessService, pageRepository, sitePageRepository);
+        pageService = new PageService(aclService, accessService, pageRepository);
     }
 
     @Test

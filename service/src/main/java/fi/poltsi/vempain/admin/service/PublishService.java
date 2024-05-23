@@ -103,7 +103,7 @@ public class PublishService {
 			i++;
 		}
 
-		var optionalSitePage = sitePageRepository.findById(pageId);
+		var optionalSitePage = sitePageRepository.findByPageId(pageId);
 		var creator          = userService.findUserResponseById(page.getCreator()).getNick();
 		var modifier         = "";
 
@@ -113,7 +113,8 @@ public class PublishService {
 			modifier = null;
 		}
 
-		SitePage     sitePage      = optionalSitePage.orElseGet(SitePage::new);
+		var published = Instant.now();
+		SitePage sitePage = optionalSitePage.orElseGet(SitePage::new);
 
 		sitePage.setPageId(page.getId());
 		sitePage.setParentId(page.getParentId());
@@ -128,10 +129,14 @@ public class PublishService {
 		sitePage.setModifier(modifier);
 		sitePage.setModified(page.getModified());
 		sitePage.setCache(null);
-		sitePage.setPublished(Instant.now());
+		sitePage.setPublished(published);
 		var savedPage = sitePageRepository.save(sitePage);
 
 		log.debug("Published page: {}", savedPage);
+		// We update the page setting the published timestamp
+		page.setPublished(published);
+		pageService.save(page);
+
 		// Check if there are any galleries in the page, if then they should also be published
 		var pageGalleries = pageGalleryService.findPageGalleryByPageId(pageId);
 
@@ -250,7 +255,7 @@ public class PublishService {
 				}
 			}
 
-			log.info("Saving site file: {}", siteFile);
+			log.debug("Saving site file: {}", siteFile);
 			var newSiteFile = siteFileRepository.save(siteFile);
 			// Add new gallery file relation
 			siteGalleryRepository.saveGalleryFile(siteGalleryId, newSiteFile.getId(), galleryFile.getSortOrder());

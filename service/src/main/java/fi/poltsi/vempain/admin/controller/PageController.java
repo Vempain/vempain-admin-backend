@@ -50,7 +50,6 @@ public class PageController implements PageAPI {
 			}
 		} else if (queryDetailEnum == QueryDetailEnum.UNPOPULATED) {
 			for (Page page : pageList) {
-				page.setPublished(pageService.whenIsPagePublished(page.getId()));
 				responses.add(page.toResponse());
 			}
 		} else {
