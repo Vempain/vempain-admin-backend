@@ -6,7 +6,7 @@ import fi.poltsi.vempain.admin.entity.Form;
 import fi.poltsi.vempain.admin.entity.Layout;
 import fi.poltsi.vempain.admin.entity.Page;
 import fi.poltsi.vempain.admin.entity.Unit;
-import fi.poltsi.vempain.admin.entity.User;
+import fi.poltsi.vempain.admin.entity.UserAccount;
 import fi.poltsi.vempain.admin.service.AclService;
 import fi.poltsi.vempain.admin.service.ComponentService;
 import fi.poltsi.vempain.admin.service.FormService;
@@ -178,7 +178,7 @@ class AclConsistencyScheduleUTC {
     @Test
     void getAclSetFromServicesUserAclFail() {
         setupSingleObjects();
-        List<User> users = TestUTCTools.generateUserList(2L);
+        List<UserAccount> users = TestUTCTools.generateUserList(2L);
         users.get(0).setAclId(6L);
         users.get(1).setAclId(6L);
         when(userService.findAll()).thenReturn(users);
@@ -210,7 +210,7 @@ class AclConsistencyScheduleUTC {
         units.getFirst().setAclId(5L);
         when(unitService.findAll()).thenReturn(units);
 
-        List<User> users = TestUTCTools.generateUserList(1L);
+        List<UserAccount> users = TestUTCTools.generateUserList(1L);
         users.getFirst().setAclId(6L);
         when(userService.findAll()).thenReturn(users);
     }

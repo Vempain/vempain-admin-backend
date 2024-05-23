@@ -72,7 +72,7 @@ public class Gallery extends AbstractVempainEntity implements Serializable {
 
 	public SiteGallery getSiteGallery() {
 		return SiteGallery.builder()
-						  .id(this.id)
+						  .galleryId(this.id)
 						  .description(this.description)
 						  .shortname(this.shortname)
 						  .creator(this.creator)

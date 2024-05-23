@@ -4,10 +4,9 @@ import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.api.Constants;
 import fi.poltsi.vempain.admin.api.request.LoginRequest;
 import fi.poltsi.vempain.admin.api.response.JwtResponse;
-import fi.poltsi.vempain.admin.entity.User;
+import fi.poltsi.vempain.admin.entity.UserAccount;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -17,6 +16,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 
+import static fi.poltsi.vempain.admin.tools.TestUserAccountTools.randomPassword;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -24,23 +24,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
 class LoginControllerITC extends AbstractITCTest {
-	private   User             testUser;
-	private   String           testPassword;
+
 	@Autowired
 	protected TestRestTemplate testRestTemplate;
 
 	@Test
-	@DisplayName(Constants.LOGIN_PATH + " REST API test with correct credentials")
 	void loginOk() {
-		testPassword = testUserAccountTools.randomLongString();
-		var userId       = testITCTools.generateUser();
-		var optionalUser = userService.findById(userId);
-		assertTrue(optionalUser.isPresent());
-		testUser = optionalUser.get();
-		testUser.setPassword(testUserAccountTools.encryptPassword(testPassword));
-		userService.save(testUser);
+		String testPassword = randomPassword(16);
+		var testUserId = testITCTools.generateUser(testPassword);
+		var testUser = userService.findById(testUserId).orElseThrow();
+		assertNotNull(testUser);
 
-		ResponseEntity<JwtResponse> response = getLoginResponse(this.testUser.getLoginName(), this.testPassword);
+		ResponseEntity<JwtResponse> response = getLoginResponse(testPassword, testPassword);
 
 		assertNotNull(response);
 		assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -50,24 +45,19 @@ class LoginControllerITC extends AbstractITCTest {
 		assertNotNull(jwtResponse);
 		assertNotNull(jwtResponse.getToken());
 
-		System.out.println("jwtResponse: " + jwtResponse);
-
-		Assertions.assertEquals(this.testUser.getEmail(), jwtResponse.getEmail());
-		Assertions.assertEquals(this.testUser.getLoginName(), jwtResponse.getLogin());
+		Assertions.assertEquals(testUser.getEmail(), jwtResponse.getEmail());
+		Assertions.assertEquals(testUser.getLoginName(), jwtResponse.getLogin());
 		assertTrue(jwtResponse.getUnits().isEmpty());
 	}
 
 	@Test
-	@DisplayName(Constants.LOGIN_PATH + " REST API test with incorrect credentials")
 	void loginFailed() {
 		var userId       = testITCTools.generateUser();
 		var optionalUser = userService.findById(userId);
 		assertTrue(optionalUser.isPresent());
-		this.testUser = optionalUser.get();
+		UserAccount testUserAccount = optionalUser.get();
 
-		ResponseEntity<JwtResponse> response =
-				getLoginResponse(this.testUser.getLoginName(),
-								 "wrong password");
+		ResponseEntity<JwtResponse> response =getLoginResponse(testUserAccount.getLoginName(),"wrong password");
 
 		assertNotNull(response);
 		assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());

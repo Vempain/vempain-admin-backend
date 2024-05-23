@@ -69,10 +69,6 @@ public class UnitService {
 		return unitRepository.save(unit);
 	}
 
-	public Long getNextAvailableUnitId() {
-		return unitRepository.getNextAvailableUnitId();
-	}
-
 	private void populateWithAcl(long aclId, UnitResponse unitResponse) {
 		var acls         = aclRepository.getAclByAclId(aclId);
 		var aclResponses = new ArrayList<AclResponse>();

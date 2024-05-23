@@ -48,10 +48,13 @@ public class PageController implements PageAPI {
 										  .path(page.getPath())
 										  .build());
 			}
-		} else {
+		} else if (queryDetailEnum == QueryDetailEnum.UNPOPULATED) {
 			for (Page page : pageList) {
 				responses.add(page.toResponse());
 			}
+		} else {
+			log.error("Unknown query detail enum: {}", queryDetailEnum);
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown query detail enum");
 		}
 
 		return ResponseEntity.ok(responses);

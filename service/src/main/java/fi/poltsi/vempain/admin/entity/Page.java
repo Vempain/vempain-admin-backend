@@ -5,7 +5,6 @@ import fi.poltsi.vempain.admin.api.response.PageResponse;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -25,7 +24,7 @@ import java.time.Instant;
 @Table(name = "page")
 public class Page extends AbstractVempainEntity {
 	@Column(name = "parent_id")
-	private long    parentId;
+	private Long    parentId;
 	@Column(name = "form_id", nullable = false)
 	private long    formId;
 	@Column(name = "path", nullable = false)
@@ -40,8 +39,7 @@ public class Page extends AbstractVempainEntity {
 	private String  header;
 	@Column(name = "body", nullable = false, length = 524288)
 	private String  body;
-
-	@Transient
+	@Column(name = "published")
 	private Instant published;
 
 	@JsonIgnore

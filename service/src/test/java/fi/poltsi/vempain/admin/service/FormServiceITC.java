@@ -3,12 +3,10 @@ package fi.poltsi.vempain.admin.service;
 import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.api.response.FormResponse;
 import fi.poltsi.vempain.admin.entity.Form;
-import fi.poltsi.vempain.admin.exception.ProcessingFailedException;
 import fi.poltsi.vempain.admin.exception.VempainAbstractException;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -20,12 +18,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 @Slf4j
 class FormServiceITC extends AbstractITCTest {
 	private final long initCount = 10L;
-
-	@AfterEach
-	void tearDown() throws ProcessingFailedException {
-		testITCTools.deleteForms();
-		testITCTools.deleteAcls();
-	}
 
 	@Test
 	void findAll() {
@@ -39,10 +31,10 @@ class FormServiceITC extends AbstractITCTest {
 
 	@Test
 	void findById() {
-		testITCTools.generateForms(initCount);
+		var formIds = testITCTools.generateForms(initCount);
 
 		try {
-			Form form = formService.findById(testITCTools.getFormIdList().getFirst());
+			Form form = formService.findById(formIds.getFirst());
 			testITCTools.assertForm(form);
 		} catch (VempainEntityNotFoundException e) {
 			fail("There should have been a form to be found");
@@ -63,11 +55,12 @@ class FormServiceITC extends AbstractITCTest {
 
 	@Test
 	void deleteById() {
-		testITCTools.generateForms(initCount);
+		var formIds = testITCTools.generateForms(initCount);
 
 		try {
-			formService.delete(testITCTools.getFormIdList().getFirst());
-			testITCTools.getFormIdList().removeFirst();
+			for (Long formId : formIds) {
+				formService.delete(formId);
+			}
 		} catch (Exception e) {
 			fail("Failed to remove form by ID");
 		}
@@ -98,13 +91,14 @@ class FormServiceITC extends AbstractITCTest {
 
 	@Test
 	void getFormResponseOk() throws VempainComponentException, VempainAbstractException, VempainEntityNotFoundException {
-		testITCTools.getFormIdList().clear();
-		testITCTools.generateFormComponents(4L, 4L);
+		var formComponentList = testITCTools.generateFormComponents(4L, 4L);
 
 		try {
-			Form form = formService.findById(testITCTools.getFormIdList().get(1));
-			FormResponse formResponse = formService.getFormResponse(form);
-			assertNotNull(formResponse);
+			for (var formComponent : formComponentList) {
+				Form         form         = formService.findById(formComponent.keySet().iterator().next());
+				FormResponse formResponse = formService.getFormResponse(form);
+				assertNotNull(formResponse);
+			}
 		} catch (Exception e) {
 			fail("Failed to create form response from form: " + e.getMessage());
 		}

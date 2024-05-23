@@ -1,6 +1,7 @@
 package fi.poltsi.vempain.admin.api;
 
 public class Constants {
+	public static final Long ADMIN_ID = 1L;
 	public static final String REST_CONTENT_PREFIX = "/content-management";
 	public static final String REST_FILE_PREFIX = REST_CONTENT_PREFIX + "/file";
 	public static final String REST_SCHEDULE_PREFIX = REST_CONTENT_PREFIX + "/schedule";

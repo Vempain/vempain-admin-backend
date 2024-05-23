@@ -3,6 +3,8 @@ package fi.poltsi.vempain.admin.entity.file;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -24,6 +26,7 @@ import java.io.Serializable;
 @Table(name = "file_class")
 public class FileClass implements Serializable {
 	@Id
+	@GeneratedValue(strategy= GenerationType.IDENTITY)
 	@Column(name = "id")
 	protected long id;
 	@Basic

@@ -5,13 +5,13 @@ import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.api.request.FileProcessRequest;
 import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
-import fi.poltsi.vempain.admin.exception.VempainFileExeption;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 
+import static fi.poltsi.vempain.admin.api.Constants.ADMIN_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -23,8 +23,7 @@ class FileServiceITC extends AbstractITCTest {
 	private ObjectMapper objectMapper;
 
 	@Test
-	void addFilesFromDirectoryWithGalleryOk() throws VempainEntityNotFoundException, IOException, VempainFileExeption, VempainAclException {
-		var userId = testITCTools.generateUser();
+	void addFilesFromDirectoryWithGalleryOk() throws VempainEntityNotFoundException, IOException, VempainAclException {
 		// The path is relative to service-directory
 		var source           = "image/Test/another";
 		var destination      = "Test/another";
@@ -48,14 +47,14 @@ class FileServiceITC extends AbstractITCTest {
 		var    gallery     = fileService.findGalleryByShortname(galleryShortname);
 		String galleryJson = objectMapper.writeValueAsString(gallery);
 		log.info("Gallery: {}", galleryJson);
-		assertEquals(userId, gallery.getCreator());
+		assertEquals(ADMIN_ID, gallery.getCreator());
 		assertEquals(numberOfFiles, gallery.getCommonFiles().size());
 
 		for (var fileCommon1 : gallery.getCommonFiles()) {
 			var optionalFileCommon = fileService.findCommonById(fileCommon1.getId());
 			assertTrue(optionalFileCommon.isPresent());
 			var fileCommon = optionalFileCommon.get();
-			assertEquals(userId, fileCommon.getCreator());
+			assertEquals(ADMIN_ID, fileCommon.getCreator());
 		}
 	}
 }

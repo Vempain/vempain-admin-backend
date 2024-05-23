@@ -8,7 +8,7 @@ import java.util.stream.StreamSupport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class UserServiceITC extends AbstractITCTest {
+class UserAccountServiceITC extends AbstractITCTest {
 	private static final Long count = 10L;
 	@Test
 	void findByIdOk() {
@@ -21,8 +21,8 @@ class UserServiceITC extends AbstractITCTest {
 
 	@Test
 	void findAllOk() {
-		var idList = testITCTools.generateUsers(count);
+		testITCTools.generateUsers(count);
 		var users = userService.findAll();
-		assertEquals(count, StreamSupport.stream(users.spliterator(), false).count());
+		assertTrue(StreamSupport.stream(users.spliterator(), false).count() >= count);
 	}
 }

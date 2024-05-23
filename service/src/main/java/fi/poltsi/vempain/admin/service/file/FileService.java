@@ -47,6 +47,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -66,6 +68,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -214,12 +217,12 @@ public class FileService extends AbstractService {
 								 .aclId(aclId)
 								 .locked(false)
 								 .build();
-		galleryRepository.save(gallery);
+		var newGallery = galleryRepository.save(gallery);
 
 		long sortOrder = 0;
 
 		for (FileCommon fileCommon : fileCommonList) {
-			galleryFileService.addGalleryFile(gallery.getId(), fileCommon.getId(), sortOrder);
+			galleryFileService.addGalleryFile(newGallery.getId(), fileCommon.getId(), sortOrder);
 			sortOrder++;
 		}
 
@@ -237,11 +240,6 @@ public class FileService extends AbstractService {
 	// FileCommon
 	public Iterable<FileCommon> findAllFileCommon() {
 		return fileCommonPageableRepository.findAll();
-	}
-
-
-	public List<FileCommon> getDuplicateCommonFiles() {
-		return fileCommonPageableRepository.findAllDuplicates();
 	}
 
 	public List<FileCommonResponse> findAllCommonAsResponseForUser(int pageNumber, int pageSize) {
@@ -418,7 +416,8 @@ public class FileService extends AbstractService {
 		return commonFileList;
 	}
 
-	private FileCommon processCommonFile(Path relativeSourceFile, String siteDirectory, Long userId, Long galleryId, long sortOrder) {
+	@Transactional(propagation = Propagation.REQUIRED)
+	protected FileCommon processCommonFile(Path relativeSourceFile, String siteDirectory, Long userId, Long galleryId, long sortOrder) {
 		// Check first if the file already exists in the database
 		var alreadyExists = fileCommonPageableRepository.findByConvertedFile(relativeSourceFile.toString());
 
@@ -526,7 +525,7 @@ public class FileService extends AbstractService {
 				// Get the length of the audio file
 				var length = getAudioLength(absolutePath.toFile());
 				var fileAudio = FileAudio.builder()
-										 .id(fileCommon.getId())
+										 .parentId(fileCommon.getId())
 										 .length(length)
 										 .build();
 				fileAudioPageableRepository.save(fileAudio);
@@ -534,7 +533,7 @@ public class FileService extends AbstractService {
 			case DOCUMENT -> {
 				// TODO create a document tool which can get the document specific characteristics
 				var fileDocument = FileDocument.builder()
-											   .id(fileCommon.getId())
+											   .parentId(fileCommon.getId())
 											   .pages(0L)
 											   .build();
 				fileDocumentPageableRepository.save(fileDocument);
@@ -542,7 +541,6 @@ public class FileService extends AbstractService {
 			case IMAGE -> {
 				var dimensions = getImageDimensions(absolutePath);
 				var fileImage = FileImage.builder()
-										 .id(fileCommon.getId())
 										 .parentId(fileCommon.getId())
 										 .height(dimensions.height)
 										 .width(dimensions.width)
@@ -553,7 +551,7 @@ public class FileService extends AbstractService {
 				var videoLength    = getVideoLength(jsonObject);
 				var videDimensions = getVideoDimensions(jsonObject);
 				var fileVideo = FileVideo.builder()
-										 .id(fileCommon.getId())
+										 .parentId(fileCommon.getId())
 										 .height(videDimensions.height)
 										 .width(videDimensions.width)
 										 .length(videoLength)
@@ -617,10 +615,6 @@ public class FileService extends AbstractService {
 				saveFileSubject(newSubject.getId(), commonFileId);
 			}
 		}
-	}
-
-	private void generateApplicationFile(Path file) {
-		// Document: Get page number
 	}
 
 	public void deleteFile(long id) {
@@ -829,8 +823,25 @@ public class FileService extends AbstractService {
 		return fileThumbPageableRepository.findAllByFilepathAndFilename(filepath, filename);
 	}
 
-	public Iterable<FileThumb> getDuplicateThumbFiles() {
-		return fileThumbPageableRepository.findAllDuplicates();
+	public List<FileThumb> getDuplicateThumbFiles() {
+		var thumbFiles = fileThumbPageableRepository.findAll();
+
+		var thumbFileMap = new HashMap<String, FileThumb>();
+		var duplicates   = new ArrayList<FileThumb>();
+
+		for (FileThumb thumbFile : thumbFiles) {
+			var key = thumbFile.getFilepath() + File.separator + thumbFile.getFilename();
+
+			if (thumbFileMap.containsKey(key)) {
+				log.info("Duplicate thumb file: {}", thumbFile);
+				duplicates.add(thumbFile);
+				duplicates.add(thumbFileMap.get(key));
+			} else {
+				thumbFileMap.put(key, thumbFile);
+			}
+		}
+
+		return duplicates;
 	}
 
 	public void deleteFileThumb(FileThumb fileThumb) {

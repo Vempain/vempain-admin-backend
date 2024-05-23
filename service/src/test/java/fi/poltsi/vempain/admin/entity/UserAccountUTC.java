@@ -7,17 +7,17 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class UserUTC {
-    User user;
+class UserAccountUTC {
+    UserAccount userAccount;
 
     @BeforeEach
     void setUp() {
-        user = TestUTCTools.generateUser(1L);
+		userAccount = TestUTCTools.generateUser(1L);
     }
 
     @Test
     void getUserResponse() {
-        UserResponse userResponse = user.getUserResponse();
+        UserResponse userResponse = userAccount.getUserResponse();
         assertEquals(1L, userResponse.getId());
     }
 }

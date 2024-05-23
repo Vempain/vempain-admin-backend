@@ -2,6 +2,8 @@ package fi.poltsi.vempain.admin.entity.file;
 
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.Transient;
@@ -23,8 +25,9 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 public class AbstractFileEntity {
 	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
-	protected long   id;
+	protected Long   id;
 	@Basic
 	@Column(name = "parent_id")
 	private   long   parentId;

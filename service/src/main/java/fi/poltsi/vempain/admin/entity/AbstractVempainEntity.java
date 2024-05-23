@@ -27,11 +27,11 @@ import java.time.Instant;
 @AllArgsConstructor
 public abstract class AbstractVempainEntity implements Serializable {
 	@Id
-	@GeneratedValue(strategy= GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
-	protected long    id;
+	protected Long    id;
 	@Basic
-	@Column(name = "acl_id")
+	@Column(name = "acl_id", unique = true)
 	protected long    aclId;
 	@Basic
 	@Column(name = "locked", nullable = false)

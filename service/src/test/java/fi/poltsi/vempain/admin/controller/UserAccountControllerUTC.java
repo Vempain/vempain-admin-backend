@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.when;
 
-class UserControllerUTC {
+class UserAccountControllerUTC {
     @Mock
     private UserService userService;
 

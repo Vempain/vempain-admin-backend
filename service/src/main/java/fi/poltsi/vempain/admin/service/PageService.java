@@ -8,7 +8,6 @@ import fi.poltsi.vempain.admin.exception.ProcessingFailedException;
 import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.repository.PageRepository;
-import fi.poltsi.vempain.site.repository.SitePageRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -25,13 +24,11 @@ import java.util.List;
 @Service
 public class PageService extends AbstractService {
 	private final PageRepository pageRepository;
-	private final SitePageRepository sitePageRepository;
 
 	@Autowired
-	public PageService(AclService aclService, AccessService accessService, PageRepository pageRepository, SitePageRepository sitePageRepository) {
+	public PageService(AclService aclService, AccessService accessService, PageRepository pageRepository) {
 		super(aclService, accessService);
 		this.pageRepository = pageRepository;
-		this.sitePageRepository = sitePageRepository;
 	}
 
 	public Iterable<Page> findAll() {
@@ -235,11 +232,7 @@ public class PageService extends AbstractService {
 
 	public PageResponse populateResponse(Page page) {
 		var response = page.toResponse();
-		var publishedPage = sitePageRepository.findById(page.getId());
-		publishedPage.ifPresent(sitePage -> response.setPublished(sitePage.getPublished()));
-
 		response.setAcls(aclService.getAclResponses(page.getAclId()));
 		return response;
-
 	}
 }

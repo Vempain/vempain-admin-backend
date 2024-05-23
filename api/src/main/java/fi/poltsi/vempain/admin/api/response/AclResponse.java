@@ -26,7 +26,7 @@ import java.io.Serializable;
 public class AclResponse implements Serializable {
 	@Schema(description = "Permission ID", example = "1")
 	@NotBlank
-	Long    permissionId;
+	Long    id;
 	@Schema(description = "ACL ID", example = "1")
 	@NotBlank
 	Long    aclId;
@@ -46,7 +46,7 @@ public class AclResponse implements Serializable {
 	@JsonIgnore
 	public AclRequest toRequest() {
 		return AclRequest.builder()
-						 .permissionId(this.permissionId)
+						 .id(this.id)
 						 .aclId(this.aclId)
 						 .user(this.user)
 						 .unit(this.unit)

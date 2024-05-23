@@ -3,10 +3,10 @@ package fi.poltsi.vempain.admin.service;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
 import fi.poltsi.vempain.admin.api.FileClassEnum;
-import fi.poltsi.vempain.admin.entity.AbstractVempainEntity;
 import fi.poltsi.vempain.admin.entity.FormComponent;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
+import fi.poltsi.vempain.admin.repository.file.FileCommonPageableRepository;
 import fi.poltsi.vempain.admin.repository.file.FileImagePageableRepository;
 import fi.poltsi.vempain.admin.repository.file.FileVideoPageableRepository;
 import fi.poltsi.vempain.admin.service.file.FileService;
@@ -50,6 +50,7 @@ public class PublishService {
 	private final SiteSubjectService          siteSubjectService;
 	private final PageGalleryService          pageGalleryService;
 	private final JschClient                  jschClient;
+	private final FileCommonPageableRepository fileCommonPageableRepository;
 
 	@Value("${vempain.site.ssh.address}")
 	private String siteSshAddress;
@@ -77,7 +78,7 @@ public class PublishService {
 	}
 
 	@Transactional(propagation = Propagation.REQUIRED)
-	public void publishPage(Long pageId) throws VempainEntityNotFoundException {
+	public long publishPage(Long pageId) throws VempainEntityNotFoundException {
 		var page           = pageService.findById(pageId);
 		var form           = formService.findById(page.getFormId());
 		var formComponents = formService.findAllFormComponentsByFormId(page.getFormId());
@@ -102,7 +103,7 @@ public class PublishService {
 			i++;
 		}
 
-		var optionalSitePage = sitePageRepository.findById(pageId);
+		var optionalSitePage = sitePageRepository.findByPageId(pageId);
 		var creator          = userService.findUserResponseById(page.getCreator()).getNick();
 		var modifier         = "";
 
@@ -112,9 +113,10 @@ public class PublishService {
 			modifier = null;
 		}
 
-		SitePage     sitePage      = optionalSitePage.orElseGet(SitePage::new);
+		var published = Instant.now();
+		SitePage sitePage = optionalSitePage.orElseGet(SitePage::new);
 
-		sitePage.setId(page.getId());
+		sitePage.setPageId(page.getId());
 		sitePage.setParentId(page.getParentId());
 		sitePage.setPath(page.getPath());
 		sitePage.setSecure(page.isSecure());
@@ -127,8 +129,13 @@ public class PublishService {
 		sitePage.setModifier(modifier);
 		sitePage.setModified(page.getModified());
 		sitePage.setCache(null);
-		sitePage.setPublished(Instant.now());
+		sitePage.setPublished(published);
 		var savedPage = sitePageRepository.save(sitePage);
+
+		log.debug("Published page: {}", savedPage);
+		// We update the page setting the published timestamp
+		page.setPublished(published);
+		pageService.save(page);
 
 		// Check if there are any galleries in the page, if then they should also be published
 		var pageGalleries = pageGalleryService.findPageGalleryByPageId(pageId);
@@ -142,6 +149,7 @@ public class PublishService {
 		// Finally, we want to reset the cache for the page which includes the Top10 component
 		// Currently hard coded to page ID 10 which is the front page
 		sitePageRepository.resetCacheByPageId(10L);
+		return savedPage.getId();
 	}
 
 	public void deletePage(Long pageId) {
@@ -184,6 +192,7 @@ public class PublishService {
 										   .orElseThrow(VempainEntityNotFoundException::new));
 		}
 
+		// Transfer the files to the site-server
 		try {
 			log.info("Connecting to site-server {}", siteSshAddress);
 			log.debug("Connecting to site-server with user {}", siteSshUser);
@@ -204,14 +213,21 @@ public class PublishService {
 
 		//// Update the site database
 		// Remove any existing gallery data if present, the gallery - file relation is removed by cascade
-		siteGalleryRepository.deleteById(galleryId);
+		siteGalleryRepository.deleteByGalleryId(galleryId);
+
+		// Add the gallery
+		var siteGallery = gallery.getSiteGallery();
+		var newSiteGallery = siteGalleryRepository.save(siteGallery);
+		var siteGalleryId = newSiteGallery.getId();
+
 		// File data
-		for (var fileCommon : gallery.getCommonFiles()) {
+		for (var galleryFile : galleryFileList) {
+			var fileCommon = fileCommonPageableRepository.findById(galleryFile.getFileCommonId()).orElseThrow(VempainEntityNotFoundException::new);
 			// Remove the site file if it exists
-			siteFileRepository.deleteById(fileCommon.getId());
+			siteFileRepository.deleteByFileId(fileCommon.getId());
 
 			var siteFile = SiteFile.builder()
-								   .id(fileCommon.getId())
+								   .fileId(fileCommon.getId())
 								   .comment(fileCommon.getComment())
 								   .path(fileCommon.getSiteFilename())
 								   .mimetype(fileCommon.getMimetype())
@@ -239,25 +255,15 @@ public class PublishService {
 				}
 			}
 
-			siteFileRepository.save(siteFile);
-		}
-		// Add the gallery
-		siteGalleryRepository.saveGallery(gallery.getSiteGallery());
-		// Add the gallery files
-		for (var galleryFile : galleryFileList) {
-			siteGalleryRepository.saveGalleryFile(galleryId, galleryFile.getFileCommonId(), galleryFile.getSortOrder());
-		}
-		// Subject data
-		var fileCommonIds = gallery.getCommonFiles()
-								   .stream()
-								   .mapToLong(AbstractVempainEntity::getId)
-								   .toArray();
-		var fileSubjects = subjectService.getCommonFileSubjectListMap(fileCommonIds);
-
-		for (var fileCommonId : fileSubjects.keySet()) {
-			var subjects = fileSubjects.get(fileCommonId);
-			siteSubjectService.saveAllFromAdminSubject(subjects);
-			siteSubjectService.saveSiteFileSubject(fileCommonId, subjects);
+			log.debug("Saving site file: {}", siteFile);
+			var newSiteFile = siteFileRepository.save(siteFile);
+			// Add new gallery file relation
+			siteGalleryRepository.saveGalleryFile(siteGalleryId, newSiteFile.getId(), galleryFile.getSortOrder());
+			// Save subject on site-side
+			var subjects = subjectService.getSubjectsByFileId(fileCommon.getId());
+			var siteSubjects = siteSubjectService.saveAllFromAdminSubject(subjects);
+			// Save subject - file relation on site-side
+			siteSubjectService.saveSiteFileSubject(newSiteFile.getId(), siteSubjects);
 		}
 	}
 

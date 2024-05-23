@@ -1,7 +1,7 @@
 package fi.poltsi.vempain.admin.schedule;
 
 import fi.poltsi.vempain.admin.entity.Unit;
-import fi.poltsi.vempain.admin.entity.User;
+import fi.poltsi.vempain.admin.entity.UserAccount;
 import fi.poltsi.vempain.admin.service.UnitService;
 import fi.poltsi.vempain.admin.service.UserService;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
@@ -16,7 +16,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.when;
 
-class UserUnitConsistencyScheduleUTC {
+class UserAccountUnitConsistencyScheduleUTC {
 	@Mock
 	UnitService unitService;
 	@Mock
@@ -32,8 +32,8 @@ class UserUnitConsistencyScheduleUTC {
 
 	@Test
 	void verifyOk() {
-		List<User> users = TestUTCTools.generateUserList(5L);
-		List<Unit> units = TestUTCTools.generateUnitList(5L);
+		List<UserAccount> users = TestUTCTools.generateUserList(5L);
+		List<Unit>        units = TestUTCTools.generateUnitList(5L);
 
 		// We add a user with non-empty unit list
 		users.getFirst().setUnits(Collections.singleton(units.getFirst()));

@@ -2,7 +2,7 @@ package fi.poltsi.vempain.admin.controller;
 
 import fi.poltsi.vempain.admin.api.request.UserRequest;
 import fi.poltsi.vempain.admin.api.response.UserResponse;
-import fi.poltsi.vempain.admin.entity.User;
+import fi.poltsi.vempain.admin.entity.UserAccount;
 import fi.poltsi.vempain.admin.rest.UserAPI;
 import fi.poltsi.vempain.admin.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -26,12 +26,12 @@ public class UserController implements UserAPI {
 
 	@Override
 	public ResponseEntity<List<UserResponse>> getUsers() {
-		Iterable<User> users = userService.findAll();
+		Iterable<UserAccount> userAccounts = userService.findAll();
 
 		ArrayList<UserResponse> responses = new ArrayList<>();
 
-		for (User user : users) {
-			responses.add(user.getUserResponse());
+		for (var userAccount : userAccounts) {
+			responses.add(userAccount.getUserResponse());
 		}
 
 		return ResponseEntity.ok(responses);
@@ -64,7 +64,7 @@ public class UserController implements UserAPI {
 	@Override
 	public ResponseEntity<UserResponse> updateUser(Long userId, UserRequest userRequest) {
 		var userResponse = userService.updateUser(userId, userRequest);
-		return null;
+		return ResponseEntity.ok(userResponse);
 	}
 
 	@ExceptionHandler(RuntimeException.class)

@@ -1,6 +1,6 @@
 package fi.poltsi.vempain.admin.service;
 
-import fi.poltsi.vempain.admin.entity.User;
+import fi.poltsi.vempain.admin.entity.UserAccount;
 import fi.poltsi.vempain.admin.repository.AclRepository;
 import fi.poltsi.vempain.admin.repository.UserRepository;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
+import static fi.poltsi.vempain.admin.api.Constants.ADMIN_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -20,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
-class UserServiceUTC {
+class UserAccountServiceUTC {
     @Mock
     private UserRepository userRepository;
 	@Mock
@@ -35,11 +36,11 @@ class UserServiceUTC {
 
     @Test
     void findAllOk() {
-        List<User> users = TestUTCTools.generateUserList(10L);
+        List<UserAccount> users = TestUTCTools.generateUserList(10L);
         when(userRepository.findAll()).thenReturn(users);
 
         try {
-            Iterable<User> returnValue = userService.findAll();
+            Iterable<UserAccount> returnValue = userService.findAll();
             assertNotNull(returnValue);
             assertEquals(10, StreamSupport.stream(returnValue.spliterator(), false).count());
         } catch (Exception e) {
@@ -49,13 +50,13 @@ class UserServiceUTC {
 
     @Test
     void findByIdOk() {
-        User user = TestUTCTools.generateUser(1L);
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        UserAccount userAccount = TestUTCTools.generateUser(ADMIN_ID);
+        when(userRepository.findById(ADMIN_ID)).thenReturn(Optional.of(userAccount));
 
         try {
-            Optional<User> returnUser = userService.findById(1L);
+            Optional<UserAccount> returnUser = userService.findById(1L);
             assertTrue(returnUser.isPresent());
-            assertEquals(user, returnUser.get());
+            assertEquals(userAccount, returnUser.get());
         } catch (Exception e) {
             fail("We should not have received any exception");
         }

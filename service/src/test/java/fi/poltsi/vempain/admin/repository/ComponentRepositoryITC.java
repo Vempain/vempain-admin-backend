@@ -4,9 +4,7 @@ import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.entity.Component;
 import fi.poltsi.vempain.admin.exception.VempainAbstractException;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
-import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,14 +20,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ComponentRepositoryITC extends AbstractITCTest {
 	private final long initCount = 10;
 
-	@AfterEach
-	void tearDown() throws VempainEntityNotFoundException {
-		testITCTools.deleteComponents();
-		testITCTools.checkDatabase();
-	}
-
 	@Test
 	void findAllOk() throws VempainComponentException, VempainAbstractException {
+		log.info("================== findAllOk start");
 		testITCTools.generateComponents(initCount);
 		Iterable<Component> components = componentRepository.findAll();
 		assertNotNull(components);
@@ -43,36 +36,35 @@ class ComponentRepositoryITC extends AbstractITCTest {
 			assertTrue(component.getCompName().contains("Test component "));
 			assertTrue(component.getCompData().contains("Test component data "));
 		}
+		log.info("================== findAllOk end");
 	}
 
 	@Test
 	void findByIdOk() throws VempainComponentException, VempainAbstractException {
-		testITCTools.generateComponents(initCount);
-		Long                componentId       = testITCTools.getComponentIdList().getFirst();
+		var componentIds = testITCTools.generateComponents(initCount);
+		Long                componentId       = componentIds.getFirst();
 		Optional<Component> optionalComponent = componentRepository.findById(componentId);
 		assertTrue(optionalComponent.isPresent());
 		Component component = optionalComponent.get();
 		assertNotNull(component);
-		log.info("Component: {}", component);
 		assertNotNull(component.getCreator());
 		assertNotNull(component.getCreated());
 		assertNull(component.getModifier());
 		assertNull(component.getModified());
-		assertEquals("Test component 1", component.getCompName());
+		assertTrue(component.getCompName().startsWith("Test component 1"));
 		assertEquals("Test component data 1", component.getCompData());
 	}
 
 	@Test
 	void findByCompNameOk() throws VempainComponentException, VempainAbstractException {
-		testITCTools.generateComponents(initCount);
-		Long                componentId       = testITCTools.getComponentIdList().getFirst();
+		var componentIds = testITCTools.generateComponents(initCount);
+		Long                componentId       = componentIds.getFirst();
 		Optional<Component> optionalComponent = componentRepository.findById(componentId);
 		assertTrue(optionalComponent.isPresent());
 		Component component  = optionalComponent.get();
 		String    compName   = component.getCompName();
 		Component component2 = componentRepository.findByCompName(component.getCompName());
 		assertNotNull(component2);
-		log.info("Component: {}", component2);
 		assertNotNull(component2.getCreator());
 		assertNotNull(component2.getCreated());
 		assertNull(component2.getModifier());
@@ -83,8 +75,8 @@ class ComponentRepositoryITC extends AbstractITCTest {
 	@Transactional
 	@Test
 	void deleteComponentByIdOk() throws VempainComponentException, VempainAbstractException {
-		testITCTools.generateComponents(initCount);
-		Long                componentId       = testITCTools.getComponentIdList().getFirst();
+		var componentIds = testITCTools.generateComponents(initCount);
+		Long                componentId       = componentIds.getFirst();
 		Optional<Component> optionalComponent = componentRepository.findById(componentId);
 		assertTrue(optionalComponent.isPresent());
 		Component component = optionalComponent.get();

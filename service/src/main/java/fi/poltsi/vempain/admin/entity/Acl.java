@@ -27,7 +27,7 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(exclude = {"permissionId"})
+@EqualsAndHashCode(exclude = {"id"})
 @ToString
 @Table(name = "acl")
 public class Acl implements Serializable {
@@ -35,9 +35,9 @@ public class Acl implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@Column(name = "permission_id", nullable = false)
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long permissionId;
+	@Column(name = "id", nullable = false)
+	private Long id;
 
 	@Column(name = "acl_id", nullable = false)
 	private long aclId;
@@ -63,7 +63,7 @@ public class Acl implements Serializable {
 	@JsonIgnore
 	public AclResponse toResponse() {
 		return AclResponse.builder()
-						  .permissionId(this.permissionId)
+						  .id(this.id)
 						  .aclId(this.aclId)
 						  .user(this.userId)
 						  .unit(this.unitId)

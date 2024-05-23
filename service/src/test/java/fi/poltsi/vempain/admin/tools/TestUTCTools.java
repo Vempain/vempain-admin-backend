@@ -16,7 +16,7 @@ import fi.poltsi.vempain.admin.entity.FormComponent;
 import fi.poltsi.vempain.admin.entity.Layout;
 import fi.poltsi.vempain.admin.entity.Page;
 import fi.poltsi.vempain.admin.entity.Unit;
-import fi.poltsi.vempain.admin.entity.User;
+import fi.poltsi.vempain.admin.entity.UserAccount;
 import fi.poltsi.vempain.admin.entity.UserUnit;
 import fi.poltsi.vempain.admin.entity.UserUnitId;
 import fi.poltsi.vempain.admin.entity.file.FileCommon;
@@ -40,9 +40,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class TestUTCTools {
 
 	// Acl
-	public static Acl generateAcl(Long permissionId, long aclId, Long userId, Long unitId) {
+	public static Acl generateAcl(Long id, long aclId, Long userId, Long unitId) {
 		return Acl.builder()
-				  .permissionId(permissionId)
+				  .id(id)
 				  .aclId(aclId)
 				  .userId(userId)
 				  .unitId(unitId)
@@ -53,21 +53,28 @@ public class TestUTCTools {
 				  .build();
 	}
 
-	public static List<Acl> generateAclList(long aclId, Long count) {
+	public static List<Acl> generateAclList(long aclId, Long count, boolean units) {
 		ArrayList<Acl> acls = new ArrayList<>();
 
-		Long permissionId = 1L;
+		Long id = 1L;
 
 		for (long i = 1L; i <= count; i++) {
-			Acl aclUser = generateAcl(permissionId, aclId, i, null);
+			Acl aclUser = generateAcl(id, aclId, i, null);
 			acls.add(aclUser);
-			permissionId++;
-			Acl aclUnit = generateAcl(permissionId, aclId, null, i);
-			acls.add(aclUnit);
-			permissionId++;
+			id++;
+
+			if (units) {
+				Acl aclUnit = generateAcl(id, aclId, null, i);
+				acls.add(aclUnit);
+				id++;
+			}
 		}
 
 		return acls;
+	}
+
+	public static List<Acl> generateAclList(long aclId, Long count) {
+		return generateAclList(aclId, count, true);
 	}
 
 	public static List<AclRequest> generateAclRequestList(long aclId, Long count) {
@@ -80,7 +87,7 @@ public class TestUTCTools {
 
 		for (Acl acl : acls) {
 			requests.add(AclRequest.builder()
-								   .permissionId(acl.getPermissionId())
+								   .id(acl.getId())
 								   .aclId(acl.getAclId())
 								   .user(acl.getUserId())
 								   .unit(acl.getUnitId())
@@ -215,7 +222,7 @@ public class TestUTCTools {
 	public static UserUnit generateUserUnit(long userId, long unitId) {
 		return UserUnit.builder()
 					   .id(generateUserUnitId(userId, unitId))
-					   .user(generateUser(userId))
+					   .userAccount(generateUser(userId))
 					   .unit(generateUnit(unitId))
 					   .build();
 	}
@@ -238,14 +245,15 @@ public class TestUTCTools {
 	}
 
 	// User
-	public static User generateUser(long userId) {
-		return User.builder()
-				   .id(userId)
-				   .build();
+	public static UserAccount generateUser(long userId) {
+		log.info("Creating user with ID: {}", userId);
+		return UserAccount.builder()
+						  .id(userId)
+						  .build();
 	}
 
-	public static List<User> generateUserList(long count) {
-		ArrayList<User> users = new ArrayList<>();
+	public static List<UserAccount> generateUserList(long count) {
+		ArrayList<UserAccount> users = new ArrayList<>();
 		for (long i = 1; i <= count; i++) {
 			users.add(generateUser(i));
 		}
@@ -265,7 +273,7 @@ public class TestUTCTools {
 	public static Page generatePage(long index) {
 		return Page.builder()
 				   .id(index)
-				   .parentId(0)
+				   .parentId(1L)
 				   .header("Test header")
 				   .title("Test title")
 				   .formId(1L)
@@ -404,7 +412,7 @@ public class TestUTCTools {
 				throw new IOException("Converted file already exists");
 			}
 		} catch (IOException e) {
-			log.error("Failed to copy image file from resource as test converted file: {}", e);
+			log.error("Failed to copy image file from resource as test converted file: {}", absoluteConvertedPath, e);
 			return null;
 		}
 

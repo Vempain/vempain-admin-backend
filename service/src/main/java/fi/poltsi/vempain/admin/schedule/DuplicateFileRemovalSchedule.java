@@ -1,6 +1,5 @@
 package fi.poltsi.vempain.admin.schedule;
 
-import fi.poltsi.vempain.admin.entity.file.FileCommon;
 import fi.poltsi.vempain.admin.entity.file.FileImage;
 import fi.poltsi.vempain.admin.entity.file.FileThumb;
 import fi.poltsi.vempain.admin.service.file.FileService;
@@ -10,7 +9,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Clean up duplicates from file_image and file_thumb tables. See example:
@@ -35,22 +33,13 @@ public class DuplicateFileRemovalSchedule {
 
 	@Scheduled(fixedDelay = DELAY, initialDelayString = INITIAL_DELAY)
 	public void removeDuplicateImages() {
-		var iterableCommonFiles = fileService.getDuplicateCommonFiles();
 		var iterableThumbFiles = fileService.getDuplicateThumbFiles();
-
-		cleanFileCommons(iterableCommonFiles);
 		cleanThumbFiles(iterableThumbFiles);
 	}
 
 	private void cleanThumbFiles(Iterable<FileThumb> iterableThumbFiles) {
 		for (FileThumb fileThumb : iterableThumbFiles) {
 			deduplicateThumbFile(fileThumb);
-		}
-	}
-
-	private void cleanFileCommons(List<FileCommon> iterableFileCommons) {
-		for (FileCommon fileCommon : iterableFileCommons) {
-			deduplicateCommonFile(fileCommon);
 		}
 	}
 
@@ -78,31 +67,5 @@ public class DuplicateFileRemovalSchedule {
 
 		// TODO Remove the duplicates
 		log.info("Found {} duplicates for thumb file {}", duplicates.size(), fileThumb);
-	}
-
-	private void deduplicateCommonFile(FileCommon fileCommon) {
-		Iterable<FileImage> fileImages = fileService.findAllFileImagesByFilepathFilename(fileCommon.getSiteFilepath(), fileCommon.getSiteFilename());
-		var counter = 0;
-		ArrayList<FileImage> duplicates = new ArrayList<>();
-		// Check if the parent file is present in file_common
-
-		for (FileImage iteratingImage : fileImages) {
-			var optionalFileCommon = fileService.findCommonById(iteratingImage.getParentId());
-			if (optionalFileCommon.isEmpty()) {
-				log.info("Removing thumb file {} because it does not refer to valid common file", iteratingImage);
-				fileService.deleteFileImage(iteratingImage);
-			} else {
-				if (counter > 0){
-					log.info("Found a duplicate image {} with valid common: {}", iteratingImage, optionalFileCommon);
-				}
-
-				counter++;
-				duplicates.add(iteratingImage);
-			}
-		}
-
-		if (counter > 1) {
-			duplicateImages.add(duplicates);
-		}
 	}
 }

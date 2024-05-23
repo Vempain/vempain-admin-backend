@@ -16,7 +16,7 @@ class AclUTC {
     void getAclResponseOk() {
         Acl acl = TestUTCTools.generateAcl(1L, 1L, 1L, null);
         AclResponse aclResponse = acl.toResponse();
-        assertEquals(acl.getPermissionId(), aclResponse.getPermissionId());
+        assertEquals(acl.getId(), aclResponse.getId());
         assertEquals(acl.getAclId(), aclResponse.getAclId());
         assertEquals(acl.getUserId(), aclResponse.getUser());
         assertEquals(acl.getUnitId(), aclResponse.getUnit());
@@ -56,10 +56,10 @@ class AclUTC {
     }
 
     @Test
-    void setPermissionIdOk() {
+    void setIdOk() {
         Acl acl = TestUTCTools.generateAcl(1L, 1L, 1L, null);
-        acl.setPermissionId(666L);
-        assertEquals(666L, acl.getPermissionId());
+        acl.setId(666L);
+        assertEquals(666L, acl.getId());
     }
 
     @Test
@@ -114,7 +114,7 @@ class AclUTC {
     @Test
     void builderOk() {
         Acl acl = Acl.builder()
-                     .permissionId(1L)
+                     .id(1L)
                      .aclId(2L)
                      .unitId(null)
                      .createPrivilege(true)
@@ -122,7 +122,7 @@ class AclUTC {
                      .modifyPrivilege(true)
                      .deletePrivilege(true)
                      .build();
-        assertEquals(1L, acl.getPermissionId());
+        assertEquals(1L, acl.getId());
         assertEquals(2L, acl.getAclId());
         assertNull(acl.getUnitId());
 		assertTrue(acl.isCreatePrivilege());

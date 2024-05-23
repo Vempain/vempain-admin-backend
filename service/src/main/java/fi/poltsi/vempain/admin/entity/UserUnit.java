@@ -25,11 +25,11 @@ import java.io.Serializable;
 @Table(name = "user_unit")
 public class UserUnit implements Serializable {
 	@EmbeddedId
-	private UserUnitId id;
+	private UserUnitId  id;
 	@ManyToOne(fetch = FetchType.EAGER)
 	@MapsId("userId")
-	private User       user;
+	private UserAccount userAccount;
 	@ManyToOne(fetch = FetchType.EAGER)
 	@MapsId("unitId")
-	private Unit       unit;
+	private Unit        unit;
 }

@@ -1,16 +1,16 @@
 package fi.poltsi.vempain.admin.principal;
 
-import fi.poltsi.vempain.admin.entity.User;
+import fi.poltsi.vempain.admin.entity.UserAccount;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 
 public class VempainUserPrincipal implements UserDetails {
-	private final User user;
+	private final UserAccount userAccount;
 
-	public VempainUserPrincipal(User user) {
-		this.user = user;
+	public VempainUserPrincipal(UserAccount userAccount) {
+		this.userAccount = userAccount;
 	}
 
 	@Override
@@ -20,12 +20,12 @@ public class VempainUserPrincipal implements UserDetails {
 
 	@Override
 	public String getPassword() {
-		return user.getPassword();
+		return userAccount.getPassword();
 	}
 
 	@Override
 	public String getUsername() {
-		return user.getLoginName();
+		return userAccount.getLoginName();
 	}
 
 	@Override

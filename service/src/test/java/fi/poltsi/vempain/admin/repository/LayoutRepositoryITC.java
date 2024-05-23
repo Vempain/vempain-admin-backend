@@ -2,11 +2,7 @@ package fi.poltsi.vempain.admin.repository;
 
 import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.entity.Layout;
-import fi.poltsi.vempain.admin.exception.ProcessingFailedException;
-import fi.poltsi.vempain.admin.exception.VempainAclException;
-import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
@@ -20,12 +16,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Slf4j
 class LayoutRepositoryITC extends AbstractITCTest {
 	private final long                initCount = 10;
-
-	@AfterEach
-	void tearDown() throws VempainAclException, ProcessingFailedException, VempainEntityNotFoundException {
-		testITCTools.deleteLayouts();
-		testITCTools.checkDatabase();
-	}
 
 	@Test
 	void findAll() {
@@ -73,7 +63,6 @@ class LayoutRepositoryITC extends AbstractITCTest {
 
 	private void assertLayout(Layout layout) {
 		assertNotNull(layout);
-		assertTrue(testITCTools.getLayoutIdList().contains(layout.getId()));
 		assertNotNull(layout.getCreator());
 		assertNotNull(layout.getCreated());
 

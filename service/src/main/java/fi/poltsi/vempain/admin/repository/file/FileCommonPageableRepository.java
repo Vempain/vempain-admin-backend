@@ -32,15 +32,12 @@ public interface FileCommonPageableRepository extends PagingAndSortingRepository
 	@Query(value = "DELETE FROM file_subject fs WHERE fs.subject_id IN :fileSubjectIdSet", nativeQuery = true)
 	void deleteAllBySubjectId(@Param("fileSubjectIdSet") Set<Long> fileSubjectIdSet);
 
-	@Query(value = "SELECT UNIQUE fc.id FROM file_common fc, file_subject fs " +
+	@Query(value = "SELECT DISTINCT fc.id FROM file_common fc, file_subject fs " +
 				   "WHERE fc.id = fs.file_common_id ORDER BY fc.id ASC", nativeQuery =	true)
 	List<Long> getAllFileCommonWithSubjects();
 
 	@Query(value = "SELECT CONCAT(fc.siteFilepath, '/', fc.siteFilename) FROM FileCommon fc WHERE fc.id = :id")
 	String getFilePathByParentId(Long id);
-
-	@Query(value = "SELECT * FROM file_common fc GROUP BY fc.site_filename , fc.site_filepath HAVING COUNT(*) > 1", nativeQuery = true)
-	List<FileCommon> findAllDuplicates();
 
 	Optional<FileCommon> findByConvertedFile(String sourceFile);
 }

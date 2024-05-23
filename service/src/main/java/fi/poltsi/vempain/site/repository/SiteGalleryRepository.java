@@ -11,19 +11,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public interface SiteGalleryRepository extends ListPagingAndSortingRepository<SiteGallery, Long>, CrudRepository<SiteGallery, Long> {
+	@Modifying
+	@Transactional
 	@Query(nativeQuery = true, value = "INSERT INTO gallery_file (gallery_id, file_id, sort_order) VALUES (:galleryId, :fileId, :sortOrder)")
 	void saveGalleryFile(@Param("galleryId") long galleryId, @Param("fileId") long fileId, @Param("sortOrder") long sortOrder);
 
 	@Modifying
-	@Query(value = "INSERT INTO gallery (id, description, shortname, creator, created, modifier, modified) " +
-				   "VALUES (:#{#siteGallery.id}, :#{#siteGallery.description}, :#{#siteGallery.shortname}, " +
-				   ":#{#siteGallery.creator}, :#{#siteGallery.created}, :#{#siteGallery.modifier}, " +
-				   ":#{#siteGallery.modified}) " +
-				   "ON DUPLICATE KEY UPDATE " +
-				   "description = VALUES(description), shortname = VALUES(shortname), " +
-				   "creator = VALUES(creator), created = VALUES(created), modifier = VALUES(modifier), " +
-				   "modified = VALUES(modified)",
-		   nativeQuery = true)
 	@Transactional
-	void saveGallery(@Param("siteGallery") SiteGallery siteGallery);
+	void deleteByGalleryId(long galleryId);
 }

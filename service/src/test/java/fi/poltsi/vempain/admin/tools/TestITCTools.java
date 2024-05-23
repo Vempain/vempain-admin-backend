@@ -1,5 +1,6 @@
 package fi.poltsi.vempain.admin.tools;
 
+import fi.poltsi.vempain.admin.api.AccountStatus;
 import fi.poltsi.vempain.admin.api.response.ComponentResponse;
 import fi.poltsi.vempain.admin.api.response.LayoutResponse;
 import fi.poltsi.vempain.admin.api.response.PrivacyType;
@@ -11,9 +12,8 @@ import fi.poltsi.vempain.admin.entity.Layout;
 import fi.poltsi.vempain.admin.entity.Page;
 import fi.poltsi.vempain.admin.entity.Subject;
 import fi.poltsi.vempain.admin.entity.Unit;
-import fi.poltsi.vempain.admin.entity.User;
+import fi.poltsi.vempain.admin.entity.UserAccount;
 import fi.poltsi.vempain.admin.entity.file.FileCommon;
-import fi.poltsi.vempain.admin.exception.ProcessingFailedException;
 import fi.poltsi.vempain.admin.exception.VempainAbstractException;
 import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
@@ -36,12 +36,15 @@ import fi.poltsi.vempain.admin.service.UserService;
 import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.tools.JsonTools;
 import fi.poltsi.vempain.tools.MetadataTools;
+import jakarta.persistence.EntityManager;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,12 +53,14 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
+import static fi.poltsi.vempain.admin.api.Constants.ADMIN_ID;
 import static fi.poltsi.vempain.admin.api.FileClassEnum.getFileClassByMimetype;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static fi.poltsi.vempain.admin.tools.TestUserAccountTools.encryptPassword;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -66,12 +71,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 @Getter
 @org.springframework.stereotype.Component
 public class TestITCTools {
-	private final List<Long>           formIdList       = new ArrayList<>();
-	private final List<Long>           componentIdList  = new ArrayList<>();
-	private final List<Long>           aclIdList        = new ArrayList<>();
-	private final List<Long>           layoutIdList     = new ArrayList<>();
-	private final List<Long>           subjectIdList    = new ArrayList<>();
-	private final List<Long>           fileCommonIdList = new ArrayList<>();
 	private final AclService           aclService;
 	private final FormService          formService;
 	private final ComponentService     componentService;
@@ -89,6 +88,9 @@ public class TestITCTools {
 	private final GalleryRepository    galleryRepository;
 	@Value("${vempain.admin.file.converted-directory}")
 	private       String               convertedDirectory;
+
+	@Autowired
+	private EntityManager entityManager;
 
 	@Autowired
 	public TestITCTools(AclService aclService, FormService formService, ComponentService componentService, LayoutService layoutService,
@@ -113,12 +115,6 @@ public class TestITCTools {
 		this.galleryRepository    = galleryRepository;
 	}
 
-	public void checkDatabase() {
-		if (aclService != null) {
-			cleanupAllAcls();
-		}
-	}
-
 	/////////////////// Acls start
 	public Long generateAcl(Long userId, Long unitId, boolean read, boolean modify, boolean create, boolean delete) {
 		long aclId = aclService.getNextAclId();
@@ -138,7 +134,6 @@ public class TestITCTools {
 		try {
 			var newAcl = aclService.save(acl);
 			aclId = newAcl.getAclId();
-			aclIdList.add(aclId);
 			log.info("Generated new ACL ID: {}", aclId);
 		} catch (VempainAclException e) {
 			log.error("Failed to create Acl");
@@ -161,66 +156,8 @@ public class TestITCTools {
 			generateAclWithId(nextAcl, null, unitId, true, true, true, true);
 		}
 
-		Iterable<Acl> acls     = aclService.findAll();
-		long          aclCount = StreamSupport.stream(acls.spliterator(), false)
-											  .count();
-		assertEquals((7 * counter), aclCount,
-					 "There should have been 7 * " + counter + " number of ACLs in database (1+2 for user and unit ACL, 1 for each " +
-					 "user and 1+2 for unit to which another user is created), instead there was: " + aclCount);
+		Iterable<Acl> acls = aclService.findAll();
 		return aclList;
-	}
-
-	public void cleanupCreatedAcls() {
-		for (Long aclId : aclIdList) {
-			try {
-				aclService.deleteByAclId(aclId);
-			} catch (Exception e) {
-				log.error("Failed to remove ACL from database: {}", e.getMessage());
-			}
-		}
-
-		deleteAcls();
-	}
-
-	public void deleteAcls() {
-		Iterable<Acl> acls = aclService.findAll();
-
-		if (StreamSupport.stream(acls.spliterator(), false)
-						 .findAny()
-						 .isPresent()) {
-			log.warn("ACLs were found, probably due to untidy tests");
-
-			for (Acl acl : acls) {
-				try {
-					aclService.deleteByAclId(acl.getAclId());
-				} catch (Exception e) {
-					log.error("Failed to remove ACL from database: {}", e.getMessage());
-				}
-			}
-		}
-	}
-
-	private void cleanupAllAcls() {
-		Iterable<Acl> acls = aclService.findAll();
-
-		if (StreamSupport.stream(acls.spliterator(), false)
-						 .findAny()
-						 .isPresent()) {
-			log.warn("Found ACLs where there should be none: {}", acls);
-		}
-
-		aclRepository.deleteAll();
-	}
-
-	public void deleteAcl(long aclId) throws VempainEntityNotFoundException {
-		aclService.deleteByAclId(aclId);
-
-		for (int i = 0; i < aclIdList.size(); i++) {
-			if (aclIdList.get(i) == aclId) {
-				aclIdList.remove(i);
-				break;
-			}
-		}
 	}
 	/////////////////// Acls end
 
@@ -243,42 +180,18 @@ public class TestITCTools {
 					   .modified(null)
 					   .build();
 		var result = formService.save(form);
-		log.info("Added {} to formIdList which now contains: {}", result.getId(), this.formIdList);
 		assertForm(result);
 		return result.getId();
 	}
 
 	public List<Long> generateForms(long count) {
+		var formIdList = new ArrayList<Long>();
+
 		for (long i = 1; i <= count; i++) {
 			formIdList.add(generateForm());
 		}
 
 		return formIdList;
-	}
-
-	public void deleteForms() throws ProcessingFailedException {
-		Iterable<Form> forms = formService.findAll();
-
-		for (Form form : forms) {
-			try {
-				formService.delete(form.getId());
-			} catch (VempainEntityNotFoundException e) {
-				log.warn("Failed to delete either form {} or parts of it: {}", form.getFormName(), e.getMessage());
-			}
-		}
-
-		Iterable<Form> noneList = formService.findAll();
-		assertNotNull(noneList);
-
-		if (StreamSupport.stream(noneList.spliterator(), false)
-						 .findAny()
-						 .isPresent()) {
-			log.error("After deleting all, we still have forms left:\n{}", noneList);
-			fail("Deleting all forms failed");
-		}
-
-		formIdList.clear();
-		deleteAcls();
 	}
 
 	public void assertForm(Form form) {
@@ -312,27 +225,31 @@ public class TestITCTools {
 							.build();
 	}
 
-	public void generateFormComponent(long formId, long componentCount) throws VempainComponentException, VempainAbstractException, VempainEntityNotFoundException {
-		var oldCompIdList = new ArrayList<>(componentIdList);
-		generateComponents(componentCount);
-		var diff = new ArrayList<>(componentIdList);
-		diff.removeAll(oldCompIdList);
-		long sortOrder = 0L;
-		var  form      = formService.findById(formId);
+	public Map<Long, List<Long>> generateFormComponent(long formId, long componentCount) throws VempainComponentException, VempainAbstractException {
+		var  componentIds = generateComponents(componentCount);
+		long sortOrder    = 0L;
+		var  map          = new HashMap<Long, List<Long>>();
 
-
-		for (Long componentId : diff) {
+		for (Long componentId : componentIds) {
 			generateFormComponent(formId, componentId, sortOrder);
 			sortOrder++;
 		}
+
+		map.put(formId, componentIds);
+		return map;
 	}
 
-	public void generateFormComponents(long formCount, long componentCount) throws VempainComponentException, VempainAbstractException, VempainEntityNotFoundException {
-		generateForms(formCount);
+	public List<Map<Long, List<Long>>> generateFormComponents(long formCount, long componentCount) throws VempainComponentException, VempainAbstractException,
+																										  VempainEntityNotFoundException {
+		var formIds           = generateForms(formCount);
+		var formComponentList = new ArrayList<Map<Long, List<Long>>>();
 
-		for (Long formId : formIdList) {
-			generateFormComponent(formId, componentCount);
+		for (Long formId : formIds) {
+			var formComponentMap = generateFormComponent(formId, componentCount);
+			formComponentList.add(formComponentMap);
 		}
+
+		return formComponentList;
 	}
 	/////////////////// FormComponents end
 
@@ -341,7 +258,7 @@ public class TestITCTools {
 		var userId = generateUser();
 		var aclId  = generateAcl(userId, null, true, true, true, true);
 		Component component = Component.builder()
-									   .compName("Test component " + index)
+									   .compName("Test component " + index + RandomStringUtils.randomAlphanumeric(8))
 									   .compData("Test component data " + index)
 									   .locked(false)
 									   .aclId(aclId)
@@ -360,25 +277,9 @@ public class TestITCTools {
 		for (long i = 1; i <= counter; i++) {
 			var component = generateComponent(i);
 			createdComponentIds.add(component.getId());
-			componentIdList.add(component.getId());
 		}
 
 		return createdComponentIds;
-	}
-
-	public void deleteComponents() throws VempainEntityNotFoundException {
-		List<Component> components = componentService.findAll();
-
-		for (Component component : components) {
-			componentService.deleteById(component.getId());
-		}
-
-		List<Component> noneList = componentService.findAll();
-		assertNotNull(noneList);
-		assertEquals(0, noneList.size());
-		componentIdList.clear();
-
-		cleanupAllAcls();
 	}
 
 	public void verifyComponentResponse(ComponentResponse response) {
@@ -436,9 +337,9 @@ public class TestITCTools {
 						   .modifier(null)
 						   .modified(null)
 						   .build();
-
 		try {
 			var newLayout = layoutService.save(layout);
+			log.info("Generated new layout with ID: {}", newLayout.getId());
 			return newLayout.getId();
 		} catch (VempainLayoutException | VempainAbstractException e) {
 			fail("Unable to create a test layout: " + e);
@@ -448,25 +349,12 @@ public class TestITCTools {
 	}
 
 	public List<Long> generateLayouts(long count) {
+		var layoutIds = new ArrayList<Long>();
 		for (long i = 0; i < count; i++) {
-			layoutIdList.add(generateLayout());
+			layoutIds.add(generateLayout());
 		}
 
-		return layoutIdList;
-	}
-
-	public void deleteLayouts() throws ProcessingFailedException, VempainAclException, VempainEntityNotFoundException {
-		Iterable<Layout> layouts = layoutService.findAll();
-
-		for (Layout layout : layouts) {
-			layoutService.delete(layout.getId());
-		}
-
-		Iterable<Layout> noneList = layoutService.findAll();
-		assertNotNull(noneList);
-		assertEquals(0, StreamSupport.stream(noneList.spliterator(), false)
-									 .count());
-		layoutIdList.clear();
+		return layoutIds;
 	}
 
 	public boolean compareLayouts(LayoutResponse layout1, LayoutResponse layout2) {
@@ -507,12 +395,12 @@ public class TestITCTools {
 
 	/////////////////// Page start
 	public Long generatePage() throws VempainAbstractException, VempainComponentException {
-		var  formId       = generateForm();
-		var  userId       = generateUser();
-		var  aclId        = generateAcl(userId, null, true, true, true, true);
-		var  componentIds = generateComponents(3L);
+		var formId       = generateForm();
+		var userId       = generateUser();
+		var aclId        = generateAcl(userId, null, true, true, true, true);
+		var componentIds = generateComponents(3L);
 		log.info("Generated components: {}", componentIds);
-		long order        = 0L;
+		long order = 0L;
 
 		for (Long componentId : componentIds) {
 			generateFormComponent(formId, componentId, order);
@@ -555,6 +443,8 @@ public class TestITCTools {
 	}
 
 	public List<Long> generateSubjects(long counter) {
+		var subjectIdList = new ArrayList<Long>();
+
 		for (long i = 1; i <= counter; i++) {
 			var subject = generateSubject(i);
 			subjectIdList.add(subject.getId());
@@ -588,6 +478,8 @@ public class TestITCTools {
 	}
 
 	public List<Long> generateFileCommons(long counter) {
+		var fileCommonIdList = new ArrayList<Long>();
+
 		for (long i = 1; i <= counter; i++) {
 			var fileCommon = generateFileCommon(i);
 			fileCommonIdList.add(fileCommon.getId());
@@ -600,33 +492,44 @@ public class TestITCTools {
 	/////////////////// FileSubject start
 	/////////////////// FileSubject end
 	/////////////////// User start
-	public Long generateUserWithId(long userId) {
+	@Transactional
+	public Long generateUser() {
 		var testUserAccountTools = new TestUserAccountTools();
-		var password             = testUserAccountTools.randomLongString();
-		var user = User.builder()
-					   .aclId(1L)
-					   .birthday(Instant.now()
-										.minus(20 * 365, ChronoUnit.DAYS))
-					   .created(Instant.now()
-									   .minus(1, ChronoUnit.HOURS))
-					   .creator(userId)
-					   .description("ITC generated user " + password)
-					   .email("first." + password + "@test.tld")
-					   .id(userId)
-					   .locked(false)
-					   .loginName(password)
-					   .modified(Instant.now())
-					   .modifier(userId)
-					   .name("Firstname " + password)
-					   .nick(password)
-					   .password(testUserAccountTools.encryptPassword(password))
-					   .pob("1111")
-					   .privacyType(PrivacyType.PRIVATE)
-					   .publiclyVisible(false)
-					   .street("")
-					   .units(null)
-					   .build();
+		var password             = testUserAccountTools.randomPassword(16);
+		return generateUser(password);
+	}
+
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	public Long generateUser(String password) {
+		// Note that here the user ID used to generate the ACL refers to the admin
+		var aclId = generateAcl(ADMIN_ID, null, true, true, true, true);
+		var user = UserAccount.builder()
+							  .aclId(aclId)
+							  .birthday(Instant.now()
+											   .minus(20 * 365, ChronoUnit.DAYS))
+							  .created(Instant.now()
+											  .minus(1, ChronoUnit.HOURS))
+							  .creator(ADMIN_ID)
+							  .description("ITC generated user " + password)
+							  .email("first." + password + "@test.tld")
+							  .locked(false)
+							  .loginName(password)
+							  .modified(Instant.now())
+							  .modifier(ADMIN_ID)
+							  .name("Firstname " + password)
+							  .nick(password)
+							  .password(encryptPassword(password))
+							  .pob("1111")
+							  .privacyType(PrivacyType.PRIVATE)
+							  .isPublic(false)
+							  .street("")
+							  .units(null)
+							  .status(AccountStatus.ACTIVE)
+							  .build();
+
 		var newUser = userService.save(user);
+		entityManager.flush();
+
 		// Once we have generated a user, we can generate the ACL for the object
 		var userAclID = generateAcl(newUser.getId(), null, true, true, true, true);
 		// Then update the aciId on the user
@@ -634,9 +537,11 @@ public class TestITCTools {
 		// We can also update the creator and modifier to be correct
 		newUser.setCreator(newUser.getId());
 		newUser.setModifier(newUser.getId());
-		userService.save(newUser);
+		var newestUser = userService.save(newUser);
+		entityManager.flush();
 		// We also need to create a unit for the user
-		var unitAclID = generateAcl(newUser.getId(), null, true, true, true, true);
+		var unitAclID = generateAcl(newestUser.getId(), null, true, true, true, true);
+		log.info("New unit ACL ID for the user: {}", unitAclID);
 		var unit = Unit.builder()
 					   .description("ITC generated unit for user " + password)
 					   .name("Unit " + password)
@@ -647,13 +552,10 @@ public class TestITCTools {
 					   .creator(newUser.getId())
 					   .build();
 
-		var newUnit = unitService.save(unit);
-		return newUser.getId();
-	}
+		unitService.save(unit);
 
-	public Long generateUser() {
-		var userId = userService.getNextAvailableUserId();
-		return generateUserWithId(userId);
+		entityManager.flush();
+		return newUser.getId();
 	}
 
 	public List<Long> generateUsers(Long count) {
@@ -671,11 +573,10 @@ public class TestITCTools {
 	public Long generateUnit() {
 		var testUserAccountTools = new TestUserAccountTools();
 		var randomString         = testUserAccountTools.randomLongString();
-		var unitId               = unitService.getNextAvailableUnitId();
 		var userId               = generateUser();
 		// Once we have generated an user, we can generate the ACL for the object
 		var aclId = generateAcl(userId, null, true, true, true, true);
-		aclIdList.add(aclId);
+
 		var unit = Unit.builder()
 					   .aclId(aclId)
 					   .description("ITC generated unit")

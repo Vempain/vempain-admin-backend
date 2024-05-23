@@ -1,7 +1,7 @@
 package fi.poltsi.vempain.admin.schedule;
 
 import fi.poltsi.vempain.admin.entity.Unit;
-import fi.poltsi.vempain.admin.entity.User;
+import fi.poltsi.vempain.admin.entity.UserAccount;
 import fi.poltsi.vempain.admin.service.UnitService;
 import fi.poltsi.vempain.admin.service.UserService;
 import lombok.AllArgsConstructor;
@@ -24,15 +24,15 @@ public class UserUnitConsistencySchedule {
 
 	@Scheduled(fixedDelay = DELAY, initialDelayString = INITIAL_DELAY)
 	public void verify() {
-		Iterable<User> users          = userService.findAll();
-		Iterable<Unit> units          = unitService.findAll();
+		Iterable<UserAccount> users = userService.findAll();
+		Iterable<Unit>        units = unitService.findAll();
 		Set<Unit>      unitsWithUsers = new HashSet<>();
 
-		for (User user : users) {
-			if (user.getUnits().isEmpty()) {
-				log.error("User ID {} ({}) does not belong to any unit", user.getId(), user.getName());
+		for (UserAccount userAccount : users) {
+			if (userAccount.getUnits().isEmpty()) {
+				log.error("User ID {} ({}) does not belong to any unit", userAccount.getId(), userAccount.getName());
 			} else {
-				unitsWithUsers.addAll(user.getUnits());
+				unitsWithUsers.addAll(userAccount.getUnits());
 			}
 		}
 

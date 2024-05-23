@@ -10,20 +10,20 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @Slf4j
 class PublishServiceITC extends AbstractITCTest {
-	private Long pageId;
 
 	@Test
-	void publishOk() {
-		testSetup();
+	void publishPageOk() {
+		var testPageId = testSetup();
 
 		try {
-			publishService.publishPage(pageId);
-			var optionalSitePage = sitePageRepository.findById(pageId);
+			var sitePageId = publishService.publishPage(testPageId);
+			var optionalSitePage = sitePageRepository.findById(sitePageId);
 			assertTrue(optionalSitePage.isPresent());
 			var sitePage = optionalSitePage.get();
 			log.info("Site page: {}", sitePage);
@@ -33,8 +33,8 @@ class PublishServiceITC extends AbstractITCTest {
 	}
 
 	@Test
-	void deleteOk() {
-		testSetup();
+	void deletePageOk() {
+		var pageId = testSetup();
 		publishService.deletePage(pageId);
 		var optionalSitePage = publishService.fetchSitePage(pageId);
 		assertTrue(optionalSitePage.isEmpty());
@@ -56,15 +56,19 @@ class PublishServiceITC extends AbstractITCTest {
 		assertEquals(referenceDateTime, originalDateTime);
 	}
 
-	void testSetup() {
+	private long testSetup() {
+		var pageId = 0L;
+
 		try {
 			pageId = testITCTools.generatePage();
+			assertNotNull(pageId);
 			log.info("Created test page with ID: {}", pageId);
 		} catch (Exception e) {
 			log.error("Failed to create a page:", e);
 		}
 
 		var checkPage = pageRepository.findById(pageId);
-		assertTrue(checkPage.isPresent());
+		assertNotNull(checkPage);
+		return pageId;
 	}
 }

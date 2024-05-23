@@ -1,6 +1,6 @@
 package fi.poltsi.vempain.admin.principal;
 
-import fi.poltsi.vempain.admin.entity.User;
+import fi.poltsi.vempain.admin.entity.UserAccount;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,15 +13,15 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-class VempainUserPrincipalUTC {
+class VempainUserAccountPrincipalUTC {
     VempainUserPrincipal vempainUserPrincipal;
 
     @BeforeEach
     void setUp() {
-        User user = TestUTCTools.generateUser(1L);
-        user.setPassword("SimplePassword");
-        user.setLoginName("erkki");
-        vempainUserPrincipal = new VempainUserPrincipal(user);
+        UserAccount userAccount = TestUTCTools.generateUser(1L);
+        userAccount.setPassword("SimplePassword");
+        userAccount.setLoginName("erkki");
+        vempainUserPrincipal = new VempainUserPrincipal(userAccount);
     }
 
     @Test

@@ -1,0 +1,16 @@
+services:
+  pg:
+    image: postgres:16
+    container_name: "${ENV_VEMPAIN_TYPE}_vempain_site_db"
+    ports:
+      - "${ENV_VEMPAIN_SITE_DB_EXT_PORT}:5432"
+    restart: always
+    environment:
+      - POSTGRES_DB: ${ENV_VEMPAIN_SITE_DB_NAME}
+      - POSTGRES_USER: ${ENV_VEMPAIN_SITE_DB_USER}
+      - POSTGRES_PASSWORD: ${ENV_VEMPAIN_SITE_DB_PASSWORD}
+    volumes:
+      - postgresdb_data:/var/lib/mysql
+
+volumes:
+  postgresdb_data:
