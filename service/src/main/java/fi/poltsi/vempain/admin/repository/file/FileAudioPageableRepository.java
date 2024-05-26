@@ -7,7 +7,11 @@ import org.springframework.data.repository.ListCrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface FileAudioPageableRepository extends PagingAndSortingRepository<FileAudio, Long>, ListCrudRepository<FileAudio, Long> {
 	Page<FileAudio> findByLengthContaining(long filter, PageRequest pageRequest);
+
+	Optional<FileAudio> findFileAudioByParentId(long parentId);
 }

@@ -7,8 +7,11 @@ import org.springframework.data.repository.ListCrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
-public interface FileDocumentPageableRepository extends PagingAndSortingRepository<FileDocument, Long>,
-														ListCrudRepository<FileDocument, Long> {
+public interface FileDocumentPageableRepository extends PagingAndSortingRepository<FileDocument, Long>, ListCrudRepository<FileDocument, Long> {
 	Page<FileDocument> findByPagesContaining(long filter, PageRequest pageRequest);
+
+	Optional<FileDocument> findFileDocumentByParentId(Long parentId);
 }

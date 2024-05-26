@@ -44,6 +44,13 @@ public class SubjectService {
 					 .executeUpdate();
 	}
 
+	@Transactional(propagation = Propagation.REQUIRED)
+	public void removeAllSubjectsFromFile(long fileCommonId) {
+		entityManager.createNativeQuery("DELETE FROM file_subject WHERE file_common_id = :fileCommonId")
+					 .setParameter("fileCommonId", fileCommonId)
+					 .executeUpdate();
+	}
+
 	public List<Subject> getSubjectsByFileId(long fileCommonId) {
 		return subjectRepository.getSubjectsByFileId(fileCommonId);
 	}

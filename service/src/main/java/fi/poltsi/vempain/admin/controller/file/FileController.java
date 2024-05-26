@@ -2,6 +2,7 @@ package fi.poltsi.vempain.admin.controller.file;
 
 import fi.poltsi.vempain.admin.VempainMessages;
 import fi.poltsi.vempain.admin.api.request.FileProcessRequest;
+import fi.poltsi.vempain.admin.api.response.RefreshResponse;
 import fi.poltsi.vempain.admin.api.response.StringList;
 import fi.poltsi.vempain.admin.api.response.file.FileAudioResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileCommonResponse;
@@ -141,6 +142,21 @@ public class FileController implements FileAPI {
 		return ResponseEntity.ok(StringList.builder()
 										   .stringList(matchedDirectories)
 										   .build());
+	}
+
+	@Override
+	public ResponseEntity<RefreshResponse> refreshGalleryFiles(long galleryId) {
+		log.debug("Received request to refresh gallery files with ID: {}", galleryId);
+		var refreshResponse = fileService.refreshGalleryFiles(galleryId);
+		return ResponseEntity.ok(refreshResponse);
+	}
+
+	@Override
+	public ResponseEntity<RefreshResponse> refreshAllGalleryFiles() {
+		log.debug("Received request to refresh all gallery files");
+		var refreshResponse = fileService.refreshAllGalleryFiles();
+
+		return ResponseEntity.ok(refreshResponse);
 	}
 
 	private <T> ResponseEntity<Page<T>> getPageableFiles(int pageNumber, int pageSize, String sorting, String filter, String filterColumn,

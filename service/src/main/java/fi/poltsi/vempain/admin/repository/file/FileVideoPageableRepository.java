@@ -7,8 +7,10 @@ import org.springframework.data.repository.ListCrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
-public interface FileVideoPageableRepository extends PagingAndSortingRepository<FileVideo, Long>,
-													 ListCrudRepository<FileVideo, Long> {
+public interface FileVideoPageableRepository extends PagingAndSortingRepository<FileVideo, Long>, ListCrudRepository<FileVideo, Long> {
 	Page<FileVideo> findByLengthContaining(long filter, PageRequest pageRequest);
+	Optional<FileVideo> findFileVideoByParentId(long parentId);
 }

@@ -2,6 +2,8 @@ package fi.poltsi.vempain.admin.rest.file;
 
 import fi.poltsi.vempain.admin.api.Constants;
 import fi.poltsi.vempain.admin.api.request.FileProcessRequest;
+import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
+import fi.poltsi.vempain.admin.api.response.RefreshResponse;
 import fi.poltsi.vempain.admin.api.response.StringList;
 import fi.poltsi.vempain.admin.api.response.file.FileAudioResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileCommonResponse;
@@ -209,4 +211,32 @@ public interface FileAPI {
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(path = MAIN_PATH + "/import-directory", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<StringList> importDirectoryMatch(@NotNull @RequestParam(name = "path") String path);
+
+	@Operation(summary = "Refresh the file information of a gallery", description = "Reload all the file data of the files belonging to a gallery",
+			   tags ="File")
+	@Parameter(name = "gallery_id", example = "123", description = "ID of the gallery to be refreshed", required = true)
+	@ApiResponses(value = {@ApiResponse(responseCode = "200",
+										description = "Gallery files refreshed",
+										content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+															schema = @Schema(implementation = GalleryRequest.class))}),
+						   @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
+						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
+	@SecurityRequirement(name = "Bearer Authentication")
+	@GetMapping(value = MAIN_PATH + "/refresh-gallery-files/{gallery_id}", produces = MediaType.APPLICATION_JSON_VALUE)
+	ResponseEntity<RefreshResponse> refreshGalleryFiles(@PathVariable(name = "gallery_id") long galleryId);
+
+
+	@Operation(summary = "Refresh the file information of all galleries", description = "Reload all the file data of the files belonging any gallery",
+			   tags ="File")
+	@ApiResponses(value = {@ApiResponse(responseCode = "200",
+										description = "All gallery files refreshed",
+										content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+															schema = @Schema(implementation = GalleryRequest.class))}),
+						   @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
+						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
+	@SecurityRequirement(name = "Bearer Authentication")
+	@GetMapping(value = MAIN_PATH + "/refresh-all-gallery-files", produces = MediaType.APPLICATION_JSON_VALUE)
+	ResponseEntity<RefreshResponse> refreshAllGalleryFiles();
 }

@@ -224,6 +224,7 @@ public class PublishService {
 		for (var galleryFile : galleryFileList) {
 			var fileCommon = fileCommonPageableRepository.findById(galleryFile.getFileCommonId()).orElseThrow(VempainEntityNotFoundException::new);
 			// Remove the site file if it exists
+			log.debug("Deleting site file by file ID: {}", fileCommon.getId());
 			siteFileRepository.deleteByFileId(fileCommon.getId());
 
 			var siteFile = SiteFile.builder()
@@ -235,23 +236,24 @@ public class PublishService {
 								   .build();
 
 			// Depending on the mimetype, we can fetch the width and height value if the file class is either image or video
-			if ((FileClassEnum.getFileClassByOrder(fileCommon.getFileClassId()) == FileClassEnum.IMAGE)
-				|| (FileClassEnum.getFileClassByOrder(fileCommon.getFileClassId()) == FileClassEnum.VIDEO)) {
-				var imageFile = fileImagePageableRepository.findById(fileCommon.getId());
-
-				// Images are shrunk to a smaller size determined by vempain.site.image-size at transfer time, and the dimensions are stored
+			if ((FileClassEnum.getFileClassByOrder(fileCommon.getFileClassId()) == FileClassEnum.IMAGE)) {
+				log.debug("Fetching image file by ID: {}", fileCommon.getId());
+				var imageFile = fileImagePageableRepository.findImageFileByParentId(fileCommon.getId());
+				log.debug("Image file is present? {}", imageFile.isPresent());
+				log.debug("Image width and height: {} x {}", fileCommon.getSiteFileDimension().getWidth(), fileCommon.getSiteFileDimension().getHeight());
+				// The site image has been shrunk to a smaller size determined by vempain.site.image-size at transfer time, and the dimensions are stored
 				// as transient field in the object
 				if (imageFile.isPresent()) {
 					siteFile.setWidth(fileCommon.getSiteFileDimension().width);
 					siteFile.setHeight(fileCommon.getSiteFileDimension().height);
-				} else {
-					var videoFile = fileVideoPageableRepository.findById(fileCommon.getId());
+				}
+			} else if (FileClassEnum.getFileClassByOrder(fileCommon.getFileClassId()) == FileClassEnum.VIDEO) {
+				var videoFile = fileVideoPageableRepository.findById(fileCommon.getId());
 
-					if (videoFile.isPresent()) {
-						siteFile.setWidth(videoFile.get().getWidth());
-						siteFile.setHeight(videoFile.get().getHeight());
-						siteFile.setLength(videoFile.get().getLength());
-					}
+				if (videoFile.isPresent()) {
+					siteFile.setWidth(videoFile.get().getWidth());
+					siteFile.setHeight(videoFile.get().getHeight());
+					siteFile.setLength(videoFile.get().getLength());
 				}
 			}
 

@@ -2,7 +2,10 @@ package fi.poltsi.vempain.admin.service.file;
 
 import fi.poltsi.vempain.admin.VempainMessages;
 import fi.poltsi.vempain.admin.api.FileClassEnum;
+import fi.poltsi.vempain.admin.api.PublishResultEnum;
 import fi.poltsi.vempain.admin.api.request.FileProcessRequest;
+import fi.poltsi.vempain.admin.api.response.RefreshDetailResponse;
+import fi.poltsi.vempain.admin.api.response.RefreshResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileAudioResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileCommonResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileDocumentResponse;
@@ -446,14 +449,12 @@ public class FileService extends AbstractService {
 			return null;
 		}
 
-		var jsonArray = new JSONArray(metadata);
+		var jsonObject = metadataToJsonObject(metadata);
 
-		if (jsonArray.isEmpty()) {
-			log.error("Failed to parse the metadata JSON from\n{}", metadata);
+		if (jsonObject == null) {
 			return null;
 		}
 
-		var jsonObject = jsonArray.getJSONObject(0);
 		log.debug("Extracted JSON object\n{}", jsonObject);
 		// Extract comment from metadata, it may not exist
 		var description = getDescriptionFromJson(jsonObject);
@@ -577,6 +578,18 @@ public class FileService extends AbstractService {
 		return fileCommon;
 	}
 
+	private static JSONObject metadataToJsonObject(String metadata) {
+		var jsonArray = new JSONArray(metadata);
+
+		if (jsonArray.isEmpty()) {
+			log.error("Failed to parse the metadata JSON from\n{}", metadata);
+			return null;
+		}
+
+		var jsonObject = jsonArray.getJSONObject(0);
+		return jsonObject;
+	}
+
 	private Instant dateTimeParser(String dateTimeString) {
 		if (dateTimeString == null || dateTimeString.isBlank()) {
 			return null;
@@ -592,12 +605,14 @@ public class FileService extends AbstractService {
 		return Instant.from(formatter.parse(dateTimeString, Instant::from));
 	}
 
-	private void extractAndStoreSubjects(long commonFileId, JSONObject jsonObject) {
+	@Transactional(propagation = Propagation.REQUIRED)
+	protected void extractAndStoreSubjects(long commonFileId, JSONObject jsonObject) {
 		List<String> subjectList = getSubjects(jsonObject);
 		saveSubjectList(commonFileId, subjectList);
 	}
 
-	private void saveSubjectList(long commonFileId, List<String> subjectList) {
+	@Transactional(propagation = Propagation.REQUIRED)
+	protected void saveSubjectList(long commonFileId, List<String> subjectList) {
 		for (String subjectName : subjectList) {
 			var optionalSubject = findSubjectBySubjectNameAndLanguage(subjectName, "");
 
@@ -675,8 +690,7 @@ public class FileService extends AbstractService {
 			return fileCommons;
 		}
 
-		return fileCommonPageableRepository.getFileCommonBySubjectId(optionalSubject.get()
-																					.getId());
+		return fileCommonPageableRepository.getFileCommonBySubjectId(optionalSubject.get().getId());
 	}
 
 	public Optional<Subject> findSubjectBySubjectNameAndLanguage(String subjectName, String language) {
@@ -690,19 +704,17 @@ public class FileService extends AbstractService {
 	}
 
 	private void saveFileSubject(Long subjectId, Long fileCommonId) {
-		log.info("Adding subject ID {} to fileCommon ID {}, checking if they exist", subjectId, fileCommonId);
+		log.debug("Adding subject ID {} to fileCommon ID {}, checking if they exist", subjectId, fileCommonId);
 
 		var optionalFileCommon = fileCommonPageableRepository.findById(fileCommonId);
 
 		if (optionalFileCommon.isPresent()) {
-			log.info("File common ID {} exists", optionalFileCommon.get()
-																   .getId());
+			log.debug("File common ID {} exists", optionalFileCommon.get().getId());
 
 			var optionalSubject = subjectRepository.findById(subjectId);
 
 			if (optionalSubject.isPresent()) {
-				log.info("Subject ID {} exists", optionalSubject.get()
-																.getId());
+				log.debug("Subject ID {} exists", optionalSubject.get().getId());
 				subjectService.addSubjectToFile(subjectId, fileCommonId);
 			} else {
 				log.error("Subject ID {} does not exist", subjectId);
@@ -710,7 +722,6 @@ public class FileService extends AbstractService {
 		} else {
 			log.error("File common ID {} does not exist", fileCommonId);
 		}
-
 	}
 
 	// FileAudio
@@ -958,5 +969,276 @@ public class FileService extends AbstractService {
 		} else {
 			log.error("Failed to find the common file part of the file image with parent ID: {}", fileEntity.getParentId());
 		}
+	}
+
+	@Transactional(propagation = Propagation.REQUIRED)
+	public RefreshResponse refreshAllGalleryFiles() {
+		var refreshResponse = RefreshResponse.builder()
+											 .details(new ArrayList<>())
+											 .build();
+		var successCount = 0L;
+		var failedCount  = 0L;
+		// First get all the gallery IDs
+		var galleryIds = galleryRepository.getAllGalleryIds();
+		for (Long galleryId : galleryIds) {
+			var galleryResponse = refreshGalleryFiles(galleryId);
+			log.debug("Gallery {} refresh result: {}", galleryId, galleryResponse);
+
+			successCount = +galleryResponse.getRefreshedItems();
+			failedCount  = +galleryResponse.getFailedItems();
+			refreshResponse.getDetails().addAll(galleryResponse.getDetails());
+		}
+
+		refreshResponse.setRefreshedItems(successCount);
+		refreshResponse.setFailedItems(failedCount);
+		refreshResponse.setResult(failedCount == 0 ? PublishResultEnum.OK : PublishResultEnum.FAIL);
+		return refreshResponse;
+	}
+
+	@Transactional(propagation = Propagation.REQUIRED)
+	public RefreshResponse refreshGalleryFiles(long galleryId) {
+		var galleryFiles   = galleryFileService.findGalleryFileByGalleryId(galleryId);
+		var refreshDetails = new ArrayList<RefreshDetailResponse>();
+		var successCount   = 0;
+		var failedCount    = 0;
+
+		for (var galleryFile : galleryFiles) {
+			log.debug("Refreshing gallery file: {}", galleryFile);
+			var refreshDetail = refreshFile(galleryFile.getFileCommonId());
+			refreshDetails.add(refreshDetail);
+
+			if (refreshDetail != null && refreshDetail.getResult() == PublishResultEnum.OK) {
+				successCount++;
+			} else {
+				failedCount++;
+			}
+		}
+
+		return RefreshResponse.builder()
+							  .refreshedItems(successCount)
+							  .failedItems(failedCount)
+							  .result(failedCount == 0 ? PublishResultEnum.OK : PublishResultEnum.FAIL)
+							  .details(refreshDetails)
+							  .build();
+	}
+
+	@Transactional(propagation = Propagation.REQUIRED)
+	protected RefreshDetailResponse refreshFile(long fileCommonId) {
+		// Get the fileCommon object
+		var optionalFileCommon = fileCommonPageableRepository.findById(fileCommonId);
+
+		if (optionalFileCommon.isEmpty()) {
+			log.error("Could not find fileCommon with ID {}", fileCommonId);
+			return null;
+		}
+
+		var fileCommon = optionalFileCommon.get();
+		var fileClass  = FileClassEnum.getFileClassByMimetype(fileCommon.getMimetype());
+		var resultMap  = new HashMap<PublishResultEnum, String>();
+
+		var fileResult = refreshCommonFile(fileCommon, resultMap);
+
+		if (fileResult) {
+
+			switch (fileClass) {
+				case IMAGE -> fileResult = refreshImageFile(fileCommon, resultMap);
+				case THUMB -> fileResult = refreshThumbFile(fileCommon, resultMap);
+				case AUDIO -> fileResult = refreshAudioFile(fileCommon, resultMap);
+				case VIDEO -> fileResult = refreshVideoFile(fileCommon, resultMap);
+				case DOCUMENT -> fileResult = refreshDocumentFile(fileCommon, resultMap);
+				// TODO Implement the rest of the file class refreshes
+				default -> {
+					log.error("Unhandled refresh file class: {}", fileClass);
+					fileResult = false;
+				}
+			}
+		}
+
+		var result = fileResult ? PublishResultEnum.OK : PublishResultEnum.FAIL;
+
+		var description = resultMap.get(result);
+
+		return RefreshDetailResponse.builder()
+									.itemId(fileCommonId)
+									.itemType(fileClass.shortName)
+									.result(result)
+									.resultDescription(description)
+									.build();
+	}
+
+	@Transactional(propagation = Propagation.REQUIRED)
+	protected boolean refreshCommonFile(FileCommon fileCommon, HashMap<PublishResultEnum, String> response) {
+		var convertedFile = fileCommon.getConvertedFile();
+
+		if (convertedFile == null || convertedFile.isBlank()) {
+			response.put(PublishResultEnum.FAIL, "Missing converted file");
+			log.error("Missing converted file for fileCommon ID {}", fileCommon.getId());
+			return false;
+		}
+
+		var convertedFilePath = Path.of(convertedDirectory + File.separator + convertedFile);
+
+		if (!Files.exists(convertedFilePath)) {
+			response.put(PublishResultEnum.FAIL, "Converted file does not exist");
+			log.error("Converted file does not exist: {}", convertedFilePath);
+			return false;
+		}
+
+		var sha1sum = getSha1OfFile(convertedFilePath.toFile());
+
+		if (sha1sum == null) {
+			response.put(PublishResultEnum.FAIL, "Could not get sha1sum of file");
+			log.error("Failed to get sha1sum of file: {}", convertedFilePath);
+			return false;
+		}
+
+		if (sha1sum.equals(fileCommon.getConvertedSha1sum())) {
+			response.put(PublishResultEnum.OK, "File has not changed");
+			return true;
+		}
+
+		response.put(PublishResultEnum.OK, "File has been updated");
+		fileCommon.setConvertedSha1sum(sha1sum);
+
+		// Get the metadata of the file
+		var metaTool = new MetadataTools();
+		var metadata = metaTool.getMetadataAsJSON(convertedFilePath.toFile());
+		fileCommon.setMetadata(metadata);
+		// Get the comment from metadata
+		var jsonObject = metadataToJsonObject(metadata);
+
+		if (jsonObject == null) {
+			response.put(PublishResultEnum.FAIL, "Failed to extract metadata");
+			return false;
+		}
+
+		var comment                = getDescriptionFromJson(jsonObject);
+		var originalDateTimeString = getOriginalDateTimeFromJson(jsonObject);
+		var originalDateTime       = dateTimeParser(originalDateTimeString);
+		var originalSecondFraction = getOriginalSecondFraction(jsonObject);
+		var originalDocumentId     = getOriginalDocumentId(jsonObject);
+		var convertedFileSize = getFileSize(convertedFilePath);
+
+		// Remove first old associations between subjects and files
+		subjectService.removeAllSubjectsFromFile(fileCommon.getId());
+		extractAndStoreSubjects(fileCommon.getId(), jsonObject);
+
+		fileCommon.setComment(comment);
+		fileCommon.setOriginalDatetime(originalDateTime);
+		fileCommon.setOriginalSecondFraction(originalSecondFraction);
+		fileCommon.setOriginalDocumentId(originalDocumentId);
+		fileCommon.setConvertedFilesize(convertedFileSize);
+		fileCommonPageableRepository.save(fileCommon);
+
+		return true;
+	}
+
+	@Transactional(propagation = Propagation.REQUIRED)
+	protected boolean refreshImageFile(FileCommon fileCommon, HashMap<PublishResultEnum, String> resultMap) {
+		var convertedFile = fileCommon.getConvertedFile();
+		var convertedFilePath = Path.of(convertedDirectory + File.separator + convertedFile);
+
+		var dimensions = getImageDimensions(convertedFilePath);
+		var optionalFileImage = fileImagePageableRepository.findImageFileByParentId(fileCommon.getId());
+
+		var fileImage = optionalFileImage.orElseGet(FileImage::new);
+
+		fileImage.setParentId(fileCommon.getId());
+		fileImage.setHeight(dimensions.height);
+		fileImage.setWidth(dimensions.width);
+		resultMap.put(PublishResultEnum.OK, "Image dimensions updated");
+
+		fileImagePageableRepository.save(fileImage);
+
+		return refreshThumbFile(fileCommon, resultMap);
+	}
+
+	@Transactional(propagation = Propagation.REQUIRED)
+	protected boolean refreshThumbFile(FileCommon fileCommon, HashMap<PublishResultEnum, String> resultMap) {
+		var optionalFileThumb = fileThumbPageableRepository.findFileThumbByParentId(fileCommon.getId());
+
+		if (optionalFileThumb.isPresent()) {
+			var thumbFile = optionalFileThumb.get();
+			var thumbFilePath = Path.of(convertedDirectory + File.separator + thumbFile.getFilepath() + File.separator + thumbFile.getFilename());
+
+			if (Files.exists(thumbFilePath)) {
+				log.debug("Removing existing thumb file: {}", thumbFilePath);
+
+				try {
+					Files.delete(thumbFilePath);
+				} catch (IOException e) {
+					log.error("Failed to remove thumb file: {}", thumbFilePath, e);
+					resultMap.put(PublishResultEnum.FAIL, "Failed to remove thumb file");
+					return false;
+				}
+			}
+
+			fileThumbPageableRepository.delete(thumbFile);
+			resultMap.put(PublishResultEnum.OK, "Old thumb file removed");
+		}
+
+		// Create a new thumb file
+		fileThumbService.generateThumbFile(fileCommon.getId());
+		var optionalUpdatedThumb = fileThumbPageableRepository.findFileThumbByParentId(fileCommon.getId());
+
+		if (optionalUpdatedThumb.isEmpty()) {
+			resultMap.put(PublishResultEnum.FAIL, "Failed to create thumb file");
+			return false;
+		}
+
+		resultMap.put(PublishResultEnum.OK, "Thumb file created");
+
+		return true;
+	}
+
+	@Transactional(propagation = Propagation.REQUIRED)
+	protected boolean refreshAudioFile(FileCommon fileCommon, HashMap<PublishResultEnum, String> resultMap) {
+		var convertedFilePath = Path.of(convertedDirectory + File.separator + fileCommon.getConvertedFile());
+		var audioLength = getAudioLength(convertedFilePath.toFile());
+
+		var optionalAudioFile = fileAudioPageableRepository.findFileAudioByParentId(fileCommon.getId());
+
+		var audioFile = optionalAudioFile.orElseGet(FileAudio::new);
+		audioFile.setLength(audioLength);
+		audioFile.setParentId(fileCommon.getId());
+
+		fileAudioPageableRepository.save(audioFile);
+		resultMap.put(PublishResultEnum.OK, "Audio length updated");
+
+		return false;
+	}
+
+	@Transactional(propagation = Propagation.REQUIRED)
+	protected boolean refreshVideoFile(FileCommon fileCommon, HashMap<PublishResultEnum, String> resultMap) {
+		var jsonObject = metadataToJsonObject(fileCommon.getMetadata());
+		var videoLength = getVideoLength(jsonObject);
+		var videoDimensions = getVideoDimensions(jsonObject);
+
+		var optionalVideoFile = fileVideoPageableRepository.findFileVideoByParentId(fileCommon.getId());
+		var videoFile = optionalVideoFile.orElseGet(FileVideo::new);
+
+		videoFile.setLength(videoLength);
+		videoFile.setHeight(videoDimensions.height);
+		videoFile.setWidth(videoDimensions.width);
+		videoFile.setParentId(fileCommon.getId());
+
+		fileVideoPageableRepository.save(videoFile);
+		resultMap.put(PublishResultEnum.OK, "Video length and dimensions updated");
+
+		return true;
+	}
+
+	private boolean refreshDocumentFile(FileCommon fileCommon, HashMap<PublishResultEnum, String> resultMap) {
+		var optionalDocumentFile = fileDocumentPageableRepository.findFileDocumentByParentId(fileCommon.getId());
+
+		var videoFile = optionalDocumentFile.orElseGet(FileDocument::new);
+		// TODO DocumentTools which allows us to get the number of pages
+		videoFile.setPages(0L);
+		videoFile.setParentId(fileCommon.getId());
+
+		fileDocumentPageableRepository.save(videoFile);
+		resultMap.put(PublishResultEnum.OK, "Document pages updated, this is still unimplemented in the backend");
+
+		return true;
 	}
 }
