@@ -7,11 +7,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 import lombok.Data;
-import lombok.ToString;
 
 import java.time.LocalDateTime;
 
-@ToString
 @Builder
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)

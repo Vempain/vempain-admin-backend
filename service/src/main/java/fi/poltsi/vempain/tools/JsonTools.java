@@ -129,7 +129,19 @@ public class JsonTools {
 		locations.put("XMP-dc", List.of("Subject"));
 		locations.put("XMP-lr", List.of("HierarchicalSubject"));
 		locations.put(IPTC_KEY, List.of(IPTC_KEYWORD_KEY));
-		return extractJsonArray(jsonObject, locations);
+
+		// We try first to extract an array of strings
+		var subjectList= extractJsonArray(jsonObject, locations);
+
+		// If the array is empty, we try to extract a single string
+		if (subjectList.isEmpty()) {
+			var subject = extractJsonString(jsonObject, locations);
+			if (subject != null && !subject.isBlank()) {
+				subjectList.add(subject);
+			}
+		}
+
+		return subjectList;
 	}
 
 	private static String extractJsonString(JSONObject jsonObject, Map<String, List<String>> locations) {
