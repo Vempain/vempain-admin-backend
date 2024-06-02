@@ -362,7 +362,7 @@ public class FileService extends AbstractService {
 	 *                                        return List of FileCommon objects
 	 */
 
-	public List<FileCommon> addFilesFromDirectory(FileProcessRequest fileProcessRequest) throws VempainEntityNotFoundException,
+	public List<FileCommon> addFilesFromDirectory(FileProcessRequest fileProcessRequest, long userId) throws VempainEntityNotFoundException,
 																								IOException, VempainAclException {
 		// String sourceDirectory, String siteDirectory, boolean createGallery,
 		// String galleryName, String galleryDescription
@@ -375,11 +375,11 @@ public class FileService extends AbstractService {
 			throw new VempainEntityNotFoundException("Could not find path to add files from", "filecommon");
 		}
 
-		var userId = accessService.getUserId();
 		final Long galleryId = fileProcessRequest.isGenerateGallery() ? createEmptyGallery(fileProcessRequest.getGalleryShortname(),
 																						   fileProcessRequest.getGalleryDescription(), userId).getId() : null;
 
 		var fileList = new ArrayList<Path>();
+
 		try (Stream<Path> files = Files.walk(sourcePath).filter(Files::isRegularFile)) {
 			files.forEach(fileList::add);
 		}
@@ -416,6 +416,7 @@ public class FileService extends AbstractService {
 			commonFileList.add(processCommonFile(relativePath, siteDirectory, userId, galleryId, sortOrder));
 			sortOrder++;
 		}
+
 		return commonFileList;
 	}
 

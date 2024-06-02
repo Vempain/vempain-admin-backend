@@ -149,7 +149,7 @@ public interface PageAPI {
 	@GetMapping(value = MAIN_PATH + "/publish/{page_id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<PublishResponse> publishPage(@PathVariable(name = "page_id") Long pageId);
 
-	@Operation(summary = "Delete", description = "Delete the page from frontend", tags = "Page")
+	@Operation(summary = "Delete", description = "Delete the page from site", tags = "Page")
 	@Parameter(name = "page_id", description = "Page ID", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Page deleted",

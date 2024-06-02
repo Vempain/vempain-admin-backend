@@ -154,6 +154,7 @@ public interface FileAPI {
 			   tags = "File")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Processing request detailing the source and target directories",
 														  required = true)
+	@SecurityRequirement(name = "Bearer Authentication")
 	@PostMapping(value = MAIN_PATH + "/add-directory", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<FileCommonResponse>> addFilesFromDirectory(@Valid @RequestBody FileProcessRequest fileProcessRequest);
 

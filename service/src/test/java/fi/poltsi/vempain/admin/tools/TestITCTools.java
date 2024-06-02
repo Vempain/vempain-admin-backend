@@ -61,6 +61,7 @@ import java.util.stream.Stream;
 import static fi.poltsi.vempain.admin.api.Constants.ADMIN_ID;
 import static fi.poltsi.vempain.admin.api.FileClassEnum.getFileClassByMimetype;
 import static fi.poltsi.vempain.admin.tools.TestUserAccountTools.encryptPassword;
+import static fi.poltsi.vempain.admin.tools.TestUserAccountTools.randomPassword;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -494,8 +495,7 @@ public class TestITCTools {
 	/////////////////// User start
 	@Transactional
 	public Long generateUser() {
-		var testUserAccountTools = new TestUserAccountTools();
-		var password             = testUserAccountTools.randomPassword(16);
+		var password = randomPassword(16);
 		return generateUser(password);
 	}
 

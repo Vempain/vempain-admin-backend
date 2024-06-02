@@ -6,14 +6,37 @@ while [[ "$#" -gt 0 ]]; do
     --developer-name) DEVELOPER_NAME="$2"; shift ;;
     --skip-root-check) SKIP_ROOT_CHECK="true" ;;
     --skip-answers) SKIP_ANSWERS="true" ;;
+    --help) SHOW_HELP="true" ;;
     *) echo "Unknown parameter passed: $1"; exit 1 ;;
   esac
   shift
 done
 
+function printHelp() {
+  echo "This script sets up the test environment for the project."
+  echo "It uses the values from the service/src/test/resources/application.properties file to set up the environment."
+  echo "This includes users and directories. Please review the property file before running this script to fully understand the changes."
+  echo
+  echo "Options:"
+  echo "  --developer-name  The name of the developer for whom the test environment is being set up"
+  echo "  --skip-root-check  Skip checking whether the root executes this script. Default is to perform the check"
+  echo "  --skip-answers  Skip the confirmation prompts"
+  echo "  --help  Show this help message"
+
+}
+
+# If the help parameter is passed, show the help message
+if [ -n "${SHOW_HELP}" ]; then
+  printHelp
+  exit 0
+fi
+
 # Set the developer name to the current user if it is not set
 if [ -z "${DEVELOPER_NAME}" ]; then
-  DEVELOPER_NAME=$(whoami)
+  echo "ERROR: Developer name must be set with --developer-name"
+  echo
+  printHelp
+  exit 1
 fi
 
 # Make sure the username exists

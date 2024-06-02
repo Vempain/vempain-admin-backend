@@ -14,6 +14,7 @@ import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.rest.file.FileAPI;
 import fi.poltsi.vempain.admin.service.file.FileService;
+import fi.poltsi.vempain.tools.AuthTools;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.function.TriFunction;
@@ -76,10 +77,12 @@ public class FileController implements FileAPI {
 
 	@Override
 	public ResponseEntity<List<FileCommonResponse>> addFilesFromDirectory(FileProcessRequest fileProcessRequest) {
-		log.info("Received request: {}", fileProcessRequest);
+		var userId = AuthTools.getCurrentUserId();
+		log.debug("Received request: {} from user ID {}", fileProcessRequest, userId);
 		List<FileCommon> fileCommonList;
+
 		try {
-			fileCommonList = fileService.addFilesFromDirectory(fileProcessRequest);
+			fileCommonList = fileService.addFilesFromDirectory(fileProcessRequest, userId);
 			var fileCommonResponseList = new ArrayList<FileCommonResponse>();
 
 			for (var fileCommon : fileCommonList) {
