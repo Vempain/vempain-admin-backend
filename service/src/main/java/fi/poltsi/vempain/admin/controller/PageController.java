@@ -159,7 +159,7 @@ public class PageController implements PageAPI {
 	}
 
 	@Override
-	public ResponseEntity<PublishResponse> publishPage(Long pageId) {
+	public ResponseEntity<PublishResponse> publishPage(Long pageId, Instant publishTime) {
 		PublishResponse response;
 
 		try {

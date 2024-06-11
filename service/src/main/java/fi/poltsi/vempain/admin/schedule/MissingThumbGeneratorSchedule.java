@@ -45,7 +45,13 @@ public class MissingThumbGeneratorSchedule {
 
 				if (optionalFileCommon.isPresent()) {
 					var fileCommon = optionalFileCommon.get();
-					// The thumb is created from the app file, so it can't be empty
+					// Make sure the converted file exists
+					if (!Files.exists(Paths.get(convertedDirectory + File.separator + fileCommon.getConvertedFile()))) {
+						log.warn("Could not generate new thumb for parent ID {} because no converted file exists", fileCommon.getConvertedFile());
+						continue;
+					}
+
+					// The thumb is created from the converted file, so it can't be empty
 					if (fileCommon.getConvertedFile() != null && !fileCommon.getConvertedFile().isEmpty()) {
 						var thumbFile = Paths.get(convertedDirectory + File.separator +
 												  fileThumb.getFilepath() + File.separator +

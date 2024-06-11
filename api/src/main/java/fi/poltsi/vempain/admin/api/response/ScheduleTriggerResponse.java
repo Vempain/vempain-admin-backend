@@ -13,6 +13,8 @@ import lombok.Data;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Schema(description = "Schedule response")
 public class ScheduleTriggerResponse {
+	@Schema(description = "Schedule id", example = "123", requiredMode = Schema.RequiredMode.REQUIRED)
+	private long id;
 	@Schema(description = "Schedule name", example = "AclConsistencySchedule", requiredMode = Schema.RequiredMode.REQUIRED)
 	private String scheduleName;
 	@Schema(description = "Schedule status", example = "ACTIVE", requiredMode = Schema.RequiredMode.REQUIRED)

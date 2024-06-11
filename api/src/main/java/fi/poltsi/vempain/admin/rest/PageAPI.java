@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.time.Instant;
 import java.util.List;
 
 // TODO add validation annotation here
@@ -137,8 +138,10 @@ public interface PageAPI {
 
 	@Operation(summary = "Publish page", description = "Publish a new version of a page", tags = "Page")
 	@Parameter(name = "page_id", description = "Page ID", required = true)
+	@Parameter(name = "publish_time", description = "Datetime when the page should be published. If the time is not given, the page is published immediately," +
+													" otherwise the publishing will be scheduled for the given time and we return 200")
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
-										description = "Page published",
+										description = "Page published, or will be published",
 										content = {@Content(array = @ArraySchema(schema = @Schema(implementation = PublishResponse.class)),
 															mediaType = MediaType.APPLICATION_JSON_VALUE)}),
 						   @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
@@ -147,7 +150,7 @@ public interface PageAPI {
 						   @ApiResponse( responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = MAIN_PATH + "/publish/{page_id}", produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<PublishResponse> publishPage(@PathVariable(name = "page_id") Long pageId);
+	ResponseEntity<PublishResponse> publishPage(@PathVariable(name = "page_id") Long pageId, @RequestParam(name = "publish_time", required = false) Instant publishTime);
 
 	@Operation(summary = "Delete", description = "Delete the page from site", tags = "Page")
 	@Parameter(name = "page_id", description = "Page ID", required = true)

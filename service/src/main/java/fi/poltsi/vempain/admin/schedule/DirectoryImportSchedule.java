@@ -1,0 +1,75 @@
+package fi.poltsi.vempain.admin.schedule;
+
+import fi.poltsi.vempain.admin.api.request.FileProcessRequest;
+import fi.poltsi.vempain.admin.api.response.file.FileImportScheduleResponse;
+import fi.poltsi.vempain.admin.exception.VempainAclException;
+import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
+import fi.poltsi.vempain.admin.repository.file.ScanQueueScheduleRepository;
+import fi.poltsi.vempain.admin.service.file.FileService;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+@Slf4j
+@AllArgsConstructor
+@Service
+public class DirectoryImportSchedule {
+	private static final long                             DELAY         = 5 * 60 * 1000L;
+	private static final String                           INITIAL_DELAY =
+			"#{ 5 * 1000 + T(java.util.concurrent.ThreadLocalRandom).current().nextInt(" + DELAY + ") }";
+
+	private final FileService fileService;
+	private final ScanQueueScheduleRepository scanQueueScheduleRepository;
+
+	@Scheduled(fixedDelay = DELAY, initialDelayString = INITIAL_DELAY)
+	public void importFilesFromDirectory() {
+		var scheduledImports = scanQueueScheduleRepository.findAll();
+
+		if (scheduledImports.isEmpty()) {
+			log.info("No scheduled imports found");
+			return;
+		}
+
+		for (var scheduledImport : scheduledImports) {
+			log.info("Importing files from directory: {}", scheduledImport.getSourceDirectory());
+			var request = FileProcessRequest.builder()
+											.sourceDirectory(scheduledImport.getSourceDirectory())
+											.destinationDirectory(scheduledImport.getDestinationDirectory())
+											.generateGallery(scheduledImport.isCreateGallery())
+											.galleryShortname(scheduledImport.getGalleryShortname())
+											.galleryDescription(scheduledImport.getGalleryDescription())
+											.generatePage(scheduledImport.isCreatePage())
+											.pageTitle(scheduledImport.getPageTitle())
+											.pagePath(scheduledImport.getPagePath())
+											.pageBody(scheduledImport.getPageBody())
+											.pageFormId(scheduledImport.getPageFormId())
+											.build();
+			try {
+				fileService.addFilesFromDirectory(request, scheduledImport.getCreatedBy());
+			} catch (VempainEntityNotFoundException e) {
+				log.error("The import directory no longer exists: {}", scheduledImport.getSourceDirectory());
+			} catch (IOException e) {
+				log.error("Error importing files from directory: {}", scheduledImport.getSourceDirectory(), e);
+			} catch (VempainAclException e) {
+				log.error("ACL error importing files from directory: {}", scheduledImport.getSourceDirectory(), e);
+			} finally {
+				scanQueueScheduleRepository.delete(scheduledImport);
+			}
+		}
+	}
+
+	public List<FileImportScheduleResponse> getUpcomingFileImportSchedules() {
+		var fileImportSchedules = scanQueueScheduleRepository.findAll();
+		var fileImportScheduleResponses = new ArrayList<FileImportScheduleResponse>();
+		for (var fileImportSchedule : fileImportSchedules) {
+			fileImportScheduleResponses.add(fileImportSchedule.toResponse());
+		}
+
+		return fileImportScheduleResponses;
+	}
+}

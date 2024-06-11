@@ -13,6 +13,7 @@ import fi.poltsi.vempain.admin.entity.file.FileCommon;
 import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.rest.file.FileAPI;
+import fi.poltsi.vempain.admin.service.ScheduleService;
 import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.tools.AuthTools;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +39,8 @@ import java.util.List;
 @RequiredArgsConstructor
 @RestController
 public class FileController implements FileAPI {
-	private final FileService fileService;
+	private final FileService     fileService;
+	private final ScheduleService scheduleService;
 
 	@Override
 	public ResponseEntity<Page<FileAudioResponse>> getPageableAudioFiles(int pageNumber, int pageSize, String sorting, String filter, String filterColumn) {
@@ -81,9 +83,16 @@ public class FileController implements FileAPI {
 		log.debug("Received request: {} from user ID {}", fileProcessRequest, userId);
 		List<FileCommon> fileCommonList;
 
+		var fileCommonResponseList = new ArrayList<FileCommonResponse>();
+
+		if (fileProcessRequest.isSchedule()) {
+			scheduleService.scheduleFileProcessRequest(fileProcessRequest, userId);
+			// We return an empty list if the request is scheduled
+			return ResponseEntity.ok(fileCommonResponseList);
+		}
+
 		try {
 			fileCommonList = fileService.addFilesFromDirectory(fileProcessRequest, userId);
-			var fileCommonResponseList = new ArrayList<FileCommonResponse>();
 
 			for (var fileCommon : fileCommonList) {
 				fileCommonResponseList.add(fileCommon.toResponse());
@@ -121,7 +130,7 @@ public class FileController implements FileAPI {
 
 		for (var matchedDirectory : matchedDirectories) {
 			// Split the matched directory to each part
-			var splitted = matchedDirectory.split(File.separator);
+			var splitted     = matchedDirectory.split(File.separator);
 			var compoundPath = splitted[0];
 			parentDirectories.add(compoundPath);
 
