@@ -134,4 +134,8 @@ public class FileThumbService {
 	public void delete(long id) {
 		fileThumbPageableRepository.deleteById(id);
 	}
+
+	public void deleteByParentId(long parentId) {
+		fileThumbPageableRepository.deleteByParentId(parentId);
+	}
 }

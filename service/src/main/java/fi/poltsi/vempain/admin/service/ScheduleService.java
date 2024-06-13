@@ -3,7 +3,9 @@ package fi.poltsi.vempain.admin.service;
 import fi.poltsi.vempain.admin.api.ContentTypeEnum;
 import fi.poltsi.vempain.admin.api.PublishStatusEnum;
 import fi.poltsi.vempain.admin.api.request.FileProcessRequest;
+import fi.poltsi.vempain.admin.api.request.PublishScheduleRequest;
 import fi.poltsi.vempain.admin.api.response.PublishScheduleResponse;
+import fi.poltsi.vempain.admin.api.response.file.FileImportScheduleResponse;
 import fi.poltsi.vempain.admin.entity.PublishSchedule;
 import fi.poltsi.vempain.admin.entity.file.ScanQueueSchedule;
 import fi.poltsi.vempain.admin.repository.PublishScheduleRepository;
@@ -42,6 +44,23 @@ public class ScheduleService {
 		scanQueueScheduleRepository.save(scanQueueSchedule);
 	}
 
+	public List<FileImportScheduleResponse> getUpcomingFileImportSchedules() {
+		var fileImportSchedules = scanQueueScheduleRepository.findAll();
+		var fileImportScheduleResponses = new ArrayList<FileImportScheduleResponse>();
+		for (var fileImportSchedule : fileImportSchedules) {
+			fileImportScheduleResponses.add(fileImportSchedule.toResponse());
+		}
+
+		return fileImportScheduleResponses;
+	}
+
+
+	public FileImportScheduleResponse getFileImportScheduleById(long id) {
+		var optionalScanQueueSchedule = scanQueueScheduleRepository.findById(id);
+
+		return optionalScanQueueSchedule.map(ScanQueueSchedule::toResponse).orElse(null);
+	}
+
 	public void schedulePublish(Instant publishTime, long itemId, ContentTypeEnum contentTypeEnum) {
 		var creationInstant = Instant.now();
 		var scanQueueSchedule = PublishSchedule.builder()
@@ -70,5 +89,25 @@ public class ScheduleService {
 		}
 
 		return publishScheduleResponses;
+	}
+
+	public PublishScheduleResponse getPublishScheduleById(long id) {
+		var publishSchedule = publishScheduleRepository.findById(id);
+
+		return publishSchedule.map(PublishSchedule::toResponse).orElse(null);
+	}
+
+	public PublishScheduleResponse triggerPublishSchedule(PublishScheduleRequest publishScheduleRequest) {
+		var publishSchedule = publishScheduleRepository.findById(publishScheduleRequest.getPublishId());
+
+		if (publishSchedule.isPresent()) {
+			var schedule = publishSchedule.get();
+			schedule.setPublishTime(Instant.now().plusSeconds(publishScheduleRequest.getDelay()));
+			schedule.setPublishStatus(PublishStatusEnum.PROCESSING);
+			var newSchedule = publishScheduleRepository.save(schedule);
+			return newSchedule.toResponse();
+		}
+
+		return null;
 	}
 }

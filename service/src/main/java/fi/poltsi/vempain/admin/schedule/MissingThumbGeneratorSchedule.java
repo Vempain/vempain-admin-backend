@@ -90,6 +90,14 @@ public class MissingThumbGeneratorSchedule {
 
 		if (optionalFileCommon.isPresent()) {
 			var fileCommon = optionalFileCommon.get();
+			// Make sure the file also exists on the filesystem
+			if (!Files.exists(Paths.get(convertedDirectory + File.separator + fileCommon.getConvertedFile()))) {
+				log.warn("Removing thumb for parent ID {} because no converted file exists", fileCommon.getConvertedFile());
+				fileThumbService.deleteByParentId(parentId);
+				return;
+			}
+
+
 			// The thumb is created from the source file, so it can't be empty
 			if (fileCommon.getConvertedFile() != null && !fileCommon.getConvertedFile().isEmpty()) {
 				log.info("Generating thumb image for fileCommon: {}", parentId);

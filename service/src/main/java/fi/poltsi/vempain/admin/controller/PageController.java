@@ -1,9 +1,11 @@
 package fi.poltsi.vempain.admin.controller;
 
 import fi.poltsi.vempain.admin.VempainMessages;
+import fi.poltsi.vempain.admin.api.ContentTypeEnum;
 import fi.poltsi.vempain.admin.api.PublishResultEnum;
 import fi.poltsi.vempain.admin.api.QueryDetailEnum;
 import fi.poltsi.vempain.admin.api.request.PageRequest;
+import fi.poltsi.vempain.admin.api.request.PublishRequest;
 import fi.poltsi.vempain.admin.api.response.DeleteResponse;
 import fi.poltsi.vempain.admin.api.response.PageResponse;
 import fi.poltsi.vempain.admin.api.response.PublishResponse;
@@ -13,6 +15,7 @@ import fi.poltsi.vempain.admin.rest.PageAPI;
 import fi.poltsi.vempain.admin.service.DeleteService;
 import fi.poltsi.vempain.admin.service.PageService;
 import fi.poltsi.vempain.admin.service.PublishService;
+import fi.poltsi.vempain.admin.service.ScheduleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -28,9 +31,10 @@ import java.util.List;
 @RequiredArgsConstructor
 @RestController
 public class PageController implements PageAPI {
-	private final PageService    pageService;
-	private final PublishService publishService;
-	private final DeleteService  deleteService;
+	private final PageService     pageService;
+	private final PublishService  publishService;
+	private final DeleteService   deleteService;
+	private final ScheduleService scheduleService;
 
 	@Override
 	public ResponseEntity<List<PageResponse>> getPages(QueryDetailEnum queryDetailEnum) {
@@ -159,11 +163,27 @@ public class PageController implements PageAPI {
 	}
 
 	@Override
-	public ResponseEntity<PublishResponse> publishPage(Long pageId, Instant publishTime) {
+	public ResponseEntity<PublishResponse> publishPage(PublishRequest publishRequest) {
 		PublishResponse response;
 
+		if (publishRequest == null || publishRequest.getId() < 1L) {
+			log.error(VempainMessages.MALFORMED_ID_IN_REQUEST_MSG, publishRequest);
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_ID_IN_REQUEST);
+		}
+
+		if (publishRequest.isPublishSchedule()) {
+			scheduleService.schedulePublish(publishRequest.getPublishDateTime(), publishRequest.getId(), ContentTypeEnum.PAGE);
+
+			response = PublishResponse.builder()
+									  .result(PublishResultEnum.OK)
+									  .message("Successfully scheduled page for publishing")
+									  .timestamp(Instant.now())
+									  .build();
+			return ResponseEntity.ok(response);
+		}
+
 		try {
-			publishService.publishPage(pageId);
+			publishService.publishPage(publishRequest.getId());
 			response = PublishResponse.builder()
 									  .result(PublishResultEnum.OK)
 									  .message("Successfully published page")
@@ -199,15 +219,11 @@ public class PageController implements PageAPI {
 	}
 
 	private void verifyPageRequest(PageRequest pageRequest) {
-		if (pageRequest == null ||
-			(pageRequest.getPath() == null ||
-			 pageRequest.getPath().isBlank()) ||
-			(pageRequest.getTitle() == null ||
-			 pageRequest.getTitle().isBlank()) ||
-			(pageRequest.getHeader() == null ||
-			 pageRequest.getHeader().isBlank()) ||
-			(pageRequest.getAcls() == null ||
-			 pageRequest.getAcls().isEmpty())) {
+		if (pageRequest == null
+			|| (pageRequest.getPath() == null || pageRequest.getPath().isBlank())
+			|| (pageRequest.getTitle() == null || pageRequest.getTitle().isBlank())
+			|| (pageRequest.getHeader() == null || pageRequest.getHeader().isBlank())
+			|| (pageRequest.getAcls() == null || pageRequest.getAcls().isEmpty())) {
 			log.error("Malformed request when creating new page: {}", pageRequest);
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Malformed page creation request");
 		}

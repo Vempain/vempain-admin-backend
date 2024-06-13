@@ -2,6 +2,7 @@ package fi.poltsi.vempain.admin.rest.file;
 
 import fi.poltsi.vempain.admin.api.Constants;
 import fi.poltsi.vempain.admin.api.QueryDetailEnum;
+import fi.poltsi.vempain.admin.api.request.PublishRequest;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
 import fi.poltsi.vempain.admin.api.response.DeleteResponse;
 import fi.poltsi.vempain.admin.api.response.PageResponse;
@@ -22,6 +23,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -157,7 +159,7 @@ public interface GalleryAPI {
 	ResponseEntity<PublishResponse> publishAll();
 
 	@Operation(summary = "Publish gallery", description = "Publish a new version of a gallery", tags = "Publish")
-	@Parameter(name = "gallery_id", description = "Gallery ID", required = true)
+	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Publish request with page ID and optional delay in seconds", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Gallery published",
 										content = {@Content(array = @ArraySchema(schema = @Schema(implementation = PublishResponse.class)),
@@ -167,6 +169,6 @@ public interface GalleryAPI {
 						   @ApiResponse(responseCode = "404", description = "No gallery found", content = @Content),
 						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
-	@GetMapping(value = MAIN_PATH + "/publish/{gallery_id}", produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<PublishResponse> publishGallery(@PathVariable(name = "gallery_id") Long galleryId);
+	@PatchMapping(value = MAIN_PATH + "/publish", produces = MediaType.APPLICATION_JSON_VALUE)
+	ResponseEntity<PublishResponse> publishGallery(@Valid @RequestBody PublishRequest publishRequest);
 }

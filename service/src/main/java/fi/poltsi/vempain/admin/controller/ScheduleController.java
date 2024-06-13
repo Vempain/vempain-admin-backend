@@ -1,6 +1,7 @@
 package fi.poltsi.vempain.admin.controller;
 
-import fi.poltsi.vempain.admin.api.request.ScheduleTriggerRequest;
+import fi.poltsi.vempain.admin.api.request.PublishScheduleRequest;
+import fi.poltsi.vempain.admin.api.request.TriggerSystemScheduleRequest;
 import fi.poltsi.vempain.admin.api.response.PublishScheduleResponse;
 import fi.poltsi.vempain.admin.api.response.ScheduleTriggerResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileImportScheduleResponse;
@@ -48,12 +49,35 @@ public class ScheduleController implements ScheduleAPI {
 	}
 
 	@Override
-	public ResponseEntity<ScheduleTriggerResponse> triggerSchedule(ScheduleTriggerRequest schedule) {
+	public ResponseEntity<ScheduleTriggerResponse> getSystemScheduleByName(String systemScheduleName) {
 		Set<ScheduledTask> scheduledTaskSet = postProcessor.getScheduledTasks();
 
 		for (ScheduledTask scheduledTask : scheduledTaskSet) {
-			if (scheduledTask.getTask().toString().equals(schedule.getScheduleName())) {
-				taskScheduler.schedule(scheduledTask.getTask().getRunnable(), Instant.now());
+			if (scheduledTask.getTask()
+							 .toString()
+							 .equals(systemScheduleName)) {
+				return ResponseEntity.ok(ScheduleTriggerResponse.builder()
+																.id(1L)
+																.scheduleName(scheduledTask.getTask().toString())
+																.status("ACTIVE")
+																.build());
+			}
+		}
+
+		return ResponseEntity.notFound()
+							 .build();
+	}
+
+	@Override
+	public ResponseEntity<ScheduleTriggerResponse> triggerSystemSchedule(TriggerSystemScheduleRequest schedule) {
+		log.debug("Call to trigger system schedule: {}", schedule);
+		Set<ScheduledTask> scheduledTaskSet = postProcessor.getScheduledTasks();
+
+		for (ScheduledTask scheduledTask : scheduledTaskSet) {
+			if (scheduledTask.getTask()
+							 .toString()
+							 .equals(schedule.getScheduleName())) {
+				taskScheduler.schedule(scheduledTask.getTask().getRunnable(), Instant.now().plusSeconds(schedule.getDelay()));
 
 				return ResponseEntity.ok(ScheduleTriggerResponse.builder()
 																.id(1L)
@@ -62,6 +86,8 @@ public class ScheduleController implements ScheduleAPI {
 																.build());
 			}
 		}
+
+		log.error("Failed to trigger system schedule with name: {}", schedule.getScheduleName());
 
 		return ResponseEntity.notFound().build();
 	}
@@ -74,9 +100,49 @@ public class ScheduleController implements ScheduleAPI {
 	}
 
 	@Override
+	public ResponseEntity<PublishScheduleResponse> getPublishingScheduleById(long id) {
+		log.debug("Call to get publishing schedule ID: {}", id);
+		var publishScheduleResponse = scheduleService.getPublishScheduleById(id);
+
+		if (publishScheduleResponse == null) {
+			return ResponseEntity.notFound()
+								 .build();
+		}
+
+		return ResponseEntity.ok(publishScheduleResponse);
+	}
+
+	@Override
+	public ResponseEntity<PublishScheduleResponse> triggerPublishSchedule(PublishScheduleRequest publishScheduleRequest) {
+		log.debug("Call to trigger publishing schedule: {}", publishScheduleRequest);
+
+		var publishScheduleResponse = scheduleService.triggerPublishSchedule(publishScheduleRequest);
+
+		if (publishScheduleResponse == null) {
+			return ResponseEntity.notFound()
+								 .build();
+		}
+
+		return ResponseEntity.ok(publishScheduleResponse);
+	}
+
+	@Override
 	public ResponseEntity<List<FileImportScheduleResponse>> listFileImportSchedules() {
 		log.debug("Call to get all the file import schedules");
-		var upcomingFileImportSchedules = directoryImportSchedule.getUpcomingFileImportSchedules();
+		var upcomingFileImportSchedules = scheduleService.getUpcomingFileImportSchedules();
 		return ResponseEntity.ok(upcomingFileImportSchedules);
+	}
+
+	@Override
+	public ResponseEntity<FileImportScheduleResponse> getFileImportScheduleById(long id) {
+		log.debug("Call to get file import schedule ID: {}", id);
+		var fileImportSchedule = scheduleService.getFileImportScheduleById(id);
+
+		if (fileImportSchedule == null) {
+			return ResponseEntity.notFound()
+								 .build();
+		}
+
+		return ResponseEntity.ok(fileImportSchedule);
 	}
 }

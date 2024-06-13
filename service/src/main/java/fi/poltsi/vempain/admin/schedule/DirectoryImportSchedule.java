@@ -1,7 +1,6 @@
 package fi.poltsi.vempain.admin.schedule;
 
 import fi.poltsi.vempain.admin.api.request.FileProcessRequest;
-import fi.poltsi.vempain.admin.api.response.file.FileImportScheduleResponse;
 import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.repository.file.ScanQueueScheduleRepository;
@@ -12,8 +11,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 @Slf4j
 @AllArgsConstructor
@@ -61,15 +58,5 @@ public class DirectoryImportSchedule {
 				scanQueueScheduleRepository.delete(scheduledImport);
 			}
 		}
-	}
-
-	public List<FileImportScheduleResponse> getUpcomingFileImportSchedules() {
-		var fileImportSchedules = scanQueueScheduleRepository.findAll();
-		var fileImportScheduleResponses = new ArrayList<FileImportScheduleResponse>();
-		for (var fileImportSchedule : fileImportSchedules) {
-			fileImportScheduleResponses.add(fileImportSchedule.toResponse());
-		}
-
-		return fileImportScheduleResponses;
 	}
 }

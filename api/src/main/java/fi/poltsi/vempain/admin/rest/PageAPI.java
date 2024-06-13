@@ -3,6 +3,7 @@ package fi.poltsi.vempain.admin.rest;
 import fi.poltsi.vempain.admin.api.Constants;
 import fi.poltsi.vempain.admin.api.QueryDetailEnum;
 import fi.poltsi.vempain.admin.api.request.PageRequest;
+import fi.poltsi.vempain.admin.api.request.PublishRequest;
 import fi.poltsi.vempain.admin.api.response.DeleteResponse;
 import fi.poltsi.vempain.admin.api.response.PageResponse;
 import fi.poltsi.vempain.admin.api.response.PublishResponse;
@@ -22,13 +23,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.time.Instant;
 import java.util.List;
 
 // TODO add validation annotation here
@@ -137,9 +138,7 @@ public interface PageAPI {
 	ResponseEntity<PublishResponse> publishAll();
 
 	@Operation(summary = "Publish page", description = "Publish a new version of a page", tags = "Page")
-	@Parameter(name = "page_id", description = "Page ID", required = true)
-	@Parameter(name = "publish_time", description = "Datetime when the page should be published. If the time is not given, the page is published immediately," +
-													" otherwise the publishing will be scheduled for the given time and we return 200")
+	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Publish request with page ID and optional delay in seconds", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Page published, or will be published",
 										content = {@Content(array = @ArraySchema(schema = @Schema(implementation = PublishResponse.class)),
@@ -149,8 +148,8 @@ public interface PageAPI {
 						   @ApiResponse(responseCode = "404", description = "No page found", content = @Content),
 						   @ApiResponse( responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
-	@GetMapping(value = MAIN_PATH + "/publish/{page_id}", produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<PublishResponse> publishPage(@PathVariable(name = "page_id") Long pageId, @RequestParam(name = "publish_time", required = false) Instant publishTime);
+	@PatchMapping(value = MAIN_PATH + "/publish", produces = MediaType.APPLICATION_JSON_VALUE)
+	ResponseEntity<PublishResponse> publishPage(@Valid @RequestBody PublishRequest publishRequest);
 
 	@Operation(summary = "Delete", description = "Delete the page from site", tags = "Page")
 	@Parameter(name = "page_id", description = "Page ID", required = true)

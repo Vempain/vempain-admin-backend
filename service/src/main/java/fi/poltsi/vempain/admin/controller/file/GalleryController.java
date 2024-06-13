@@ -1,7 +1,10 @@
 package fi.poltsi.vempain.admin.controller.file;
 
+import fi.poltsi.vempain.admin.VempainMessages;
+import fi.poltsi.vempain.admin.api.ContentTypeEnum;
 import fi.poltsi.vempain.admin.api.PublishResultEnum;
 import fi.poltsi.vempain.admin.api.QueryDetailEnum;
+import fi.poltsi.vempain.admin.api.request.PublishRequest;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
 import fi.poltsi.vempain.admin.api.response.DeleteResponse;
 import fi.poltsi.vempain.admin.api.response.PublishResponse;
@@ -12,12 +15,14 @@ import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.rest.file.GalleryAPI;
 import fi.poltsi.vempain.admin.service.PageGalleryService;
 import fi.poltsi.vempain.admin.service.PublishService;
+import fi.poltsi.vempain.admin.service.ScheduleService;
 import fi.poltsi.vempain.admin.service.file.GalleryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -30,6 +35,7 @@ public class GalleryController implements GalleryAPI {
 	private final GalleryService     galleryService;
 	private final PublishService     publishService;
 	private final PageGalleryService pageGalleryService;
+	private final ScheduleService    scheduleService;
 
 	@Override
 	public ResponseEntity<List<GalleryResponse>> getGalleries(QueryDetailEnum queryDetailEnum) {
@@ -148,10 +154,27 @@ public class GalleryController implements GalleryAPI {
 	}
 
 	@Override
-	public ResponseEntity<PublishResponse> publishGallery(Long galleryId) {
+	public ResponseEntity<PublishResponse> publishGallery(PublishRequest publishRequest) {
 		PublishResponse response;
+
+		if (publishRequest == null || publishRequest.getId() < 1L) {
+			log.error(VempainMessages.MALFORMED_ID_IN_REQUEST_MSG, publishRequest);
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_ID_IN_REQUEST);
+		}
+
+		if (publishRequest.isPublishSchedule()) {
+			scheduleService.schedulePublish(publishRequest.getPublishDateTime(), publishRequest.getId(), ContentTypeEnum.PAGE);
+
+			response = PublishResponse.builder()
+									  .result(PublishResultEnum.OK)
+									  .message("Successfully scheduled page for publishing")
+									  .timestamp(Instant.now())
+									  .build();
+			return ResponseEntity.ok(response);
+		}
+
 		try {
-			publishService.publishGallery(galleryId);
+			publishService.publishGallery(publishRequest.getId());
 			response = PublishResponse.builder()
 									  .result(PublishResultEnum.OK)
 									  .message("Successfully published gallery")

@@ -12,6 +12,7 @@ import fi.poltsi.vempain.admin.service.AclService;
 import fi.poltsi.vempain.admin.service.DeleteService;
 import fi.poltsi.vempain.admin.service.PageService;
 import fi.poltsi.vempain.admin.service.PublishService;
+import fi.poltsi.vempain.admin.service.ScheduleService;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,14 +47,16 @@ class PageControllerUTC {
 	@Mock
 	private PublishService publishService;
 	@Mock
-	private DeleteService  deleteService;
+	private DeleteService   deleteService;
+	@Mock
+	private ScheduleService scheduleService;
 
 	private PageController pageController;
 
 	@BeforeEach
 	void setUp() {
 		MockitoAnnotations.openMocks(this);
-		pageController = new PageController(pageService, publishService, deleteService);
+		pageController = new PageController(pageService, publishService, deleteService, scheduleService);
 	}
 
 	@Test
