@@ -36,7 +36,7 @@ jobs:
 
       - name: Run test setup
         shell: bash
-        run: sudo ./testSetup.sh --skip-root-check --skip-answers
+        run: sudo ./testSetup.sh --developer-name $(whoami) --skip-root-check --skip-answers
 
       - name: Run tests with Gradle
         run: ./gradlew clean test
