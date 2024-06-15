@@ -163,7 +163,8 @@ public class GalleryController implements GalleryAPI {
 		}
 
 		if (publishRequest.isPublishSchedule()) {
-			scheduleService.schedulePublish(publishRequest.getPublishDateTime(), publishRequest.getId(), ContentTypeEnum.PAGE);
+			scheduleService.schedulePublish(publishRequest.getPublishDateTime(), publishRequest.getId(),
+											ContentTypeEnum.GALLERY, publishRequest.getPublishMessage());
 
 			response = PublishResponse.builder()
 									  .result(PublishResultEnum.OK)

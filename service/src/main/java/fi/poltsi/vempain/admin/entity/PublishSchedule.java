@@ -11,7 +11,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -40,7 +39,6 @@ public class PublishSchedule {
 	@Column(name = "publish_time", nullable = false)
 	private Instant publishTime;
 
-	@Size(max = 255)
 	@NotNull
 	@Column(name = "publish_status", nullable = false)
 	@Enumerated(STRING)
@@ -49,7 +47,6 @@ public class PublishSchedule {
 	@Column(name = "publish_message", length = Integer.MAX_VALUE)
 	private String publishMessage;
 
-	@Size(max = 255)
 	@NotNull
 	@Column(name = "publish_type", nullable = false)
 	@Enumerated(STRING)

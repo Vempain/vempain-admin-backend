@@ -119,8 +119,7 @@ public class ScheduleController implements ScheduleAPI {
 		var publishScheduleResponse = scheduleService.triggerPublishSchedule(publishScheduleRequest);
 
 		if (publishScheduleResponse == null) {
-			return ResponseEntity.notFound()
-								 .build();
+			return ResponseEntity.notFound().build();
 		}
 
 		return ResponseEntity.ok(publishScheduleResponse);

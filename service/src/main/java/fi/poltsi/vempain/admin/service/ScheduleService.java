@@ -61,16 +61,22 @@ public class ScheduleService {
 		return optionalScanQueueSchedule.map(ScanQueueSchedule::toResponse).orElse(null);
 	}
 
-	public void schedulePublish(Instant publishTime, long itemId, ContentTypeEnum contentTypeEnum) {
+	public PublishScheduleResponse schedulePublish(Instant publishTime, long itemId, ContentTypeEnum contentTypeEnum, String publishMessage) {
 		var creationInstant = Instant.now();
+		var publishStatus = PublishStatusEnum.NOT_PUBLISHED;
+
 		var scanQueueSchedule = PublishSchedule.builder()
+											   .publishId(itemId)
 											   .publishTime(publishTime)
 											   .publishType(contentTypeEnum)
+											   .publishMessage(publishMessage)
+											   .publishStatus(publishStatus)
 											   .createdAt(creationInstant)
 											   .updatedAt(creationInstant)
 											   .build();
 
-		publishScheduleRepository.save(scanQueueSchedule);
+		var newSchedule = publishScheduleRepository.save(scanQueueSchedule);
+		return newSchedule.toResponse();
 	}
 
 	public List<PublishScheduleResponse> getUpcomingPublishSchedules() {
@@ -102,8 +108,14 @@ public class ScheduleService {
 
 		if (publishSchedule.isPresent()) {
 			var schedule = publishSchedule.get();
-			schedule.setPublishTime(Instant.now().plusSeconds(publishScheduleRequest.getDelay()));
-			schedule.setPublishStatus(PublishStatusEnum.PROCESSING);
+			schedule.setPublishTime(publishScheduleRequest.getPublishTime());
+
+			if (!publishScheduleRequest.getPublishTime().isAfter(Instant.now())) {
+				schedule.setPublishStatus(PublishStatusEnum.PROCESSING);
+			} else {
+				schedule.setPublishStatus(PublishStatusEnum.NOT_PUBLISHED);
+			}
+
 			var newSchedule = publishScheduleRepository.save(schedule);
 			return newSchedule.toResponse();
 		}

@@ -172,7 +172,17 @@ public class PageController implements PageAPI {
 		}
 
 		if (publishRequest.isPublishSchedule()) {
-			scheduleService.schedulePublish(publishRequest.getPublishDateTime(), publishRequest.getId(), ContentTypeEnum.PAGE);
+			var publishResponse = scheduleService.schedulePublish(publishRequest.getPublishDateTime(), publishRequest.getId(),
+														   ContentTypeEnum.PAGE, publishRequest.getPublishMessage());
+
+			if (publishResponse == null) {
+				response = PublishResponse.builder()
+										  .result(PublishResultEnum.FAIL)
+										  .message("Failed to schedule page for publishing")
+										  .timestamp(Instant.now())
+										  .build();
+				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+			}
 
 			response = PublishResponse.builder()
 									  .result(PublishResultEnum.OK)

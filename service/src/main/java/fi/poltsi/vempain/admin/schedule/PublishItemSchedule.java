@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+
 @Slf4j
 @AllArgsConstructor
 @Service
@@ -26,50 +28,46 @@ public class PublishItemSchedule {
 	@Scheduled(fixedDelay = DELAY, initialDelayString = INITIAL_DELAY)
 	@Transactional(propagation = Propagation.REQUIRED)
 	protected void publishItems() {
-		var scheduledPublishes = publishScheduleRepository.findAllUpcomingSchedulesByPublishStatus(PublishStatusEnum.NOT_PUBLISHED);
+		var scheduledPublishes = publishScheduleRepository.findAllByPublishStatusEqualsAndPublishTimeBefore(PublishStatusEnum.NOT_PUBLISHED, Instant.now());
 
 		if (scheduledPublishes.isEmpty()) {
 			log.info("No scheduled publishes found");
 			return;
 		}
 
+		var counter = 0;
+
 		for (var scheduledPublish : scheduledPublishes) {
+			updatePublishStatus(scheduledPublish.getId(), PublishStatusEnum.PROCESSING);
+
 			log.info("Publishing item: {}", scheduledPublish.getPublishType());
 
 			if (scheduledPublish.getPublishType() == ContentTypeEnum.PAGE) {
-				publishPage(scheduledPublish.getPublishId());
+				try {
+					publishService.publishPage(scheduledPublish.getPublishId());
+				} catch (VempainEntityNotFoundException e) {
+					log.error("The page to publish no longer exists: {}", scheduledPublish.getPublishId());
+				}
 			} else if (scheduledPublish.getPublishType() == ContentTypeEnum.GALLERY) {
-				publishGallery(scheduledPublish.getPublishId());
+				try {
+					publishService.publishGallery(scheduledPublish.getPublishId());
+				} catch (VempainEntityNotFoundException e) {
+					log.error("The gallery to publish no longer exists: {}", scheduledPublish.getPublishId());
+				}
 			} else {
 				log.warn("Unknown publish type: {}", scheduledPublish.getPublishType());
 			}
+
+			updatePublishStatus(scheduledPublish.getId(), PublishStatusEnum.PUBLISHED);
+
+			counter++;
 		}
 
-		log.info("Publishing items");
+		log.info("{} items published", counter);
 	}
 
 	@Transactional(propagation = Propagation.REQUIRED)
-	protected void publishPage(Long pageId) {
-		try {
-			publishService.publishPage(pageId);
-			updatePublishStatus(pageId, ContentTypeEnum.PAGE);
-		} catch (VempainEntityNotFoundException e) {
-			log.error("The page to publish no longer exists: {}", pageId);
-		}
-	}
-
-	@Transactional(propagation = Propagation.REQUIRED)
-	protected void publishGallery(Long galleryId) {
-		try {
-			publishService.publishGallery(galleryId);
-			updatePublishStatus(galleryId, ContentTypeEnum.GALLERY);
-		} catch (VempainEntityNotFoundException e) {
-			log.error("The gallery to publish no longer exists: {}", galleryId);
-		}
-	}
-
-	@Transactional(propagation = Propagation.REQUIRED)
-	protected void updatePublishStatus(Long publishId, ContentTypeEnum contentTypeEnum) {
-		publishScheduleRepository.updatePublishStatus(publishId, contentTypeEnum);
+	protected void updatePublishStatus(Long publishId, PublishStatusEnum publishStatusEnum) {
+		publishScheduleRepository.updatePublishStatus(publishId, publishStatusEnum);
 	}
 }
