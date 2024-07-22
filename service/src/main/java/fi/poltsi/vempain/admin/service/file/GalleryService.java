@@ -157,4 +157,8 @@ public class GalleryService extends AbstractService {
 
 		gallery.setCommonFiles(fileCommons);
 	}
+
+	public Iterable<Gallery> findAll() {
+		return galleryRepository.findAll();
+	}
 }

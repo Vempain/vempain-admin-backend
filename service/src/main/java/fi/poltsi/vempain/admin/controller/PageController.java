@@ -140,23 +140,38 @@ public class PageController implements PageAPI {
 	// //////////////////// Publishing actions
 
 	@Override
-	public ResponseEntity<PublishResponse> publishAll() {
+	public ResponseEntity<PublishResponse> publishAll(Instant publishDate) {
 		PublishResponse response;
 
-		try {
-			publishService.publishAllPages();
+		if (publishDate != null) {
+			var pages = pageService.findAll();
+
+			for (var page: pages) {
+				createPagePublishSchedule(publishDate, page.getId(), "Publish all pages");
+			}
+
 			response = PublishResponse.builder()
 									  .result(PublishResultEnum.OK)
-									  .message("Successfully published all pages")
+									  .message("Successfully scheduled to publish all pages")
 									  .timestamp(Instant.now())
 									  .build();
-		} catch (VempainEntityNotFoundException e) {
-			response = PublishResponse.builder()
-									  .result(PublishResultEnum.FAIL)
-									  .message("Could not find any pages")
-									  .timestamp(Instant.now())
-									  .build();
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+		} else {
+			try {
+				publishService.publishAllPages();
+				response = PublishResponse.builder()
+										  .result(PublishResultEnum.OK)
+										  .message("Successfully published all pages")
+										  .timestamp(Instant.now())
+										  .build();
+			} catch (VempainEntityNotFoundException e) {
+				response = PublishResponse.builder()
+										  .result(PublishResultEnum.FAIL)
+										  .message("Could not find any pages")
+										  .timestamp(Instant.now())
+										  .build();
+				return ResponseEntity.status(HttpStatus.NOT_FOUND)
+									 .body(response);
+			}
 		}
 
 		return ResponseEntity.ok(response);
@@ -172,24 +187,7 @@ public class PageController implements PageAPI {
 		}
 
 		if (publishRequest.isPublishSchedule()) {
-			var publishResponse = scheduleService.schedulePublish(publishRequest.getPublishDateTime(), publishRequest.getId(),
-														   ContentTypeEnum.PAGE, publishRequest.getPublishMessage());
-
-			if (publishResponse == null) {
-				response = PublishResponse.builder()
-										  .result(PublishResultEnum.FAIL)
-										  .message("Failed to schedule page for publishing")
-										  .timestamp(Instant.now())
-										  .build();
-				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-			}
-
-			response = PublishResponse.builder()
-									  .result(PublishResultEnum.OK)
-									  .message("Successfully scheduled page for publishing")
-									  .timestamp(Instant.now())
-									  .build();
-			return ResponseEntity.ok(response);
+			return createPagePublishSchedule(publishRequest.getPublishDateTime(), publishRequest.getId(), publishRequest.getPublishMessage());
 		}
 
 		try {
@@ -208,6 +206,28 @@ public class PageController implements PageAPI {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
 		}
 
+		return ResponseEntity.ok(response);
+	}
+
+	private ResponseEntity<PublishResponse> createPagePublishSchedule(Instant publishDateTime, long pageId, String message) {
+		PublishResponse response;
+		var publishResponse = scheduleService.schedulePublish(publishDateTime, pageId, ContentTypeEnum.PAGE, message);
+
+		if (publishResponse == null) {
+			response = PublishResponse.builder()
+									  .result(PublishResultEnum.FAIL)
+									  .message("Failed to schedule page for publishing")
+									  .timestamp(Instant.now())
+									  .build();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+								 .body(response);
+		}
+
+		response = PublishResponse.builder()
+								  .result(PublishResultEnum.OK)
+								  .message("Successfully scheduled page for publishing")
+								  .timestamp(Instant.now())
+								  .build();
 		return ResponseEntity.ok(response);
 	}
 

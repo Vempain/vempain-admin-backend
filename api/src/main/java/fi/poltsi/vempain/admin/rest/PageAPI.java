@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.time.Instant;
 import java.util.List;
 
 // TODO add validation annotation here
@@ -125,6 +126,8 @@ public interface PageAPI {
 
 	// /////////////////////////// Publishing actions
 	@Operation(summary = "Publish all pages", description = "Publish a new version of all pages", tags = "Page")
+	@Parameter(name = "publish_date", description = "Date when the all the pages should be published, in YYYY-MM-DDTHH:mm:ss format",
+			   example = "2027-12-31T23:59:59")
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "All pages published",
 										content = {@Content(array = @ArraySchema(schema = @Schema(implementation = PublishResponse.class)),
@@ -135,7 +138,7 @@ public interface PageAPI {
 						   @ApiResponse( responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = MAIN_PATH + "/publish", produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<PublishResponse> publishAll();
+	ResponseEntity<PublishResponse> publishAll(@RequestParam(name = "publish_date", required = false)Instant publishDate);
 
 	@Operation(summary = "Publish page", description = "Publish a new version of a page", tags = "Page")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Publish request with page ID and optional delay in seconds", required = true)

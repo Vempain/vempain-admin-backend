@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.time.Instant;
 import java.util.List;
 
 @Tag(name = "Gallery", description = "REST API for Vempain gallery objects")
@@ -146,6 +147,8 @@ public interface GalleryAPI {
 	// /////////////////////////// Publishing actions
 
 	@Operation(summary = "Publish all galleries", description = "Publish a new version of all galleries", tags = "Publish")
+	@Parameter(name = "publish_date", description = "Date when the all the galleries should be published, in YYYY-MM-DDTHH:mm:ss format",
+			   example = "2027-12-31T23:59:59")
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Galleries published",
 										content = {@Content(array = @ArraySchema(schema = @Schema(implementation = PublishResponse.class)),
@@ -156,7 +159,7 @@ public interface GalleryAPI {
 						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = MAIN_PATH + "/publish", produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<PublishResponse> publishAll();
+	ResponseEntity<PublishResponse> publishAll(@RequestParam(name = "publish_date", required = false) Instant publishDate);
 
 	@Operation(summary = "Publish gallery", description = "Publish a new version of a gallery", tags = "Publish")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Publish request with page ID and optional delay in seconds", required = true)
