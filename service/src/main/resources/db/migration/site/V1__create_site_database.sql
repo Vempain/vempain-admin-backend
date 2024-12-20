@@ -25,10 +25,10 @@ CREATE TABLE file
 	comment  TEXT DEFAULT NULL,
 	path     VARCHAR(512) NOT NULL,
 	mimetype VARCHAR(255) NOT NULL,
-	width    INT  DEFAULT NULL,
-	height   INT  DEFAULT NULL,
-	length   INT  DEFAULT NULL,
-	pages    INT  DEFAULT NULL,
+	width    BIGINT  DEFAULT NULL,
+	height   BIGINT  DEFAULT NULL,
+	length   BIGINT  DEFAULT NULL,
+	pages    BIGINT  DEFAULT NULL,
 	metadata TEXT DEFAULT NULL
 );
 

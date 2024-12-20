@@ -14,7 +14,7 @@ CREATE TABLE user_account
 	public_account BOOLEAN      NOT NULL DEFAULT false,
 	street         VARCHAR(255)          DEFAULT NULL,
 	pob            VARCHAR(255)          DEFAULT NULL,
-	status		 VARCHAR(10)  NOT NULL CHECK (status IN ('REGISTERED', 'ACTIVE', 'DISABLED')),
+	status         VARCHAR(10)  NOT NULL CHECK (status IN ('REGISTERED', 'ACTIVE', 'DISABLED')),
 	creator        BIGINT       NOT NULL,
 	created        TIMESTAMP    NOT NULL,
 	modifier       BIGINT,
@@ -50,10 +50,10 @@ CREATE TABLE component
 	comp_data TEXT,
 	comp_name VARCHAR(255) NOT NULL UNIQUE,
 	locked    BOOLEAN      NOT NULL DEFAULT false,
-	creator        BIGINT       NOT NULL,
-	created        TIMESTAMP    NOT NULL,
-	modifier       BIGINT,
-	modified       TIMESTAMP,
+	creator   BIGINT       NOT NULL,
+	created   TIMESTAMP    NOT NULL,
+	modifier  BIGINT,
+	modified  TIMESTAMP,
 	FOREIGN KEY (creator) REFERENCES user_account (id),
 	FOREIGN KEY (modifier) REFERENCES user_account (id)
 );
@@ -84,10 +84,10 @@ CREATE TABLE file_common
 	site_sha1sum             VARCHAR(40),
 	metadata                 TEXT,
 	locked                   BOOLEAN   NOT NULL DEFAULT false,
-	creator        BIGINT       NOT NULL,
-	created        TIMESTAMP    NOT NULL,
-	modifier       BIGINT,
-	modified       TIMESTAMP,
+	creator                  BIGINT    NOT NULL,
+	created                  TIMESTAMP NOT NULL,
+	modifier                 BIGINT,
+	modified                 TIMESTAMP,
 	FOREIGN KEY (creator) REFERENCES user_account (id),
 	FOREIGN KEY (modifier) REFERENCES user_account (id),
 	FOREIGN KEY (file_class_id) REFERENCES file_class (id) ON DELETE CASCADE
@@ -100,10 +100,10 @@ CREATE TABLE gallery
 	description VARCHAR(255),
 	shortname   VARCHAR(255) NOT NULL UNIQUE,
 	locked      BOOLEAN      NOT NULL DEFAULT false,
-	creator        BIGINT       NOT NULL,
-	created        TIMESTAMP    NOT NULL,
-	modifier       BIGINT,
-	modified       TIMESTAMP,
+	creator     BIGINT       NOT NULL,
+	created     TIMESTAMP    NOT NULL,
+	modifier    BIGINT,
+	modified    TIMESTAMP,
 	FOREIGN KEY (creator) REFERENCES user_account (id),
 	FOREIGN KEY (modifier) REFERENCES user_account (id)
 );
@@ -186,10 +186,10 @@ CREATE TABLE layout
 	layout_name VARCHAR(255) NOT NULL UNIQUE,
 	structure   TEXT,
 	locked      BOOLEAN      NOT NULL DEFAULT false,
-	creator        BIGINT       NOT NULL,
-	created        TIMESTAMP    NOT NULL,
-	modifier       BIGINT,
-	modified       TIMESTAMP,
+	creator     BIGINT       NOT NULL,
+	created     TIMESTAMP    NOT NULL,
+	modifier    BIGINT,
+	modified    TIMESTAMP,
 	FOREIGN KEY (creator) REFERENCES user_account (id),
 	FOREIGN KEY (modifier) REFERENCES user_account (id)
 );
@@ -201,10 +201,10 @@ CREATE TABLE form
 	form_name VARCHAR(255) NOT NULL UNIQUE,
 	layout_id BIGINT,
 	locked    BOOLEAN      NOT NULL DEFAULT false,
-	creator        BIGINT       NOT NULL,
-	created        TIMESTAMP    NOT NULL,
-	modifier       BIGINT,
-	modified       TIMESTAMP,
+	creator   BIGINT       NOT NULL,
+	created   TIMESTAMP    NOT NULL,
+	modifier  BIGINT,
+	modified  TIMESTAMP,
 	FOREIGN KEY (creator) REFERENCES user_account (id),
 	FOREIGN KEY (modifier) REFERENCES user_account (id),
 	FOREIGN KEY (layout_id) REFERENCES layout (id)
@@ -251,10 +251,10 @@ CREATE TABLE page
 	title     VARCHAR(512) NOT NULL,
 	cache     TEXT,
 	locked    BOOLEAN      NOT NULL DEFAULT false,
-	creator        BIGINT       NOT NULL,
-	created        TIMESTAMP    NOT NULL,
-	modifier       BIGINT,
-	modified       TIMESTAMP,
+	creator   BIGINT       NOT NULL,
+	created   TIMESTAMP    NOT NULL,
+	modifier  BIGINT,
+	modified  TIMESTAMP,
 	FOREIGN KEY (creator) REFERENCES user_account (id),
 	FOREIGN KEY (modifier) REFERENCES user_account (id),
 	FOREIGN KEY (form_id) REFERENCES form (id),
@@ -268,19 +268,19 @@ CREATE TABLE unit
 	description VARCHAR(255),
 	name        VARCHAR(255) NOT NULL UNIQUE,
 	locked      BOOLEAN      NOT NULL DEFAULT false,
-	creator        BIGINT       NOT NULL,
-	created        TIMESTAMP    NOT NULL,
-	modifier       BIGINT,
-	modified       TIMESTAMP,
+	creator     BIGINT       NOT NULL,
+	created     TIMESTAMP    NOT NULL,
+	modifier    BIGINT,
+	modified    TIMESTAMP,
 	FOREIGN KEY (creator) REFERENCES user_account (id),
 	FOREIGN KEY (modifier) REFERENCES user_account (id)
 );
 
 CREATE TABLE user_unit
 (
+	id      BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 	user_id BIGINT NOT NULL,
 	unit_id BIGINT NOT NULL,
-	PRIMARY KEY (user_id, unit_id),
 	FOREIGN KEY (user_id) REFERENCES user_account (id) ON DELETE CASCADE,
 	FOREIGN KEY (unit_id) REFERENCES unit (id) ON DELETE CASCADE
 );
@@ -315,7 +315,8 @@ SELECT setval('file_class_id_seq', (SELECT MAX(id) + 1 FROM file_class));
 
 INSERT INTO user_account (id, acl_id, birthday, created, creator, locked, email, login_name, name, nick, password, priv_type, public_account, street, status)
 	OVERRIDING SYSTEM VALUE
-VALUES (1, 1, '1900-01-01 00:00:00', NOW(), 1, false, 'admin@nohost.nodomain', 'admin', 'Vempain Administrator', 'Admin', 'Disabled', 'PRIVATE', false, '', 'ACTIVE');
+VALUES (1, 1, '1900-01-01 00:00:00', NOW(), 1, false, 'admin@nohost.nodomain', 'admin', 'Vempain Administrator', 'Admin', 'Disabled', 'PRIVATE', false, '',
+		'ACTIVE');
 
 SELECT setval('user_account_id_seq', (SELECT MAX(id) + 1 FROM user_account));
 

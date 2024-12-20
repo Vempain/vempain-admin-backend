@@ -34,7 +34,7 @@ class UserAccountUnitUTC {
 
     @Test
     void getUserOk() {
-        assertEquals(1L, userUnit.getUserAccount().getId());
+        assertEquals(1L, userUnit.getUser().getId());
     }
 
     @Test
@@ -72,8 +72,8 @@ class UserAccountUnitUTC {
     @Test
     void setUserOk() {
         UserAccount newUserAccount = TestUTCTools.generateUser(2L);
-        userUnit.setUserAccount(newUserAccount);
-        assertEquals(newUserAccount, userUnit.getUserAccount());
+        userUnit.setUser(newUserAccount);
+        assertEquals(newUserAccount, userUnit.getUser());
     }
 
     @Test
@@ -85,7 +85,7 @@ class UserAccountUnitUTC {
 
     @Test
     void builderOk() {
-        assertEquals(1L, userUnit.getUserAccount().getId());
+        assertEquals(1L, userUnit.getUser().getId());
         assertEquals(1L, userUnit.getUnit().getId());
     }
 }

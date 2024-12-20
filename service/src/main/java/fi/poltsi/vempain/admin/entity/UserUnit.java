@@ -24,7 +24,7 @@ public class UserUnit implements Serializable {
 	private UserUnitId  id;
 	@ManyToOne(fetch = FetchType.EAGER)
 	@MapsId("userId")
-	private UserAccount userAccount;
+	private UserAccount user;
 	@ManyToOne(fetch = FetchType.EAGER)
 	@MapsId("unitId")
 	private Unit        unit;
