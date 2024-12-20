@@ -222,7 +222,7 @@ public class TestUTCTools {
 	public static UserUnit generateUserUnit(long userId, long unitId) {
 		return UserUnit.builder()
 					   .id(generateUserUnitId(userId, unitId))
-					   .userAccount(generateUser(userId))
+					   .user(generateUser(userId))
 					   .unit(generateUnit(unitId))
 					   .build();
 	}

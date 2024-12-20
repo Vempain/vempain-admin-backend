@@ -23,8 +23,8 @@ import lombok.NoArgsConstructor;
 public class Language {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "language_id")
-	private int    languageId;
+	@Column(name = "id")
+	private int    id;
 	@Basic
 	@Column(name = "description")
 	private String description;
