@@ -14,9 +14,9 @@ import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.admin.service.file.FileThumbService;
 import fi.poltsi.vempain.admin.service.file.GalleryFileService;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
@@ -67,16 +67,8 @@ class FileServiceUTC {
 	@Mock
 	private PageGalleryService             pageGalleryService;
 
+	@InjectMocks
 	private FileService fileService;
-
-	@BeforeEach
-	void setUp() {
-		fileService = new FileService(aclService, fileCommonPageableRepository, fileImagePageableRepository,
-									  fileAudioPageableRepository, fileDocumentPageableRepository, fileVideoPageableRepository,
-									  fileThumbPageableRepository,
-									  galleryRepository, galleryFileService, accessService, subjectRepository, fileThumbService, subjectService,
-									  pageService, pageGalleryService);
-	}
 
 	@Test
 	void findAllGalleriesOk() {

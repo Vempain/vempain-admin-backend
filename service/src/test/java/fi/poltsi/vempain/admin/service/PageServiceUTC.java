@@ -8,12 +8,12 @@ import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.repository.PageRepository;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.web.authentication.session.SessionAuthenticationException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -28,6 +28,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class PageServiceUTC {
     @Mock
     PageRepository pageRepository;
@@ -36,13 +37,8 @@ class PageServiceUTC {
     @Mock
     AccessService      accessService;
 
+	@InjectMocks
     private PageService pageService;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        pageService = new PageService(aclService, accessService, pageRepository);
-    }
 
     @Test
     void findAllOk() {
@@ -144,7 +140,7 @@ class PageServiceUTC {
     void saveFromPageRequestOk() {
         Page page = TestUTCTools.generatePage(1L);
         PageRequest request = TestUTCTools.generatePageRequestFromPage(page);
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         when(pageRepository.findByPath(request.getPath())).thenReturn(null);
         when(aclService.saveNewAclForObject(request.getAcls())).thenReturn(1L);
         when(pageRepository.save(any())).thenReturn(page);
@@ -164,13 +160,13 @@ class PageServiceUTC {
     void saveFromPageRequestInvalidUserSessionFail() {
         Page page = TestUTCTools.generatePage(1L);
         PageRequest request = TestUTCTools.generatePageRequestFromPage(page);
-        doThrow(new SessionAuthenticationException("Test exception")).when(accessService).getUserId();
+        doThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Test exception")).when(accessService).getValidUserId();
 
         try {
             pageService.saveFromPageRequest(request);
             fail("Should have caught a SessionAuthenticationException");
         } catch (ResponseStatusException e) {
-            assertEquals("401 UNAUTHORIZED \"" + VempainMessages.INVALID_USER_SESSION + "\"", e.getMessage());
+            assertEquals("401 UNAUTHORIZED \"Test exception\"", e.getMessage());
             assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
         } catch (Exception e) {
             fail("Should not have received any other exception: " + e);
@@ -181,7 +177,7 @@ class PageServiceUTC {
     void saveFromPageRequestPathExistsFail() {
         Page page = TestUTCTools.generatePage(1L);
         PageRequest request = TestUTCTools.generatePageRequestFromPage(page);
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         when(pageRepository.findByPath(request.getPath())).thenReturn(page);
 
         try {
@@ -199,7 +195,7 @@ class PageServiceUTC {
     void updateFromRequestOk() throws VempainAclException {
         Page page = TestUTCTools.generatePage(1L);
         PageRequest request = TestUTCTools.generatePageRequestFromPage(page);
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         when(pageRepository.findById(request.getId())).thenReturn(page);
         when(accessService.hasModifyPermission(page.getAclId())).thenReturn(true);
         doNothing().when(aclService).updateFromRequestList(request.getAcls());
@@ -220,13 +216,13 @@ class PageServiceUTC {
     void updateFromRequestNoSessionFail() {
         Page page = TestUTCTools.generatePage(1L);
         PageRequest request = TestUTCTools.generatePageRequestFromPage(page);
-        doThrow(new SessionAuthenticationException("Test exception")).when(accessService).getUserId();
+        doThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Test exception")).when(accessService).getValidUserId();
 
         try {
             pageService.updateFromRequest(request);
             fail("We should not have been able to update page with no session");
         } catch (ResponseStatusException e) {
-            assertEquals("401 UNAUTHORIZED \"" + VempainMessages.INVALID_USER_SESSION + "\"", e.getMessage());
+            assertEquals("401 UNAUTHORIZED \"Test exception\"", e.getMessage());
             assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
         } catch (Exception e) {
             fail("Should not have received any other exception: " + e);
@@ -237,7 +233,7 @@ class PageServiceUTC {
     void updateFromRequestNoPageFoundFail() {
         Page page = TestUTCTools.generatePage(1L);
         PageRequest request = TestUTCTools.generatePageRequestFromPage(page);
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         when(pageRepository.findById(request.getId())).thenReturn(null);
 
         try {
@@ -255,7 +251,7 @@ class PageServiceUTC {
     void updateFromRequestNoPermissionsFail() {
         Page page = TestUTCTools.generatePage(1L);
         PageRequest request = TestUTCTools.generatePageRequestFromPage(page);
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         when(pageRepository.findById(request.getId())).thenReturn(page);
         when(accessService.hasModifyPermission(page.getAclId())).thenReturn(false);
 
@@ -274,7 +270,7 @@ class PageServiceUTC {
     void updateFromRequestUpdatedPathAlreadyExistsFail() {
         Page page = TestUTCTools.generatePage(1L);
         PageRequest request = TestUTCTools.generatePageRequestFromPage(page);
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         when(pageRepository.findById(request.getId())).thenReturn(page);
         when(accessService.hasModifyPermission(page.getAclId())).thenReturn(true);
         request.setPath("/new-path");
@@ -297,7 +293,7 @@ class PageServiceUTC {
     void updateFromRequestUpdatedPathOk() throws VempainAclException {
         Page page = TestUTCTools.generatePage(1L);
         PageRequest request = TestUTCTools.generatePageRequestFromPage(page);
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         when(pageRepository.findById(request.getId())).thenReturn(page);
         when(accessService.hasModifyPermission(page.getAclId())).thenReturn(true);
         request.setPath("/new-path");
@@ -322,7 +318,7 @@ class PageServiceUTC {
     void updateFromRequestUpdatedPathNoPageFoundOk() throws VempainAclException {
         Page page = TestUTCTools.generatePage(1L);
         PageRequest request = TestUTCTools.generatePageRequestFromPage(page);
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         when(pageRepository.findById(request.getId())).thenReturn(page);
         when(accessService.hasModifyPermission(page.getAclId())).thenReturn(true);
         request.setPath("/new-path");
@@ -347,10 +343,9 @@ class PageServiceUTC {
     void updateFromRequestACLExceptionFail() throws VempainAclException {
         Page page = TestUTCTools.generatePage(1L);
         PageRequest request = TestUTCTools.generatePageRequestFromPage(page);
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         when(pageRepository.findById(request.getId())).thenReturn(page);
         when(accessService.hasModifyPermission(page.getAclId())).thenReturn(true);
-        when(pageRepository.findByPath(request.getPath())).thenReturn(null);
         when(accessService.hasModifyPermission(page.getAclId())).thenReturn(true);
         doThrow(new VempainAclException("Test exception")).when(aclService).updateFromRequestList(request.getAcls());
 
@@ -369,10 +364,9 @@ class PageServiceUTC {
     void updateFromRequestSaveExceptionFail() throws VempainAclException {
         Page page = TestUTCTools.generatePage(1L);
         PageRequest request = TestUTCTools.generatePageRequestFromPage(page);
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         when(pageRepository.findById(request.getId())).thenReturn(page);
         when(accessService.hasModifyPermission(page.getAclId())).thenReturn(true);
-        when(pageRepository.findByPath(request.getPath())).thenReturn(null);
         when(accessService.hasModifyPermission(page.getAclId())).thenReturn(true);
         doNothing().when(aclService).updateFromRequestList(request.getAcls());
         doThrow(new RuntimeException("Test exception")).when(pageRepository).save(any());
@@ -394,7 +388,6 @@ class PageServiceUTC {
         when(pageRepository.findById(1L)).thenReturn(page);
         when(accessService.hasDeletePermission(1L)).thenReturn(true);
         doNothing().when(aclService).deleteByAclId(1L);
-        doNothing().when(pageRepository).deletePageById(1L);
 
         try {
             pageService.deleteById(1L);
@@ -471,13 +464,13 @@ class PageServiceUTC {
 
     @Test
     void deleteByIdNoSessionFail() {
-        doThrow(new SessionAuthenticationException("Test exception")).when(accessService).getUserId();
+        doThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Test exception")).when(accessService).getValidUserId();
 
         try {
             pageService.deleteById(1L);
             fail("We should not have been able to delete the page with no session");
         } catch (ResponseStatusException e) {
-            assertEquals("401 UNAUTHORIZED \"" + VempainMessages.INVALID_USER_SESSION + "\"", e.getMessage());
+            assertEquals("401 UNAUTHORIZED \"Test exception\"", e.getMessage());
             assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
         } catch (Exception e) {
             fail("Should not have received any other exception: " + e);
@@ -486,12 +479,11 @@ class PageServiceUTC {
 
     @Test
     void deleteByUserOk() throws VempainEntityNotFoundException {
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         Page page = TestUTCTools.generatePage(1L);
         when(pageRepository.findById(1L)).thenReturn(page);
         when(accessService.hasDeletePermission(1L)).thenReturn(true);
         doNothing().when(aclService).deleteByAclId(1L);
-        doNothing().when(pageRepository).deletePageById(1L);
 
         try {
             pageService.deleteByUser(1L);
@@ -502,13 +494,13 @@ class PageServiceUTC {
 
     @Test
     void deleteByUserNoSessionFail() {
-        doThrow(new SessionAuthenticationException("Test exception")).when(accessService).getUserId();
+        doThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Test exception")).when(accessService).getValidUserId();
 
         try {
             pageService.deleteByUser(1L);
             fail("Should not have been able to delete without a session");
         } catch (ResponseStatusException e) {
-            assertEquals("401 UNAUTHORIZED \"" + VempainMessages.INVALID_USER_SESSION + "\"", e.getMessage());
+            assertEquals("401 UNAUTHORIZED \"Test exception\"", e.getMessage());
             assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
         } catch (Exception e) {
             fail("Should not have received any other exception: " + e);
@@ -517,7 +509,7 @@ class PageServiceUTC {
 
     @Test
     void deleteByUserNoPageFail() {
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         when(pageRepository.findById(1L)).thenReturn(null);
 
         try {
@@ -533,7 +525,7 @@ class PageServiceUTC {
 
     @Test
     void deleteByUserNoPermissionFail() {
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         Page page = TestUTCTools.generatePage(1L);
         when(pageRepository.findById(1L)).thenReturn(page);
         when(accessService.hasDeletePermission(1L)).thenReturn(false);
@@ -551,12 +543,11 @@ class PageServiceUTC {
 
     @Test
     void deleteByUserNoAclOk() throws VempainEntityNotFoundException {
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         Page page = TestUTCTools.generatePage(1L);
         when(pageRepository.findById(1L)).thenReturn(page);
         when(accessService.hasDeletePermission(1L)).thenReturn(true);
         doThrow(new VempainEntityNotFoundException("ACL not found for deletion", "acl")).when(aclService).deleteByAclId(page.getAclId());
-        doNothing().when(pageRepository).deletePageById(1L);
 
         try {
             pageService.deleteByUser(1L);
@@ -567,7 +558,7 @@ class PageServiceUTC {
 
     @Test
     void deleteByUserUnknownAclExceptionFail() throws VempainEntityNotFoundException {
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         Page page = TestUTCTools.generatePage(1L);
         when(pageRepository.findById(1L)).thenReturn(page);
         when(accessService.hasDeletePermission(1L)).thenReturn(true);
@@ -586,7 +577,7 @@ class PageServiceUTC {
 
     @Test
     void deleteByUserUnknownDeleteExceptionFail() throws VempainEntityNotFoundException {
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         Page page = TestUTCTools.generatePage(1L);
         when(pageRepository.findById(1L)).thenReturn(page);
         when(accessService.hasDeletePermission(1L)).thenReturn(true);

@@ -10,6 +10,7 @@ import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.exception.VempainLayoutException;
 import fi.poltsi.vempain.admin.repository.LayoutRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -22,14 +23,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
+@RequiredArgsConstructor
 @Service
-public class LayoutService extends AbstractService {
+public class LayoutService {
 	private final LayoutRepository layoutRepository;
-
-	public LayoutService(AclService aclService, LayoutRepository layoutRepository, AccessService accessService) {
-		super(aclService, accessService);
-		this.layoutRepository = layoutRepository;
-	}
+	private final AclService aclService;
+	private final AccessService accessService;
 
 	public Iterable<Layout> findAll() {
 		return layoutRepository.findAll();
@@ -61,7 +60,7 @@ public class LayoutService extends AbstractService {
 	}
 
 	public Layout findByIdByUser(long layoutId) throws VempainEntityNotFoundException {
-		var userId = getUserId();
+		var userId = accessService.getValidUserId();
 
 		var layout = findById(layoutId);
 
@@ -95,7 +94,7 @@ public class LayoutService extends AbstractService {
 	}
 
 	public LayoutResponse findLayoutResponseByLayoutNameByUser(String layoutName) throws VempainLayoutException {
-		var userId = getUserId();
+		var userId = accessService.getValidUserId();
 
 		var layout = findByLayoutName(layoutName);
 
@@ -115,7 +114,7 @@ public class LayoutService extends AbstractService {
 
 	@Transactional(propagation = Propagation.REQUIRED)
 	public Layout saveLayoutRequestByUser(LayoutRequest layoutRequest) {
-		var userId = getUserId();
+		var userId = accessService.getValidUserId();
 
 		try {
 			// Check if the layout name already exists
@@ -155,7 +154,7 @@ public class LayoutService extends AbstractService {
 
 	@Transactional(propagation = Propagation.REQUIRED)
 	public Layout updateByUser(LayoutRequest layoutRequest) {
-		var userId = getUserId();
+		var userId = accessService.getValidUserId();
 
 		// Check if the layout already exists
 		Layout layout;
@@ -223,7 +222,7 @@ public class LayoutService extends AbstractService {
 
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void deleteByUser(long layoutId) {
-		var userId = getUserId();
+		var userId = accessService.getValidUserId();
 
 		Layout layout;
 
@@ -262,6 +261,6 @@ public class LayoutService extends AbstractService {
 			throw new VempainLayoutException("Layout structure is null or blank");
 		}
 
-		validateAbstractData(layout);
+		aclService.validateAbstractData(layout);
 	}
 }

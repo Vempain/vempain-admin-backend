@@ -63,6 +63,8 @@ class SetupVerification implements ApplicationContextAware {
 			} else if (value.equals("override-me")) {
 				closeApplication("Configuration value for key " + keyPair[0] + " is still set to default value");
 			} else {
+				var path = Paths.get(value);
+
 				switch (keyPair[1]) {
 					case TYPE_NUMBER:
 						if (!NumberUtils.isCreatable(value)) {
@@ -71,24 +73,20 @@ class SetupVerification implements ApplicationContextAware {
 
 						break;
 					case TYPE_PATH:
-						var path = Paths.get(value);
-
 						if (!Files.exists(path)) {
 							closeApplication("Path from configuration " + keyPair[0] + " pointing to " + value + " does not exist");
 						}
 						break;
 					case TYPE_FILE:
-						var file = Paths.get(value);
-
-						if (!Files.exists(file)) {
+						if (!Files.exists(path)) {
 							closeApplication("File from configuration " + keyPair[0] + " pointing to " + value + " does not exist");
 						}
 
-						if (!Files.isRegularFile(file)) {
+						if (!Files.isRegularFile(path)) {
 							closeApplication("File from configuration " + keyPair[0] + " pointing to " + value + " is not a file");
 						}
 
-						if (!Files.isExecutable(file)) {
+						if (!Files.isExecutable(path)) {
 							closeApplication("File from configuration " + keyPair[0] + " pointing to " + value + " is not executable");
 						}
 						break;

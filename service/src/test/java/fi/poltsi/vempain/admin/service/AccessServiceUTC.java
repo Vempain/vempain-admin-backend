@@ -5,10 +5,11 @@ import fi.poltsi.vempain.admin.entity.Acl;
 import fi.poltsi.vempain.admin.entity.Unit;
 import fi.poltsi.vempain.admin.entity.UserAccount;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -30,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class AccessServiceUTC {
 	@Mock
 	Authentication  authentication;
@@ -41,13 +43,12 @@ class AccessServiceUTC {
 	private UserService userService;
 	@Mock
 	private Environment environment;
+
+	@InjectMocks
 	private AccessService accessService;
 
-	@BeforeEach
-	void setUp() {
-		MockitoAnnotations.openMocks(this);
-		accessService = new AccessService(aclService, userService, environment);
-
+	@Test
+	void hasReadPermissionOk() {
 		when(environment.getProperty("vempain.test")).thenReturn("false");
 		when(securityContext.getAuthentication()).thenReturn(authentication);
 		SecurityContextHolder.setContext(securityContext);
@@ -55,10 +56,7 @@ class AccessServiceUTC {
 		UserDetailsImpl userDetails = UserDetailsImpl.build(userAccount);
 		when(authentication.getPrincipal()).thenReturn(userDetails);
 		when(userService.findById(1L)).thenReturn(Optional.of(userAccount));
-	}
 
-	@Test
-	void hasReadPermissionOk() {
 		Acl acl = TestUTCTools.generateAcl(1L, 1L, 1L, null);
 		when(aclService.findAclByAclId(1L)).thenReturn(Collections.singletonList(acl));
 
@@ -71,12 +69,16 @@ class AccessServiceUTC {
 
 	@Test
 	void hasReadPermissionViaUnitOk() {
-		UserAccount userAccount = TestUTCTools.generateUser(1L);
+		when(environment.getProperty("vempain.test")).thenReturn("false");
+		when(securityContext.getAuthentication()).thenReturn(authentication);
+		SecurityContextHolder.setContext(securityContext);
+		UserAccount     userAccount = TestUTCTools.generateUser(1L);
 		List<Unit>  units       = TestUTCTools.generateUnitList(3L);
 		userAccount.setUnits(new HashSet<>(units));
 		UserDetailsImpl userDetails = UserDetailsImpl.build(userAccount);
 		when(authentication.getPrincipal()).thenReturn(userDetails);
 		when(userService.findById(1L)).thenReturn(Optional.of(userAccount));
+
 
 		Acl acl = TestUTCTools.generateAcl(1L, 1L, null, 1L);
 		when(aclService.findAclByAclId(1L)).thenReturn(Collections.singletonList(acl));
@@ -90,9 +92,13 @@ class AccessServiceUTC {
 
 	@Test
 	void hasReadPermissionNullAuthenticationFail() {
+		when(environment.getProperty("vempain.test")).thenReturn("false");
+		when(securityContext.getAuthentication()).thenReturn(authentication);
+		SecurityContextHolder.setContext(securityContext);
+		UserAccount     userAccount = TestUTCTools.generateUser(1L);
+		UserDetailsImpl userDetails = UserDetailsImpl.build(userAccount);
+
 		when(securityContext.getAuthentication()).thenReturn(null);
-		Acl acl = TestUTCTools.generateAcl(1L, 1L, 1L, null);
-		when(aclService.findAclByAclId(1L)).thenReturn(Collections.singletonList(acl));
 
 		try {
 			accessService.hasReadPermission(1L);
@@ -106,8 +112,14 @@ class AccessServiceUTC {
 
 	@Test
 	void hasReadPermissionNoUSerFoundFail() {
-		Acl acl = TestUTCTools.generateAcl(1L, 1L, 1L, null);
-		when(aclService.findAclByAclId(1L)).thenReturn(Collections.singletonList(acl));
+		when(environment.getProperty("vempain.test")).thenReturn("false");
+		when(securityContext.getAuthentication()).thenReturn(authentication);
+		SecurityContextHolder.setContext(securityContext);
+		UserAccount     userAccount = TestUTCTools.generateUser(1L);
+		UserDetailsImpl userDetails = UserDetailsImpl.build(userAccount);
+		when(authentication.getPrincipal()).thenReturn(userDetails);
+		when(userService.findById(1L)).thenReturn(Optional.of(userAccount));
+
 		when(userService.findById(1L)).thenReturn(Optional.empty());
 
 		try {
@@ -122,6 +134,13 @@ class AccessServiceUTC {
 
 	@Test
 	void hasReadPermissionNoAclFoundFail() {
+		when(environment.getProperty("vempain.test")).thenReturn("false");
+		when(securityContext.getAuthentication()).thenReturn(authentication);
+		SecurityContextHolder.setContext(securityContext);
+		UserAccount     userAccount = TestUTCTools.generateUser(1L);
+		UserDetailsImpl userDetails = UserDetailsImpl.build(userAccount);
+		when(authentication.getPrincipal()).thenReturn(userDetails);
+		when(userService.findById(1L)).thenReturn(Optional.of(userAccount));
 		when(aclService.findAclByAclId(1L)).thenReturn(new ArrayList<>());
 
 		try {
@@ -134,6 +153,14 @@ class AccessServiceUTC {
 
 	@Test
 	void hasModifyPermissionOk() {
+		when(environment.getProperty("vempain.test")).thenReturn("false");
+		when(securityContext.getAuthentication()).thenReturn(authentication);
+		SecurityContextHolder.setContext(securityContext);
+		UserAccount     userAccount = TestUTCTools.generateUser(1L);
+		UserDetailsImpl userDetails = UserDetailsImpl.build(userAccount);
+		when(authentication.getPrincipal()).thenReturn(userDetails);
+		when(userService.findById(1L)).thenReturn(Optional.of(userAccount));
+
 		try {
 			accessService.hasModifyPermission(1L);
 		} catch (Exception e) {
@@ -143,6 +170,14 @@ class AccessServiceUTC {
 
 	@Test
 	void hasCreatePermissionOk() {
+		when(environment.getProperty("vempain.test")).thenReturn("false");
+		when(securityContext.getAuthentication()).thenReturn(authentication);
+		SecurityContextHolder.setContext(securityContext);
+		UserAccount     userAccount = TestUTCTools.generateUser(1L);
+		UserDetailsImpl userDetails = UserDetailsImpl.build(userAccount);
+		when(authentication.getPrincipal()).thenReturn(userDetails);
+		when(userService.findById(1L)).thenReturn(Optional.of(userAccount));
+
 		try {
 			accessService.hasCreatePermission(1L);
 		} catch (Exception e) {
@@ -152,6 +187,14 @@ class AccessServiceUTC {
 
 	@Test
 	void hasDeletePermissionOk() {
+		when(environment.getProperty("vempain.test")).thenReturn("false");
+		when(securityContext.getAuthentication()).thenReturn(authentication);
+		SecurityContextHolder.setContext(securityContext);
+		UserAccount     userAccount = TestUTCTools.generateUser(1L);
+		UserDetailsImpl userDetails = UserDetailsImpl.build(userAccount);
+		when(authentication.getPrincipal()).thenReturn(userDetails);
+		when(userService.findById(1L)).thenReturn(Optional.of(userAccount));
+
 		try {
 			accessService.hasDeletePermission(1L);
 		} catch (Exception e) {
@@ -161,6 +204,14 @@ class AccessServiceUTC {
 
 	@Test
 	void getUserIdOk() {
+		when(environment.getProperty("vempain.test")).thenReturn("false");
+		when(securityContext.getAuthentication()).thenReturn(authentication);
+		SecurityContextHolder.setContext(securityContext);
+		UserAccount     userAccount = TestUTCTools.generateUser(1L);
+		UserDetailsImpl userDetails = UserDetailsImpl.build(userAccount);
+		when(authentication.getPrincipal()).thenReturn(userDetails);
+		when(userService.findById(1L)).thenReturn(Optional.of(userAccount));
+
 		try {
 			accessService.getUserId();
 		} catch (Exception e) {
@@ -170,6 +221,12 @@ class AccessServiceUTC {
 
 	@Test
 	void getUserIdNoUserFail() {
+		when(environment.getProperty("vempain.test")).thenReturn("false");
+		when(securityContext.getAuthentication()).thenReturn(authentication);
+		SecurityContextHolder.setContext(securityContext);
+		UserAccount     userAccount = TestUTCTools.generateUser(1L);
+		UserDetailsImpl userDetails = UserDetailsImpl.build(userAccount);
+		when(authentication.getPrincipal()).thenReturn(userDetails);
 		when(userService.findById(1L)).thenReturn(Optional.empty());
 
 		try {
@@ -184,6 +241,14 @@ class AccessServiceUTC {
 
 	@Test
 	void checkAuthenticationOk() {
+		when(environment.getProperty("vempain.test")).thenReturn("false");
+		when(securityContext.getAuthentication()).thenReturn(authentication);
+		SecurityContextHolder.setContext(securityContext);
+		UserAccount     userAccount = TestUTCTools.generateUser(1L);
+		UserDetailsImpl userDetails = UserDetailsImpl.build(userAccount);
+		when(authentication.getPrincipal()).thenReturn(userDetails);
+		when(userService.findById(1L)).thenReturn(Optional.of(userAccount));
+
 		try {
 			accessService.checkAuthentication();
 		} catch (Exception e) {
@@ -193,15 +258,23 @@ class AccessServiceUTC {
 
 	@Test
 	void checkAuthenticationNoUserFail() {
+		when(environment.getProperty("vempain.test")).thenReturn("false");
+		when(securityContext.getAuthentication()).thenReturn(authentication);
+		SecurityContextHolder.setContext(securityContext);
+		UserAccount     userAccount = TestUTCTools.generateUser(1L);
+		UserDetailsImpl userDetails = UserDetailsImpl.build(userAccount);
+		when(authentication.getPrincipal()).thenReturn(userDetails);
+		when(userService.findById(1L)).thenReturn(Optional.of(userAccount));
 		when(userService.findById(1L)).thenReturn(Optional.empty());
 
 		try {
 			accessService.checkAuthentication();
+			fail("Should have thrown aResponseStatusException");
 		} catch (ResponseStatusException e) {
 			assertEquals("403 FORBIDDEN \"User must be logged on to use this resource\"", e.getMessage());
 			assertEquals(HttpStatus.FORBIDDEN, e.getStatusCode());
 		} catch (Exception e) {
-			fail("Should not have received an exception: " + e.getMessage());
+			fail("Should not have received an exception: " + e);
 		}
 	}
 

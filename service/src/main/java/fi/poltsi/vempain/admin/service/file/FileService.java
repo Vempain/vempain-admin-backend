@@ -31,7 +31,6 @@ import fi.poltsi.vempain.admin.repository.file.FileThumbPageableRepository;
 import fi.poltsi.vempain.admin.repository.file.FileVideoPageableRepository;
 import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
 import fi.poltsi.vempain.admin.repository.file.SubjectRepository;
-import fi.poltsi.vempain.admin.service.AbstractService;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.AclService;
 import fi.poltsi.vempain.admin.service.PageGalleryService;
@@ -40,10 +39,10 @@ import fi.poltsi.vempain.admin.service.SubjectService;
 import fi.poltsi.vempain.tools.ImageTools;
 import fi.poltsi.vempain.tools.MetadataTools;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -96,9 +95,12 @@ import static fi.poltsi.vempain.tools.VideoTools.getVideoDimensions;
 import static fi.poltsi.vempain.tools.VideoTools.getVideoLength;
 
 @Slf4j
+@RequiredArgsConstructor
 @Service
-public class FileService extends AbstractService {
+public class FileService {
 
+	private final AclService                     aclService;
+	private final AccessService                  accessService;
 	private final FileCommonPageableRepository   fileCommonPageableRepository;
 	private final FileImagePageableRepository    fileImagePageableRepository;
 	private final FileAudioPageableRepository    fileAudioPageableRepository;
@@ -111,12 +113,9 @@ public class FileService extends AbstractService {
 	private final FileThumbService               fileThumbService;
 	private final SubjectService                 subjectService;
 	private final PageService                    pageService;
-	private final PageGalleryService			 pageGalleryService;
-
-	@Autowired
-	private MetadataTools metadataTools;
-	@Autowired
-	private ImageTools imageTools;
+	private final PageGalleryService             pageGalleryService;
+	private final MetadataTools                  metadataTools;
+	private final ImageTools                     imageTools;
 
 	@Value("${vempain.admin.file.converted-directory}")
 	private String convertedDirectory;
@@ -125,41 +124,15 @@ public class FileService extends AbstractService {
 
 	private static final String RESPONSE_STATUS_EXCEPTION_MESSAGE = "Unknown error";
 
-	@Autowired
-	public FileService(AclService aclService, FileCommonPageableRepository fileCommonPageableRepository,
-					   FileImagePageableRepository fileImagePageableRepository,
-					   FileAudioPageableRepository fileAudioPageableRepository,
-					   FileDocumentPageableRepository fileDocumentPageableRepository,
-					   FileVideoPageableRepository fileVideoPageableRepository,
-					   FileThumbPageableRepository fileThumbPageableRepository,
-					   GalleryRepository galleryRepository, GalleryFileService galleryFileService,
-					   AccessService accessService, SubjectRepository subjectRepository,
-					   FileThumbService fileThumbService, SubjectService subjectService,
-					   PageService pageService, PageGalleryService pageGalleryService) {
-		super(aclService, accessService);
-		this.fileCommonPageableRepository   = fileCommonPageableRepository;
-		this.fileImagePageableRepository    = fileImagePageableRepository;
-		this.fileAudioPageableRepository    = fileAudioPageableRepository;
-		this.fileDocumentPageableRepository = fileDocumentPageableRepository;
-		this.fileVideoPageableRepository    = fileVideoPageableRepository;
-		this.fileThumbPageableRepository    = fileThumbPageableRepository;
-		this.galleryRepository              = galleryRepository;
-		this.galleryFileService             = galleryFileService;
-		this.subjectRepository              = subjectRepository;
-		this.fileThumbService               = fileThumbService;
-		this.subjectService                 = subjectService;
-		this.pageService                    = pageService;
-		this.pageGalleryService             = pageGalleryService;
-	}
-
 	@PostConstruct
 	public void setupEnv() {
 		var currentPath = System.getProperty("user.dir");
 		log.info("Current directory: {}", currentPath);
 		var exceptionMessage = "Unable to initiate the main storage directory";
-		var convertedPath    = Path.of(convertedDirectory);
+		var convertedPath = Path.of(convertedDirectory);
 
-		if (!convertedPath.toFile().exists()) {
+		if (!convertedPath.toFile()
+						  .exists()) {
 			try {
 				createAndVerifyDirectory(convertedPath);
 			} catch (Exception e) {
@@ -186,8 +159,8 @@ public class FileService extends AbstractService {
 			return null;
 		}
 
-		var gallery         = optionalGallery.get();
-		var galleryFiles    = galleryFileService.findGalleryFileByGalleryId(galleryId);
+		var gallery = optionalGallery.get();
+		var galleryFiles = galleryFileService.findGalleryFileByGalleryId(galleryId);
 		var commonFileIdSet = new ArrayList<Long>();
 
 		for (GalleryFile galleryFile : galleryFiles) {
@@ -251,8 +224,8 @@ public class FileService extends AbstractService {
 	}
 
 	public List<FileCommonResponse> findAllCommonAsResponseForUser(int pageNumber, int pageSize) {
-		Pageable pageable    = PageRequest.of(pageNumber, pageSize);
-		var      commonFiles = fileCommonPageableRepository.findAll(pageable);
+		Pageable pageable = PageRequest.of(pageNumber, pageSize);
+		var commonFiles = fileCommonPageableRepository.findAll(pageable);
 		log.info("Found {} common files", commonFiles.stream()
 													 .count());
 		ArrayList<FileCommonResponse> fileCommonResponses = new ArrayList<>();
@@ -313,9 +286,10 @@ public class FileService extends AbstractService {
 	 * @param galleryShortname   Short name for gallery
 	 * @param galleryDescription Description of gallery
 	 */
+	@Transactional
 	public void processUploadFiles(MultipartFile[] multipartFiles, String destinationDirectory, String galleryShortname,
 								   String galleryDescription) {
-		var  usedId    = getUserId();
+		var usedId = accessService.getUserId();
 		Long galleryId = null;
 
 		if (galleryShortname != null &&
@@ -342,7 +316,8 @@ public class FileService extends AbstractService {
 		}
 	}
 
-	private void processUploadFile(InputStream inputStream, String originalFilename, String destinationDirectory,
+	@Transactional
+	void processUploadFile(InputStream inputStream, String originalFilename, String destinationDirectory,
 								   long userId, Long galleryId, long sortOrder) {
 		File sourceFile = new File(File.separator + "tmp" + File.separator + originalFilename);
 		try (OutputStream output = new FileOutputStream(sourceFile, false)) {
@@ -367,8 +342,9 @@ public class FileService extends AbstractService {
 	 *                                        return List of FileCommon objects
 	 */
 
+	@Transactional
 	public List<FileCommon> addFilesFromDirectory(FileProcessRequest fileProcessRequest, long userId) throws VempainEntityNotFoundException,
-																								IOException, VempainAclException {
+																											 IOException, VempainAclException {
 		// String sourceDirectory, String siteDirectory, boolean createGallery,
 		// String galleryName, String galleryDescription
 		var sourcePath = Path.of(convertedDirectory + File.separator + fileProcessRequest.getSourceDirectory());
@@ -385,12 +361,13 @@ public class FileService extends AbstractService {
 
 		var fileList = new ArrayList<Path>();
 
-		try (Stream<Path> files = Files.walk(sourcePath).filter(Files::isRegularFile)) {
+		try (Stream<Path> files = Files.walk(sourcePath)
+									   .filter(Files::isRegularFile)) {
 			files.forEach(fileList::add);
 		}
 
 		if (fileProcessRequest.isGeneratePage()) {
-			var pageAclId    = aclService.createNewAcl(userId, null, true, true, true, true);
+			var pageAclId = aclService.createNewAcl(userId, null, true, true, true, true);
 			var galleryIdMap = Map.of("galleryId", String.valueOf(galleryId));
 			var completePage = fileProcessRequest.getPageBody() + "\n" + processTemplateFile("templates/gallery_template.php", galleryIdMap);
 			var newPage = fi.poltsi.vempain.admin.entity.Page.builder()
@@ -410,10 +387,11 @@ public class FileService extends AbstractService {
 		return addFilesToDatabase(fileProcessRequest.getDestinationDirectory(), fileList, userId, galleryId);
 	}
 
+	@Transactional
 	public ArrayList<FileCommon> addFilesToDatabase(String siteDirectory, List<Path> fileList, Long userId, Long galleryId) {
-		var sortOrder      = 0L;
+		var sortOrder = 0L;
 		var commonFileList = new ArrayList<FileCommon>();
-		var relativizer    = Path.of(convertedDirectory + File.separator);
+		var relativizer = Path.of(convertedDirectory + File.separator);
 
 		for (Path path : fileList) {
 			var relativePath = relativizer.relativize(path);
@@ -465,9 +443,9 @@ public class FileService extends AbstractService {
 		var description = getDescriptionFromJson(jsonObject);
 
 		var originalDateTimeString = getOriginalDateTimeFromJson(jsonObject);
-		var originalDateTime       = dateTimeParser(originalDateTimeString);
+		var originalDateTime = dateTimeParser(originalDateTimeString);
 		var originalSecondFraction = getOriginalSecondFraction(jsonObject);
-		var originalDocumentId     = getOriginalDocumentId(jsonObject);
+		var originalDocumentId = getOriginalDocumentId(jsonObject);
 
 		// Get filesize
 		var sourceFileSize = getFileSize(absolutePath);
@@ -476,6 +454,7 @@ public class FileService extends AbstractService {
 
 		if (mimetype == null) {
 			log.warn("Failed to extract mimetype from JSON: {}", jsonObject);
+			mimetype = "text/plain"; // Default to plain text if mimetype is not found
 		} else {
 			log.debug("Mimetype: {}", mimetype);
 		}
@@ -554,7 +533,7 @@ public class FileService extends AbstractService {
 				fileImagePageableRepository.save(fileImage);
 			}
 			case VIDEO -> {
-				var videoLength    = getVideoLength(jsonObject);
+				var videoLength = getVideoLength(jsonObject);
 				var videDimensions = getVideoDimensions(jsonObject);
 				var fileVideo = FileVideo.builder()
 										 .parentId(fileCommon.getId())
@@ -591,8 +570,7 @@ public class FileService extends AbstractService {
 			return null;
 		}
 
-		var jsonObject = jsonArray.getJSONObject(0);
-		return jsonObject;
+		return jsonArray.getJSONObject(0);
 	}
 
 	private Instant dateTimeParser(String dateTimeString) {
@@ -695,7 +673,8 @@ public class FileService extends AbstractService {
 			return fileCommons;
 		}
 
-		return fileCommonPageableRepository.getFileCommonBySubjectId(optionalSubject.get().getId());
+		return fileCommonPageableRepository.getFileCommonBySubjectId(optionalSubject.get()
+																					.getId());
 	}
 
 	public Optional<Subject> findSubjectBySubjectNameAndLanguage(String subjectName, String language) {
@@ -714,12 +693,14 @@ public class FileService extends AbstractService {
 		var optionalFileCommon = fileCommonPageableRepository.findById(fileCommonId);
 
 		if (optionalFileCommon.isPresent()) {
-			log.debug("File common ID {} exists", optionalFileCommon.get().getId());
+			log.debug("File common ID {} exists", optionalFileCommon.get()
+																	.getId());
 
 			var optionalSubject = subjectRepository.findById(subjectId);
 
 			if (optionalSubject.isPresent()) {
-				log.debug("Subject ID {} exists", optionalSubject.get().getId());
+				log.debug("Subject ID {} exists", optionalSubject.get()
+																 .getId());
 				subjectService.addSubjectToFile(subjectId, fileCommonId);
 			} else {
 				log.error("Subject ID {} does not exist", subjectId);
@@ -843,7 +824,7 @@ public class FileService extends AbstractService {
 		var thumbFiles = fileThumbPageableRepository.findAll();
 
 		var thumbFileMap = new HashMap<String, FileThumb>();
-		var duplicates   = new ArrayList<FileThumb>();
+		var duplicates = new ArrayList<FileThumb>();
 
 		for (FileThumb thumbFile : thumbFiles) {
 			var key = thumbFile.getFilepath() + File.separator + thumbFile.getFilename();
@@ -982,16 +963,17 @@ public class FileService extends AbstractService {
 											 .details(new ArrayList<>())
 											 .build();
 		var successCount = 0L;
-		var failedCount  = 0L;
+		var failedCount = 0L;
 		// First get all the gallery IDs
 		var galleryIds = galleryRepository.getAllGalleryIds();
 		for (Long galleryId : galleryIds) {
 			var galleryResponse = refreshGalleryFiles(galleryId);
 			log.debug("Gallery {} refresh result: {}", galleryId, galleryResponse);
 
-			successCount = +galleryResponse.getRefreshedItems();
-			failedCount  = +galleryResponse.getFailedItems();
-			refreshResponse.getDetails().addAll(galleryResponse.getDetails());
+			successCount = successCount + galleryResponse.getRefreshedItems();
+			failedCount = failedCount + galleryResponse.getFailedItems();
+			refreshResponse.getDetails()
+						   .addAll(galleryResponse.getDetails());
 		}
 
 		refreshResponse.setRefreshedItems(successCount);
@@ -1002,10 +984,10 @@ public class FileService extends AbstractService {
 
 	@Transactional(propagation = Propagation.REQUIRED)
 	public RefreshResponse refreshGalleryFiles(long galleryId) {
-		var galleryFiles   = galleryFileService.findGalleryFileByGalleryId(galleryId);
+		var galleryFiles = galleryFileService.findGalleryFileByGalleryId(galleryId);
 		var refreshDetails = new ArrayList<RefreshDetailResponse>();
-		var successCount   = 0;
-		var failedCount    = 0;
+		var successCount = 0;
+		var failedCount = 0;
 
 		for (var galleryFile : galleryFiles) {
 			log.debug("Refreshing gallery file: {}", galleryFile);
@@ -1038,8 +1020,8 @@ public class FileService extends AbstractService {
 		}
 
 		var fileCommon = optionalFileCommon.get();
-		var fileClass  = FileClassEnum.getFileClassByMimetype(fileCommon.getMimetype());
-		var resultMap  = new HashMap<PublishResultEnum, String>();
+		var fileClass = FileClassEnum.getFileClassByMimetype(fileCommon.getMimetype());
+		var resultMap = new HashMap<PublishResultEnum, String>();
 
 		var fileResult = refreshCommonFile(fileCommon, resultMap);
 
@@ -1117,11 +1099,11 @@ public class FileService extends AbstractService {
 			return false;
 		}
 
-		var comment                = getDescriptionFromJson(jsonObject);
+		var comment = getDescriptionFromJson(jsonObject);
 		var originalDateTimeString = getOriginalDateTimeFromJson(jsonObject);
-		var originalDateTime       = dateTimeParser(originalDateTimeString);
+		var originalDateTime = dateTimeParser(originalDateTimeString);
 		var originalSecondFraction = getOriginalSecondFraction(jsonObject);
-		var originalDocumentId     = getOriginalDocumentId(jsonObject);
+		var originalDocumentId = getOriginalDocumentId(jsonObject);
 		var convertedFileSize = getFileSize(convertedFilePath);
 
 		// Remove first old associations between subjects and files

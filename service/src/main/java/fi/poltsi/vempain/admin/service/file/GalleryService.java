@@ -8,11 +8,10 @@ import fi.poltsi.vempain.admin.entity.file.Gallery;
 import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.repository.file.FileCommonPageableRepository;
 import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
-import fi.poltsi.vempain.admin.service.AbstractService;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.AclService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,20 +21,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
+@RequiredArgsConstructor
 @Service
-public class GalleryService extends AbstractService {
+public class GalleryService {
 	private final GalleryRepository            galleryRepository;
 	private final FileCommonPageableRepository fileCommonPageableRepository;
 	private final GalleryFileService           galleryFileService;
-
-	@Autowired
-	public GalleryService(AclService aclService, AccessService accessService, GalleryRepository galleryRepository,
-						  FileCommonPageableRepository fileCommonPageableRepository, GalleryFileService galleryFileService) {
-		super(aclService, accessService);
-		this.galleryRepository            = galleryRepository;
-		this.fileCommonPageableRepository = fileCommonPageableRepository;
-		this.galleryFileService           = galleryFileService;
-	}
+	private final AclService aclService;
+	private final AccessService accessService;
 
 	public List<Gallery> findAllForUser() {
 		var galleryList = new ArrayList<Gallery>();
@@ -89,7 +82,7 @@ public class GalleryService extends AbstractService {
 							 .shortname(galleryRequest.getShortName())
 							 .description(galleryRequest.getDescription())
 							 .aclId(aclId)
-							 .creator(getUserId())
+							 .creator(accessService.getUserId())
 							 .created(Instant.now())
 							 .modifier(null)
 							 .modified(null)
@@ -121,7 +114,7 @@ public class GalleryService extends AbstractService {
 
 		currentGallery.setShortname(galleryRequest.getShortName());
 		currentGallery.setDescription(galleryRequest.getDescription());
-		currentGallery.setModifier(getUserId());
+		currentGallery.setModifier(accessService.getUserId());
 		currentGallery.setModified(Instant.now());
 		currentGallery.setLocked(false);
 

@@ -18,6 +18,7 @@ import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.repository.FormRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
@@ -31,27 +32,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
+@RequiredArgsConstructor
 @Service
-public class FormService extends AbstractService {
+public class FormService {
 	private final FormRepository       formRepository;
 	private final ComponentService     componentService;
 	private final FormComponentService formComponentService;
-
-	public FormService(AclService aclService, FormRepository formRepository, ComponentService componentService,
-					   AccessService accessService, FormComponentService formComponentService) {
-		super(aclService, accessService);
-		this.formRepository       = formRepository;
-		this.componentService     = componentService;
-		this.formComponentService = formComponentService;
-	}
-
+	private final AclService           aclService;
+	private final AccessService        accessService;
 
 	public Iterable<Form> findAll() {
 		return formRepository.findAll();
 	}
 
 	public List<FormResponse> findAllAsResponsesForUser(QueryDetailEnum requestForm) throws VempainComponentException {
-		var forms     = findAll();
+		var forms = findAll();
 		var responses = new ArrayList<FormResponse>();
 
 		for (Form form : forms) {
@@ -81,7 +76,7 @@ public class FormService extends AbstractService {
 	}
 
 	public FormResponse findByIdForUser(long formId) throws VempainComponentException, VempainEntityNotFoundException {
-		var userId = getUserId();
+		var userId = accessService.getValidUserId();
 
 		var form = findById(formId);
 
@@ -158,12 +153,14 @@ public class FormService extends AbstractService {
 	@Transactional(propagation = Propagation.REQUIRED)
 	public FormResponse saveRequest(FormRequest formRequest) throws EntityAlreadyExistsException, InvalidRequestException, ProcessingFailedException {
 
-		if (isFormNameTaken(formRequest.getName().trim())) {
+		if (isFormNameTaken(formRequest.getName()
+									   .trim())) {
 			log.error("Form name {} already exists", formRequest.getName());
 			throw new EntityAlreadyExistsException("Tried to save a form with an existing name", "form");
 		}
 
-		if (formRequest.getComponents() == null || formRequest.getComponents().isEmpty()) {
+		if (formRequest.getComponents() == null || formRequest.getComponents()
+															  .isEmpty()) {
 			log.error("Missing component list in form request: {}", formRequest);
 			throw new InvalidRequestException("Missing component list in form request");
 		}
@@ -181,7 +178,7 @@ public class FormService extends AbstractService {
 						.formName(formRequest.getName())
 						.layoutId(formRequest.getLayoutId())
 						.aclId(aclId)
-						.creator(getUserId())
+						.creator(accessService.getUserId())
 						.created(Instant.now())
 						.build();
 
@@ -214,13 +211,16 @@ public class FormService extends AbstractService {
 			throw new AccessDeniedException("User does not have permission to modify form");
 		}
 
-		if (formRequest.getComponents() == null || formRequest.getComponents().isEmpty()) {
+		if (formRequest.getComponents() == null || formRequest.getComponents()
+															  .isEmpty()) {
 			log.error("Missing component list in form request: {}", formRequest);
 			throw new InvalidRequestException("Missing component list in form request");
 		}
 
 		// If the name has changed, check whether the new name is unique
-		if (!form.getFormName().equals(formRequest.getName().trim())) {
+		if (!form.getFormName()
+				 .equals(formRequest.getName()
+									.trim())) {
 			if (isFormNameTaken(formRequest.getName())) {
 				log.error("Form name {} already exists", formRequest.getName());
 				throw new EntityAlreadyExistsException("Tried to save a form with an existing name", "form");
@@ -237,7 +237,7 @@ public class FormService extends AbstractService {
 		form.setFormName(formRequest.getName());
 		form.setLayoutId(formRequest.getLayoutId());
 		form.setModified(Instant.now());
-		form.setModifier(getUserId());
+		form.setModifier(accessService.getUserId());
 		var returnForm = save(form);
 
 		saveFormComponents(formRequest.getComponents(), returnForm);
@@ -289,13 +289,13 @@ public class FormService extends AbstractService {
 
 		response.setAcls(aclService.getAclResponses(form.getAclId()));
 
-		var formComponents     = formComponentService.findFormComponentByFormId(form.getId());
+		var formComponents = formComponentService.findFormComponentByFormId(form.getId());
 		var componentResponses = new ArrayList<ComponentResponse>();
 
 		for (FormComponent formComponent : formComponents) {
-			var component         = componentService.findById(formComponent.getComponentId());
-			var compAcls          = aclService.findAclByAclId(component.getAclId());
-			var aclCompResponses  = new ArrayList<AclResponse>();
+			var component = componentService.findById(formComponent.getComponentId());
+			var compAcls = aclService.findAclByAclId(component.getAclId());
+			var aclCompResponses = new ArrayList<AclResponse>();
 			var componentResponse = component.getComponentResponse();
 
 			for (Acl acl : compAcls) {
@@ -316,7 +316,7 @@ public class FormService extends AbstractService {
 
 	public List<FormResponse> findFormsByComponentId(long componentId) {
 		var formComponents = formComponentService.findFormComponentByComponentId(componentId);
-		var formResponses  = new ArrayList<FormResponse>();
+		var formResponses = new ArrayList<FormResponse>();
 
 		for (FormComponent formComponent : formComponents) {
 			var form = formRepository.findById(formComponent.getFormId());

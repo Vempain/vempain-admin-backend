@@ -1,10 +1,9 @@
 package fi.poltsi.vempain.admin.security;
 
-import fi.poltsi.vempain.admin.security.jwt.AuthEntryPointJwt;
 import fi.poltsi.vempain.admin.security.jwt.AuthTokenFilter;
 import fi.poltsi.vempain.admin.service.UserDetailsServiceImpl;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,12 +32,9 @@ import static org.springframework.security.config.Customizer.withDefaults;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@RequiredArgsConstructor
 public class WebSecurityConfig {
-	@Autowired
-	private UserDetailsServiceImpl userDetailsServiceImpl;
-
-	@Autowired
-	private AuthEntryPointJwt unauthorizedHandler;
+	private final UserDetailsServiceImpl userDetailsServiceImpl;
 
 	@Value("${vempain.cors.allowed-origins}")
 	private List<String> allowedOrigins;
@@ -96,8 +92,7 @@ public class WebSecurityConfig {
 
 	@Bean
 	public DaoAuthenticationProvider authenticationProvider() {
-		DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-		authProvider.setUserDetailsService(userDetailsServiceImpl);
+		DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsServiceImpl);
 		authProvider.setPasswordEncoder(passwordEncoder());
 		return authProvider;
 	}

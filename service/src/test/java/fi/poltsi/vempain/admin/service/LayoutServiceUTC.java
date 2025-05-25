@@ -3,6 +3,7 @@ package fi.poltsi.vempain.admin.service;
 import fi.poltsi.vempain.admin.VempainMessages;
 import fi.poltsi.vempain.admin.api.request.LayoutRequest;
 import fi.poltsi.vempain.admin.api.response.LayoutResponse;
+import fi.poltsi.vempain.admin.entity.AbstractVempainEntity;
 import fi.poltsi.vempain.admin.entity.Layout;
 import fi.poltsi.vempain.admin.exception.ProcessingFailedException;
 import fi.poltsi.vempain.admin.exception.VempainAbstractException;
@@ -12,12 +13,12 @@ import fi.poltsi.vempain.admin.exception.VempainLayoutException;
 import fi.poltsi.vempain.admin.repository.LayoutRepository;
 import fi.poltsi.vempain.admin.tools.MockRepositoryTools;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.web.authentication.session.SessionAuthenticationException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
@@ -35,23 +36,19 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class LayoutServiceUTC {
     private final static long count = 10;
 
     @Mock
-    LayoutRepository layoutRepository;
+    private LayoutRepository layoutRepository;
     @Mock
-    AclService       aclService;
+	private AclService       aclService;
     @Mock
-    AccessService    accessService;
+	private AccessService    accessService;
 
+	@InjectMocks
     private LayoutService layoutService;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        layoutService = new LayoutService(aclService, layoutRepository, accessService);
-    }
 
     @Test
     void findAllOk() {
@@ -84,7 +81,6 @@ class LayoutServiceUTC {
     @Test
     void findAllByUserNoneFoundOk() {
         MockRepositoryTools.layoutRepositoryFindAllOk(layoutRepository, 0);
-        when(accessService.hasReadPermission(anyLong())).thenReturn(true);
 
         List<LayoutResponse> layoutResponses = layoutService.findAllByUser();
         assertNotNull(layoutResponses);
@@ -129,7 +125,7 @@ class LayoutServiceUTC {
     @Test
     void findByIdByUserOk() {
         MockRepositoryTools.layoutRepositoryfindByIdOk(layoutRepository, count);
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         when(accessService.hasReadPermission(anyLong())).thenReturn(true);
 
         try {
@@ -143,15 +139,14 @@ class LayoutServiceUTC {
 
     @Test
     void findByIdByUserNoSessionFail() {
-        MockRepositoryTools.layoutRepositoryfindByIdOk(layoutRepository, count);
-        doThrow(new SessionAuthenticationException("Test exception")).when(accessService).getUserId();
+        doThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Test exception")).when(accessService).getValidUserId();
 
         try {
             layoutService.findByIdByUser(count);
             fail("Searching by id and user without session should have triggered an exception");
         } catch (ResponseStatusException e) {
             assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
-            assertEquals("401 UNAUTHORIZED \"" + VempainMessages.INVALID_USER_SESSION + "\"", e.getMessage());
+            assertEquals("401 UNAUTHORIZED \"Test exception\"", e.getMessage());
         } catch (Exception e) {
             fail("Should not have received any other exception: " + e);
         }
@@ -208,7 +203,7 @@ class LayoutServiceUTC {
         Layout layout = TestUTCTools.generateLayout(1L);
         layout.setLayoutName(layoutName);
 
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
 
         Optional<Layout> optionalLayout = Optional.of(layout);
         when(layoutRepository.findByLayoutName(layoutName)).thenReturn(optionalLayout);
@@ -228,7 +223,7 @@ class LayoutServiceUTC {
         Layout layout = TestUTCTools.generateLayout(1L);
         layout.setLayoutName(layoutName);
 
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
 
         Optional<Layout> optionalLayout = Optional.of(layout);
         when(layoutRepository.findByLayoutName(layoutName)).thenReturn(optionalLayout);
@@ -251,14 +246,14 @@ class LayoutServiceUTC {
         Layout layout = TestUTCTools.generateLayout(1L);
         layout.setLayoutName(layoutName);
 
-        doThrow(new SessionAuthenticationException("Test exception")).when(accessService).getUserId();
+        doThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Test exception")).when(accessService).getValidUserId();
 
         try {
             layoutService.findLayoutResponseByLayoutNameByUser("");
             fail("Searching by name and user without session should have triggered an exception");
         } catch (ResponseStatusException e) {
             assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
-            assertEquals("401 UNAUTHORIZED \"" + VempainMessages.INVALID_USER_SESSION + "\"", e.getMessage());
+            assertEquals("401 UNAUTHORIZED \"Test exception\"", e.getMessage());
         } catch (Exception e) {
             fail("Should not have received any other exception: " + e);
         }
@@ -269,8 +264,6 @@ class LayoutServiceUTC {
         Layout layout = MockRepositoryTools.makeLayout(1L, "Test layout");
 
         when(layoutRepository.save(layout)).thenReturn(layout);
-        Optional<Layout> optionalLayout = Optional.of(layout);
-        when(layoutRepository.findById(1L)).thenReturn(optionalLayout);
 
         try {
             layoutService.save(layout);
@@ -351,9 +344,12 @@ class LayoutServiceUTC {
     }
 
     @Test
-    void saveInvalidAclFail() {
+    void saveInvalidAclFail() throws VempainAbstractException {
         Layout layout = MockRepositoryTools.makeLayout(1L, "Test layout");
         layout.setAclId(-1L);
+
+		doThrow(new VempainAbstractException("ACL ID is invalid"))
+				.when(aclService).validateAbstractData(any(AbstractVempainEntity.class));
 
         try {
             layoutService.save(layout);
@@ -366,9 +362,12 @@ class LayoutServiceUTC {
     }
 
     @Test
-    void saveNegativeCreatorFail() {
+    void saveNegativeCreatorFail() throws VempainAbstractException {
         Layout layout = MockRepositoryTools.makeLayout(1L, "Test layout");
         layout.setCreator(-1L);
+
+		doThrow(new VempainAbstractException("Creator is missing or invalid"))
+				.when(aclService).validateAbstractData(any(AbstractVempainEntity.class));
 
         try {
             layoutService.save(layout);
@@ -381,9 +380,12 @@ class LayoutServiceUTC {
     }
 
     @Test
-    void saveNullCreatedFail() {
+    void saveNullCreatedFail() throws VempainAbstractException {
         Layout layout = MockRepositoryTools.makeLayout(1L, "Test layout");
         layout.setCreated(null);
+
+		doThrow(new VempainAbstractException("Created datetime is missing"))
+				.when(aclService).validateAbstractData(any(AbstractVempainEntity.class));
 
         try {
             layoutService.save(layout);
@@ -396,9 +398,12 @@ class LayoutServiceUTC {
     }
 
     @Test
-    void saveNullModifierFail() {
+    void saveNullModifierFail() throws VempainAbstractException {
         Layout layout = MockRepositoryTools.makeLayout(1L, "Test layout");
         layout.setModifier(null);
+
+		doThrow(new VempainAbstractException("Modifier is missing while modified is set"))
+				.when(aclService).validateAbstractData(any(AbstractVempainEntity.class));
 
         try {
             layoutService.save(layout);
@@ -411,9 +416,12 @@ class LayoutServiceUTC {
     }
 
     @Test
-    void saveNullModifiedFail() {
+    void saveNullModifiedFail() throws VempainAbstractException {
         Layout layout = MockRepositoryTools.makeLayout(1L, "Test layout");
         layout.setModified(null);
+
+		doThrow(new VempainAbstractException("Modified datetime is missing while modifier is set"))
+				.when(aclService).validateAbstractData(any(AbstractVempainEntity.class));
 
         try {
             layoutService.save(layout);
@@ -426,10 +434,13 @@ class LayoutServiceUTC {
     }
 
     @Test
-    void saveNullModifiedBeforeCreatedFail() {
+    void saveNullModifiedBeforeCreatedFail() throws VempainAbstractException {
         Layout layout = MockRepositoryTools.makeLayout(1L, "Test layout");
         layout.setModified(Instant.now().minus(1, ChronoUnit.HOURS));
         layout.setCreated(Instant.now());
+
+		doThrow(new VempainAbstractException("Created datetime is more recent than modified"))
+				.when(aclService).validateAbstractData(any(AbstractVempainEntity.class));
 
         try {
             layoutService.save(layout);
@@ -447,7 +458,7 @@ class LayoutServiceUTC {
         Layout layout = MockRepositoryTools.makeLayout(1L, layoutName);
         LayoutRequest layoutRequest = TestUTCTools.generateLayoutRequest(layout);
 
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         when(layoutRepository.findByLayoutName(layoutName)).thenReturn(Optional.empty());
         when(aclService.getNextAclId()).thenReturn(1L);
         doNothing().when(aclService).saveAclRequests(1L, layoutRequest.getAcls());
@@ -467,14 +478,14 @@ class LayoutServiceUTC {
         Layout layout = MockRepositoryTools.makeLayout(1L, layoutName);
         LayoutRequest layoutRequest = TestUTCTools.generateLayoutRequest(layout);
 
-        doThrow(new SessionAuthenticationException("Test exception")).when(accessService).getUserId();
+        doThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Test exception")).when(accessService).getValidUserId();
 
         try {
             layoutService.saveLayoutRequestByUser(layoutRequest);
             fail("Saving a layout request without a user session should have triggered an exception");
         } catch (ResponseStatusException e) {
             assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
-            assertEquals("401 UNAUTHORIZED \"" + VempainMessages.INVALID_USER_SESSION + "\"", e.getMessage());
+            assertEquals("401 UNAUTHORIZED \"Test exception\"", e.getMessage());
         } catch (Exception e) {
             fail("Should not have received any other exception: " + e);
         }
@@ -486,7 +497,7 @@ class LayoutServiceUTC {
         Layout layout = MockRepositoryTools.makeLayout(1L, layoutName);
         LayoutRequest layoutRequest = TestUTCTools.generateLayoutRequest(layout);
 
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         Optional<Layout> optionalLayout = Optional.of(layout);
         when(layoutRepository.findByLayoutName(layoutName)).thenReturn(optionalLayout);
 
@@ -507,7 +518,7 @@ class LayoutServiceUTC {
         Layout layout = MockRepositoryTools.makeLayout(1L, layoutName);
         LayoutRequest layoutRequest = TestUTCTools.generateLayoutRequest(layout);
 
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         when(layoutRepository.findByLayoutName(layoutName)).thenReturn(Optional.empty());
         when(aclService.getNextAclId()).thenReturn(1L);
         doThrow(new VempainAclException("Test exception")).when(aclService).saveAclRequests(1L, layoutRequest.getAcls());
@@ -530,7 +541,7 @@ class LayoutServiceUTC {
         layout.setStructure("  ");
         LayoutRequest layoutRequest = TestUTCTools.generateLayoutRequest(layout);
 
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         when(layoutRepository.findByLayoutName(layoutName)).thenReturn(Optional.empty());
         when(aclService.getNextAclId()).thenReturn(1L);
         doNothing().when(aclService).saveAclRequests(1L, layoutRequest.getAcls());
@@ -552,7 +563,7 @@ class LayoutServiceUTC {
         Layout layout = MockRepositoryTools.makeLayout(1L, layoutName);
         LayoutRequest layoutRequest = TestUTCTools.generateLayoutRequest(layout);
 
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         Optional<Layout> optionalLayout = Optional.of(layout);
         when(layoutRepository.findById(1L)).thenReturn(optionalLayout);
         when(accessService.hasModifyPermission(1L)).thenReturn(true);
@@ -573,14 +584,14 @@ class LayoutServiceUTC {
         Layout layout = MockRepositoryTools.makeLayout(1L, layoutName);
         LayoutRequest layoutRequest = TestUTCTools.generateLayoutRequest(layout);
 
-        doThrow(new SessionAuthenticationException("Test exception")).when(accessService).getUserId();
+        doThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Test exception")).when(accessService).getValidUserId();
 
         try {
             layoutService.updateByUser(layoutRequest);
             fail("updating layout without session should have triggered an exception");
         } catch (ResponseStatusException e) {
             assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
-            assertEquals("401 UNAUTHORIZED \"" + VempainMessages.INVALID_USER_SESSION + "\"", e.getMessage());
+            assertEquals("401 UNAUTHORIZED \"Test exception\"", e.getMessage());
         } catch (Exception e) {
             fail("Should not have received any other exception: " + e);
         }
@@ -592,7 +603,7 @@ class LayoutServiceUTC {
         Layout layout = MockRepositoryTools.makeLayout(1L, layoutName);
         LayoutRequest layoutRequest = TestUTCTools.generateLayoutRequest(layout);
 
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
 
         Optional<Layout> emptyOptional = Optional.empty();
         when(layoutRepository.findById(1L)).thenReturn(emptyOptional);
@@ -614,7 +625,7 @@ class LayoutServiceUTC {
         Layout layout = MockRepositoryTools.makeLayout(1L, layoutName);
         LayoutRequest layoutRequest = TestUTCTools.generateLayoutRequest(layout);
 
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         Optional<Layout> optionalLayout = Optional.of(layout);
         when(layoutRepository.findById(1L)).thenReturn(optionalLayout);
         when(accessService.hasModifyPermission(1L)).thenReturn(false);
@@ -636,7 +647,7 @@ class LayoutServiceUTC {
         Layout layout = MockRepositoryTools.makeLayout(1L, layoutName);
         LayoutRequest layoutRequest = TestUTCTools.generateLayoutRequest(layout);
 
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         Optional<Layout> optionalLayout = Optional.of(layout);
         when(layoutRepository.findById(1L)).thenReturn(optionalLayout);
         when(accessService.hasModifyPermission(1L)).thenReturn(true);
@@ -689,7 +700,6 @@ class LayoutServiceUTC {
         Optional<Layout> optionalLayout = Optional.of(layout);
         when(layoutRepository.findById(1L)).thenReturn(optionalLayout);
         doThrow(new RuntimeException("Test exception")).when(aclService).deleteByAclId(1L);
-        doNothing().when(layoutRepository).delete(layout);
 
         try {
             layoutService.delete(1L);
@@ -722,7 +732,7 @@ class LayoutServiceUTC {
     @Test
     void deleteByUserOk() throws VempainEntityNotFoundException {
         Layout layout = TestUTCTools.generateLayout(1L);
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         when(accessService.hasDeletePermission(anyLong())).thenReturn(true);
         Optional<Layout> optionalLayout = Optional.of(layout);
         when(layoutRepository.findById(1L)).thenReturn(optionalLayout);
@@ -737,14 +747,14 @@ class LayoutServiceUTC {
 
     @Test
     void deleteByUserNoSessionFail() {
-        doThrow(new SessionAuthenticationException("Test exception")).when(accessService).getUserId();
+        doThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Test exception")).when(accessService).getValidUserId();
 
         try {
             layoutService.deleteByUser(1L);
             fail("Deleting by id without session should have triggered an exception");
         } catch (ResponseStatusException e) {
             assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
-            assertEquals("401 UNAUTHORIZED \"" + VempainMessages.INVALID_USER_SESSION + "\"", e.getMessage());
+            assertEquals("401 UNAUTHORIZED \"Test exception\"", e.getMessage());
         } catch (Exception e) {
             fail("Should not have received any other exception: " + e);
         }
@@ -753,7 +763,7 @@ class LayoutServiceUTC {
     @Test
     void deleteByUserNoPermissionFail() {
         Layout layout = TestUTCTools.generateLayout(1L);
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         Optional<Layout> optionalLayout = Optional.of(layout);
         when(layoutRepository.findById(layout.getId())).thenReturn(optionalLayout);
         when(accessService.hasDeletePermission(anyLong())).thenReturn(false);
@@ -772,7 +782,7 @@ class LayoutServiceUTC {
     @Test
     void deleteByUserNoAclFail() throws VempainEntityNotFoundException {
         Layout layout = TestUTCTools.generateLayout(1L);
-        when(accessService.getUserId()).thenReturn(1L);
+        when(accessService.getValidUserId()).thenReturn(1L);
         Optional<Layout> optionalLayout = Optional.of(layout);
         when(layoutRepository.findById(layout.getId())).thenReturn(optionalLayout);
         when(accessService.hasDeletePermission(anyLong())).thenReturn(true);

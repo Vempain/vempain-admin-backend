@@ -5,11 +5,9 @@ import fi.poltsi.vempain.admin.api.QueryDetailEnum;
 import fi.poltsi.vempain.admin.api.request.AclRequest;
 import fi.poltsi.vempain.admin.api.request.ComponentRequest;
 import fi.poltsi.vempain.admin.api.request.FormRequest;
-import fi.poltsi.vempain.admin.api.response.AclResponse;
 import fi.poltsi.vempain.admin.api.response.FormResponse;
 import fi.poltsi.vempain.admin.entity.Component;
 import fi.poltsi.vempain.admin.entity.Form;
-import fi.poltsi.vempain.admin.entity.FormComponent;
 import fi.poltsi.vempain.admin.exception.EntityAlreadyExistsException;
 import fi.poltsi.vempain.admin.exception.InvalidRequestException;
 import fi.poltsi.vempain.admin.exception.ProcessingFailedException;
@@ -18,18 +16,17 @@ import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.repository.FormRepository;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.web.authentication.session.SessionAuthenticationException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
@@ -45,10 +42,9 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class FormServiceUTC {
 	private final static long itemCount = 10L;
-
-	private FormService formService;
 
 	@Mock
 	private AclService           aclService;
@@ -61,11 +57,9 @@ class FormServiceUTC {
 	@Mock
 	private FormComponentService formComponentService;
 
-	@BeforeEach
-	void setUp() {
-		MockitoAnnotations.openMocks(this);
-		formService = new FormService(aclService, formRepository, componentService, accessService, formComponentService);
-	}
+	@InjectMocks
+	private FormService formService;
+	;
 
 	@Test
 	void findAllOk() {
@@ -75,7 +69,8 @@ class FormServiceUTC {
 		try {
 			Iterable<Form> formList = formService.findAll();
 			assertNotNull(formList);
-			assertEquals(itemCount, StreamSupport.stream(formList.spliterator(), false).count());
+			assertEquals(itemCount, StreamSupport.stream(formList.spliterator(), false)
+												 .count());
 		} catch (Exception e) {
 			fail("We should not have received an exception when retrieving all forms: " + e.getMessage());
 		}
@@ -100,7 +95,8 @@ class FormServiceUTC {
 		try {
 			Iterable<Form> formList = formService.findAll();
 			assertNotNull(formList);
-			assertEquals(0, StreamSupport.stream(formList.spliterator(), false).count());
+			assertEquals(0, StreamSupport.stream(formList.spliterator(), false)
+										 .count());
 		} catch (Exception e) {
 			fail("We should not have received an exception when retrieving all forms and null returned: " + e.getMessage());
 		}
@@ -138,8 +134,8 @@ class FormServiceUTC {
 
 	@Test
 	void findByIdOk() {
-		var  formId = 1L;
-		Form form   = TestUTCTools.generateForm(1L, 1L);
+		var formId = 1L;
+		Form form = TestUTCTools.generateForm(1L, 1L);
 		form.setId(formId);
 		when(formRepository.findById(formId)).thenReturn(Optional.of(form));
 
@@ -170,8 +166,8 @@ class FormServiceUTC {
 
 	@Test
 	void findByIdForUserOk() {
-		var  formId = 1L;
-		Form form   = TestUTCTools.generateForm(1L, 1L);
+		var formId = 1L;
+		Form form = TestUTCTools.generateForm(1L, 1L);
 		when(formRepository.findById(formId)).thenReturn(Optional.of(form));
 		when(accessService.hasReadPermission(anyLong())).thenReturn(true);
 
@@ -200,16 +196,15 @@ class FormServiceUTC {
 
 	@Test
 	void findByIdForUserNoSessionFail() {
-		var  formId = 1L;
-		Form form   = TestUTCTools.generateForm(1L, 1L);
-		when(formRepository.findById(formId)).thenReturn(Optional.of(form));
-		doThrow(new SessionAuthenticationException("Test exception")).when(accessService).getUserId();
+		var formId = 1L;
+		doThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Test exception")).when(accessService)
+																					   .getValidUserId();
 
 		try {
 			formService.findByIdForUser(formId);
 			fail("Accessing form without session should have failed");
 		} catch (ResponseStatusException e) {
-			assertEquals("401 UNAUTHORIZED \"" + VempainMessages.INVALID_USER_SESSION + "\"", e.getMessage());
+			assertEquals("401 UNAUTHORIZED \"Test exception\"", e.getMessage());
 			assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
 		} catch (Exception e) {
 			fail("We should have received an ResponseStatusException instead of some other exception: " + e);
@@ -218,8 +213,8 @@ class FormServiceUTC {
 
 	@Test
 	void findByIdForUserNoAccessFail() {
-		var  formId = 1L;
-		Form form   = TestUTCTools.generateForm(1L, 1L);
+		var formId = 1L;
+		Form form = TestUTCTools.generateForm(1L, 1L);
 		when(formRepository.findById(formId)).thenReturn(Optional.of(form));
 		when(accessService.hasReadPermission(anyLong())).thenReturn(false);
 
@@ -236,7 +231,7 @@ class FormServiceUTC {
 
 	@Test
 	void findByFormNameOk() {
-		Form   form     = TestUTCTools.generateForm(1L, 1L);
+		Form form = TestUTCTools.generateForm(1L, 1L);
 		String formName = form.getFormName();
 		when(formRepository.findByFormName(formName)).thenReturn(form);
 
@@ -250,9 +245,6 @@ class FormServiceUTC {
 
 	@Test
 	void findByFormNameNullFail() {
-		var formId = 1L;
-		when(formRepository.findById(formId)).thenReturn(null);
-
 		try {
 			formService.findByFormName("not exist");
 			fail("Should not have received any form");
@@ -267,8 +259,10 @@ class FormServiceUTC {
 		Form form = TestUTCTools.generateForm(1L, 1L);
 		when(formRepository.findById(form.getId())).thenReturn(Optional.of(form));
 		when(accessService.hasDeletePermission(anyLong())).thenReturn(true);
-		doNothing().when(aclService).deleteByAclId(form.getAclId());
-		doNothing().when(formRepository).deleteById(form.getId());
+		doNothing().when(aclService)
+				   .deleteByAclId(form.getAclId());
+		doNothing().when(formRepository)
+				   .deleteById(form.getId());
 
 		try {
 			formService.delete(form.getId());
@@ -314,7 +308,8 @@ class FormServiceUTC {
 		Form form = TestUTCTools.generateForm(1L, 1L);
 		when(formRepository.findById(form.getId())).thenReturn(Optional.of(form));
 		when(accessService.hasDeletePermission(anyLong())).thenReturn(true);
-		doThrow(new VempainEntityNotFoundException("ACL not found for deletion", "acl")).when(aclService).deleteByAclId(anyLong());
+		doThrow(new VempainEntityNotFoundException("ACL not found for deletion", "acl")).when(aclService)
+																						.deleteByAclId(anyLong());
 
 		try {
 			formService.delete(form.getId());
@@ -332,8 +327,10 @@ class FormServiceUTC {
 		Form form = TestUTCTools.generateForm(1L, 1L);
 		when(formRepository.findById(form.getId())).thenReturn(Optional.of(form));
 		when(accessService.hasDeletePermission(anyLong())).thenReturn(true);
-		doNothing().when(aclService).deleteByAclId(form.getAclId());
-		doThrow(new NullPointerException()).when(formRepository).deleteById(form.getId());
+		doNothing().when(aclService)
+				   .deleteByAclId(form.getAclId());
+		doThrow(new NullPointerException()).when(formRepository)
+										   .deleteById(form.getId());
 
 		try {
 			formService.delete(form.getId());
@@ -367,15 +364,25 @@ class FormServiceUTC {
 			FormResponse formResponse = formService.saveRequest(formRequest);
 			assertNotNull(formResponse);
 		} catch (Exception e) {
-			fail("We should not have received an exception when saving a correctly formed FormRequest");
+			fail("We should not have received an exception when saving a correctly formed FormRequest, but we got: " + e.getMessage());
 		}
 	}
 
 	@Test
 	void saveRequestFormNameAlreadyExistsFail() throws VempainAclException, VempainComponentException {
-		FormRequest formRequest = setupSaveRequest();
-
-		when(formRepository.findByFormName(formRequest.getName())).thenReturn(Form.builder().build());
+		List<AclRequest> aclRequests = TestUTCTools.generateAclRequestList(1L, 1L);
+		var componentRequests = TestUTCTools.generateComponentRequestList(4L);
+		var formRequest = FormRequest.builder()
+									 .id(1L)
+									 .name("Test form")
+									 .layoutId(1L)
+									 .acls(aclRequests)
+									 .locked(false)
+									 .components(componentRequests)
+									 .build();
+		when(formRepository.findByFormName(formRequest.getName())).thenReturn(null);
+		when(formRepository.findByFormName(formRequest.getName())).thenReturn(Form.builder()
+																				  .build());
 
 		try {
 			formService.saveRequest(formRequest);
@@ -390,13 +397,34 @@ class FormServiceUTC {
 
 	@Test
 	void saveRequestNullComponentsListFail() throws VempainAclException, VempainComponentException {
-		FormRequest formRequest = setupSaveRequest();
+		List<AclRequest> aclRequests = TestUTCTools.generateAclRequestList(1L, 1L);
+		var componentRequests = TestUTCTools.generateComponentRequestList(4L);
+		var formRequest = FormRequest.builder()
+									 .id(1L)
+									 .name("Test form")
+									 .layoutId(1L)
+									 .acls(aclRequests)
+									 .locked(false)
+									 .components(componentRequests)
+									 .build();
+		when(formRepository.findByFormName(formRequest.getName())).thenReturn(null);
 		testFormServiceWithComponentList(formRequest, null);
 	}
 
 	@Test
 	void saveRequestEmptyComponentsListFail() throws VempainAclException, VempainComponentException {
-		FormRequest formRequest = setupSaveRequest();
+		List<AclRequest> aclRequests = TestUTCTools.generateAclRequestList(1L, 1L);
+		var componentRequests = TestUTCTools.generateComponentRequestList(4L);
+		var formRequest = FormRequest.builder()
+									 .id(1L)
+									 .name("Test form")
+									 .layoutId(1L)
+									 .acls(aclRequests)
+									 .locked(false)
+									 .components(componentRequests)
+									 .build();
+		when(formRepository.findByFormName(formRequest.getName())).thenReturn(null);
+
 		testFormServiceWithComponentList(formRequest, new ArrayList<>());
 	}
 
@@ -415,8 +443,21 @@ class FormServiceUTC {
 
 	@Test
 	void saveRequestAclIdFail() throws VempainAclException, VempainComponentException {
-		FormRequest formRequest = setupSaveRequest();
-		doThrow(new VempainAclException("New ACL ID is invalid")).when(aclService).saveAclRequests(anyLong(), any());
+		List<AclRequest> aclRequests = TestUTCTools.generateAclRequestList(1L, 1L);
+		var componentRequests = TestUTCTools.generateComponentRequestList(4L);
+		var formRequest = FormRequest.builder()
+									 .id(1L)
+									 .name("Test form")
+									 .layoutId(1L)
+									 .acls(aclRequests)
+									 .locked(false)
+									 .components(componentRequests)
+									 .build();
+		when(formRepository.findByFormName(formRequest.getName())).thenReturn(null);
+		when(aclService.getNextAclId()).thenReturn(1L);
+
+		doThrow(new VempainAclException("New ACL ID is invalid")).when(aclService)
+																 .saveAclRequests(anyLong(), any());
 
 		try {
 			formService.saveRequest(formRequest);
@@ -434,7 +475,8 @@ class FormServiceUTC {
 		ComponentRequest componentRequest = ComponentRequest.builder()
 															.id(-1L)
 															.build();
-		formRequest.getComponents().add(componentRequest);
+		formRequest.getComponents()
+				   .add(componentRequest);
 
 		try {
 			formService.saveRequest(formRequest);
@@ -449,7 +491,8 @@ class FormServiceUTC {
 	@Test
 	void saveRequestNoComponentFoundFail() throws VempainAclException, VempainComponentException {
 		FormService spyService = spy(formService);
-		doThrow(new VempainComponentException("Failed to find component")).when(spyService).getFormResponse(any(Form.class));
+		doThrow(new VempainComponentException("Failed to find component")).when(spyService)
+																		  .getFormResponse(any(Form.class));
 		FormRequest formRequest = setupSaveRequest();
 
 		try {
@@ -462,63 +505,48 @@ class FormServiceUTC {
 		}
 	}
 
-	private FormRequest setupSaveRequest() throws VempainAclException, VempainComponentException {
-		List<AclRequest> aclRequests       = TestUTCTools.generateAclRequestList(1L, 1L);
-		var              componentRequests = TestUTCTools.generateComponentRequestList(4L);
-		FormRequest formRequest = FormRequest.builder()
-											 .id(1L)
-											 .name("Test form")
-											 .layoutId(1L)
-											 .acls(aclRequests)
-											 .locked(false)
-											 .components(componentRequests)
-											 .build();
+	private FormRequest setupSaveRequest() throws VempainComponentException {
+		var aclRequests = TestUTCTools.generateAclRequestList(1L, 1L);
+		var componentRequests = TestUTCTools.generateComponentRequestList(4L);
+		var formRequest = FormRequest.builder()
+									 .id(1L)
+									 .name("Test form")
+									 .layoutId(1L)
+									 .acls(aclRequests)
+									 .locked(false)
+									 .components(componentRequests)
+									 .build();
 		when(formRepository.findByFormName(formRequest.getName())).thenReturn(null);
 		when(aclService.getNextAclId()).thenReturn(1L);
-		doNothing().when(aclService).saveAclRequests(1L, formRequest.getAcls());
 		// The return value is not actually used anywhere
-		when(formRepository.save(any(Form.class))).thenReturn(Form.builder().build());
-		when(componentService.findById(anyLong())).thenReturn(Component.builder().build());
+		when(formRepository.save(any(Form.class))).thenReturn(Form.builder()
+																  .build());
+		when(componentService.findById(anyLong())).thenReturn(Component.builder()
+																	   .build());
 
-		AclResponse aclResponse = AclResponse.builder().build();
-		when(aclService.getAclResponses(formRequest.getAcls().getFirst().getAclId())).thenReturn(Collections.singletonList(aclResponse));
-
-		ArrayList<FormComponent> formComponents = new ArrayList<>();
-
-		long sortOrder = 0;
-		for (var componentRequest : formRequest.getComponents()) {
-			formComponents.add(FormComponent.builder()
-											.componentId(componentRequest.getId())
-											.formId(1L)
-											.sortOrder(sortOrder)
-											.build());
-			sortOrder++;
-		}
-
-		when(formComponentService.findFormComponentByFormId(1L)).thenReturn(formComponents);
 		return formRequest;
 	}
 
 	@Test
 	void saveFormComponentsOk() throws VempainComponentException {
-		var  componentRequests = TestUTCTools.generateComponentRequestList(4L);
-		Form form              = TestUTCTools.generateForm(1L, 1L);
-		when(componentService.findById(anyLong())).thenReturn(Component.builder().build());
-		doNothing().when(formComponentService).addFormComponent(anyLong(), anyLong(), anyLong());
+		var componentRequests = TestUTCTools.generateComponentRequestList(4L);
+		Form form = TestUTCTools.generateForm(1L, 1L);
+		when(componentService.findById(anyLong())).thenReturn(Component.builder()
+																	   .build());
 
 		try {
 			formService.saveFormComponents(componentRequests, form);
 		} catch (Exception e) {
-			fail("Saving well formed component list and form should have succeeded");
+			fail("Saving well formed component list and form should have succeeded, instead we got: " + e.getMessage());
 		}
 	}
 
 	@Test
 	void saveFormComponentsNoComponentFail() throws VempainComponentException {
-		var  componentRequests = TestUTCTools.generateComponentRequestList(4L);
-		Form form            = TestUTCTools.generateForm(1L, 1L);
-		doThrow(new VempainComponentException("Failed to find component")).when(componentService).findById(anyLong());
-		doNothing().when(formComponentService).addFormComponent(anyLong(), anyLong(), anyLong());
+		var componentRequests = TestUTCTools.generateComponentRequestList(4L);
+		Form form = TestUTCTools.generateForm(1L, 1L);
+		doThrow(new VempainComponentException("Failed to find component")).when(componentService)
+																		  .findById(anyLong());
 
 		try {
 			formService.saveFormComponents(componentRequests, form);

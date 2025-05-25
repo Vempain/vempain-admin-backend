@@ -17,7 +17,6 @@ import fi.poltsi.vempain.admin.entity.file.FileCommon;
 import fi.poltsi.vempain.admin.exception.VempainAbstractException;
 import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
-import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.exception.VempainLayoutException;
 import fi.poltsi.vempain.admin.repository.AclRepository;
 import fi.poltsi.vempain.admin.repository.ComponentRepository;
@@ -244,8 +243,7 @@ public class TestITCTools {
 		return map;
 	}
 
-	public List<Map<Long, List<Long>>> generateFormComponents(long formCount, long componentCount) throws VempainComponentException, VempainAbstractException,
-																										  VempainEntityNotFoundException {
+	public List<Map<Long, List<Long>>> generateFormComponents(long formCount, long componentCount) throws VempainComponentException, VempainAbstractException {
 		var formIds = generateForms(formCount);
 		var formComponentList = new ArrayList<Map<Long, List<Long>>>();
 
@@ -263,7 +261,7 @@ public class TestITCTools {
 		var userId = generateUser();
 		var aclId = generateAcl(userId, null, true, true, true, true);
 		Component component = Component.builder()
-									   .compName("Test component " + index + RandomStringUtils.randomAlphanumeric(8))
+									   .compName("Test component " + index + RandomStringUtils.secure().nextAlphanumeric(8))
 									   .compData("Test component data " + index)
 									   .locked(false)
 									   .aclId(aclId)
@@ -575,8 +573,7 @@ public class TestITCTools {
 	/// //////////////// User end
 	/// //////////////// Unit start
 	public Long generateUnit() {
-		var testUserAccountTools = new TestUserAccountTools();
-		var randomString = testUserAccountTools.randomLongString();
+		var randomString = TestUserAccountTools.randomLongString();
 		var userId = generateUser();
 		// Once we have generated an user, we can generate the ACL for the object
 		var aclId = generateAcl(userId, null, true, true, true, true);
@@ -598,7 +595,7 @@ public class TestITCTools {
 
 	/// //////////////// Gallery start
 	public Long generateGalleryFromDirectory(long playerId) {
-		var randomImagePath = RandomStringUtils.randomAlphanumeric(8);
+		var randomImagePath = RandomStringUtils.secure().nextAlphanumeric(8);
 		var testGalleryName = "Test gallery " + randomImagePath;
 
 		var destinationFileList = prepareConvertedForTests(randomImagePath);

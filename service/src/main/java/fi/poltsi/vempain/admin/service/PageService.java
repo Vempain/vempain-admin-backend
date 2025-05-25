@@ -8,8 +8,8 @@ import fi.poltsi.vempain.admin.exception.ProcessingFailedException;
 import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.repository.PageRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -21,15 +21,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
+@RequiredArgsConstructor
 @Service
-public class PageService extends AbstractService {
+public class PageService {
 	private final PageRepository pageRepository;
-
-	@Autowired
-	public PageService(AclService aclService, AccessService accessService, PageRepository pageRepository) {
-		super(aclService, accessService);
-		this.pageRepository = pageRepository;
-	}
+	private final AclService aclService;
+	private final AccessService accessService;
 
 	public Iterable<Page> findAll() {
 		return pageRepository.findAll();
@@ -75,7 +72,7 @@ public class PageService extends AbstractService {
 	public Page saveFromPageRequest(PageRequest request) {
 		log.debug("Received call to save page request: {}", request);
 
-		var userId = getUserId();
+		var userId = accessService.getValidUserId();
 
 		try {
 			log.debug("Checking if path of the new page already exists: {}", request.getPath());
@@ -109,7 +106,7 @@ public class PageService extends AbstractService {
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void deleteById(long pageId) throws ProcessingFailedException, VempainEntityNotFoundException {
-		var userId = getUserId();
+		var userId = accessService.getValidUserId();
 		var page = pageRepository.findById(pageId);
 
 		if (page == null) {
@@ -141,7 +138,7 @@ public class PageService extends AbstractService {
 
 	@Transactional(propagation = Propagation.REQUIRED)
 	public Page updateFromRequest(PageRequest request) {
-		var userId = getUserId();
+		var userId = accessService.getValidUserId();
 
 		var page = findById(request.getId());
 		if (page == null) {
@@ -161,8 +158,8 @@ public class PageService extends AbstractService {
 			try {
 				var pathPage = findByPath(request.getPath().trim());
 
-				if (pathPage.getId() != page.getId()) {
-					log.error("Failed to update page as the path {} already exists", request.getPath().trim());
+				if (!pathPage.getId().equals(page.getId())) {
+					log.error("Failed to update page as the path {} already exists and belongs to page ID {}", request.getPath().trim(), pathPage.getId());
 					throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST);
 				}
 			} catch (VempainEntityNotFoundException e) {
@@ -197,7 +194,7 @@ public class PageService extends AbstractService {
 	}
 
 	public void deleteByUser(long pageId) {
-		var userId = getUserId();
+		var userId = accessService.getValidUserId();
 
 		var page = findById(pageId);
 

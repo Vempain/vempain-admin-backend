@@ -16,7 +16,7 @@ public class TestUserAccountTools {
 	}
 
 	public static String randomLongString() {
-		return RandomStringUtils.randomAlphanumeric(14);
+		return RandomStringUtils.secure().nextAlphanumeric(14);
 	}
 
 	public static String randomPassword(int length) {

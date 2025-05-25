@@ -386,9 +386,9 @@ public class TestUTCTools {
 		var storageDir = Path.of(storageDirSetup);
 
 		// Give the file a random name
-		var randomFileName = RandomStringUtils.randomAlphabetic(12) + ".jpeg";
+		var randomFileName = RandomStringUtils.secure().nextAlphanumeric(12) + ".jpeg";
 		var convertedPath = FileClassEnum.getFileClassNameByMimetype("image/jpeg")
-							+ File.separator + RandomStringUtils.randomAlphabetic(12);
+							+ File.separator + RandomStringUtils.secure().nextAlphanumeric(12);
 		var absoluteConvertedPath = Path.of(storageDir + File.separator + convertedPath);
 		var convertedFile         = Path.of(convertedPath + File.separator + randomFileName);
 		var absoluteConvertedFile = Path.of(storageDir + File.separator + convertedFile);

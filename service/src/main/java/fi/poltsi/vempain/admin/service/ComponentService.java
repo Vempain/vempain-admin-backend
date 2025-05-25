@@ -8,6 +8,7 @@ import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.repository.ComponentRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,15 +22,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
+@RequiredArgsConstructor
 @Service
-public class ComponentService extends AbstractService {
+public class ComponentService {
 	private static final String              COMPONENT_ID = "component";
 	private final        ComponentRepository componentRepository;
-
-	public ComponentService(AclService aclService, AccessService accessService, ComponentRepository componentRepository) {
-		super(aclService, accessService);
-		this.componentRepository = componentRepository;
-	}
+	private final        AclService          aclService;
+	private final        AccessService       accessService;
 
 	public List<Component> findAll() {
 		ArrayList<Component> components = new ArrayList<>();
@@ -42,11 +41,12 @@ public class ComponentService extends AbstractService {
 	}
 
 	public List<Component> findAllByUser() {
-		Iterable<Component>  allComponents        = componentRepository.findAll();
+		Iterable<Component> allComponents = componentRepository.findAll();
 		ArrayList<Component> accessableComponents = new ArrayList<>();
 
 		for (Component component : allComponents) {
 			if (accessService.hasReadPermission(component.getAclId())) {
+				log.info("XXXXXXXXXXXXXXXX Adding {}", component);
 				accessableComponents.add(component);
 			}
 		}
@@ -66,7 +66,7 @@ public class ComponentService extends AbstractService {
 	}
 
 	public Component findByIdByUser(long componentId) {
-		var userId = getUserId();
+		var userId = accessService.getValidUserId();
 
 		Component component;
 
@@ -106,7 +106,8 @@ public class ComponentService extends AbstractService {
 			throw new VempainEntityNotFoundException("Component not found for deletion", COMPONENT_ID);
 		}
 
-		aclService.deleteByAclId(optionalComponent.get().getAclId());
+		aclService.deleteByAclId(optionalComponent.get()
+												  .getAclId());
 		componentRepository.deleteById(componentId);
 	}
 
@@ -118,7 +119,7 @@ public class ComponentService extends AbstractService {
 
 	@Transactional(propagation = Propagation.REQUIRED)
 	public Component saveFromRequest(ComponentRequest request) {
-		var userId = getUserId();
+		var userId = accessService.getValidUserId();
 
 		try {
 			var component = findByName(request.getCompName());
@@ -138,7 +139,8 @@ public class ComponentService extends AbstractService {
 										  .creator(userId)
 										  .created(Instant.now())
 										  .modifier(userId)
-										  .modified(Instant.now().plus(1, ChronoUnit.SECONDS))
+										  .modified(Instant.now()
+														   .plus(1, ChronoUnit.SECONDS))
 										  .build();
 
 		return componentRepository.save(newComponent);
@@ -147,7 +149,7 @@ public class ComponentService extends AbstractService {
 	@Transactional(propagation = Propagation.REQUIRED)
 	public Component updateFromRequest(ComponentRequest request) throws VempainEntityNotFoundException, VempainComponentException,
 																		VempainAclException, VempainAbstractException {
-		var userId = getUserId();
+		var userId = accessService.getValidUserId();
 		Component component;
 
 		try {
@@ -175,7 +177,7 @@ public class ComponentService extends AbstractService {
 
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void deleteByUser(Long componentId) throws VempainAclException {
-		var userId = getUserId();
+		var userId = accessService.getValidUserId();
 
 		var optionalComponent = componentRepository.findById(componentId);
 		if (optionalComponent.isEmpty()) {
@@ -210,16 +212,18 @@ public class ComponentService extends AbstractService {
 	}
 
 	private void validateComponent(Component component) throws VempainComponentException, VempainAbstractException {
-		if (component.getCompData() == null || component.getCompData().isBlank()) {
+		if (component.getCompData() == null || component.getCompData()
+														.isBlank()) {
 			log.error("Component data is not set: {}", component);
 			throw new VempainComponentException("Component data is not set");
 		}
 
-		if (component.getCompName() == null || component.getCompName().isBlank()) {
+		if (component.getCompName() == null || component.getCompName()
+														.isBlank()) {
 			log.error("Component name is not set: {}", component);
 			throw new VempainComponentException("Component name is not set");
 		}
 
-		validateAbstractData(component);
+		aclService.validateAbstractData(component);
 	}
 }
