@@ -16,3 +16,6 @@ logging:
         web: WARN
       hibernate:
         SQL: WARN
+vempain:
+  cmd-line:
+    exiftool: "/usr/bin/exiftool"

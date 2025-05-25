@@ -17,7 +17,6 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.stream.StreamSupport;
@@ -29,6 +28,7 @@ class SetupVerification implements ApplicationContextAware {
 	private final String TYPE_STRING  = "string";
 	private final String TYPE_NUMBER  = "number";
 	private final String TYPE_PATH    = "path";
+	private final String TYPE_FILE   = "file";
 
 	private final String[][] requiredKeys = {{"vempain.admin.file.image-format", TYPE_STRING},
 											 {"vempain.admin.file.thumbnail-size", TYPE_NUMBER},
@@ -36,6 +36,7 @@ class SetupVerification implements ApplicationContextAware {
 											 {"vempain.admin.ssh.user", TYPE_STRING},
 											 {"vempain.admin.ssh.home-dir", TYPE_PATH},
 											 {"vempain.admin.ssh.private-key", TYPE_PATH},
+											 {"vempain.cmd-line.exiftool", TYPE_FILE},
 											 {"vempain.site.ssh.address", TYPE_STRING},
 											 {"vempain.site.ssh.port", TYPE_NUMBER},
 											 {"vempain.site.ssh.user", TYPE_STRING},
@@ -52,8 +53,9 @@ class SetupVerification implements ApplicationContextAware {
 	@EventListener
 	public void checkEssentialConfigurations(ContextRefreshedEvent event) {
 		final Environment env = event.getApplicationContext().getEnvironment();
+
 		for (String[] keyPair : requiredKeys) {
-			String value = env.getProperty(keyPair[0]);
+			var value = env.getProperty(keyPair[0]);
 			log.info("Verifying that key {} is defined and not empty: {}", keyPair[0], value);
 
 			if (value == null || value.isEmpty()) {
@@ -69,10 +71,25 @@ class SetupVerification implements ApplicationContextAware {
 
 						break;
 					case TYPE_PATH:
-						Path path = Paths.get(value);
+						var path = Paths.get(value);
 
 						if (!Files.exists(path)) {
 							closeApplication("Path from configuration " + keyPair[0] + " pointing to " + value + " does not exist");
+						}
+						break;
+					case TYPE_FILE:
+						var file = Paths.get(value);
+
+						if (!Files.exists(file)) {
+							closeApplication("File from configuration " + keyPair[0] + " pointing to " + value + " does not exist");
+						}
+
+						if (!Files.isRegularFile(file)) {
+							closeApplication("File from configuration " + keyPair[0] + " pointing to " + value + " is not a file");
+						}
+
+						if (!Files.isExecutable(file)) {
+							closeApplication("File from configuration " + keyPair[0] + " pointing to " + value + " is not executable");
 						}
 						break;
 					case TYPE_STRING:

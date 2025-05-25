@@ -3,7 +3,9 @@ package fi.poltsi.vempain.tools;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.coobird.thumbnailator.Thumbnails;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.imageio.ImageIO;
@@ -14,11 +16,15 @@ import java.nio.file.Path;
 import java.util.Iterator;
 
 @Slf4j
+@Component
 @RequiredArgsConstructor
 public class ImageTools {
+	@Autowired
+	private MetadataTools metadataTools;
+
 	private static final String RESPONSE_STATUS_EXCEPTION_MESSAGE = "Unknown error";
 
-	public static Dimension resizeImage(Path sourceFile, Path destinationFile, int imageMinimumSize, float quality) {
+	public Dimension resizeImage(Path sourceFile, Path destinationFile, int imageMinimumSize, float quality) {
 		// Get the original dimensions of the source file in order to see whether it should be resized
 		var origDimensions   = getImageDimensions(sourceFile);
 		var targetDimensions = new Dimension();
@@ -36,8 +42,6 @@ public class ImageTools {
 			}
 		}
 
-		// log.info("Resizing image {} from {} to: {}", sourceFile, origDimensions, targetDimensions);
-
 		try {
 			Thumbnails
 					.of(sourceFile.toFile())
@@ -48,8 +52,7 @@ public class ImageTools {
 					.useExifOrientation(true)
 					.toFile(destinationFile.toFile());
 
-			var metaTools = new MetadataTools();
-			metaTools.copyMetadata(sourceFile.toFile(), destinationFile.toFile());
+			metadataTools.copyMetadata(sourceFile.toFile(), destinationFile.toFile());
 		} catch (IOException e) {
 			log.error("Failed to copy/convert {} to {}", sourceFile, destinationFile, e);
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, RESPONSE_STATUS_EXCEPTION_MESSAGE);
@@ -58,7 +61,7 @@ public class ImageTools {
 		return targetDimensions;
 	}
 
-	public static Dimension getImageDimensions(Path imageFile) {
+	public Dimension getImageDimensions(Path imageFile) {
 		if (!imageFile.toFile().exists()) {
 			log.error("File does not exist: {}", imageFile);
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, RESPONSE_STATUS_EXCEPTION_MESSAGE);

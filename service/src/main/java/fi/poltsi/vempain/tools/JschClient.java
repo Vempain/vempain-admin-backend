@@ -11,6 +11,7 @@ import fi.poltsi.vempain.admin.entity.file.FileCommon;
 import fi.poltsi.vempain.admin.entity.file.FileThumb;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -23,8 +24,6 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-
-import static fi.poltsi.vempain.tools.ImageTools.resizeImage;
 
 @Slf4j
 @Setter
@@ -45,6 +44,9 @@ public class JschClient {
 	private String thumbSubDir;
 	@Value("${vempain.site.image-size}")
 	private int    siteImageSize;
+
+	@Autowired
+	private ImageTools imageTools;
 
 	public JschClient() {
 		this.jsch = new JSch();
@@ -93,7 +95,7 @@ public class JschClient {
 					throw new RuntimeException(e);
 				}
 
-				var siteDimensions = resizeImage(Path.of(absolutePathConvertedFile), tmpFile.toPath(), siteImageSize, 0.7F);
+				var siteDimensions = imageTools.resizeImage(Path.of(absolutePathConvertedFile), tmpFile.toPath(), siteImageSize, 0.7F);
 				fileCommon.setSiteFileDimension(siteDimensions);
 
 				absolutePathConvertedFile = tmpFile.getAbsolutePath();

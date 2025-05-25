@@ -8,3 +8,6 @@ logging:
     root: INFO
     fi:
       poltsi: DEBUG
+vempain:
+  cmd-line:
+    exiftool: "/usr/bin/exiftool"

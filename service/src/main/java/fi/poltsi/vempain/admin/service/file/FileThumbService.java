@@ -4,6 +4,7 @@ import fi.poltsi.vempain.admin.api.FileClassEnum;
 import fi.poltsi.vempain.admin.entity.file.FileThumb;
 import fi.poltsi.vempain.admin.repository.file.FileCommonPageableRepository;
 import fi.poltsi.vempain.admin.repository.file.FileThumbPageableRepository;
+import fi.poltsi.vempain.tools.ImageTools;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -19,8 +20,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static fi.poltsi.vempain.tools.ImageTools.getImageDimensions;
-import static fi.poltsi.vempain.tools.ImageTools.resizeImage;
 import static fi.poltsi.vempain.tools.LocalFileTools.createAndVerifyDirectory;
 import static fi.poltsi.vempain.tools.LocalFileTools.getFileSize;
 import static fi.poltsi.vempain.tools.LocalFileTools.getSha1OfFile;
@@ -34,6 +33,7 @@ public class FileThumbService {
 	private static final String                       RESPONSE_STATUS_EXCEPTION_MESSAGE = "Unknown error";
 	private final        FileThumbPageableRepository  fileThumbPageableRepository;
 	private final        FileCommonPageableRepository fileCommonPageableRepository;
+	private final        ImageTools                   imageTools;
 
 	@Value("${vempain.admin.file.converted-directory}")
 	private String convertedDirectory;
@@ -41,6 +41,7 @@ public class FileThumbService {
 	private String imageFormat;
 	@Value("${vempain.admin.file.thumbnail-size}")
 	private int    thumbnailSize;
+
 
 	@Transactional
 	public void generateThumbFile(long fileCommonId) {
@@ -60,7 +61,8 @@ public class FileThumbService {
 		var sourcePath = Path.of((convertedDirectory != null ? convertedDirectory : "") + File.separator + fileCommon.getConvertedFile());
 
 		generateThumbFile(fileCommon.getId(), sourcePath,
-						  Path.of(fileCommon.getConvertedFile()).getParent(),
+						  Path.of(fileCommon.getConvertedFile())
+							  .getParent(),
 						  FileClassEnum.getFileClassByMimetype(fileCommon.getMimetype()));
 	}
 
@@ -70,9 +72,10 @@ public class FileThumbService {
 		var relativeDestinationPath = Path.of(FileClassEnum.THUMB.shortName + File.separator + destination);
 		var absoluteDestinationPath = Path.of(convertedDirectory + File.separator + relativeDestinationPath);
 		// Set the correct file extension
-		var thumbFilename = setExtension(sourceFile.getFileName().toString(), (imageFormat != null ? imageFormat : "jpeg"));
+		var thumbFilename = setExtension(sourceFile.getFileName()
+												   .toString(), (imageFormat != null ? imageFormat : "jpeg"));
 
-		var destinationFile     = Path.of(absoluteDestinationPath + File.separator + thumbFilename);
+		var destinationFile = Path.of(absoluteDestinationPath + File.separator + thumbFilename);
 
 		// Does the file already exist?
 		if (Files.exists(destinationFile)) {
@@ -88,14 +91,14 @@ public class FileThumbService {
 
 		// Generate thumb, for now we only handle images
 		if (fileClassEnum.equals(FileClassEnum.IMAGE)) {
-			resizeImage(sourceFile, destinationFile, (thumbnailSize != 0 ? thumbnailSize : 250), 0.5F);
+			imageTools.resizeImage(sourceFile, destinationFile, (thumbnailSize != 0 ? thumbnailSize : 250), 0.5F);
 		} else {
 			log.info("Unsupported file class {}", fileClassEnum.shortName);
 		}
 
-		var  dimensions = getImageDimensions(destinationFile);
-		long filesize   = getFileSize(destinationFile);
-		var  sha1sum    = getSha1OfFile(sourceFile.toFile());
+		var dimensions = imageTools.getImageDimensions(destinationFile);
+		long filesize = getFileSize(destinationFile);
+		var sha1sum = getSha1OfFile(sourceFile.toFile());
 
 		// We store the full path name from the converted directory
 		var thumbDestinationFilename = sourceFile.getFileName()

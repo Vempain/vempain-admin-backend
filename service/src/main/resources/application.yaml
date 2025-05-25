@@ -47,7 +47,8 @@ management:
     web:
       exposure:
         include: [ "*", "openapi", "swagger-ui" ]
-    enabled-by-default: true
+    access:
+      default: unrestricted
 
 springdoc:
   show-login-endpoint: true
@@ -92,7 +93,7 @@ vempain:
       private-key: "${vempain.admin.ssh.home-dir}/.ssh/id_ed25519"
   site:
     www-root: override-me
-    # This is the minimum dimension, if the original image size is 2800x5600 then the site image size is 1400x2800
+    # This is the minimum dimension if the original image size is 2800x5600 then the site image size is 1400x2800
     image-size: 1400
     thumb-directory: ".thumb"
     ssh:
@@ -104,6 +105,8 @@ vempain:
     allowed-origins: ${vempain.app.frontend-url}
     cors-pattern: '/**'
     max-age: 3600
+  cmd-line:
+    exiftool: override-me
 
 ---
 ### Local machine ###

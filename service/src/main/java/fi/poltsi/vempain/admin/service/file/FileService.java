@@ -37,6 +37,7 @@ import fi.poltsi.vempain.admin.service.AclService;
 import fi.poltsi.vempain.admin.service.PageGalleryService;
 import fi.poltsi.vempain.admin.service.PageService;
 import fi.poltsi.vempain.admin.service.SubjectService;
+import fi.poltsi.vempain.tools.ImageTools;
 import fi.poltsi.vempain.tools.MetadataTools;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -80,7 +81,6 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static fi.poltsi.vempain.tools.AudioTools.getAudioLength;
-import static fi.poltsi.vempain.tools.ImageTools.getImageDimensions;
 import static fi.poltsi.vempain.tools.JsonTools.extractMimetype;
 import static fi.poltsi.vempain.tools.JsonTools.getDescriptionFromJson;
 import static fi.poltsi.vempain.tools.JsonTools.getOriginalDateTimeFromJson;
@@ -112,6 +112,11 @@ public class FileService extends AbstractService {
 	private final SubjectService                 subjectService;
 	private final PageService                    pageService;
 	private final PageGalleryService			 pageGalleryService;
+
+	@Autowired
+	private MetadataTools metadataTools;
+	@Autowired
+	private ImageTools imageTools;
 
 	@Value("${vempain.admin.file.converted-directory}")
 	private String convertedDirectory;
@@ -441,9 +446,8 @@ public class FileService extends AbstractService {
 
 		log.debug("Checksum of source file: {}", sourceSha1Sum);
 
-		var metaTool = new MetadataTools();
 		// Get metadata
-		var metadata = metaTool.getMetadataAsJSON(absolutePath.toFile());
+		var metadata = metadataTools.getMetadataAsJSON(absolutePath.toFile());
 
 		if (metadata == null || metadata.isEmpty()) {
 			log.error("Failed to get metadata from file: {}", absolutePath);
@@ -541,7 +545,7 @@ public class FileService extends AbstractService {
 				fileDocumentPageableRepository.save(fileDocument);
 			}
 			case IMAGE -> {
-				var dimensions = getImageDimensions(absolutePath);
+				var dimensions = imageTools.getImageDimensions(absolutePath);
 				var fileImage = FileImage.builder()
 										 .parentId(fileCommon.getId())
 										 .height(dimensions.height)
@@ -1139,7 +1143,7 @@ public class FileService extends AbstractService {
 		var convertedFile = fileCommon.getConvertedFile();
 		var convertedFilePath = Path.of(convertedDirectory + File.separator + convertedFile);
 
-		var dimensions = getImageDimensions(convertedFilePath);
+		var dimensions = imageTools.getImageDimensions(convertedFilePath);
 		var optionalFileImage = fileImagePageableRepository.findImageFileByParentId(fileCommon.getId());
 
 		var fileImage = optionalFileImage.orElseGet(FileImage::new);

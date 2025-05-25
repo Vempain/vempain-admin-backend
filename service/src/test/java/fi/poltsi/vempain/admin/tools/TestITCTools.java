@@ -89,9 +89,13 @@ public class TestITCTools {
 	private final GalleryRepository    galleryRepository;
 	@Value("${vempain.admin.file.converted-directory}")
 	private       String               convertedDirectory;
+	@Value("${vempain.cmd-line.exiftool}")
+	private String exifToolPath;
 
 	@Autowired
 	private EntityManager entityManager;
+	@Autowired
+	private MetadataTools metadataTools;
 
 	@Autowired
 	public TestITCTools(AclService aclService, FormService formService, ComponentService componentService, LayoutService layoutService,
@@ -99,24 +103,24 @@ public class TestITCTools {
 						FormRepository formRepository, ComponentRepository componentRepository, LayoutRepository layoutRepository,
 						UserService userService, UnitService unitService, UserRepository userRepository, PageRepository pageRepository,
 						GalleryRepository galleryRepository) {
-		this.aclService           = aclService;
-		this.formService          = formService;
-		this.componentService     = componentService;
-		this.layoutService        = layoutService;
-		this.fileService          = fileService;
+		this.aclService = aclService;
+		this.formService = formService;
+		this.componentService = componentService;
+		this.layoutService = layoutService;
+		this.fileService = fileService;
 		this.formComponentService = formComponentService;
-		this.aclRepository        = aclRepository;
-		this.formRepository       = formRepository;
-		this.componentRepository  = componentRepository;
-		this.layoutRepository     = layoutRepository;
-		this.userService          = userService;
-		this.unitService          = unitService;
-		this.userRepository       = userRepository;
-		this.pageRepository       = pageRepository;
-		this.galleryRepository    = galleryRepository;
+		this.aclRepository = aclRepository;
+		this.formRepository = formRepository;
+		this.componentRepository = componentRepository;
+		this.layoutRepository = layoutRepository;
+		this.userService = userService;
+		this.unitService = unitService;
+		this.userRepository = userRepository;
+		this.pageRepository = pageRepository;
+		this.galleryRepository = galleryRepository;
 	}
 
-	/////////////////// Acls start
+	/// //////////////// Acls start
 	public Long generateAcl(Long userId, Long unitId, boolean read, boolean modify, boolean create, boolean delete) {
 		long aclId = aclService.getNextAclId();
 		return generateAclWithId(aclId, userId, unitId, read, modify, create, delete);
@@ -148,7 +152,7 @@ public class TestITCTools {
 		var aclList = new ArrayList<Long>();
 
 		for (long i = 0; i < counter; i++) {
-			var userId  = generateUser();
+			var userId = generateUser();
 			var nextAcl = aclService.getNextAclId();
 			aclList.add(nextAcl);
 			log.info("Creating acl with aclId: {}", nextAcl);
@@ -162,13 +166,13 @@ public class TestITCTools {
 	}
 	/////////////////// Acls end
 
-	/////////////////// Forms start
+	/// //////////////// Forms start
 	public Long generateForm() {
-		var formId   = formRepository.getNextAvailableFormId();
+		var formId = formRepository.getNextAvailableFormId();
 		var layoutId = generateLayout();
 
 		var userId = generateUser();
-		var aclId  = generateAcl(userId, null, true, true, true, true);
+		var aclId = generateAcl(userId, null, true, true, true, true);
 		var form = Form.builder()
 					   .formName("Test form " + formId)
 					   .layoutId(layoutId)
@@ -209,7 +213,7 @@ public class TestITCTools {
 	}
 	/////////////////// Forms end
 
-	/////////////////// FormComponents start
+	/// //////////////// FormComponents start
 	public FormComponent generateFormComponent(long formId, long componentId, long sortOrder) {
 		var optionalComponent = componentRepository.findById(componentId);
 
@@ -227,9 +231,9 @@ public class TestITCTools {
 	}
 
 	public Map<Long, List<Long>> generateFormComponent(long formId, long componentCount) throws VempainComponentException, VempainAbstractException {
-		var  componentIds = generateComponents(componentCount);
-		long sortOrder    = 0L;
-		var  map          = new HashMap<Long, List<Long>>();
+		var componentIds = generateComponents(componentCount);
+		long sortOrder = 0L;
+		var map = new HashMap<Long, List<Long>>();
 
 		for (Long componentId : componentIds) {
 			generateFormComponent(formId, componentId, sortOrder);
@@ -242,7 +246,7 @@ public class TestITCTools {
 
 	public List<Map<Long, List<Long>>> generateFormComponents(long formCount, long componentCount) throws VempainComponentException, VempainAbstractException,
 																										  VempainEntityNotFoundException {
-		var formIds           = generateForms(formCount);
+		var formIds = generateForms(formCount);
 		var formComponentList = new ArrayList<Map<Long, List<Long>>>();
 
 		for (Long formId : formIds) {
@@ -254,10 +258,10 @@ public class TestITCTools {
 	}
 	/////////////////// FormComponents end
 
-	/////////////////// Components start
+	/// //////////////// Components start
 	public Component generateComponent(long index) throws VempainComponentException, VempainAbstractException {
 		var userId = generateUser();
-		var aclId  = generateAcl(userId, null, true, true, true, true);
+		var aclId = generateAcl(userId, null, true, true, true, true);
 		Component component = Component.builder()
 									   .compName("Test component " + index + RandomStringUtils.randomAlphanumeric(8))
 									   .compData("Test component data " + index)
@@ -323,10 +327,10 @@ public class TestITCTools {
 	}
 	/////////////////// Components end
 
-	/////////////////// Layouts start
+	/// //////////////// Layouts start
 	public Long generateLayout() {
-		var  userId = generateUser();
-		long aclId  = generateAcl(userId, null, true, true, true, true);
+		var userId = generateUser();
+		long aclId = generateAcl(userId, null, true, true, true, true);
 		var layout = Layout.builder()
 						   .layoutName("Test layout " + userId)
 						   .structure("<!--comp_0--><!--comp_1--><!--page--><!--comp_2-->")
@@ -394,11 +398,11 @@ public class TestITCTools {
 	}
 	/////////////////// Layouts end
 
-	/////////////////// Page start
+	/// //////////////// Page start
 	public Long generatePage() throws VempainAbstractException, VempainComponentException {
-		var formId       = generateForm();
-		var userId       = generateUser();
-		var aclId        = generateAcl(userId, null, true, true, true, true);
+		var formId = generateForm();
+		var userId = generateUser();
+		var aclId = generateAcl(userId, null, true, true, true, true);
 		var componentIds = generateComponents(3L);
 		log.info("Generated components: {}", componentIds);
 		long order = 0L;
@@ -429,8 +433,8 @@ public class TestITCTools {
 		return newPage.getId();
 	}
 
-	/////////////////// Page end
-	/////////////////// Subject start
+	/// //////////////// Page end
+	/// //////////////// Subject start
 	public Subject generateSubject(long index) {
 		var subject = Subject.builder()
 							 .subjectName("Subject " + index)
@@ -454,8 +458,8 @@ public class TestITCTools {
 		return subjectIdList;
 	}
 
-	/////////////////// Subject end
-	/////////////////// FileCommon start
+	/// //////////////// Subject end
+	/// //////////////// FileCommon start
 	public FileCommon generateFileCommon(long idx) {
 		var aclId = generateAcl(1L, null, true, true, true, true);
 		var fileCommon = FileCommon.builder()
@@ -489,10 +493,10 @@ public class TestITCTools {
 		return fileCommonIdList;
 	}
 
-	/////////////////// FileCommon end
-	/////////////////// FileSubject start
-	/////////////////// FileSubject end
-	/////////////////// User start
+	/// //////////////// FileCommon end
+	/// //////////////// FileSubject start
+	/// //////////////// FileSubject end
+	/// //////////////// User start
 	@Transactional
 	public Long generateUser() {
 		var password = randomPassword(16);
@@ -568,12 +572,12 @@ public class TestITCTools {
 		return idList;
 	}
 
-	/////////////////// User end
-	/////////////////// Unit start
+	/// //////////////// User end
+	/// //////////////// Unit start
 	public Long generateUnit() {
 		var testUserAccountTools = new TestUserAccountTools();
-		var randomString         = testUserAccountTools.randomLongString();
-		var userId               = generateUser();
+		var randomString = testUserAccountTools.randomLongString();
+		var userId = generateUser();
 		// Once we have generated an user, we can generate the ACL for the object
 		var aclId = generateAcl(userId, null, true, true, true, true);
 
@@ -592,7 +596,7 @@ public class TestITCTools {
 	}
 	/////////////////// Unit end
 
-	/////////////////// Gallery start
+	/// //////////////// Gallery start
 	public Long generateGalleryFromDirectory(long playerId) {
 		var randomImagePath = RandomStringUtils.randomAlphanumeric(8);
 		var testGalleryName = "Test gallery " + randomImagePath;
@@ -624,13 +628,12 @@ public class TestITCTools {
 
 		// The copy the files in fileList to the destinationDir
 		for (Path file : fileList) {
-			var metaTool = new MetadataTools();
 			// Get metadata
-			var metadata   = metaTool.getMetadataAsJSON(file.toFile());
-			var jsonArray  = new JSONArray(metadata);
+			var metadata = metadataTools.getMetadataAsJSON(file.toFile());
+			var jsonArray = new JSONArray(metadata);
 			var jsonObject = jsonArray.getJSONObject(0);
-			var mimetype   = JsonTools.extractMimetype(jsonObject);
-			var fileClass  = getFileClassByMimetype(mimetype);
+			var mimetype = JsonTools.extractMimetype(jsonObject);
+			var fileClass = getFileClassByMimetype(mimetype);
 			var destinationFile = Path.of(convertedDirectory + File.separator + fileClass.name()
 																						 .toLowerCase() + File.separator +
 										  randomImagePath + File.separator + file.getFileName());

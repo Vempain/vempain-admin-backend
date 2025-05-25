@@ -94,5 +94,11 @@
       "name": "vempain.site.www-root",
       "type": "java.lang.String",
       "description": "Path to website on the remote site-server."
+    },
+    {
+      "name": "vempain.cmd-line.exiftool",
+      "type": "java.lang.String",
+      "description": "Path to the exiftool command line utility, used for reading and writing metadata in files."
     }
-  ] }
+  ]
+}

@@ -1,6 +1,9 @@
 package fi.poltsi.vempain.tools;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -8,10 +11,16 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 @Slf4j
+@RequiredArgsConstructor
+@Component
 public class MetadataTools {
+	@Value("${vempain.cmd-line.exiftool}")
+	private String exifToolPath;
+
 	public void copyMetadata(File sourceFile, File destinationFile) {
 		var builder = new ProcessBuilder();
-		builder.command("exiftool", "-overwrite_original_in_place", "-TagsFromFile", sourceFile.getAbsolutePath(), "-all:all",
+		log.info("XXXXXXXXXXX The configured exifTool path is: {}", exifToolPath);
+		builder.command(exifToolPath, "-overwrite_original_in_place", "-TagsFromFile", sourceFile.getAbsolutePath(), "-all:all",
 						destinationFile.getAbsolutePath());
 		var output = new StringBuilder();
 
@@ -28,26 +37,14 @@ public class MetadataTools {
 			log.error("Failed to copy metadata from file {} to file {}", sourceFile, destinationFile, e);
 		} catch (InterruptedException e) {
 			log.error("Failed to copy metadata from file {} to file {}", sourceFile, destinationFile, e);
-			Thread.currentThread().interrupt();
+			Thread.currentThread()
+				  .interrupt();
 		}
-	}
-
-	private int runCommand(ProcessBuilder builder, StringBuilder output) throws IOException, InterruptedException {
-		Process        process        = builder.start();
-		BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-
-		String line;
-
-		while ((line = bufferedReader.readLine()) != null) {
-			output.append(line);
-		}
-
-		return process.waitFor();
 	}
 
 	public String getMetadataAsJSON(File file) {
 		var builder = new ProcessBuilder();
-		builder.command("exiftool", "-a", "-u", "-ee", "-api", "RequestAll=3", "-g1", "-J", file.getAbsolutePath());
+		builder.command(exifToolPath, "-a", "-u", "-ee", "-api", "RequestAll=3", "-g1", "-J", file.getAbsolutePath());
 		var output = new StringBuilder();
 
 		try {
@@ -64,9 +61,24 @@ public class MetadataTools {
 			log.error("Failed to parse metadata of file {}", file, e);
 		} catch (InterruptedException e) {
 			log.error("Failed to parse metadata of file {}", file, e);
-			Thread.currentThread().interrupt();
+			Thread.currentThread()
+				  .interrupt();
 		}
 
 		return null;
+	}
+
+	private int runCommand(ProcessBuilder builder, StringBuilder output) throws IOException, InterruptedException {
+		log.info("XXXXXXXXXXX The configured exifTool path is: {}", exifToolPath);
+		var process = builder.start();
+		var bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
+		String line;
+
+		while ((line = bufferedReader.readLine()) != null) {
+			output.append(line);
+		}
+
+		return process.waitFor();
 	}
 }
