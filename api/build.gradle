@@ -17,7 +17,7 @@ dependencies {
     // https://mvnrepository.com/artifact/jakarta.validation/jakarta.validation-api
     implementation group: 'jakarta.validation', name: 'jakarta.validation-api', version: '3.1.1'
 	// https://mvnrepository.com/artifact/jakarta.persistence/jakarta.persistence-api
-	implementation group: 'jakarta.persistence', name: 'jakarta.persistence-api', version: '3.1.0'
+	implementation group: 'jakarta.persistence', name: 'jakarta.persistence-api', version: '3.2.0'
 	// https://mvnrepository.com/artifact/org.springframework.data/spring-data-jpa
     api group: 'org.springframework.data', name: 'spring-data-jpa', version: "${springBootVersion}"
     // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations
