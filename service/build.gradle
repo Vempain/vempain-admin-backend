@@ -38,9 +38,9 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-jdbc
 	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-jdbc', version: "${springBootVersion}"
 	// https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui
-	implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.8.6'
+	implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.8.9'
 	// https://mvnrepository.com/artifact/org.hibernate.orm/hibernate-core
-	implementation group: 'org.hibernate.orm', name: 'hibernate-core', version: '6.6.13.Final'
+	implementation group: 'org.hibernate.orm', name: 'hibernate-core', version: '6.6.18.Final'
 	// https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-api
     implementation group: 'io.jsonwebtoken', name: 'jjwt-api', version: "${jjwtVersion}"
     // https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310
