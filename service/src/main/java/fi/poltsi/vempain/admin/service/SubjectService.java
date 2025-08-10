@@ -18,8 +18,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Service
 public class SubjectService {
-	private final SubjectRepository            subjectRepository;
-	private final EntityManager				entityManager;
+	private final SubjectRepository subjectRepository;
+	private final EntityManager     entityManager;
 
 	public Optional<Subject> getSubjectById(long subjectId) {
 		return subjectRepository.findById(subjectId);

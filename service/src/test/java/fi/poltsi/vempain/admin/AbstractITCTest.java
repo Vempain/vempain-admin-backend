@@ -57,13 +57,13 @@ import static fi.poltsi.vempain.tools.LocalFileTools.removeDirectory;
 public abstract class AbstractITCTest {
 
 	@Container
-	public static PostgreSQLContainer<?> vempainAdminContainer = new PostgreSQLContainer<>("postgres:latest")
+	public static PostgreSQLContainer<?> vempainAdminContainer = new PostgreSQLContainer<>("postgres:17")
 			.withDatabaseName("vempain_admin")
 			.withUsername("test")
 			.withPassword("test");
 
 	@Container
-	public static PostgreSQLContainer<?> vempainSiteContainer = new PostgreSQLContainer<>("postgres:latest")
+	public static PostgreSQLContainer<?> vempainSiteContainer = new PostgreSQLContainer<>("postgres:17")
 			.withDatabaseName("vempain_site")
 			.withUsername("test")
 			.withPassword("test");

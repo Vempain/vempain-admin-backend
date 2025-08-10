@@ -1,5 +1,7 @@
 ### Common settings ###
 spring:
+  profiles:
+    default: local
   application:
     name: Vempain Admin
   servlet:
