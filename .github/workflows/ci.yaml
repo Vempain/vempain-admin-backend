@@ -129,6 +129,7 @@ jobs:
           mainVersion: ${{ steps.basemain.outputs.mainVersion }}
           baseVersion: ${{ steps.basemain.outputs.baseVersion }}
           newVersion: ${{ steps.newVer.outputs.newVersion }}
+
       - name: Create tag
         uses: actions/github-script@v7
         with:
