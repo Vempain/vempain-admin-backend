@@ -26,7 +26,7 @@ repositories {
 dependencies {
 	implementation project(':api')
     // https://mvnrepository.com/artifact/org.apache.commons/commons-text
-    implementation group: 'org.apache.commons', name: 'commons-text', version: '1.13.1'
+    implementation group: 'org.apache.commons', name: 'commons-text', version: '1.14.0'
     // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot
     implementation group: 'org.springframework.boot', name: 'spring-boot', version: "${springBootVersion}"
     // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-security
@@ -60,7 +60,7 @@ dependencies {
 	// https://mvnrepository.com/artifact/jakarta.annotation/jakarta.annotation-api
 	implementation group: 'jakarta.annotation', name: 'jakarta.annotation-api', version: '3.0.0'
 	// https://mvnrepository.com/artifact/com.github.spotbugs/spotbugs-annotations
-	implementation group: 'com.github.spotbugs', name: 'spotbugs-annotations', version: '4.9.3'
+	implementation group: 'com.github.spotbugs', name: 'spotbugs-annotations', version: '4.9.4'
 	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-jpa
 	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: "${springBootVersion}"
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
