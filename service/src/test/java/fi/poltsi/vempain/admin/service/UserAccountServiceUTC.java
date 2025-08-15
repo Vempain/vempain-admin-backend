@@ -1,9 +1,10 @@
 package fi.poltsi.vempain.admin.service;
 
-import fi.poltsi.vempain.admin.entity.UserAccount;
-import fi.poltsi.vempain.admin.repository.AclRepository;
-import fi.poltsi.vempain.admin.repository.UserRepository;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
+import fi.poltsi.vempain.auth.entity.UserAccount;
+import fi.poltsi.vempain.auth.repository.AclRepository;
+import fi.poltsi.vempain.auth.repository.UserRepository;
+import fi.poltsi.vempain.auth.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;

@@ -3,7 +3,7 @@ package fi.poltsi.vempain.admin.api.response.file;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import fi.poltsi.vempain.admin.api.response.AbstractResponse;
+import fi.poltsi.vempain.auth.api.response.AbstractResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,9 +18,6 @@ import java.time.Instant;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Schema(description = "Response containing the common file data")
 public class FileCommonResponse extends AbstractResponse {
-	@Schema(description = "Common file ID", example = "123", requiredMode = Schema.RequiredMode.REQUIRED)
-	private long   id;
-
 	@Schema(description = "Mimetype of the file", example = "text/plain", requiredMode = Schema.RequiredMode.REQUIRED)
 	private String mimetype;
 

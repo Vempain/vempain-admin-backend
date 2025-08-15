@@ -1,9 +1,12 @@
 package fi.poltsi.vempain.admin.service;
 
 import fi.poltsi.vempain.admin.VempainMessages;
-import fi.poltsi.vempain.admin.entity.Acl;
-import fi.poltsi.vempain.admin.entity.Unit;
-import fi.poltsi.vempain.admin.entity.UserAccount;
+import fi.poltsi.vempain.auth.entity.Acl;
+import fi.poltsi.vempain.auth.entity.Unit;
+import fi.poltsi.vempain.auth.entity.UserAccount;
+import fi.poltsi.vempain.auth.service.AclService;
+import fi.poltsi.vempain.auth.service.UserDetailsImpl;
+import fi.poltsi.vempain.auth.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;

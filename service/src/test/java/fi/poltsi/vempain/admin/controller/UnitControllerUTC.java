@@ -1,13 +1,14 @@
 package fi.poltsi.vempain.admin.controller;
 
-import fi.poltsi.vempain.admin.api.response.UnitResponse;
-import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.service.UnitService;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
-import org.junit.jupiter.api.BeforeEach;
+import fi.poltsi.vempain.auth.api.response.UnitResponse;
+import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
@@ -20,17 +21,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class UnitControllerUTC {
     @Mock
     UnitService unitService;
 
+	@InjectMocks
     private UnitController unitController;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        unitController = new UnitController(unitService);
-    }
 
     @Test
     void getUnitsOk() {

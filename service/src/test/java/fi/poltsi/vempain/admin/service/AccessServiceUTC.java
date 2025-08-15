@@ -1,10 +1,13 @@
 package fi.poltsi.vempain.admin.service;
 
 import fi.poltsi.vempain.admin.VempainMessages;
-import fi.poltsi.vempain.admin.entity.Acl;
-import fi.poltsi.vempain.admin.entity.Unit;
-import fi.poltsi.vempain.admin.entity.UserAccount;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
+import fi.poltsi.vempain.auth.entity.Acl;
+import fi.poltsi.vempain.auth.entity.Unit;
+import fi.poltsi.vempain.auth.entity.UserAccount;
+import fi.poltsi.vempain.auth.service.AclService;
+import fi.poltsi.vempain.auth.service.UserDetailsImpl;
+import fi.poltsi.vempain.auth.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -52,7 +55,7 @@ class AccessServiceUTC {
 		when(environment.getProperty("vempain.test")).thenReturn("false");
 		when(securityContext.getAuthentication()).thenReturn(authentication);
 		SecurityContextHolder.setContext(securityContext);
-		UserAccount     userAccount = TestUTCTools.generateUser(1L);
+		UserAccount userAccount = TestUTCTools.generateUser(1L);
 		UserDetailsImpl userDetails = UserDetailsImpl.build(userAccount);
 		when(authentication.getPrincipal()).thenReturn(userDetails);
 		when(userService.findById(1L)).thenReturn(Optional.of(userAccount));

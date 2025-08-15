@@ -1,13 +1,14 @@
 package fi.poltsi.vempain.admin.service;
 
-import fi.poltsi.vempain.admin.api.request.AclRequest;
-import fi.poltsi.vempain.admin.entity.Acl;
-import fi.poltsi.vempain.admin.exception.VempainAclException;
-import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
-import fi.poltsi.vempain.admin.repository.AclRepository;
-import fi.poltsi.vempain.admin.repository.UnitRepository;
-import fi.poltsi.vempain.admin.repository.UserRepository;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
+import fi.poltsi.vempain.auth.api.request.AclRequest;
+import fi.poltsi.vempain.auth.entity.Acl;
+import fi.poltsi.vempain.auth.exception.VempainAclException;
+import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
+import fi.poltsi.vempain.auth.repository.AclRepository;
+import fi.poltsi.vempain.auth.repository.UnitRepository;
+import fi.poltsi.vempain.auth.repository.UserRepository;
+import fi.poltsi.vempain.auth.service.AclService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

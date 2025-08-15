@@ -1,16 +1,16 @@
 package fi.poltsi.vempain.admin.service;
 
-import fi.poltsi.vempain.admin.api.request.AclRequest;
 import fi.poltsi.vempain.admin.api.request.UnitRequest;
-import fi.poltsi.vempain.admin.api.response.AclResponse;
-import fi.poltsi.vempain.admin.api.response.UnitResponse;
-import fi.poltsi.vempain.admin.entity.Acl;
-import fi.poltsi.vempain.admin.entity.Unit;
-import fi.poltsi.vempain.admin.exception.VempainAclException;
-import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
-import fi.poltsi.vempain.admin.repository.AclRepository;
-import fi.poltsi.vempain.admin.repository.UnitRepository;
-import fi.poltsi.vempain.tools.AuthTools;
+import fi.poltsi.vempain.auth.api.request.AclRequest;
+import fi.poltsi.vempain.auth.api.response.AclResponse;
+import fi.poltsi.vempain.auth.api.response.UnitResponse;
+import fi.poltsi.vempain.auth.entity.Acl;
+import fi.poltsi.vempain.auth.entity.Unit;
+import fi.poltsi.vempain.auth.exception.VempainAclException;
+import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
+import fi.poltsi.vempain.auth.repository.AclRepository;
+import fi.poltsi.vempain.auth.repository.UnitRepository;
+import fi.poltsi.vempain.auth.tools.AuthTools;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

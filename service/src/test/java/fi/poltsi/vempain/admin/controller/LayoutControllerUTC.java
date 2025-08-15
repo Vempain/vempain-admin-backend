@@ -5,16 +5,17 @@ import fi.poltsi.vempain.admin.api.request.LayoutRequest;
 import fi.poltsi.vempain.admin.api.response.DeleteResponse;
 import fi.poltsi.vempain.admin.api.response.LayoutResponse;
 import fi.poltsi.vempain.admin.entity.Layout;
-import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.exception.VempainLayoutException;
 import fi.poltsi.vempain.admin.service.DeleteService;
 import fi.poltsi.vempain.admin.service.LayoutService;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
+import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
@@ -25,24 +26,19 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 @Slf4j
+@ExtendWith(MockitoExtension.class)
 class LayoutControllerUTC {
 	@Mock
 	private LayoutService layoutService;
 	@Mock
 	private DeleteService deleteService;
 
+	@InjectMocks
 	private LayoutController layoutController;
-
-	@BeforeEach
-	void setUp() {
-		MockitoAnnotations.openMocks(this);
-		layoutController = new LayoutController(layoutService, deleteService);
-	}
 
 	@Test
 	void getLayoutsOk() {
@@ -320,7 +316,6 @@ class LayoutControllerUTC {
 	void removeLayoutByIdOk() {
 		Layout        layout        = TestUTCTools.generateLayout(1L);
 		LayoutRequest layoutRequest = TestUTCTools.generateLayoutRequest(layout);
-		doNothing().when(layoutService).deleteByUser(layoutRequest.getId());
 
 		try {
 			ResponseEntity<DeleteResponse> responseEntity = layoutController.removeLayoutById(layoutRequest.getId());

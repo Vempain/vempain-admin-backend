@@ -2,8 +2,8 @@ package fi.poltsi.vempain.admin.repository;
 
 import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.entity.Form;
-import fi.poltsi.vempain.admin.exception.VempainAbstractException;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
+import fi.poltsi.vempain.auth.exception.VempainAbstractException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.transaction.annotation.Transactional;

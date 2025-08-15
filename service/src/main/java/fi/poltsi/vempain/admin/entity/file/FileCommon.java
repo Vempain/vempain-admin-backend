@@ -1,9 +1,9 @@
 package fi.poltsi.vempain.admin.entity.file;
 
-import fi.poltsi.vempain.admin.api.response.AclResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileCommonResponse;
-import fi.poltsi.vempain.admin.entity.AbstractVempainEntity;
-import fi.poltsi.vempain.admin.entity.Acl;
+import fi.poltsi.vempain.auth.api.response.AclResponse;
+import fi.poltsi.vempain.auth.entity.AbstractVempainEntity;
+import fi.poltsi.vempain.auth.entity.Acl;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -76,7 +76,7 @@ public class FileCommon extends AbstractVempainEntity implements Serializable {
 	private Long   siteFilesize;
 	@Basic
 	@Column(name = "site_sha1sum", length = 40)
-	private String siteSha1sum;
+	private String    siteSha1sum;
 	@Transient
 	private List<Acl> acls;
 

@@ -2,7 +2,6 @@ package fi.poltsi.vempain.admin.service;
 
 import fi.poltsi.vempain.admin.VempainMessages;
 import fi.poltsi.vempain.admin.api.QueryDetailEnum;
-import fi.poltsi.vempain.admin.api.request.AclRequest;
 import fi.poltsi.vempain.admin.api.request.ComponentRequest;
 import fi.poltsi.vempain.admin.api.request.FormRequest;
 import fi.poltsi.vempain.admin.api.response.FormResponse;
@@ -11,11 +10,13 @@ import fi.poltsi.vempain.admin.entity.Form;
 import fi.poltsi.vempain.admin.exception.EntityAlreadyExistsException;
 import fi.poltsi.vempain.admin.exception.InvalidRequestException;
 import fi.poltsi.vempain.admin.exception.ProcessingFailedException;
-import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
-import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.repository.FormRepository;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
+import fi.poltsi.vempain.auth.api.request.AclRequest;
+import fi.poltsi.vempain.auth.exception.VempainAclException;
+import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
+import fi.poltsi.vempain.auth.service.AclService;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,11 +48,11 @@ class FormServiceUTC {
 	private final static long itemCount = 10L;
 
 	@Mock
-	private AclService           aclService;
+	private AclService       aclService;
 	@Mock
-	private ComponentService     componentService;
+	private ComponentService componentService;
 	@Mock
-	private AccessService        accessService;
+	private AccessService    accessService;
 	@Mock
 	private FormRepository       formRepository;
 	@Mock

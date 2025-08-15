@@ -1,13 +1,14 @@
 package fi.poltsi.vempain.admin.controller;
 
-import fi.poltsi.vempain.admin.api.response.AclResponse;
 import fi.poltsi.vempain.admin.service.AccessService;
-import fi.poltsi.vempain.admin.service.AclService;
 import fi.poltsi.vempain.admin.tools.MockServiceTools;
-import org.junit.jupiter.api.BeforeEach;
+import fi.poltsi.vempain.auth.api.response.AclResponse;
+import fi.poltsi.vempain.auth.service.AclService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
@@ -20,25 +21,23 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 
+@ExtendWith(MockitoExtension.class)
 class AclControllerUTC {
     static final long count = 10L;
 
     @Mock
     private AclService aclService;
+
     @Mock
     private AccessService accessService;
 
+    @InjectMocks
     private AclController aclController;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        aclController = new AclController(aclService, accessService);
-    }
 
     @Test
     void getAllAclOk() {
-        doNothing().when(accessService).checkAuthentication();
+        doNothing().when(accessService)
+                   .checkAuthentication();
         MockServiceTools.aclServiceFindAllOk(aclService, count);
 
         ResponseEntity<List<AclResponse>> aclResponseEntity = aclController.getAllAcl();
@@ -50,7 +49,8 @@ class AclControllerUTC {
 
     @Test
     void getAllAclOkNoAcl() {
-        doNothing().when(accessService).checkAuthentication();
+        doNothing().when(accessService)
+                   .checkAuthentication();
         MockServiceTools.aclServiceFindAllOk(aclService, 0);
 
         ResponseEntity<List<AclResponse>> aclResponseEntity = aclController.getAllAcl();
@@ -62,8 +62,10 @@ class AclControllerUTC {
 
     @Test
     void getAllAclFailNoAccess() {
-        doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "User must be logged on to use this resource")).when(accessService).checkAuthentication();
-        MockServiceTools.aclServiceFindAllOk(aclService, count);
+        doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "User must be logged on to use this resource"))
+                .when(accessService)
+                .checkAuthentication();
+        // MockServiceTools.aclServiceFindAllOk(aclService, count);
 
         try {
             aclController.getAllAcl();
@@ -76,7 +78,8 @@ class AclControllerUTC {
 
     @Test
     void getAclOk() {
-        doNothing().when(accessService).checkAuthentication();
+        doNothing().when(accessService)
+                   .checkAuthentication();
         MockServiceTools.aclServicefindAclByAclIdOk(aclService, 1L);
         ResponseEntity<List<AclResponse>> responseEntity = aclController.getAcl(1L);
         assertNotNull(responseEntity);
@@ -87,8 +90,10 @@ class AclControllerUTC {
 
     @Test
     void getAclFailNoAccess() {
-        doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "User must be logged on to use this resource")).when(accessService).checkAuthentication();
-        MockServiceTools.aclServicefindAclByAclIdOk(aclService, 1L);
+        doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "User must be logged on to use this resource"))
+                .when(accessService)
+                .checkAuthentication();
+        // MockServiceTools.aclServicefindAclByAclIdOk(aclService, 1L);
 
         try {
             aclController.getAcl(1L);
@@ -101,7 +106,8 @@ class AclControllerUTC {
 
     @Test
     void getAclFailNoAcl() {
-        doNothing().when(accessService).checkAuthentication();
+        doNothing().when(accessService)
+                   .checkAuthentication();
         MockServiceTools.aclServicefindAclByAclIdEmptyList(aclService, 1L);
 
         try {

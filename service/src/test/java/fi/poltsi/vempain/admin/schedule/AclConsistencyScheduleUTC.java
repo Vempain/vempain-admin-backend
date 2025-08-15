@@ -1,60 +1,54 @@
 package fi.poltsi.vempain.admin.schedule;
 
-import fi.poltsi.vempain.admin.entity.Acl;
 import fi.poltsi.vempain.admin.entity.Component;
 import fi.poltsi.vempain.admin.entity.Form;
 import fi.poltsi.vempain.admin.entity.Layout;
 import fi.poltsi.vempain.admin.entity.Page;
-import fi.poltsi.vempain.admin.entity.Unit;
-import fi.poltsi.vempain.admin.entity.UserAccount;
-import fi.poltsi.vempain.admin.service.AclService;
 import fi.poltsi.vempain.admin.service.ComponentService;
 import fi.poltsi.vempain.admin.service.FormService;
 import fi.poltsi.vempain.admin.service.LayoutService;
 import fi.poltsi.vempain.admin.service.PageService;
 import fi.poltsi.vempain.admin.service.UnitService;
-import fi.poltsi.vempain.admin.service.UserService;
 import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
-import org.junit.jupiter.api.BeforeEach;
+import fi.poltsi.vempain.auth.entity.Acl;
+import fi.poltsi.vempain.auth.entity.Unit;
+import fi.poltsi.vempain.auth.entity.UserAccount;
+import fi.poltsi.vempain.auth.service.AclService;
+import fi.poltsi.vempain.auth.service.UserService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class AclConsistencyScheduleUTC {
     @Mock
-    private AclService aclService;
+    private AclService       aclService;
     @Mock
     private ComponentService componentService;
     @Mock
-    private FormService formService;
+    private FormService      formService;
     @Mock
-    private LayoutService layoutService;
+    private LayoutService    layoutService;
     @Mock
     private PageService pageService;
     @Mock
-    private UnitService unitService;
+    private UnitService      unitService;
     @Mock
-    private UserService userService;
+    private UserService      userService;
     @Mock
-    private FileService fileService;
+    private FileService      fileService;
 
+	@InjectMocks
     private AclConsistencySchedule aclConsistencySchedule;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        aclConsistencySchedule = new AclConsistencySchedule(aclService, componentService, formService, layoutService, pageService,
-                                                            unitService, userService, fileService,
-                                                            new HashSet<>(), new HashSet<>(), new HashSet<>(), new ArrayList<>());
-    }
 
     @Test
     void verifyOk() {
@@ -72,7 +66,7 @@ class AclConsistencyScheduleUTC {
     }
 
     private void testWithGivenAclTableCount(long tableCount) {
-        List<Acl> acls = new ArrayList<>();
+        var acls = new ArrayList<Acl>();
 
         for (long i = 1; i <= tableCount; i++) {
             acls.addAll(TestUTCTools.generateAclList(i, 2L));

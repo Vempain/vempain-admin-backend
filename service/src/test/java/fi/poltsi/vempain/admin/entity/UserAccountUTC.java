@@ -1,7 +1,8 @@
 package fi.poltsi.vempain.admin.entity;
 
-import fi.poltsi.vempain.admin.api.response.UserResponse;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
+import fi.poltsi.vempain.auth.api.response.UserResponse;
+import fi.poltsi.vempain.auth.entity.UserAccount;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

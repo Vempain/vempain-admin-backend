@@ -1,8 +1,8 @@
 package fi.poltsi.vempain.admin.repository;
 
 import fi.poltsi.vempain.admin.AbstractITCTest;
-import fi.poltsi.vempain.admin.api.response.PrivacyType;
-import fi.poltsi.vempain.admin.entity.UserAccount;
+import fi.poltsi.vempain.auth.api.PrivacyType;
+import fi.poltsi.vempain.auth.entity.UserAccount;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;

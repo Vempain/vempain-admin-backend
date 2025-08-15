@@ -21,8 +21,6 @@ import fi.poltsi.vempain.admin.entity.file.FileThumb;
 import fi.poltsi.vempain.admin.entity.file.FileVideo;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
 import fi.poltsi.vempain.admin.entity.file.GalleryFile;
-import fi.poltsi.vempain.admin.exception.VempainAclException;
-import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.repository.file.FileAudioPageableRepository;
 import fi.poltsi.vempain.admin.repository.file.FileCommonPageableRepository;
 import fi.poltsi.vempain.admin.repository.file.FileDocumentPageableRepository;
@@ -32,10 +30,12 @@ import fi.poltsi.vempain.admin.repository.file.FileVideoPageableRepository;
 import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
 import fi.poltsi.vempain.admin.repository.file.SubjectRepository;
 import fi.poltsi.vempain.admin.service.AccessService;
-import fi.poltsi.vempain.admin.service.AclService;
 import fi.poltsi.vempain.admin.service.PageGalleryService;
 import fi.poltsi.vempain.admin.service.PageService;
 import fi.poltsi.vempain.admin.service.SubjectService;
+import fi.poltsi.vempain.auth.exception.VempainAclException;
+import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
+import fi.poltsi.vempain.auth.service.AclService;
 import fi.poltsi.vempain.tools.ImageTools;
 import fi.poltsi.vempain.tools.MetadataTools;
 import jakarta.annotation.PostConstruct;
@@ -99,10 +99,10 @@ import static fi.poltsi.vempain.tools.VideoTools.getVideoLength;
 @Service
 public class FileService {
 
-	private final AclService                     aclService;
-	private final AccessService                  accessService;
-	private final FileCommonPageableRepository   fileCommonPageableRepository;
-	private final FileImagePageableRepository    fileImagePageableRepository;
+	private final AclService                   aclService;
+	private final AccessService                accessService;
+	private final FileCommonPageableRepository fileCommonPageableRepository;
+	private final FileImagePageableRepository  fileImagePageableRepository;
 	private final FileAudioPageableRepository    fileAudioPageableRepository;
 	private final FileThumbPageableRepository    fileThumbPageableRepository;
 	private final FileDocumentPageableRepository fileDocumentPageableRepository;

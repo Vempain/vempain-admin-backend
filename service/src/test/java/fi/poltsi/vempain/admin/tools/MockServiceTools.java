@@ -1,18 +1,18 @@
 package fi.poltsi.vempain.admin.tools;
 
 import fi.poltsi.vempain.admin.api.QueryDetailEnum;
-import fi.poltsi.vempain.admin.api.response.AclResponse;
 import fi.poltsi.vempain.admin.api.response.ComponentResponse;
 import fi.poltsi.vempain.admin.api.response.FormResponse;
-import fi.poltsi.vempain.admin.entity.Acl;
 import fi.poltsi.vempain.admin.entity.Component;
 import fi.poltsi.vempain.admin.entity.Form;
 import fi.poltsi.vempain.admin.exception.EntityAlreadyExistsException;
 import fi.poltsi.vempain.admin.exception.InvalidRequestException;
 import fi.poltsi.vempain.admin.exception.ProcessingFailedException;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
-import fi.poltsi.vempain.admin.service.AclService;
 import fi.poltsi.vempain.admin.service.FormService;
+import fi.poltsi.vempain.auth.api.response.AclResponse;
+import fi.poltsi.vempain.auth.entity.Acl;
+import fi.poltsi.vempain.auth.service.AclService;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;

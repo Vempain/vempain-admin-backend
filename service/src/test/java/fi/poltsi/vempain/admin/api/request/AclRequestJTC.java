@@ -1,5 +1,6 @@
 package fi.poltsi.vempain.admin.api.request;
 
+import fi.poltsi.vempain.auth.api.request.AclRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

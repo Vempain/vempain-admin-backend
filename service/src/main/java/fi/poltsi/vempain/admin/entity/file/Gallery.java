@@ -1,10 +1,10 @@
 package fi.poltsi.vempain.admin.entity.file;
 
-import fi.poltsi.vempain.admin.api.response.AclResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileCommonResponse;
 import fi.poltsi.vempain.admin.api.response.file.GalleryResponse;
-import fi.poltsi.vempain.admin.entity.AbstractVempainEntity;
-import fi.poltsi.vempain.admin.entity.Acl;
+import fi.poltsi.vempain.auth.api.response.AclResponse;
+import fi.poltsi.vempain.auth.entity.AbstractVempainEntity;
+import fi.poltsi.vempain.auth.entity.Acl;
 import fi.poltsi.vempain.site.entity.SiteGallery;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;

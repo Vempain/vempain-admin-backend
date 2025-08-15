@@ -5,11 +5,11 @@ import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
 import fi.poltsi.vempain.admin.api.response.file.GalleryResponse;
 import fi.poltsi.vempain.admin.entity.file.FileCommon;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
-import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.repository.file.FileCommonPageableRepository;
 import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
 import fi.poltsi.vempain.admin.service.AccessService;
-import fi.poltsi.vempain.admin.service.AclService;
+import fi.poltsi.vempain.auth.exception.VempainAclException;
+import fi.poltsi.vempain.auth.service.AclService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,8 +27,8 @@ public class GalleryService {
 	private final GalleryRepository            galleryRepository;
 	private final FileCommonPageableRepository fileCommonPageableRepository;
 	private final GalleryFileService           galleryFileService;
-	private final AclService aclService;
-	private final AccessService accessService;
+	private final AclService                   aclService;
+	private final AccessService                accessService;
 
 	public List<Gallery> findAllForUser() {
 		var galleryList = new ArrayList<Gallery>();

@@ -1,10 +1,10 @@
 package fi.poltsi.vempain.admin.controller;
 
-import fi.poltsi.vempain.admin.api.request.UserRequest;
-import fi.poltsi.vempain.admin.api.response.UserResponse;
-import fi.poltsi.vempain.admin.entity.UserAccount;
 import fi.poltsi.vempain.admin.rest.UserAPI;
-import fi.poltsi.vempain.admin.service.UserService;
+import fi.poltsi.vempain.auth.api.request.UserRequest;
+import fi.poltsi.vempain.auth.api.response.UserResponse;
+import fi.poltsi.vempain.auth.entity.UserAccount;
+import fi.poltsi.vempain.auth.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

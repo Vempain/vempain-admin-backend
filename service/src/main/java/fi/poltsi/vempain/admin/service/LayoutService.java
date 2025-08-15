@@ -5,11 +5,12 @@ import fi.poltsi.vempain.admin.api.request.LayoutRequest;
 import fi.poltsi.vempain.admin.api.response.LayoutResponse;
 import fi.poltsi.vempain.admin.entity.Layout;
 import fi.poltsi.vempain.admin.exception.ProcessingFailedException;
-import fi.poltsi.vempain.admin.exception.VempainAbstractException;
-import fi.poltsi.vempain.admin.exception.VempainAclException;
-import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.exception.VempainLayoutException;
 import fi.poltsi.vempain.admin.repository.LayoutRepository;
+import fi.poltsi.vempain.auth.exception.VempainAbstractException;
+import fi.poltsi.vempain.auth.exception.VempainAclException;
+import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
+import fi.poltsi.vempain.auth.service.AclService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -27,8 +28,8 @@ import java.util.List;
 @Service
 public class LayoutService {
 	private final LayoutRepository layoutRepository;
-	private final AclService aclService;
-	private final AccessService accessService;
+	private final AclService       aclService;
+	private final AccessService    accessService;
 
 	public Iterable<Layout> findAll() {
 		return layoutRepository.findAll();

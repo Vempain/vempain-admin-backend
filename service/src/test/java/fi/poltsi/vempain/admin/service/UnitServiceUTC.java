@@ -1,13 +1,14 @@
 package fi.poltsi.vempain.admin.service;
 
-import fi.poltsi.vempain.admin.entity.Unit;
-import fi.poltsi.vempain.admin.repository.AclRepository;
-import fi.poltsi.vempain.admin.repository.UnitRepository;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
-import org.junit.jupiter.api.BeforeEach;
+import fi.poltsi.vempain.auth.entity.Unit;
+import fi.poltsi.vempain.auth.repository.AclRepository;
+import fi.poltsi.vempain.auth.repository.UnitRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,24 +18,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class UnitServiceUTC {
     private final static int count = 10;
 
     @Mock
-    UnitRepository unitRepository;
+	UnitRepository unitRepository;
 	@Mock
 	AclRepository  aclRepository;
 
+	@InjectMocks
     private UnitService unitService;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        unitService = new UnitService(unitRepository, aclRepository);
-    }
 
     @Test
     void findAllOk() {
@@ -65,8 +61,6 @@ class UnitServiceUTC {
 
     @Test
     void deleteById() {
-        doNothing().when(unitRepository).deleteUnitById(1L);
-
         try {
             unitService.deleteById(1L);
         } catch (Exception e) {
