@@ -2,9 +2,9 @@ package fi.poltsi.vempain.admin.schedule;
 
 import fi.poltsi.vempain.admin.api.ContentTypeEnum;
 import fi.poltsi.vempain.admin.api.PublishStatusEnum;
-import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.repository.PublishScheduleRepository;
 import fi.poltsi.vempain.admin.service.PublishService;
+import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

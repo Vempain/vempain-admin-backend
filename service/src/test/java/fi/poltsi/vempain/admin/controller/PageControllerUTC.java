@@ -3,22 +3,21 @@ package fi.poltsi.vempain.admin.controller;
 import fi.poltsi.vempain.admin.VempainMessages;
 import fi.poltsi.vempain.admin.api.QueryDetailEnum;
 import fi.poltsi.vempain.admin.api.request.PageRequest;
-import fi.poltsi.vempain.admin.api.response.AclResponse;
 import fi.poltsi.vempain.admin.api.response.PageResponse;
 import fi.poltsi.vempain.admin.entity.Page;
-import fi.poltsi.vempain.admin.exception.ProcessingFailedException;
-import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
-import fi.poltsi.vempain.admin.service.AclService;
 import fi.poltsi.vempain.admin.service.DeleteService;
 import fi.poltsi.vempain.admin.service.PageService;
 import fi.poltsi.vempain.admin.service.PublishService;
 import fi.poltsi.vempain.admin.service.ScheduleService;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
+import fi.poltsi.vempain.auth.api.response.AclResponse;
+import fi.poltsi.vempain.auth.service.AclService;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
@@ -33,12 +32,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 @Slf4j
+@ExtendWith(MockitoExtension.class)
 class PageControllerUTC {
 	@Mock
 	private PageService    pageService;
@@ -47,17 +45,12 @@ class PageControllerUTC {
 	@Mock
 	private PublishService publishService;
 	@Mock
-	private DeleteService   deleteService;
+	private DeleteService  deleteService;
 	@Mock
 	private ScheduleService scheduleService;
 
+	@InjectMocks
 	private PageController pageController;
-
-	@BeforeEach
-	void setUp() {
-		MockitoAnnotations.openMocks(this);
-		pageController = new PageController(pageService, publishService, deleteService, scheduleService);
-	}
 
 	@Test
 	void getPagesOk() {
@@ -65,7 +58,6 @@ class PageControllerUTC {
 		when(pageService.findAllByUser()).thenReturn(pages);
 
 		var acls = TestUTCTools.generateAclResponses(1L, 1L);
-		when(aclService.getAclResponses(anyLong())).thenReturn(acls);
 
 		for (Page page : pages) {
 			var pageResponse = page.toResponse();
@@ -93,10 +85,6 @@ class PageControllerUTC {
 
 	@Test
 	void getPagesEmptyListOk() {
-		when(pageService.findAll()).thenReturn(new ArrayList<>());
-		List<AclResponse> acls = TestUTCTools.generateAclResponses(1L, 1L);
-		when(aclService.getAclResponses(any())).thenReturn(acls);
-
 		try {
 			ResponseEntity<List<PageResponse>> responseEntity = pageController.getPages(QueryDetailEnum.FULL);
 			assertNotNull(responseEntity);
@@ -115,7 +103,6 @@ class PageControllerUTC {
 		var acls        = TestUTCTools.generateAclResponses(1L, 1L);
 
 		when(pageService.saveFromPageRequest(pageRequest)).thenReturn(page);
-		when(aclService.getAclResponses(page.getAclId())).thenReturn(acls);
 
 		var populatedPageResponse = page.toResponse();
 		populatedPageResponse.setPublished(Instant.now().minus(20, ChronoUnit.MINUTES));
@@ -285,10 +272,7 @@ class PageControllerUTC {
 	}
 
 	@Test
-	void removePageByIdOk() throws ProcessingFailedException, VempainEntityNotFoundException {
-		doNothing().when(pageService).
-				   deleteById(1L);
-
+	void removePageByIdOk() {
 		try {
 			pageController.deletePage(1L);
 		} catch (Exception e) {

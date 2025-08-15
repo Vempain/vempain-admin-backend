@@ -1,8 +1,8 @@
 package fi.poltsi.vempain.admin.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fi.poltsi.vempain.admin.api.response.AclResponse;
 import fi.poltsi.vempain.admin.api.response.LayoutResponse;
+import fi.poltsi.vempain.auth.api.response.AclResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;

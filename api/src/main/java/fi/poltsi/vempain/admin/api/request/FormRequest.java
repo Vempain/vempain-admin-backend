@@ -20,8 +20,6 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = false)
 @Schema(description = "Form request")
 public class FormRequest extends BaseRequest {
-	@Schema(description = "Form ID", example = "1")
-	private long                   id;
 	@Schema(description = "Form name", example = "My layout")
 	private String                 name;
 	@Schema(description = "Layout ID", example = "1")

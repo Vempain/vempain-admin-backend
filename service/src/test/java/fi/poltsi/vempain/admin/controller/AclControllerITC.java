@@ -1,7 +1,7 @@
 package fi.poltsi.vempain.admin.controller;
 
 import fi.poltsi.vempain.admin.AbstractITCTest;
-import fi.poltsi.vempain.admin.api.response.AclResponse;
+import fi.poltsi.vempain.auth.api.response.AclResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

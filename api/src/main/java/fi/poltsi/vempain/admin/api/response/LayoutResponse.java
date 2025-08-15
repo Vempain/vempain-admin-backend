@@ -4,8 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import fi.poltsi.vempain.admin.api.request.AclRequest;
 import fi.poltsi.vempain.admin.api.request.LayoutRequest;
+import fi.poltsi.vempain.auth.api.request.AclRequest;
+import fi.poltsi.vempain.auth.api.response.AbstractResponse;
+import fi.poltsi.vempain.auth.api.response.AclResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -27,8 +29,6 @@ import java.util.List;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Schema(description = "Item depicting a layout item")
 public class LayoutResponse extends AbstractResponse {
-	@Schema(description = "Layout ID", example = "1")
-	private long   id;
 	@Schema(description = "Layout name", example = "My layout")
 	private String layoutName;
 	@Schema(description = "Layout structure", example = "<!--comp_1-->")
@@ -43,7 +43,7 @@ public class LayoutResponse extends AbstractResponse {
 		}
 
 		return LayoutRequest.builder()
-							.id(this.id)
+							.id(this.getId())
 							.layoutName(this.layoutName)
 							.structure(this.structure)
 							.acls(aclRequests)

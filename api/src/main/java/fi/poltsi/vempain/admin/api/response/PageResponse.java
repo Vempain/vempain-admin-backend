@@ -3,6 +3,7 @@ package fi.poltsi.vempain.admin.api.response;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import fi.poltsi.vempain.auth.api.response.AbstractResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,8 +19,6 @@ import java.time.Instant;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Schema(description = "Page data")
 public class PageResponse extends AbstractResponse {
-	@Schema(description = "Page ID", example = "1")
-	private Long    id;
 	@Schema(description = "Parent page ID", example = "1")
 	private Long    parentId;
 	@Schema(description = "Form ID", example = "1")

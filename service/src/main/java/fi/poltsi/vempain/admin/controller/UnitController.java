@@ -1,11 +1,11 @@
 package fi.poltsi.vempain.admin.controller;
 
 import fi.poltsi.vempain.admin.api.request.UnitRequest;
-import fi.poltsi.vempain.admin.api.response.UnitResponse;
-import fi.poltsi.vempain.admin.entity.Unit;
-import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.rest.UnitAPI;
 import fi.poltsi.vempain.admin.service.UnitService;
+import fi.poltsi.vempain.auth.api.response.UnitResponse;
+import fi.poltsi.vempain.auth.entity.Unit;
+import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

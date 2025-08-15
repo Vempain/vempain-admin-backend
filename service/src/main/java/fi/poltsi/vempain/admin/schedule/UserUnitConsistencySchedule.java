@@ -1,9 +1,9 @@
 package fi.poltsi.vempain.admin.schedule;
 
-import fi.poltsi.vempain.admin.entity.Unit;
-import fi.poltsi.vempain.admin.entity.UserAccount;
 import fi.poltsi.vempain.admin.service.UnitService;
-import fi.poltsi.vempain.admin.service.UserService;
+import fi.poltsi.vempain.auth.entity.Unit;
+import fi.poltsi.vempain.auth.entity.UserAccount;
+import fi.poltsi.vempain.auth.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

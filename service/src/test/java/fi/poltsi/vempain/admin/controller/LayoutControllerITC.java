@@ -1,9 +1,9 @@
 package fi.poltsi.vempain.admin.controller;
 
 import fi.poltsi.vempain.admin.AbstractITCTest;
-import fi.poltsi.vempain.admin.api.request.AclRequest;
 import fi.poltsi.vempain.admin.api.request.LayoutRequest;
 import fi.poltsi.vempain.admin.api.response.LayoutResponse;
+import fi.poltsi.vempain.auth.api.request.AclRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

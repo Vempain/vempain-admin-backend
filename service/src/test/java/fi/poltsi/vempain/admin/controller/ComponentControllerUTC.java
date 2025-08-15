@@ -2,23 +2,23 @@ package fi.poltsi.vempain.admin.controller;
 
 import fi.poltsi.vempain.admin.VempainMessages;
 import fi.poltsi.vempain.admin.api.request.ComponentRequest;
-import fi.poltsi.vempain.admin.api.response.AclResponse;
 import fi.poltsi.vempain.admin.api.response.ComponentResponse;
 import fi.poltsi.vempain.admin.api.response.DeleteResponse;
-import fi.poltsi.vempain.admin.entity.Acl;
 import fi.poltsi.vempain.admin.entity.Component;
-import fi.poltsi.vempain.admin.exception.VempainAbstractException;
-import fi.poltsi.vempain.admin.exception.VempainAclException;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
-import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
-import fi.poltsi.vempain.admin.service.AclService;
 import fi.poltsi.vempain.admin.service.ComponentService;
 import fi.poltsi.vempain.admin.service.DeleteService;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
-import org.junit.jupiter.api.BeforeEach;
+import fi.poltsi.vempain.auth.api.response.AclResponse;
+import fi.poltsi.vempain.auth.exception.VempainAbstractException;
+import fi.poltsi.vempain.auth.exception.VempainAclException;
+import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
+import fi.poltsi.vempain.auth.service.AclService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
@@ -30,10 +30,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class ComponentControllerUTC {
 	final String[] invalidFields = {null, "", " ", "\t", " \t"};
 
@@ -42,15 +42,10 @@ class ComponentControllerUTC {
 	@Mock
 	private AclService       aclService;
 	@Mock
-	private DeleteService	deleteService;
+	private DeleteService    deleteService;
 
+	@InjectMocks
 	private ComponentController componentController;
-
-	@BeforeEach
-	void setUp() {
-		MockitoAnnotations.openMocks(this);
-		componentController = new ComponentController(componentService, aclService, deleteService);
-	}
 
 	@Test
 	void getComponentsOk() {
@@ -124,10 +119,7 @@ class ComponentControllerUTC {
 	void addComponentOk() throws VempainComponentException {
 		Component        component        = TestUTCTools.generateComponent(1L, 1L);
 		ComponentRequest componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
-		doThrow(new VempainComponentException("Failed to find component by name")).when(componentService).findByName(componentRequest.getCompName());
 		when(componentService.saveFromRequest(componentRequest)).thenReturn(component);
-		List<Acl> acls = TestUTCTools.generateAclList(1L, 1L);
-		when(aclService.findAclByAclId(component.getAclId())).thenReturn(acls);
 		List<AclResponse> aclResponses = TestUTCTools.generateAclResponses(1L, 2L);
 		when(aclService.getAclResponses(component.getAclId())).thenReturn(aclResponses);
 
@@ -336,8 +328,6 @@ class ComponentControllerUTC {
 
 	@Test
 	void removeComponentByIdOk() throws VempainAclException {
-		doNothing().when(componentService).deleteByUser(1L);
-
 		try {
 			ResponseEntity<DeleteResponse> response = componentController.deleteComponentById(1L);
 			assertNotNull(response);

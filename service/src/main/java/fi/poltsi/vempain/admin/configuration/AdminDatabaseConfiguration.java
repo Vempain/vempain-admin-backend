@@ -21,7 +21,7 @@ import javax.sql.DataSource;
 @EnableTransactionManagement
 @EnableJpaRepositories(entityManagerFactoryRef = "adminEntityManagerFactory",
 					   transactionManagerRef = "adminTransactionManager",
-					   basePackages = "fi.poltsi.vempain.admin.repository")
+					   basePackages = {"fi.poltsi.vempain.admin.repository", "fi.poltsi.vempain.auth.repository"})
 public class AdminDatabaseConfiguration {
 	@Primary
 	@Bean
@@ -45,7 +45,7 @@ public class AdminDatabaseConfiguration {
 																			@Qualifier("adminDataSource") DataSource dataSource) {
 		return builder
 				.dataSource(dataSource)
-				.packages("fi.poltsi.vempain.admin.entity")
+				.packages("fi.poltsi.vempain.admin.entity", "fi.poltsi.vempain.auth.entity")
 				.persistenceUnit("admin")
 				.build();
 	}

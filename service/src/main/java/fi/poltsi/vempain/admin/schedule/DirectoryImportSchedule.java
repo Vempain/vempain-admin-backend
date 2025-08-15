@@ -1,10 +1,10 @@
 package fi.poltsi.vempain.admin.schedule;
 
 import fi.poltsi.vempain.admin.api.request.FileProcessRequest;
-import fi.poltsi.vempain.admin.exception.VempainAclException;
-import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.repository.file.ScanQueueScheduleRepository;
 import fi.poltsi.vempain.admin.service.file.FileService;
+import fi.poltsi.vempain.auth.exception.VempainAclException;
+import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

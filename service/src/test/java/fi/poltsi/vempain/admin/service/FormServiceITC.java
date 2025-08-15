@@ -3,9 +3,9 @@ package fi.poltsi.vempain.admin.service;
 import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.api.response.FormResponse;
 import fi.poltsi.vempain.admin.entity.Form;
-import fi.poltsi.vempain.admin.exception.VempainAbstractException;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
-import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
+import fi.poltsi.vempain.auth.exception.VempainAbstractException;
+import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 

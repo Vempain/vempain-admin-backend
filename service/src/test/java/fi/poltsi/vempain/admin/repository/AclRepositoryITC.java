@@ -1,7 +1,7 @@
 package fi.poltsi.vempain.admin.repository;
 
 import fi.poltsi.vempain.admin.AbstractITCTest;
-import fi.poltsi.vempain.admin.entity.Acl;
+import fi.poltsi.vempain.auth.entity.Acl;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.transaction.annotation.Transactional;

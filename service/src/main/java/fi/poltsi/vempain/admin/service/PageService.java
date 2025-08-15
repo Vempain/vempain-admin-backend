@@ -5,9 +5,10 @@ import fi.poltsi.vempain.admin.api.request.PageRequest;
 import fi.poltsi.vempain.admin.api.response.PageResponse;
 import fi.poltsi.vempain.admin.entity.Page;
 import fi.poltsi.vempain.admin.exception.ProcessingFailedException;
-import fi.poltsi.vempain.admin.exception.VempainAclException;
-import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.admin.repository.PageRepository;
+import fi.poltsi.vempain.auth.exception.VempainAclException;
+import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
+import fi.poltsi.vempain.auth.service.AclService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -25,8 +26,8 @@ import java.util.List;
 @Service
 public class PageService {
 	private final PageRepository pageRepository;
-	private final AclService aclService;
-	private final AccessService accessService;
+	private final AclService     aclService;
+	private final AccessService  accessService;
 
 	public Iterable<Page> findAll() {
 		return pageRepository.findAll();

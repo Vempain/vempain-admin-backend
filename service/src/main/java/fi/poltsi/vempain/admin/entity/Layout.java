@@ -1,6 +1,7 @@
 package fi.poltsi.vempain.admin.entity;
 
 import fi.poltsi.vempain.admin.api.response.LayoutResponse;
+import fi.poltsi.vempain.auth.entity.AbstractVempainEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;

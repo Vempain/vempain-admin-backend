@@ -1,11 +1,12 @@
 package fi.poltsi.vempain.admin.service;
 
-import fi.poltsi.vempain.admin.exception.VempainEntityNotFoundException;
-import fi.poltsi.vempain.admin.repository.AclRepository;
+
 import fi.poltsi.vempain.admin.repository.ComponentRepository;
 import fi.poltsi.vempain.admin.repository.FormRepository;
 import fi.poltsi.vempain.admin.repository.LayoutRepository;
 import fi.poltsi.vempain.admin.repository.PageRepository;
+import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
+import fi.poltsi.vempain.auth.repository.AclRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

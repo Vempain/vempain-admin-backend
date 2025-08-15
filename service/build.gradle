@@ -1,36 +1,50 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
 plugins {
 	id 'application'
-    id 'org.springframework.boot' version "${springBootVersion}"
-    // https://mvnrepository.com/artifact/io.freefair.lombok/io.freefair.lombok.gradle.plugin
-    id "io.freefair.lombok" version "${ioFreeFairLombok}"
-    id "jacoco"
+	id 'org.springframework.boot' version "${springBootVersion}"
+	// https://mvnrepository.com/artifact/io.freefair.lombok/io.freefair.lombok.gradle.plugin
+	id "io.freefair.lombok" version "${ioFreeFairLombok}"
+	id "jacoco"
 }
 
 group = 'fi.poltsi.vempain'
+version = project.hasProperty("releaseVersion") ? project.releaseVersion : '0.0.1-SNAPSHOT'
 
 bootJar {
 	archiveFileName = "${rootProject.name}-${version}.jar"
 }
 
 java {
-	sourceCompatibility = "${javaVersion}"
+	toolchain {
+		languageVersion = JavaLanguageVersion.of("${javaVersion}")
+	}
 }
 
 repositories {
 	mavenCentral()
 	maven {
-		url "https://mvn.0110.be/releases"
+		url "https://maven.pkg.github.com/Vempain/vempain-auth"
+		credentials {
+			username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+			password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+		}
 	}
+	maven { url = 'https://repo.spring.io/milestone' }
+	maven { url = "https://mvn.0110.be/releases" }
 }
 
 dependencies {
 	implementation project(':api')
-    // https://mvnrepository.com/artifact/org.apache.commons/commons-text
-    implementation group: 'org.apache.commons', name: 'commons-text', version: '1.14.0'
-    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot
-    implementation group: 'org.springframework.boot', name: 'spring-boot', version: "${springBootVersion}"
-    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-security
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: "${springBootVersion}"
+	// This needs to be built first in vempain-auth
+	implementation group: 'fi.poltsi.vempain', name: 'vempain-auth-core', version: "${vempainAuthVersion}"
+	implementation group: 'fi.poltsi.vempain', name: 'vempain-auth-api', version: "${vempainAuthVersion}"
+	// https://mvnrepository.com/artifact/org.apache.commons/commons-text
+	implementation group: 'org.apache.commons', name: 'commons-text', version: '1.14.0'
+	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot
+	implementation group: 'org.springframework.boot', name: 'spring-boot', version: "${springBootVersion}"
+	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-security
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: "${springBootVersion}"
 	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-actuator
 	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version: "${springBootVersion}"
 	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-validation
@@ -42,19 +56,19 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.hibernate.orm/hibernate-core
 	implementation group: 'org.hibernate.orm', name: 'hibernate-core', version: '6.6.24.Final'
 	// https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-api
-    implementation group: 'io.jsonwebtoken', name: 'jjwt-api', version: "${jjwtVersion}"
-    // https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310
-    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: "${jacksonVersion}"
-    // https://mvnrepository.com/artifact/org.flywaydb/flyway-core
-    implementation group: 'org.flywaydb', name: 'flyway-core', version: "${flywayVersion}"
+	implementation group: 'io.jsonwebtoken', name: 'jjwt-api', version: "${jjwtVersion}"
+	// https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310
+	implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: "${jacksonVersion}"
+	// https://mvnrepository.com/artifact/org.flywaydb/flyway-core
+	implementation group: 'org.flywaydb', name: 'flyway-core', version: "${flywayVersion}"
 	// https://mvnrepository.com/artifact/org.postgresql/postgresql
 	implementation group: 'org.postgresql', name: 'postgresql', version: '42.7.7'
 	// https://mvnrepository.com/artifact/org.json/json
-    implementation group: 'org.json', name: 'json', version: '20250517'
-    // https://mvnrepository.com/artifact/net.coobird/thumbnailator
-    implementation group: 'net.coobird', name: 'thumbnailator', version: '0.4.20'
-    // https://mvnrepository.com/artifact/com.github.mwiede/jsch
-    implementation group: 'com.github.mwiede', name: 'jsch', version: '2.27.2'
+	implementation group: 'org.json', name: 'json', version: '20250517'
+	// https://mvnrepository.com/artifact/net.coobird/thumbnailator
+	implementation group: 'net.coobird', name: 'thumbnailator', version: '0.4.20'
+	// https://mvnrepository.com/artifact/com.github.mwiede/jsch
+	implementation group: 'com.github.mwiede', name: 'jsch', version: '2.27.2'
 	// https://mvnrepository.com/artifact/jakarta.xml.bind/jakarta.xml.bind-api
 	implementation group: 'jakarta.xml.bind', name: 'jakarta.xml.bind-api', version: '4.0.2'
 	// https://mvnrepository.com/artifact/jakarta.annotation/jakarta.annotation-api
@@ -72,41 +86,49 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.flywaydb/flyway-database-postgresql
 	runtimeOnly group: 'org.flywaydb', name: 'flyway-database-postgresql', version: "${flywayVersion}"
 	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-test
-    testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: "${springBootVersion}"
-    // https://mvnrepository.com/artifact/org.testcontainers/junit-jupiter
-    testImplementation group: 'org.testcontainers', name: 'junit-jupiter', version: "${testContainersVersion}"
-    // https://mvnrepository.com/artifact/org.testcontainers/postgresql
-    testImplementation group: 'org.testcontainers', name: 'postgresql', version: "${testContainersVersion}"
-    // https://mvnrepository.com/artifact/org.mockito/mockito-junit-jupiter
-    testImplementation group: 'org.mockito', name: 'mockito-junit-jupiter', version: '5.18.0'
-    // https://mvnrepository.com/artifact/org.springframework.security/spring-security-test
-    testImplementation group: 'org.springframework.security', name: 'spring-security-test', version: '6.5.2'
-    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-configuration-processor
-    annotationProcessor group: 'org.springframework.boot', name: 'spring-boot-configuration-processor', version: "${springBootVersion}"
+	testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: "${springBootVersion}"
+	// https://mvnrepository.com/artifact/org.testcontainers/junit-jupiter
+	testImplementation group: 'org.testcontainers', name: 'junit-jupiter', version: "${testContainersVersion}"
+	// https://mvnrepository.com/artifact/org.testcontainers/postgresql
+	testImplementation group: 'org.testcontainers', name: 'postgresql', version: "${testContainersVersion}"
+	// https://mvnrepository.com/artifact/org.mockito/mockito-junit-jupiter
+	testImplementation group: 'org.mockito', name: 'mockito-junit-jupiter', version: '5.18.0'
+	// https://mvnrepository.com/artifact/org.springframework.security/spring-security-test
+	testImplementation group: 'org.springframework.security', name: 'spring-security-test', version: '6.5.2'
+	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-configuration-processor
+	annotationProcessor group: 'org.springframework.boot', name: 'spring-boot-configuration-processor', version: "${springBootVersion}"
 }
 
 application {
-    // Define the main class for the application.
-    mainClass = 'fi.poltsi.vempain.VempainAdminApplication'
+	// Define the main class for the application.
+	mainClass = 'fi.poltsi.vempain.VempainAdminApplication'
 }
 
 compileJava.inputs.files(processResources)
 
 jacoco {
-    toolVersion = "0.8.13"
+	toolVersion = "0.8.13"
 }
 
 tasks.named('test') {
-    useJUnitPlatform()
+	useJUnitPlatform()
 }
 
 test {
-    finalizedBy jacocoTestReport
+	finalizedBy jacocoTestReport
 }
 
 jacocoTestReport {
-    dependsOn test
-    reports {
-        xml.required = true
-    }
+	dependsOn test
+	reports {
+		xml.required = true
+	}
+}
+
+processResources {
+	filesMatching("**/application.yaml") {
+		filter(ReplaceTokens, tokens: [
+				'project.version': project.version
+		])
+	}
 }

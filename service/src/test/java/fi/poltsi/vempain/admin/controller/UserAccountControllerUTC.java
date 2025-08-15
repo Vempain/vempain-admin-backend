@@ -1,36 +1,32 @@
 package fi.poltsi.vempain.admin.controller;
 
-import fi.poltsi.vempain.admin.api.response.UserResponse;
-import fi.poltsi.vempain.admin.service.UserService;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
-import org.junit.jupiter.api.BeforeEach;
+import fi.poltsi.vempain.auth.api.response.UserResponse;
+import fi.poltsi.vempain.auth.service.UserService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class UserAccountControllerUTC {
     @Mock
     private UserService userService;
 
+	@InjectMocks
     private UserController userController;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        userController = new UserController(userService);
-    }
 
     @Test
     void getUsersOk() {
@@ -100,8 +96,6 @@ class UserAccountControllerUTC {
     }
     @Test
     void findByIdNoneFoundFail() {
-        when(userService.findById(1L)).thenReturn(Optional.empty());
-
         try {
             userController.findById(1L);
             fail("Should have received a ResponseStatusException");

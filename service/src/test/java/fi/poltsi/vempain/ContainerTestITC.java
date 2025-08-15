@@ -1,6 +1,6 @@
 package fi.poltsi.vempain;
 
-import fi.poltsi.vempain.admin.service.AclService;
+import fi.poltsi.vempain.auth.service.AclService;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

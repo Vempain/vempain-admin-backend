@@ -2,6 +2,7 @@ package fi.poltsi.vempain.admin.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import fi.poltsi.vempain.admin.api.response.ComponentResponse;
+import fi.poltsi.vempain.auth.entity.AbstractVempainEntity;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

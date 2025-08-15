@@ -1,17 +1,13 @@
 package fi.poltsi.vempain.admin;
 
-import fi.poltsi.vempain.admin.repository.AclRepository;
 import fi.poltsi.vempain.admin.repository.ComponentRepository;
 import fi.poltsi.vempain.admin.repository.FormRepository;
 import fi.poltsi.vempain.admin.repository.LayoutRepository;
 import fi.poltsi.vempain.admin.repository.PageRepository;
-import fi.poltsi.vempain.admin.repository.UnitRepository;
-import fi.poltsi.vempain.admin.repository.UserRepository;
 import fi.poltsi.vempain.admin.repository.file.FileCommonPageableRepository;
 import fi.poltsi.vempain.admin.repository.file.FileImagePageableRepository;
 import fi.poltsi.vempain.admin.repository.file.FileThumbPageableRepository;
 import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
-import fi.poltsi.vempain.admin.service.AclService;
 import fi.poltsi.vempain.admin.service.ComponentService;
 import fi.poltsi.vempain.admin.service.FormComponentService;
 import fi.poltsi.vempain.admin.service.FormService;
@@ -19,9 +15,13 @@ import fi.poltsi.vempain.admin.service.LayoutService;
 import fi.poltsi.vempain.admin.service.PageService;
 import fi.poltsi.vempain.admin.service.PublishService;
 import fi.poltsi.vempain.admin.service.UnitService;
-import fi.poltsi.vempain.admin.service.UserService;
 import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.admin.tools.TestITCTools;
+import fi.poltsi.vempain.auth.repository.AclRepository;
+import fi.poltsi.vempain.auth.repository.UnitRepository;
+import fi.poltsi.vempain.auth.repository.UserRepository;
+import fi.poltsi.vempain.auth.service.AclService;
+import fi.poltsi.vempain.auth.service.UserService;
 import fi.poltsi.vempain.site.repository.SitePageRepository;
 import fi.poltsi.vempain.tools.JschClient;
 import jakarta.persistence.EntityManager;
@@ -79,7 +79,7 @@ public abstract class AbstractITCTest {
 	@Autowired
 	protected TestITCTools                 testITCTools;
 	@Autowired
-	private EntityManager				  entityManager;
+	private   EntityManager                entityManager;
 	// Services
 	@Autowired
 	protected AclService                   aclService;

@@ -1,7 +1,7 @@
 package fi.poltsi.vempain.admin.rest;
 
 import fi.poltsi.vempain.admin.api.Constants;
-import fi.poltsi.vempain.admin.api.response.AclResponse;
+import fi.poltsi.vempain.auth.api.response.AclResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;

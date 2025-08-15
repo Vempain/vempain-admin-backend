@@ -1,6 +1,6 @@
 package fi.poltsi.vempain.admin.principal;
 
-import fi.poltsi.vempain.admin.entity.UserAccount;
+import fi.poltsi.vempain.auth.entity.UserAccount;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 

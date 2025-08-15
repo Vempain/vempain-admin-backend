@@ -1,6 +1,7 @@
 package fi.poltsi.vempain.admin.service;
 
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
+import fi.poltsi.vempain.auth.service.UserDetailsImpl;
 import org.junit.jupiter.api.Test;
 
 import java.util.Set;
@@ -12,7 +13,7 @@ class UserAccountDetailsImplUTC {
     @Test
     void testEqualsOk() {
 		var unit = TestUTCTools.generateUnit(1);
-        var userDetails1 = new UserDetailsImpl(1L, "login", "nick", "email@address", "password", Set.of(unit),null);
+        var userDetails1 = new UserDetailsImpl(1L, "login", "nick", "email@address", "password", Set.of(unit), null);
         var userDetails2 = new UserDetailsImpl(1L, "login", "nick", "email@address", "password", Set.of(unit), null);
         boolean equals = userDetails1.equals(userDetails2);
         assertTrue(equals);

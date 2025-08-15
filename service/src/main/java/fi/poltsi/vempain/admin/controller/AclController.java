@@ -1,10 +1,10 @@
 package fi.poltsi.vempain.admin.controller;
 
-import fi.poltsi.vempain.admin.api.response.AclResponse;
-import fi.poltsi.vempain.admin.entity.Acl;
 import fi.poltsi.vempain.admin.rest.AclAPI;
 import fi.poltsi.vempain.admin.service.AccessService;
-import fi.poltsi.vempain.admin.service.AclService;
+import fi.poltsi.vempain.auth.api.response.AclResponse;
+import fi.poltsi.vempain.auth.entity.Acl;
+import fi.poltsi.vempain.auth.service.AclService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -20,7 +20,7 @@ import java.util.stream.StreamSupport;
 @RequiredArgsConstructor
 @RestController
 public class AclController implements AclAPI {
-	private final AclService aclService;
+	private final AclService    aclService;
 	private final AccessService accessService;
 
 	@Override
