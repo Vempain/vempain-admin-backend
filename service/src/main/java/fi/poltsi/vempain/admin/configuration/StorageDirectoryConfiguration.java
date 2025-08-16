@@ -20,6 +20,9 @@ public class StorageDirectoryConfiguration {
 	@Value("${vempain.admin.file.converted-directory}")
 	private String convertedFileStorage;
 
+	@Value("${vempain.admin.file.site-directory}")
+	private String siteFileStorage;
+
 	@Bean
 	public Map<String, String> storageLocations() {
 		HashMap<String, String> storageLocations = new HashMap<>();
@@ -36,6 +39,29 @@ public class StorageDirectoryConfiguration {
 				throw new FileSystemNotFoundException(exceptionMessage);
 			} else if (!Files.isReadable(tmpDir.toPath())) {
 				log.error("Type {} file storage has wrong permission: {}", fileClassName, tmpDir);
+				throw new FileSystemNotFoundException(exceptionMessage);
+			}
+		}
+
+		return storageLocations;
+	}
+
+	@Bean
+	public Map<String, String> siteStorageLocations() {
+		HashMap<String, String> storageLocations = new HashMap<>();
+		var                     exceptionMessage = "Unable to generate site storage location map";
+
+		for (String fileClassName : FileClassEnum.getFileClassNames()) {
+			var tmpPath = siteFileStorage + File.separator + fileClassName;
+			log.info("Initializing, adding site storage location {}: {}", fileClassName, tmpPath);
+			storageLocations.put(fileClassName, tmpPath);
+			var tmpDir = new File(tmpPath);
+
+			if (!tmpDir.exists() && !tmpDir.mkdirs()) {
+				log.error("Type {} site file storage did not exist and it could not be created as: {}", fileClassName, tmpDir);
+				throw new FileSystemNotFoundException(exceptionMessage);
+			} else if (!Files.isReadable(tmpDir.toPath())) {
+				log.error("Type {} site file storage has wrong permission: {}", fileClassName, tmpDir);
 				throw new FileSystemNotFoundException(exceptionMessage);
 			}
 		}

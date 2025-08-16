@@ -85,10 +85,12 @@ vempain:
     jwtExpirationMs: 86400000
   test: true
   admin:
+    service-psk: override-me
     file:
       image-format: "jpeg"
       thumbnail-size: 250
       converted-directory: override-me
+      site-directory: override-me
     ssh:
       user: override-me
       home-dir: override-me

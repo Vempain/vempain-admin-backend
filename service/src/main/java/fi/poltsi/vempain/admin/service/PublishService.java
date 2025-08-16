@@ -12,11 +12,11 @@ import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.admin.service.file.GalleryFileService;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.UserService;
-import fi.poltsi.vempain.site.entity.SiteFile;
 import fi.poltsi.vempain.site.entity.SitePage;
-import fi.poltsi.vempain.site.repository.SiteFileRepository;
+import fi.poltsi.vempain.site.entity.WebSiteFile;
 import fi.poltsi.vempain.site.repository.SiteGalleryRepository;
 import fi.poltsi.vempain.site.repository.SitePageRepository;
+import fi.poltsi.vempain.site.repository.WebSiteFileRepository;
 import fi.poltsi.vempain.site.service.SiteSubjectService;
 import fi.poltsi.vempain.tools.JschClient;
 import lombok.RequiredArgsConstructor;
@@ -44,9 +44,9 @@ public class PublishService {
 	private final LayoutService               layoutService;
 	private final UserService                 userService;
 	private final SubjectService              subjectService;
-	private final SitePageRepository          sitePageRepository;
-	private final SiteFileRepository          siteFileRepository;
-	private final SiteGalleryRepository       siteGalleryRepository;
+	private final SitePageRepository    sitePageRepository;
+	private final WebSiteFileRepository webSiteFileRepository;
+	private final SiteGalleryRepository siteGalleryRepository;
 	private final GalleryFileService          galleryFileService;
 	private final SiteSubjectService          siteSubjectService;
 	private final PageGalleryService          pageGalleryService;
@@ -226,15 +226,15 @@ public class PublishService {
 			var fileCommon = fileCommonPageableRepository.findById(galleryFile.getFileCommonId()).orElseThrow(VempainEntityNotFoundException::new);
 			// Remove the site file if it exists
 			log.debug("Deleting site file by file ID: {}", fileCommon.getId());
-			siteFileRepository.deleteByFileId(fileCommon.getId());
+			webSiteFileRepository.deleteByFileId(fileCommon.getId());
 
-			var siteFile = SiteFile.builder()
-								   .fileId(fileCommon.getId())
-								   .comment(fileCommon.getComment())
-								   .path(fileCommon.getSiteFilename())
-								   .mimetype(fileCommon.getMimetype())
-								   .metadata(fileCommon.getMetadata())
-								   .build();
+			var siteFile = WebSiteFile.builder()
+									  .fileId(fileCommon.getId())
+									  .comment(fileCommon.getComment())
+									  .path(fileCommon.getSiteFilename())
+									  .mimetype(fileCommon.getMimetype())
+									  .metadata(fileCommon.getMetadata())
+									  .build();
 
 			// Depending on the mimetype, we can fetch the width and height value if the file class is either image or video
 			if ((FileClassEnum.getFileClassByOrder(fileCommon.getFileClassId()) == FileClassEnum.IMAGE)) {
@@ -259,7 +259,7 @@ public class PublishService {
 			}
 
 			log.debug("Saving site file: {}", siteFile);
-			var newSiteFile = siteFileRepository.save(siteFile);
+			var newSiteFile = webSiteFileRepository.save(siteFile);
 			// Add new gallery file relation
 			siteGalleryRepository.saveGalleryFile(siteGalleryId, newSiteFile.getId(), galleryFile.getSortOrder());
 			// Save subject on site-side

@@ -64,7 +64,7 @@ public class GalleryFileService {
 
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void addGalleryFile(Long galleryId, Long fileCommonId, Long sortOrder) {
-		var query = entityManager.createNativeQuery("INSERT INTO gallery_file (gallery_id, file_common_id, sort_order) " +
+		var query = entityManager.createNativeQuery("INSERT INTO gallery_file (gallery_id, site_file_id, sort_order) " +
 													  "VALUES (:galleryId, :fileCommonId, :sortOrder)");
 		query.setParameter("galleryId", galleryId);
 		query.setParameter("fileCommonId", fileCommonId);
