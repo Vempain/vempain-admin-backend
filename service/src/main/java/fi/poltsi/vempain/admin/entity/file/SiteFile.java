@@ -72,6 +72,7 @@ public class SiteFile {
 							   .id(this.id)
 							   .fileName(this.fileName)
 							   .filePath(this.filePath)
+							   .fileClass(this.fileClass.name())
 							   .mimeType(this.mimeType)
 							   .size(this.size)
 							   .sha256sum(this.sha256sum)

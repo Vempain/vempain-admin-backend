@@ -7,6 +7,7 @@ import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.service.SubjectService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.Instant;
 
@@ -51,4 +52,53 @@ class SiteFileRepositoryITC extends AbstractITCTest {
 
 		assertEquals(1, subjects.size());
 	}
+
+	@Test
+	 void findByFileClassReturnsCorrectResults() {
+	  var userId = testITCTools.generateUser();
+
+	  var siteFile1 = SiteFile.builder()
+	          .filePath("path1")
+	          .fileName("file1")
+	          .mimeType("image/jpeg")
+	          .sha256sum("SHA256-1")
+	          .fileClass(FileClassEnum.IMAGE)
+	          .creator(userId)
+	          .created(Instant.now())
+	          .modifier(userId)
+	          .modified(Instant.now())
+	          .build();
+	  siteFileRepository.save(siteFile1);
+
+	  var siteFile2 = SiteFile.builder()
+	          .filePath("path2")
+	          .fileName("file2")
+	          .mimeType("application/pdf")
+	          .sha256sum("SHA256-2")
+	          .fileClass(FileClassEnum.DOCUMENT)
+	          .creator(userId)
+	          .created(Instant.now())
+	          .modifier(userId)
+	          .modified(Instant.now())
+	          .build();
+	  siteFileRepository.save(siteFile2);
+
+	  var pageRequest = PageRequest.of(0, 10);
+	  var pageable = PageRequest.of(0, 10);
+
+	  var result = siteFileRepository.findByFileClass(FileClassEnum.IMAGE, pageRequest, pageable);
+
+	  assertEquals(1, result.getTotalElements());
+	  assertEquals("file1", result.getContent().getFirst().getFileName());
+	 }
+
+	 @Test
+	 void findByFileClassReturnsEmptyWhenNoMatch() {
+	  var pageRequest = PageRequest.of(0, 10);
+	  var pageable = PageRequest.of(0, 10);
+
+	  var result = siteFileRepository.findByFileClass(FileClassEnum.VIDEO, pageRequest, pageable);
+
+	  assertEquals(0, result.getTotalElements());
+	 }
 }

@@ -24,8 +24,11 @@ public class SiteFileResponse {
 	@Schema(description = "Path to the file", example = "/uploads/example.jpg")
 	private String filePath;
 
+	@Schema(description = "File class", example = "IMAGE")
+	private String fileClass;
+
 	@Schema(description = "MIME type of the file", example = "image/jpeg")
-	private String mimeType;
+	private String        mimeType;
 
 	@Schema(description = "Size of the file in bytes", example = "204800")
 	private long size;
