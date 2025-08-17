@@ -85,10 +85,11 @@ vempain:
     jwtExpirationMs: 86400000
   test: true
   admin:
+    service-psk: override-me
     file:
       image-format: "jpeg"
       thumbnail-size: 250
-      converted-directory: override-me
+      site-file-directory: override-me
     ssh:
       user: override-me
       home-dir: override-me
@@ -104,7 +105,7 @@ vempain:
       address: override-me
       port: 22
   cors:
-    allowed-origins: ${vempain.app.frontend-url}
+    allowed-origins: "${vempain.app.frontend-url},http://localhost:8081"
     cors-pattern: '/**'
     max-age: 3600
   cmd-line:

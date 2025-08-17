@@ -1,6 +1,5 @@
 package fi.poltsi.vempain.admin.schedule;
 
-import fi.poltsi.vempain.admin.entity.file.FileImage;
 import fi.poltsi.vempain.admin.entity.file.FileThumb;
 import fi.poltsi.vempain.admin.service.file.FileService;
 import lombok.AllArgsConstructor;
@@ -29,8 +28,6 @@ public class DuplicateFileRemovalSchedule {
 
 	private final FileService fileService;
 
-	private ArrayList<ArrayList<FileImage>> duplicateImages;
-
 	@Scheduled(fixedDelay = DELAY, initialDelayString = INITIAL_DELAY)
 	public void removeDuplicateImages() {
 		var iterableThumbFiles = fileService.getDuplicateThumbFiles();
@@ -50,7 +47,7 @@ public class DuplicateFileRemovalSchedule {
 		// Check if the parent file is present in file_common
 
 		for (FileThumb iteratingThumb : fileThumbs) {
-			var optionalFileCommon = fileService.findCommonById(iteratingThumb.getParentId());
+			var optionalFileCommon = fileService.findSiteFileById(iteratingThumb.getParentId());
 
 			if (optionalFileCommon.isEmpty()) {
 				log.info("Removing thumb file {} because it does not refer to valid common file", iteratingThumb);

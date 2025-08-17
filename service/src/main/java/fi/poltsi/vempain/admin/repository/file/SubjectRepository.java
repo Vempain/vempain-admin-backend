@@ -13,13 +13,19 @@ import java.util.Optional;
 @Repository
 public interface SubjectRepository extends PagingAndSortingRepository<Subject, Long>, ListCrudRepository<Subject, Long> {
 	Optional<Subject> findSubjectBySubjectName(String subjectName);
+
 	Optional<Subject> findSubjectBySubjectNameDe(String subjectNameDe);
+
 	Optional<Subject> findSubjectBySubjectNameEn(String subjectNameEn);
+
 	Optional<Subject> findSubjectBySubjectNameFi(String subjectNameFi);
+
 	Optional<Subject> findSubjectBySubjectNameSe(String subjectNameSe);
 
-	@Query(value = "SELECT s.* FROM subject s, file_subject fs " +
-				   "WHERE fs.file_common_id = :fileCommonId " +
-				   "AND fs.subject_id = s.id", nativeQuery = true)
-	List<Subject> getSubjectsByFileId(@Param("fileCommonId") Long fileCommonId);
+	@Query(value = """
+            SELECT s.* FROM subject s, file_subject fs
+            WHERE fs.site_file_id = :siteFileId
+            AND   fs.subject_id = s.id
+            """, nativeQuery = true)
+	List<Subject> getSubjectsByFileId(@Param("siteFileId") Long siteFileId);
 }

@@ -6,9 +6,8 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
-import fi.poltsi.vempain.admin.api.FileClassEnum;
-import fi.poltsi.vempain.admin.entity.file.FileCommon;
 import fi.poltsi.vempain.admin.entity.file.FileThumb;
+import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,9 +17,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -38,8 +34,8 @@ public class JschClient {
 
 	@Value("${vempain.site.www-root}")
 	private String siteWwwRoot;
-	@Value("${vempain.admin.file.converted-directory}")
-	private String convertedDirectory;
+	@Value("${vempain.admin.file.site-file-directory}")
+	private String siteFileDirectory;
 	@Value("${vempain.site.thumb-directory}")
 	private String thumbSubDir;
 	@Value("${vempain.site.image-size}")
@@ -74,34 +70,17 @@ public class JschClient {
 		channelSftp = (ChannelSftp) channel;
 	}
 
-	public void transferFilesToSite(List<FileCommon> fileCommonList, List<FileThumb> thumbList) throws SftpException {
+	public void transferFilesToSite(List<SiteFile> siteFiles, List<FileThumb> thumbList) throws SftpException {
 		if (!siteDirectoryExists(siteWwwRoot)) {
 			log.error("The site main directory {} does not exist, file transfer is aborted", siteWwwRoot);
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Site configuration is not set up correctly");
 		}
 
-		for (FileCommon fileCommon : fileCommonList) {
-			var absolutePathConvertedFile = convertedDirectory + File.separator + fileCommon.getConvertedFile();
+		for (var siteFile : siteFiles) {
+			var absolutePathConvertedFile = siteFileDirectory + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName();
 			log.debug("Transferring file {} to {}", absolutePathConvertedFile, siteWwwRoot);
 
-			// If the file is an image, then we create a temporary smaller sized file which we transfer to the site
-			if (FileClassEnum.getFileClassByOrder(fileCommon.getFileClassId()) == FileClassEnum.IMAGE) {
-				// Create a temporary file which is a smaller version of the original file
-				File tmpFile;
-				try {
-					tmpFile = Files.createTempFile("tmp", ".jpg")
-								   .toFile();
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
-
-				var siteDimensions = imageTools.resizeImage(Path.of(absolutePathConvertedFile), tmpFile.toPath(), siteImageSize, 0.7F);
-				fileCommon.setSiteFileDimension(siteDimensions);
-
-				absolutePathConvertedFile = tmpFile.getAbsolutePath();
-			}
-
-			var targetSubDir = fileCommon.getSiteFilepath();
+			var targetSubDir = siteFile.getFilePath();
 			var targetDir    = siteWwwRoot + File.separator + targetSubDir;
 
 			// We remove the leading / from the subdir so that it can be later split correctly
@@ -120,14 +99,14 @@ public class JschClient {
 				log.debug("Site directory {} already exists", targetDir);
 			}
 
-			channelSftp.put(absolutePathConvertedFile, targetDir + File.separator + fileCommon.getSiteFilename());
+			channelSftp.put(absolutePathConvertedFile, targetDir + File.separator + siteFile.getFileName());
 		}
 
 		for (FileThumb fileThumb : thumbList) {
 			var absolutePathThumbFile =
-					convertedDirectory + File.separator + fileThumb.getFilepath() + File.separator + fileThumb.getFilename();
-			var targetDir = siteWwwRoot + File.separator + fileThumb.getFileCommon()
-																	.getSiteFilepath() + File.separator + thumbSubDir;
+					siteFileDirectory + File.separator + fileThumb.getFilepath() + File.separator + fileThumb.getFilename();
+			var targetDir = siteWwwRoot + File.separator + fileThumb.getSiteFile()
+																	.getFilePath() + File.separator + thumbSubDir;
 			log.info("Transferring thumb {} to {}", absolutePathThumbFile, targetDir);
 			channelSftp.put(absolutePathThumbFile, targetDir);
 		}

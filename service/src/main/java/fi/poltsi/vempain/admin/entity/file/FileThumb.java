@@ -41,7 +41,7 @@ public class FileThumb extends AbstractFileImageEntity implements Serializable, 
 								.parentId(this.getParentId())
 								.width(this.getWidth())
 								.height(this.getHeight())
-								.common(this.getFileCommon().toResponse())
+								.siteFile(this.getSiteFile().toResponse())
 								.build();
 	}
 }

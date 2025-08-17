@@ -2,21 +2,18 @@ package fi.poltsi.vempain.admin.service;
 
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
-import fi.poltsi.vempain.admin.api.FileClassEnum;
 import fi.poltsi.vempain.admin.entity.FormComponent;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
-import fi.poltsi.vempain.admin.repository.file.FileCommonPageableRepository;
-import fi.poltsi.vempain.admin.repository.file.FileImagePageableRepository;
-import fi.poltsi.vempain.admin.repository.file.FileVideoPageableRepository;
+import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.admin.service.file.GalleryFileService;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.UserService;
-import fi.poltsi.vempain.site.entity.SiteFile;
 import fi.poltsi.vempain.site.entity.SitePage;
-import fi.poltsi.vempain.site.repository.SiteFileRepository;
+import fi.poltsi.vempain.site.entity.WebSiteFile;
 import fi.poltsi.vempain.site.repository.SiteGalleryRepository;
 import fi.poltsi.vempain.site.repository.SitePageRepository;
+import fi.poltsi.vempain.site.repository.WebSiteFileRepository;
 import fi.poltsi.vempain.site.service.SiteSubjectService;
 import fi.poltsi.vempain.tools.JschClient;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +25,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.File;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -38,20 +36,18 @@ public class PublishService {
 	private final PageService                 pageService;
 	private final FormService                 formService;
 	private final ComponentService            componentService;
-	private final FileService                 fileService;
-	private final FileImagePageableRepository fileImagePageableRepository;
-	private final FileVideoPageableRepository fileVideoPageableRepository;
-	private final LayoutService               layoutService;
+	private final FileService        fileService;
+	private final SiteFileRepository siteFileRepository;
+	private final LayoutService      layoutService;
 	private final UserService                 userService;
 	private final SubjectService              subjectService;
-	private final SitePageRepository          sitePageRepository;
-	private final SiteFileRepository          siteFileRepository;
-	private final SiteGalleryRepository       siteGalleryRepository;
+	private final SitePageRepository    sitePageRepository;
+	private final WebSiteFileRepository webSiteFileRepository;
+	private final SiteGalleryRepository siteGalleryRepository;
 	private final GalleryFileService          galleryFileService;
 	private final SiteSubjectService          siteSubjectService;
 	private final PageGalleryService          pageGalleryService;
 	private final JschClient                  jschClient;
-	private final FileCommonPageableRepository fileCommonPageableRepository;
 
 	@Value("${vempain.site.ssh.address}")
 	private String siteSshAddress;
@@ -183,14 +179,14 @@ public class PublishService {
 		}
 
 		// Fetch the common and thumb files
-		var fileThumbList = fileService.findAllFileThumbsByFileCommonList(gallery.getCommonFiles());
+		var fileThumbList = fileService.findAllFileThumbsBySiteFileList(gallery.getSiteFiles());
 
 		for (var fileThumb : fileThumbList) {
-			fileThumb.setFileCommon(gallery.getCommonFiles()
-										   .stream()
-										   .filter(fileCommon -> fileCommon.getId() == fileThumb.getParentId())
-										   .findFirst()
-										   .orElseThrow(VempainEntityNotFoundException::new));
+			fileThumb.setSiteFile(gallery.getSiteFiles()
+										 .stream()
+										 .filter(fileCommon -> fileCommon.getId() == fileThumb.getParentId())
+										 .findFirst()
+										 .orElseThrow(VempainEntityNotFoundException::new));
 		}
 
 		// Transfer the files to the site-server
@@ -201,7 +197,7 @@ public class PublishService {
 			log.debug("Using SSH private key {}", adminSshPrivateKey);
 			jschClient.connect(siteSshAddress, siteSshPort, siteSshUser, adminSshHomeDir, adminSshPrivateKey);
 			log.debug("Transferring files to site-server");
-			jschClient.transferFilesToSite(gallery.getCommonFiles(), fileThumbList);
+			jschClient.transferFilesToSite(gallery.getSiteFiles(), fileThumbList);
 		} catch (JSchException e) {
 			log.error("Failed to create a SSH connection to site-server {}", siteSshAddress, e);
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to create a SSH connection to site-server: " + siteSshAddress);
@@ -223,47 +219,25 @@ public class PublishService {
 
 		// File data
 		for (var galleryFile : galleryFileList) {
-			var fileCommon = fileCommonPageableRepository.findById(galleryFile.getFileCommonId()).orElseThrow(VempainEntityNotFoundException::new);
-			// Remove the site file if it exists
-			log.debug("Deleting site file by file ID: {}", fileCommon.getId());
-			siteFileRepository.deleteByFileId(fileCommon.getId());
+			var siteFile = siteFileRepository.findById(galleryFile.getSiteFileId()).orElseThrow(VempainEntityNotFoundException::new);
+			// Remove the web site file if it exists
+			log.debug("Deleting web site file by file ID: {}", siteFile.getId());
+			webSiteFileRepository.deleteByFileId(siteFile.getId());
 
-			var siteFile = SiteFile.builder()
-								   .fileId(fileCommon.getId())
-								   .comment(fileCommon.getComment())
-								   .path(fileCommon.getSiteFilename())
-								   .mimetype(fileCommon.getMimetype())
-								   .metadata(fileCommon.getMetadata())
-								   .build();
+			var webSiteFile = WebSiteFile.builder()
+										 .fileId(siteFile.getId())
+										 .comment(siteFile.getComment())
+										 .path(siteFile.getFilePath() + File.pathSeparator + siteFile.getFileName())
+										 .mimetype(siteFile.getMimeType())
+										 .metadata(siteFile.getMetadata())
+										 .build();
 
-			// Depending on the mimetype, we can fetch the width and height value if the file class is either image or video
-			if ((FileClassEnum.getFileClassByOrder(fileCommon.getFileClassId()) == FileClassEnum.IMAGE)) {
-				log.debug("Fetching image file by ID: {}", fileCommon.getId());
-				var imageFile = fileImagePageableRepository.findImageFileByParentId(fileCommon.getId());
-				log.debug("Image file is present? {}", imageFile.isPresent());
-				log.debug("Image width and height: {} x {}", fileCommon.getSiteFileDimension().getWidth(), fileCommon.getSiteFileDimension().getHeight());
-				// The site image has been shrunk to a smaller size determined by vempain.site.image-size at transfer time, and the dimensions are stored
-				// as transient field in the object
-				if (imageFile.isPresent()) {
-					siteFile.setWidth(fileCommon.getSiteFileDimension().width);
-					siteFile.setHeight(fileCommon.getSiteFileDimension().height);
-				}
-			} else if (FileClassEnum.getFileClassByOrder(fileCommon.getFileClassId()) == FileClassEnum.VIDEO) {
-				var videoFile = fileVideoPageableRepository.findById(fileCommon.getId());
-
-				if (videoFile.isPresent()) {
-					siteFile.setWidth(videoFile.get().getWidth());
-					siteFile.setHeight(videoFile.get().getHeight());
-					siteFile.setLength(videoFile.get().getLength());
-				}
-			}
-
-			log.debug("Saving site file: {}", siteFile);
-			var newSiteFile = siteFileRepository.save(siteFile);
+			log.debug("Saving site file: {}", webSiteFile);
+			var newSiteFile = webSiteFileRepository.save(webSiteFile);
 			// Add new gallery file relation
 			siteGalleryRepository.saveGalleryFile(siteGalleryId, newSiteFile.getId(), galleryFile.getSortOrder());
 			// Save subject on site-side
-			var subjects = subjectService.getSubjectsByFileId(fileCommon.getId());
+			var subjects = subjectService.getSubjectsByFileId(webSiteFile.getId());
 			var siteSubjects = siteSubjectService.saveAllFromAdminSubject(subjects);
 			// Save subject - file relation on site-side
 			siteSubjectService.saveSiteFileSubject(newSiteFile.getId(), siteSubjects);

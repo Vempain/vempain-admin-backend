@@ -23,6 +23,6 @@ public class GalleryFile implements Serializable {
 	private Long sortOrder;
 	@Column(name = "gallery_id")
 	private Long galleryId;
-	@Column(name = "file_common_id")
-	private Long fileCommonId;
+	@Column(name = "site_file_id")
+	private Long siteFileId;
 }

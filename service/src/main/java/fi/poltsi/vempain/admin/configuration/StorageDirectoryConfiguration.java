@@ -17,8 +17,9 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Configuration
 public class StorageDirectoryConfiguration {
-	@Value("${vempain.admin.file.converted-directory}")
-	private String convertedFileStorage;
+
+	@Value("${vempain.admin.file.site-file-directory}")
+	private String siteFileStorage;
 
 	@Bean
 	public Map<String, String> storageLocations() {
@@ -26,7 +27,7 @@ public class StorageDirectoryConfiguration {
 		var                     exceptionMessage = "Unable to generate storage location map";
 
 		for (String fileClassName : FileClassEnum.getFileClassNames()) {
-			var tmpPath = convertedFileStorage + File.separator + fileClassName;
+			var tmpPath = siteFileStorage + File.separator + fileClassName;
 			log.info("Initializing, adding storage location {}: {}", fileClassName, tmpPath);
 			storageLocations.put(fileClassName, tmpPath);
 			var tmpDir = new File(tmpPath);

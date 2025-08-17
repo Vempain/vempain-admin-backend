@@ -33,5 +33,5 @@ public class AbstractFileEntity {
 	private   long   parentId;
 
 	@Transient
-	private FileCommon fileCommon;
+	private SiteFile siteFile;
 }

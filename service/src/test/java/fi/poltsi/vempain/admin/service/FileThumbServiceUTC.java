@@ -1,8 +1,8 @@
 package fi.poltsi.vempain.admin.service;
 
 import fi.poltsi.vempain.admin.entity.file.FileThumb;
-import fi.poltsi.vempain.admin.repository.file.FileCommonPageableRepository;
 import fi.poltsi.vempain.admin.repository.file.FileThumbPageableRepository;
+import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.service.file.FileThumbService;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
 import fi.poltsi.vempain.tools.ImageTools;
@@ -15,7 +15,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.awt.*;
-import java.io.File;
 import java.nio.file.Path;
 import java.util.Optional;
 
@@ -35,11 +34,11 @@ class FileThumbServiceUTC {
 	private final String TEST_STORAGE_DIR = "/var/tmp/vempain-test-storage";
 
 	@Mock
-	private FileThumbPageableRepository  fileThumbPageableRepository;
+	private FileThumbPageableRepository fileThumbPageableRepository;
 	@Mock
-	private FileCommonPageableRepository fileCommonPageableRepository;
+	private SiteFileRepository          siteFileRepository;
 	@Mock
-	private ImageTools                   imageTools;
+	private ImageTools                  imageTools;
 
 	@InjectMocks
 	private FileThumbService fileThumbService;
@@ -55,32 +54,28 @@ class FileThumbServiceUTC {
 
 	@Test
 	void generateThumbFileOk() {
-		var commonId = 1L;
-		var fileCommon = TestUTCTools.generateFileCommon(commonId, TEST_STORAGE_DIR);
-		assertNotNull(fileCommon);
-		when(fileCommonPageableRepository.findById(commonId)).thenReturn(Optional.of(fileCommon));
+		var siteFileId = 1L;
+		var siteFile = TestUTCTools.generateSiteFile(siteFileId, TEST_STORAGE_DIR);
+		assertNotNull(siteFile);
+		when(siteFileRepository.findById(siteFileId)).thenReturn(Optional.of(siteFile));
 
 		var thumbDimension = new Dimension(250, 250);
 		when(imageTools.resizeImage(any(Path.class), any(Path.class), anyInt(), anyFloat()))
 				.thenReturn(thumbDimension);
 		when(imageTools.getImageDimensions(any(Path.class)))
 				.thenReturn(thumbDimension);
-		var thumbFileName = Path.of(fileCommon.getConvertedFile())
-								.getFileName()
-								.toString();
-		var thumbFilePath = Path.of("thumb" + File.separator + fileCommon.getConvertedFile())
-								.getParent()
-								.toString();
+		var thumbFileName = siteFile.getFileName();
+		var thumbFilePath = siteFile.getFilePath();
 
 		var fileThumb = FileThumb.builder()
-								 .parentId(commonId)
+								 .parentId(siteFileId)
 								 .filepath(thumbFilePath)
 								 .filename(thumbFileName)
 								 .build();
 
 		when(fileThumbPageableRepository.save(any())).thenReturn(fileThumb);
 
-		fileThumbService.generateThumbFile(commonId);
+		fileThumbService.generateThumbFile(siteFileId);
 		verify(fileThumbPageableRepository, times(1)).save(any(FileThumb.class));
 		verify(imageTools, times(1)).resizeImage(any(Path.class), any(Path.class), anyInt(), anyFloat());
 		verify(imageTools, times(1)).getImageDimensions(any(Path.class));

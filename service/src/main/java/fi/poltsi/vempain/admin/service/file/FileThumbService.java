@@ -2,8 +2,8 @@ package fi.poltsi.vempain.admin.service.file;
 
 import fi.poltsi.vempain.admin.api.FileClassEnum;
 import fi.poltsi.vempain.admin.entity.file.FileThumb;
-import fi.poltsi.vempain.admin.repository.file.FileCommonPageableRepository;
 import fi.poltsi.vempain.admin.repository.file.FileThumbPageableRepository;
+import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.tools.ImageTools;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -20,9 +20,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static fi.poltsi.vempain.tools.LocalFileTools.computeSha256;
 import static fi.poltsi.vempain.tools.LocalFileTools.createAndVerifyDirectory;
 import static fi.poltsi.vempain.tools.LocalFileTools.getFileSize;
-import static fi.poltsi.vempain.tools.LocalFileTools.getSha1OfFile;
 import static fi.poltsi.vempain.tools.LocalFileTools.setExtension;
 
 @Slf4j
@@ -31,11 +31,11 @@ import static fi.poltsi.vempain.tools.LocalFileTools.setExtension;
 @Service
 public class FileThumbService {
 	private static final String                       RESPONSE_STATUS_EXCEPTION_MESSAGE = "Unknown error";
-	private final        FileThumbPageableRepository  fileThumbPageableRepository;
-	private final        FileCommonPageableRepository fileCommonPageableRepository;
-	private final        ImageTools                   imageTools;
+	private final FileThumbPageableRepository fileThumbPageableRepository;
+	private final SiteFileRepository          siteFileRepository;
+	private final ImageTools                  imageTools;
 
-	@Value("${vempain.admin.file.converted-directory}")
+	@Value("${vempain.admin.file.site-file-directory}")
 	private String convertedDirectory;
 	@Value("${vempain.admin.file.image-format}")
 	private String imageFormat;
@@ -50,20 +50,20 @@ public class FileThumbService {
 			return;
 		}
 
-		var optionalFileCommon = fileCommonPageableRepository.findById(fileCommonId);
+		var optionalSiteFile = siteFileRepository.findById(fileCommonId);
 
-		if (optionalFileCommon.isEmpty()) {
+		if (optionalSiteFile.isEmpty()) {
 			log.warn("Common file ID {} does not exist in database", fileCommonId);
 			return;
 		}
 
-		var fileCommon = optionalFileCommon.get();
-		var sourcePath = Path.of((convertedDirectory != null ? convertedDirectory : "") + File.separator + fileCommon.getConvertedFile());
+		var siteFile = optionalSiteFile.get();
+		var sourcePath = Path.of((convertedDirectory != null ? convertedDirectory : "") + File.separator + siteFile.getFileName());
 
-		generateThumbFile(fileCommon.getId(), sourcePath,
-						  Path.of(fileCommon.getConvertedFile())
+		generateThumbFile(siteFile.getId(), sourcePath,
+						  Path.of(siteFile.getFileName())
 							  .getParent(),
-						  FileClassEnum.getFileClassByMimetype(fileCommon.getMimetype()));
+						  FileClassEnum.getFileClassByMimetype(siteFile.getMimeType()));
 	}
 
 	@Transactional(propagation = Propagation.REQUIRED)
@@ -98,7 +98,7 @@ public class FileThumbService {
 
 		var dimensions = imageTools.getImageDimensions(destinationFile);
 		long filesize = getFileSize(destinationFile);
-		var sha1sum = getSha1OfFile(sourceFile.toFile());
+		var sha1sum = computeSha256(sourceFile.toFile());
 
 		// We store the full path name from the converted directory
 		var thumbDestinationFilename = sourceFile.getFileName()

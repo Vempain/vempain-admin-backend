@@ -1,7 +1,7 @@
 package fi.poltsi.vempain.admin.entity.file;
 
-import fi.poltsi.vempain.admin.api.response.file.FileCommonResponse;
 import fi.poltsi.vempain.admin.api.response.file.GalleryResponse;
+import fi.poltsi.vempain.admin.api.response.file.SiteFileResponse;
 import fi.poltsi.vempain.auth.api.response.AclResponse;
 import fi.poltsi.vempain.auth.entity.AbstractVempainEntity;
 import fi.poltsi.vempain.auth.entity.Acl;
@@ -42,16 +42,16 @@ public class Gallery extends AbstractVempainEntity implements Serializable {
 	private String shortname;
 
 	@Transient
-	private List<FileCommon> commonFiles;
+	private List<SiteFile> siteFiles;
 	@Transient
-	private List<Acl>        acls;
+	private List<Acl>      acls;
 
 	public GalleryResponse getResponse() {
-		var commonFileResponses = new ArrayList<FileCommonResponse>();
+		var siteFileResponses = new ArrayList<SiteFileResponse>();
 
-		if (this.commonFiles != null) {
-			for (var commonFile : this.commonFiles) {
-				commonFileResponses.add(commonFile.toResponse());
+		if (this.siteFiles != null) {
+			for (var siteFile : this.siteFiles) {
+				siteFileResponses.add(siteFile.toResponse());
 			}
 		}
 
@@ -66,7 +66,7 @@ public class Gallery extends AbstractVempainEntity implements Serializable {
 							  .id(this.id)
 							  .shortName(this.shortname)
 							  .description(this.description)
-							  .commonFiles(commonFileResponses)
+							  .siteFiles(siteFileResponses)
 							  .build();
 	}
 

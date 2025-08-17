@@ -1,5 +1,6 @@
 package fi.poltsi.vempain.admin.tools;
 
+import fi.poltsi.vempain.admin.api.FileClassEnum;
 import fi.poltsi.vempain.admin.api.response.ComponentResponse;
 import fi.poltsi.vempain.admin.api.response.LayoutResponse;
 import fi.poltsi.vempain.admin.entity.Component;
@@ -8,7 +9,7 @@ import fi.poltsi.vempain.admin.entity.FormComponent;
 import fi.poltsi.vempain.admin.entity.Layout;
 import fi.poltsi.vempain.admin.entity.Page;
 import fi.poltsi.vempain.admin.entity.Subject;
-import fi.poltsi.vempain.admin.entity.file.FileCommon;
+import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.exception.VempainLayoutException;
 import fi.poltsi.vempain.admin.repository.ComponentRepository;
@@ -16,6 +17,7 @@ import fi.poltsi.vempain.admin.repository.FormRepository;
 import fi.poltsi.vempain.admin.repository.LayoutRepository;
 import fi.poltsi.vempain.admin.repository.PageRepository;
 import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
+import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.service.ComponentService;
 import fi.poltsi.vempain.admin.service.FormComponentService;
 import fi.poltsi.vempain.admin.service.FormService;
@@ -71,30 +73,32 @@ import static org.junit.jupiter.api.Assertions.fail;
 @Getter
 @org.springframework.stereotype.Component
 public class TestITCTools {
-	private final AclService       aclService;
-	private final FormService      formService;
-	private final ComponentService componentService;
-	private final LayoutService    layoutService;
-	private final FileService      fileService;
+	private final AclService           aclService;
+	private final FormService          formService;
+	private final ComponentService     componentService;
+	private final LayoutService        layoutService;
+	private final FileService          fileService;
 	private final FormComponentService formComponentService;
 	private final AclRepository        aclRepository;
 	private final FormRepository       formRepository;
 	private final ComponentRepository  componentRepository;
-	private final LayoutRepository layoutRepository;
-	private final UserService      userService;
-	private final UnitService      unitService;
-	private final UserRepository   userRepository;
-	private final PageRepository   pageRepository;
+	private final LayoutRepository     layoutRepository;
+	private final UserService          userService;
+	private final UnitService          unitService;
+	private final UserRepository       userRepository;
+	private final PageRepository       pageRepository;
 	private final GalleryRepository    galleryRepository;
-	@Value("${vempain.admin.file.converted-directory}")
-	private       String               convertedDirectory;
+	@Value("${vempain.admin.file.site-file-directory}")
+	private       String               siteFileDirectory;
 	@Value("${vempain.cmd-line.exiftool}")
-	private String exifToolPath;
+	private       String               exifToolPath;
 
 	@Autowired
-	private EntityManager entityManager;
+	private EntityManager      entityManager;
 	@Autowired
-	private MetadataTools metadataTools;
+	private MetadataTools      metadataTools;
+	@Autowired
+	private SiteFileRepository siteFileRepository;
 
 	@Autowired
 	public TestITCTools(AclService aclService, FormService formService, ComponentService componentService, LayoutService layoutService,
@@ -261,7 +265,8 @@ public class TestITCTools {
 		var userId = generateUser();
 		var aclId = generateAcl(userId, null, true, true, true, true);
 		Component component = Component.builder()
-									   .compName("Test component " + index + RandomStringUtils.secure().nextAlphanumeric(8))
+									   .compName("Test component " + index + RandomStringUtils.secure()
+																							  .nextAlphanumeric(8))
 									   .compData("Test component data " + index)
 									   .locked(false)
 									   .aclId(aclId)
@@ -458,33 +463,32 @@ public class TestITCTools {
 
 	/// //////////////// Subject end
 	/// //////////////// FileCommon start
-	public FileCommon generateFileCommon(long idx) {
+	public SiteFile generateSiteFile(long idx) {
 		var aclId = generateAcl(1L, null, true, true, true, true);
-		var fileCommon = FileCommon.builder()
-								   .convertedFile("site/" + idx + ".jpg")
-								   .convertedFilesize(100L + idx)
-								   .convertedSha1sum("so-Sha1sum" + idx)
-								   .siteFilename(idx + ".jpg")
-								   .siteFilepath("site/")
-								   .siteSha1sum("si-Sha1sum" + idx)
-								   .metadata("")
-								   .fileClassId(1L)
-								   .comment("")
-								   .aclId(aclId)
-								   .creator(1L)
-								   .created(Instant.now()
-												   .minus(1, ChronoUnit.HOURS))
-								   .modifier(1L)
-								   .modified(Instant.now())
-								   .build();
-		return fileService.saveFileCommon(fileCommon);
+		var siteFile = SiteFile.builder()
+							   .fileName("Test file " + idx + RandomStringUtils.secure()
+																			   .nextAlphanumeric(8) + ".jpg")
+							   .filePath("/uploads/test/" + idx + "/")
+							   .mimeType("image/jpeg")
+							   .size(1024L * 1024L) // 1 MB
+							   .fileClass(FileClassEnum.IMAGE)
+							   .comment("Test file comment " + idx)
+							   .metadata("{}") // Empty metadata for testing
+							   .sha256sum("dummy-sha256sum-" + idx) // Dummy SHA256 for testing
+							   .creator(ADMIN_ID)
+							   .created(Instant.now()
+											   .minus(1, ChronoUnit.HOURS))
+							   .modifier(null)
+							   .modified(null)
+							   .build();
+		return fileService.saveSiteFile(siteFile);
 	}
 
 	public List<Long> generateFileCommons(long counter) {
 		var fileCommonIdList = new ArrayList<Long>();
 
 		for (long i = 1; i <= counter; i++) {
-			var fileCommon = generateFileCommon(i);
+			var fileCommon = generateSiteFile(i);
 			fileCommonIdList.add(fileCommon.getId());
 		}
 
@@ -595,13 +599,38 @@ public class TestITCTools {
 
 	/// //////////////// Gallery start
 	public Long generateGalleryFromDirectory(long playerId) {
-		var randomImagePath = RandomStringUtils.secure().nextAlphanumeric(8);
+		var randomImagePath = RandomStringUtils.secure()
+											   .nextAlphanumeric(8);
 		var testGalleryName = "Test gallery " + randomImagePath;
 
 		var destinationFileList = prepareConvertedForTests(randomImagePath);
 
 		var gallery = fileService.createEmptyGallery(testGalleryName, "A test gallery generated by TestITCTools", playerId);
-		fileService.addFilesToDatabase("/Test/" + randomImagePath, destinationFileList, playerId, gallery.getId());
+		// First copy all files from resource/files to the siteFileDirectory
+		for (Path file : destinationFileList) {
+			var siteFile = SiteFile.builder()
+								   .fileName(file.getFileName()
+												 .toString())
+								   .filePath(file.getParent()
+												 .toString()
+												 .replace(siteFileDirectory + File.separator, ""))
+								   .mimeType("image/jpeg")
+								   .size(0L) // Size will be updated later
+								   .fileClass(FileClassEnum.IMAGE)
+								   .comment("Test file comment for " + file.getFileName())
+								   .metadata("{}") // Empty metadata for testing
+								   .sha256sum("dummy-sha256sum-" + file.getFileName()) // Dummy SHA256 for testing
+								   .creator(playerId)
+								   .created(Instant.now())
+								   .modifier(null)
+								   .modified(null)
+								   .build();
+			var storedSiteFile = siteFileRepository.save(siteFile);
+
+			if (storedSiteFile != null) {
+				gallery.getSiteFiles().add(storedSiteFile);
+			}
+		}
 
 		var optionalGallery = galleryRepository.findByShortname(testGalleryName);
 		assertTrue(optionalGallery.isPresent());
@@ -631,8 +660,8 @@ public class TestITCTools {
 			var jsonObject = jsonArray.getJSONObject(0);
 			var mimetype = JsonTools.extractMimetype(jsonObject);
 			var fileClass = getFileClassByMimetype(mimetype);
-			var destinationFile = Path.of(convertedDirectory + File.separator + fileClass.name()
-																						 .toLowerCase() + File.separator +
+			var destinationFile = Path.of(siteFileDirectory + File.separator + fileClass.name()
+																						.toLowerCase() + File.separator +
 										  randomImagePath + File.separator + file.getFileName());
 			destinationFileList.add(destinationFile);
 			// Check if destinationFileDir exists, if not create it

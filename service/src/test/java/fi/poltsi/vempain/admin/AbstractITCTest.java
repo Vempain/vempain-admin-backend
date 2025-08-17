@@ -4,10 +4,9 @@ import fi.poltsi.vempain.admin.repository.ComponentRepository;
 import fi.poltsi.vempain.admin.repository.FormRepository;
 import fi.poltsi.vempain.admin.repository.LayoutRepository;
 import fi.poltsi.vempain.admin.repository.PageRepository;
-import fi.poltsi.vempain.admin.repository.file.FileCommonPageableRepository;
-import fi.poltsi.vempain.admin.repository.file.FileImagePageableRepository;
 import fi.poltsi.vempain.admin.repository.file.FileThumbPageableRepository;
 import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
+import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.service.ComponentService;
 import fi.poltsi.vempain.admin.service.FormComponentService;
 import fi.poltsi.vempain.admin.service.FormService;
@@ -109,13 +108,11 @@ public abstract class AbstractITCTest {
 	@Autowired
 	protected ComponentRepository          componentRepository;
 	@Autowired
-	protected LayoutRepository             layoutRepository;
+	protected LayoutRepository            layoutRepository;
 	@Autowired
-	protected FileCommonPageableRepository fileCommonPageableRepository;
+	protected SiteFileRepository          siteFileRepository;
 	@Autowired
-	protected FileImagePageableRepository  fileImagePageableRepository;
-	@Autowired
-	protected FileThumbPageableRepository  fileThumbPageableRepository;
+	protected FileThumbPageableRepository fileThumbPageableRepository;
 	@Autowired
 	protected PageRepository               pageRepository;
 	@Autowired

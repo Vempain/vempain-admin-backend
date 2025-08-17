@@ -6,7 +6,6 @@ import fi.poltsi.vempain.admin.api.response.PublishScheduleResponse;
 import fi.poltsi.vempain.admin.api.response.ScheduleTriggerResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileImportScheduleResponse;
 import fi.poltsi.vempain.admin.rest.ScheduleAPI;
-import fi.poltsi.vempain.admin.schedule.DirectoryImportSchedule;
 import fi.poltsi.vempain.admin.service.ScheduleService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +27,6 @@ public class ScheduleController implements ScheduleAPI {
 	private ScheduledAnnotationBeanPostProcessor postProcessor;
 	private TaskScheduler                        taskScheduler;
 	private ScheduleService                      scheduleService;
-	private DirectoryImportSchedule              directoryImportSchedule;
 
 	@Override
 	public ResponseEntity<List<ScheduleTriggerResponse>> getSystemSchedules() {

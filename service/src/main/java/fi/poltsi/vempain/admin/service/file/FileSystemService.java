@@ -16,11 +16,11 @@ import java.util.Objects;
 @RequiredArgsConstructor
 @Service
 public class FileSystemService {
-	@Value("${vempain.admin.file.converted-directory}")
-	private String convertedDirectory;
+	@Value("${vempain.admin.file.site-file-directory}")
+	private String siteFileDirectory;
 
 	public List<DirectoryNodeResponse> getConvertedDirectoryTree() {
-		File rootDir = new File(convertedDirectory);
+		File rootDir = new File(siteFileDirectory);
 		if (!rootDir.exists() || !rootDir.isDirectory()) {
 			throw new IllegalArgumentException("Invalid root directory path");
 		}
@@ -33,7 +33,7 @@ public class FileSystemService {
 		if (files != null) {
 			for (File file : files) {
 				if (file.isDirectory()
-					&& !Objects.equals(file.toString(),convertedDirectory + File.separator + FileClassEnum.THUMB.shortName)) {
+					&& !Objects.equals(file.toString(), siteFileDirectory + File.separator + FileClassEnum.THUMB.shortName)) {
 					rootList.add(buildDirectoryTree(file));
 				}
 			}
