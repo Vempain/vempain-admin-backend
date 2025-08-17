@@ -1,8 +1,9 @@
 package fi.poltsi.vempain.admin.repository.file;
 
 import fi.poltsi.vempain.admin.AbstractITCTest;
+import fi.poltsi.vempain.admin.api.FileClassEnum;
 import fi.poltsi.vempain.admin.entity.Subject;
-import fi.poltsi.vempain.admin.entity.file.FileCommon;
+import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.service.SubjectService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +12,7 @@ import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class FileCommonPageableRepositoryITC extends AbstractITCTest {
+class SiteFileRepositoryITC extends AbstractITCTest {
 	@Autowired
 	private SubjectRepository subjectRepository;
 	@Autowired
@@ -30,25 +31,23 @@ class FileCommonPageableRepositoryITC extends AbstractITCTest {
 							 .build();
 		subject = subjectRepository.save(subject);
 
-		var fileCommon = FileCommon.builder()
-								   .acls(null)
-								   .fileClassId(1L)
-								   .comment("comment")
-								   .created(Instant.now())
-								   .creator(userId)
-								   .metadata(null)
-								   .locked(false)
-								   .mimetype("mimetype")
-								   .convertedFile("sourceFile")
-								   .convertedFilesize(1L)
-								   .convertedSha1sum("sourceSha1sum")
-								   .build();
+		var siteFile = SiteFile.builder()
+							   .filePath("filePath")
+							   .fileName("fileName")
+							   .mimeType("image/jpeg")
+							   .sha256sum("Test-SHA256-Sum")
+							   .fileClass(FileClassEnum.IMAGE)
+							   .creator(userId)
+							   .created(Instant.now())
+							   .modifier(userId)
+							   .modified(Instant.now())
+							   .build();
 
-		fileCommon = fileCommonPageableRepository.save(fileCommon);
+		siteFile = siteFileRepository.save(siteFile);
 
-		subjectService.addSubjectToFile(subject.getId(), fileCommon.getId());
+		subjectService.addSubjectToFile(subject.getId(), siteFile.getId());
 
-		var subjects = subjectService.getSubjectsByFileId(fileCommon.getId());
+		var subjects = subjectService.getSubjectsByFileId(siteFile.getId());
 
 		assertEquals(1, subjects.size());
 	}

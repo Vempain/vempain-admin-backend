@@ -22,7 +22,7 @@ public interface FileIngestApi {
 	@Operation(
 		summary = "Ingest a file to the site storage",
 		description = "Service-to-service endpoint. Auth via PSK in X-PSK header. Accepts metadata JSON and a multipart file. " +
-			"Places the file under vempain.admin.file.site-directory/<class>/<filePath>/<fileName> where class is derived from mimetype."
+			"Places the file under vempain.admin.file.site-file-directory/<class>/<filePath>/<fileName> where class is derived from mimetype."
 	)
 	@io.swagger.v3.oas.annotations.responses.ApiResponses({
 		@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "OK"),

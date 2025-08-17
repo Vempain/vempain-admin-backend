@@ -61,11 +61,6 @@
       "description": "JWT timeout in milliseconds."
     },
     {
-      "name": "vempain.admin.file.converted-directory",
-      "type": "java.lang.String",
-      "description": "Main directory where Vempain stores the files of various types on admin side."
-    },
-    {
       "name": "vempain.admin.file.thumbnail-size",
       "type": "java.lang.Integer",
       "description": "Size in pixels of the thumbnails that are generated from files on admin side."

@@ -1,20 +1,15 @@
 package fi.poltsi.vempain.tools;
 
-import jakarta.xml.bind.annotation.adapters.HexBinaryAdapter;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Comparator;
 
 @Slf4j
@@ -35,34 +30,12 @@ public class LocalFileTools {
 		}
 	}
 
-	public static String getSha1OfFile(File file) {
-		MessageDigest sha1;
-
+	public static String computeSha256(File file) {
 		try {
-			sha1 = MessageDigest.getInstance("SHA-1");
-		} catch (NoSuchAlgorithmException e) {
-			log.error("Could not find message digest SHA-1");
+			return DigestUtils.sha256Hex(Files.readAllBytes(file.toPath()));
+		} catch (IOException e) {
 			return null;
 		}
-
-		try (InputStream input = new FileInputStream(file)) {
-
-			byte[] buffer = new byte[8192];
-			int    len    = input.read(buffer);
-
-			while (len != -1) {
-				sha1.update(buffer, 0, len);
-				len = input.read(buffer);
-			}
-
-			return new HexBinaryAdapter().marshal(sha1.digest());
-		} catch (FileNotFoundException e) {
-			log.error("Failed to read file {}", file);
-		} catch (IOException e) {
-			log.error("Failed to read file {}", file, e);
-		}
-
-		return null;
 	}
 
 	public static long getFileSize(Path filepath) {

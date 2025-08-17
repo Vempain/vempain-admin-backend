@@ -1,13 +1,9 @@
 package fi.poltsi.vempain.admin.service;
 
-import fi.poltsi.vempain.admin.entity.file.FileCommon;
+import fi.poltsi.vempain.admin.api.FileClassEnum;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
-import fi.poltsi.vempain.admin.repository.file.FileAudioPageableRepository;
-import fi.poltsi.vempain.admin.repository.file.FileCommonPageableRepository;
-import fi.poltsi.vempain.admin.repository.file.FileDocumentPageableRepository;
-import fi.poltsi.vempain.admin.repository.file.FileImagePageableRepository;
+import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.repository.file.FileThumbPageableRepository;
-import fi.poltsi.vempain.admin.repository.file.FileVideoPageableRepository;
 import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
 import fi.poltsi.vempain.admin.repository.file.SubjectRepository;
 import fi.poltsi.vempain.admin.service.file.FileService;
@@ -39,16 +35,6 @@ import static org.mockito.Mockito.when;
 class FileServiceUTC {
 	@Mock
 	private AclService                     aclService;
-	@Mock
-	private FileCommonPageableRepository   fileCommonPageableRepository;
-	@Mock
-	private FileAudioPageableRepository    fileAudioPageableRepository;
-	@Mock
-	private FileDocumentPageableRepository fileDocumentPageableRepository;
-	@Mock
-	private FileImagePageableRepository    fileImagePageableRepository;
-	@Mock
-	private FileVideoPageableRepository    fileVideoPageableRepository;
 	@Mock
 	private FileThumbPageableRepository    fileThumbPageableRepository;
 	@Mock
@@ -117,29 +103,21 @@ class FileServiceUTC {
 
 		when(galleryRepository.save(any())).thenReturn(gallery);
 
-		List<FileCommon> fileCommonList = new ArrayList<>();
+		List<SiteFile> siteFiles = new ArrayList<>();
 
 		for (int i = 0; i < 4; i++) {
-			FileCommon fileCommon = FileCommon.builder()
+			var siteFile = SiteFile.builder()
 											  .id(Integer.toUnsignedLong(i))
-											  .fileClassId(1L)
-											  .aclId(i)
-											  .convertedFile("/source/file/" + i + ".jpg")
-											  .convertedFilesize(100L + i)
-											  .convertedSha1sum("so-Sha1sum" + i)
-											  .siteFilepath("site/file/")
-											  .siteFilename(i + ".jpg")
-											  .siteFilesize(200L + i)
-											  .siteSha1sum("si-Sha1sum" + i)
+											  .fileClass(FileClassEnum.IMAGE)
 											  .metadata("Metadata " + i)
 											  .build();
-			fileCommonList.add(fileCommon);
+			siteFiles.add(siteFile);
 		}
 
 		doNothing().when(galleryFileService)
 				   .addGalleryFile(anyLong(), anyLong(), anyLong());
 
-		Gallery returnGallery = fileService.createGallery(shortName, description, 1L, fileCommonList);
+		Gallery returnGallery = fileService.createGallery(shortName, description, 1L, siteFiles);
 		assertNotNull(returnGallery);
 		assertEquals(description, returnGallery.getDescription());
 		assertEquals(shortName, returnGallery.getShortname());

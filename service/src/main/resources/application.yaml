@@ -89,8 +89,7 @@ vempain:
     file:
       image-format: "jpeg"
       thumbnail-size: 250
-      converted-directory: override-me
-      site-directory: override-me
+      site-file-directory: override-me
     ssh:
       user: override-me
       home-dir: override-me

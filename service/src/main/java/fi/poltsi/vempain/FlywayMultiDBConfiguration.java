@@ -25,7 +25,7 @@ public class FlywayMultiDBConfiguration {
 	public Flyway adminFlyway(@Qualifier("adminDataSource") DataSource dataSource) {
 		var flyway = new Flyway(
 				new FluentConfiguration()
-						.locations("db/migration/admin")
+						.locations("db/migration/admin", "db/migration/auth")
 						.dataSource(dataSource)
 						.cleanDisabled(adminCleanDisabled)
 						.baselineOnMigrate(true)

@@ -20,18 +20,18 @@ import java.util.List;
 public interface FileSystemAPI {
 	String MAIN_PATH = Constants.REST_FILE_PREFIX;
 
-	@Operation(summary = "Return the converted directory tree",
-			   description = "Return a tree structure of the converted directory sub directories",
+	@Operation(summary = "Return the site file directory tree",
+			   description = "Return a tree structure of the site file directory sub directories",
 			   tags = "FileSystem")
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "The tree structure of the converted directory returned",
+			@ApiResponse(responseCode = "200", description = "The tree structure of the site file directory returned",
 						 content = {@Content(array = @ArraySchema(schema = @Schema(implementation = DirectoryNodeResponse.class)),
 											 mediaType = MediaType.APPLICATION_JSON_VALUE)}),
 			@ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
 			@ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
 	})
 	@SecurityRequirement(name = "Bearer Authentication")
-	@GetMapping(path = MAIN_PATH + "/converted-directory", produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(path = MAIN_PATH + "/site-file-directory", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<DirectoryNodeResponse>> getConvertedDirectoryStructure();
 
 }

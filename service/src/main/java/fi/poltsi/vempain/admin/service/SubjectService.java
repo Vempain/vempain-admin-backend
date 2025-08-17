@@ -37,17 +37,17 @@ public class SubjectService {
 	}
 
 	@Transactional(propagation = Propagation.REQUIRED)
-	public void addSubjectToFile(Long subjectId, Long fileCommonId) {
-		entityManager.createNativeQuery("INSERT INTO file_subject (subject_id, file_common_id) VALUES (:subjectId, :fileCommonId)")
+	public void addSubjectToFile(Long subjectId, Long siteFileId) {
+		entityManager.createNativeQuery("INSERT INTO file_subject (subject_id, site_file_id) VALUES (:subjectId, :siteFileId)")
 					 .setParameter("subjectId", subjectId)
-					 .setParameter("fileCommonId", fileCommonId)
+					 .setParameter("siteFileId", siteFileId)
 					 .executeUpdate();
 	}
 
 	@Transactional(propagation = Propagation.REQUIRED)
-	public void removeAllSubjectsFromFile(long fileCommonId) {
-		entityManager.createNativeQuery("DELETE FROM file_subject WHERE file_common_id = :fileCommonId")
-					 .setParameter("fileCommonId", fileCommonId)
+	public void removeAllSubjectsFromFile(long siteFileId) {
+		entityManager.createNativeQuery("DELETE FROM file_subject WHERE site_file_id = :siteFileId")
+					 .setParameter("siteFileId", siteFileId)
 					 .executeUpdate();
 	}
 

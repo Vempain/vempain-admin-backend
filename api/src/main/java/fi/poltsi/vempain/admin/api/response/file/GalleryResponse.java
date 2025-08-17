@@ -21,7 +21,7 @@ public class GalleryResponse extends AbstractResponse {
 	@Schema(description = "Gallery short name", example = "Short name", requiredMode = Schema.RequiredMode.REQUIRED)
 	private String shortName;
 	@Schema(description = "Gallery description", example = "Gallery description string", requiredMode = Schema.RequiredMode.REQUIRED)
-	private String                   description;
+	private String                 description;
 	@Schema(description = "List of file common ID belonging to this gallery", example = "{1, 2, 3, 4}", requiredMode = Schema.RequiredMode.REQUIRED)
-	private List<FileCommonResponse> commonFiles;
+	private List<SiteFileResponse> siteFiles;
 }

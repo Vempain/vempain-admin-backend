@@ -1,48 +1,3 @@
-CREATE TABLE user_account
-(
-	id             BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	acl_id         BIGINT       NOT NULL UNIQUE,
-	locked         BOOLEAN      NOT NULL DEFAULT false,
-	birthday       TIMESTAMP    NOT NULL,
-	description    VARCHAR(255),
-	email          VARCHAR(255) NOT NULL UNIQUE,
-	login_name     VARCHAR(255) NOT NULL UNIQUE,
-	name           VARCHAR(255) NOT NULL,
-	nick           VARCHAR(255) NOT NULL,
-	password       VARCHAR(255) NOT NULL,
-	priv_type      VARCHAR(10)  NOT NULL CHECK (priv_type IN ('PRIVATE', 'GROUP', 'PUBLIC')),
-	public_account BOOLEAN      NOT NULL DEFAULT false,
-	street         VARCHAR(255)          DEFAULT NULL,
-	pob            VARCHAR(255)          DEFAULT NULL,
-	status         VARCHAR(10)  NOT NULL CHECK (status IN ('REGISTERED', 'ACTIVE', 'DISABLED')),
-	creator        BIGINT       NOT NULL,
-	created        TIMESTAMP    NOT NULL,
-	modifier       BIGINT,
-	modified       TIMESTAMP,
-	FOREIGN KEY (creator) REFERENCES user_account (id),
-	FOREIGN KEY (modifier) REFERENCES user_account (id)
-);
-
-CREATE TABLE acl
-(
-	id               BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	acl_id           BIGINT  NOT NULL,
-	create_privilege BOOLEAN NOT NULL,
-	delete_privilege BOOLEAN NOT NULL,
-	modify_privilege BOOLEAN NOT NULL,
-	read_privilege   BOOLEAN NOT NULL,
-	unit_id          BIGINT,
-	user_id          BIGINT
-);
-
--- Only either unit_id or user_id is not null
-ALTER TABLE acl
-	ADD CONSTRAINT acl_unit_user_xor CHECK ((unit_id IS NOT NULL AND user_id IS NULL) OR (unit_id IS NULL AND user_id IS NOT NULL));
-
--- There can be no two rows with the same acl_id, user_id or unit_id
-ALTER TABLE acl
-	ADD CONSTRAINT acl_unique_acl_id_user_id_unit_id UNIQUE (acl_id, user_id, unit_id);
-
 CREATE TABLE component
 (
 	id        BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -65,34 +20,6 @@ CREATE TABLE file_class
 	shortname   VARCHAR(255)
 );
 
-CREATE TABLE file_common
-(
-	id                       BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	acl_id                   BIGINT    NOT NULL UNIQUE,
-	comment                  TEXT,
-	file_class_id            BIGINT    NOT NULL,
-	mimetype                 VARCHAR(64),
-	converted_file           TEXT      NOT NULL UNIQUE,
-	converted_filesize       BIGINT,
-	converted_sha1sum        VARCHAR(40),
-	original_datetime        TIMESTAMP,
-	original_second_fraction INT,
-	original_document_id     VARCHAR(128),
-	site_filename            VARCHAR(255),
-	site_filepath            VARCHAR(255),
-	site_filesize            BIGINT,
-	site_sha1sum             VARCHAR(40),
-	metadata                 TEXT,
-	locked                   BOOLEAN   NOT NULL DEFAULT false,
-	creator                  BIGINT    NOT NULL,
-	created                  TIMESTAMP NOT NULL,
-	modifier                 BIGINT,
-	modified                 TIMESTAMP,
-	FOREIGN KEY (creator) REFERENCES user_account (id),
-	FOREIGN KEY (modifier) REFERENCES user_account (id),
-	FOREIGN KEY (file_class_id) REFERENCES file_class (id) ON DELETE CASCADE
-);
-
 CREATE TABLE gallery
 (
 	id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -108,41 +35,6 @@ CREATE TABLE gallery
 	FOREIGN KEY (modifier) REFERENCES user_account (id)
 );
 
-CREATE TABLE file_audio
-(
-	id        BIGINT,
-	parent_id BIGINT NOT NULL UNIQUE,
-	length    BIGINT,
-	FOREIGN KEY (parent_id) REFERENCES file_common (id) ON DELETE CASCADE
-);
-
-CREATE TABLE file_document
-(
-	id        BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	parent_id BIGINT NOT NULL UNIQUE,
-	pages     BIGINT,
-	FOREIGN KEY (parent_id) REFERENCES file_common (id) ON DELETE CASCADE
-);
-
-CREATE TABLE file_image
-(
-	id        BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	parent_id BIGINT NOT NULL UNIQUE,
-	height    BIGINT,
-	width     BIGINT,
-	FOREIGN KEY (parent_id) REFERENCES file_common (id) ON DELETE CASCADE
-);
-
-CREATE TABLE file_video
-(
-	id        BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	parent_id BIGINT NOT NULL UNIQUE,
-	height    BIGINT,
-	width     BIGINT,
-	length    BIGINT,
-	FOREIGN KEY (parent_id) REFERENCES file_common (id) ON DELETE CASCADE
-);
-
 CREATE TABLE subject
 (
 	id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -153,12 +45,31 @@ CREATE TABLE subject
 	subject_se VARCHAR(255)
 );
 
+CREATE TABLE site_file
+(
+	id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	file_name  VARCHAR(255)  NOT NULL,
+	file_path  VARCHAR(2048) NOT NULL,
+	mime_type  VARCHAR(255)  NOT NULL,
+	size       BIGINT        NOT NULL,
+	file_class BIGINT        NOT NULL,
+	sha256sum  VARCHAR(255)  NOT NULL,
+	comment    TEXT,
+	metadata   TEXT,
+	creator    BIGINT        NOT NULL,
+	created    TIMESTAMP,
+	modifier   BIGINT,
+	modified   TIMESTAMP,
+	FOREIGN KEY (creator) REFERENCES user_account (id),
+	FOREIGN KEY (modifier) REFERENCES user_account (id)
+);
+
 CREATE TABLE file_subject
 (
-	file_common_id BIGINT NOT NULL,
-	subject_id     BIGINT NOT NULL,
-	PRIMARY KEY (file_common_id, subject_id),
-	FOREIGN KEY (file_common_id) REFERENCES file_common (id) ON DELETE CASCADE,
+	site_file_id BIGINT NOT NULL,
+	subject_id   BIGINT NOT NULL,
+	PRIMARY KEY (site_file_id, subject_id),
+	FOREIGN KEY (site_file_id) REFERENCES site_file (id) ON DELETE CASCADE,
 	FOREIGN KEY (subject_id) REFERENCES subject (id) ON DELETE CASCADE
 );
 
@@ -174,7 +85,7 @@ CREATE TABLE file_thumb
 	height        BIGINT,
 	sha1sum       VARCHAR(255),
 	width         BIGINT,
-	FOREIGN KEY (parent_id) REFERENCES file_common (id) ON DELETE CASCADE,
+	FOREIGN KEY (parent_id) REFERENCES site_file (id) ON DELETE CASCADE,
 	UNIQUE (filepath, filename),
 	UNIQUE (site_filepath, site_filename)
 );
@@ -220,15 +131,19 @@ CREATE TABLE form_component
 	FOREIGN KEY (component_id) REFERENCES component (id) ON DELETE CASCADE
 );
 
+CREATE UNIQUE INDEX ux_site_file_path_name ON site_file (file_path, file_name);
+
 CREATE TABLE gallery_file
 (
-	file_common_id BIGINT NOT NULL,
-	gallery_id     BIGINT NOT NULL,
-	sort_order     BIGINT NOT NULL,
-	PRIMARY KEY (file_common_id, gallery_id, sort_order),
-	FOREIGN KEY (file_common_id) REFERENCES file_common (id) ON DELETE CASCADE,
+	site_file_id BIGINT NOT NULL,
+	gallery_id   BIGINT NOT NULL,
+	sort_order   BIGINT NOT NULL,
+	PRIMARY KEY (site_file_id, gallery_id, sort_order),
+	FOREIGN KEY (site_file_id) REFERENCES site_file (id) ON DELETE CASCADE,
 	FOREIGN KEY (gallery_id) REFERENCES gallery (id) ON DELETE CASCADE
 );
+
+CREATE INDEX idx_gallery_file_site_file_id ON gallery_file (site_file_id);
 
 CREATE TABLE language
 (
@@ -255,34 +170,11 @@ CREATE TABLE page
 	created   TIMESTAMP    NOT NULL,
 	modifier  BIGINT,
 	modified  TIMESTAMP,
+	published TIMESTAMP             DEFAULT NULL,
 	FOREIGN KEY (creator) REFERENCES user_account (id),
 	FOREIGN KEY (modifier) REFERENCES user_account (id),
 	FOREIGN KEY (form_id) REFERENCES form (id),
 	FOREIGN KEY (parent_id) REFERENCES page (id)
-);
-
-CREATE TABLE unit
-(
-	id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	acl_id      BIGINT       NOT NULL UNIQUE,
-	description VARCHAR(255),
-	name        VARCHAR(255) NOT NULL UNIQUE,
-	locked      BOOLEAN      NOT NULL DEFAULT false,
-	creator     BIGINT       NOT NULL,
-	created     TIMESTAMP    NOT NULL,
-	modifier    BIGINT,
-	modified    TIMESTAMP,
-	FOREIGN KEY (creator) REFERENCES user_account (id),
-	FOREIGN KEY (modifier) REFERENCES user_account (id)
-);
-
-CREATE TABLE user_unit
-(
-	id      BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	user_id BIGINT NOT NULL,
-	unit_id BIGINT NOT NULL,
-	FOREIGN KEY (user_id) REFERENCES user_account (id) ON DELETE CASCADE,
-	FOREIGN KEY (unit_id) REFERENCES unit (id) ON DELETE CASCADE
 );
 
 CREATE TABLE page_gallery
@@ -293,6 +185,37 @@ CREATE TABLE page_gallery
 	PRIMARY KEY (page_id, gallery_id, sort_order),
 	FOREIGN KEY (page_id) REFERENCES page (id) ON DELETE CASCADE,
 	FOREIGN KEY (gallery_id) REFERENCES gallery (id) ON DELETE CASCADE
+);
+
+-- New: publish & scan schedules
+CREATE TABLE publish_schedule
+(
+	id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	publish_time    TIMESTAMP    NOT NULL,
+	publish_status  VARCHAR(255) NOT NULL,
+	publish_message TEXT,
+	publish_type    VARCHAR(255) NOT NULL,
+	publish_id      BIGINT       NOT NULL,
+	created_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE scan_queue_schedule
+(
+	id                    BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	source_directory      TEXT      NOT NULL,
+	destination_directory TEXT      NOT NULL,
+	create_gallery        BOOLEAN   NOT NULL,
+	gallery_shortname     VARCHAR(255),
+	gallery_description   TEXT,
+	create_page           BOOLEAN   NOT NULL,
+	page_title            VARCHAR(512),
+	page_path             VARCHAR(255),
+	page_body             TEXT,
+	page_form_id          BIGINT,
+	created_by            BIGINT    NOT NULL,
+	created_at            TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at            TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Data
@@ -320,7 +243,6 @@ VALUES (1, 1, '1900-01-01 00:00:00', NOW(), 1, false, 'admin@nohost.nodomain', '
 
 SELECT setval('user_account_id_seq', (SELECT MAX(id) + 1 FROM user_account));
 
--- Adding default ACLs
 INSERT INTO acl (id, acl_id, create_privilege, delete_privilege, modify_privilege, read_privilege, unit_id, user_id)
 	OVERRIDING SYSTEM VALUE
 VALUES (1, 1, true, true, true, true, NULL, 1),
@@ -330,7 +252,6 @@ VALUES (1, 1, true, true, true, true, NULL, 1),
 
 SELECT setval('acl_id_seq', (SELECT MAX(id) + 1 FROM acl));
 
--- Add default units
 INSERT INTO unit (id, acl_id, created, creator, locked, modified, modifier, description, name)
 	OVERRIDING SYSTEM VALUE
 VALUES (1, 2, NOW(), 1, false, null, null, 'Admin group', 'Admin'),
@@ -338,3 +259,4 @@ VALUES (1, 2, NOW(), 1, false, null, null, 'Admin group', 'Admin'),
 	   (3, 4, NOW(), 1, false, null, null, 'Editor group', 'Editor');
 
 SELECT setval('unit_id_seq', (SELECT MAX(id) + 1 FROM unit));
+

@@ -14,7 +14,7 @@ import lombok.experimental.SuperBuilder;
 @Schema(description = "Abstract file response")
 public abstract class AbstractFileResponse {
 	@Schema(description = "File type specific ID", example = "123", requiredMode = Schema.RequiredMode.REQUIRED)
-	private long id;
-	@Schema(description = "Common data of the file", example = "{FileCommonResponse}", requiredMode = Schema.RequiredMode.REQUIRED)
-	private FileCommonResponse common;
+	private long             id;
+	@Schema(description = "Site file data of the file", example = "{SiteFileResponse}", requiredMode = Schema.RequiredMode.REQUIRED)
+	private SiteFileResponse siteFile;
 }

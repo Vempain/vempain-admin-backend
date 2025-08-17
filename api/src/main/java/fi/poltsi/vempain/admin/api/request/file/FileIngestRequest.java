@@ -26,6 +26,18 @@ public class FileIngestRequest {
 	@Pattern(regexp = "^[^/\\s]+/[^/\\s]+$", message = "Must be in 'type/subtype' format")
 	private String mimeType;           // required
 
+	@Schema(description = "Comment", example = "Some comment", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+	@NotNull
+	private String   comment;
+
+	@Schema(description = "Metadata of the file in JSON format", example = "{\"some-field\": \"some value\"}", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+	@NotNull
+	private String   metadata;
+
+	@Schema(description = "SHA 256 sum of the sent file, used to verify the file integrity", example = "a", requiredMode = Schema.RequiredMode.REQUIRED)
+	@NotNull
+	private String   sha256sum;
+
 	@Schema(description = "User ID performing the ingest", example = "42", requiredMode = Schema.RequiredMode.REQUIRED)
 	@NotNull
 	private Long   userId;             // required

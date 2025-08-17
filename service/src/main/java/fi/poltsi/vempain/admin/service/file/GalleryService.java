@@ -3,10 +3,10 @@ package fi.poltsi.vempain.admin.service.file;
 import fi.poltsi.vempain.admin.api.QueryDetailEnum;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
 import fi.poltsi.vempain.admin.api.response.file.GalleryResponse;
-import fi.poltsi.vempain.admin.entity.file.FileCommon;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
-import fi.poltsi.vempain.admin.repository.file.FileCommonPageableRepository;
+import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
+import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.service.AclService;
@@ -24,9 +24,9 @@ import java.util.List;
 @RequiredArgsConstructor
 @Service
 public class GalleryService {
-	private final GalleryRepository            galleryRepository;
-	private final FileCommonPageableRepository fileCommonPageableRepository;
-	private final GalleryFileService           galleryFileService;
+	private final GalleryRepository  galleryRepository;
+	private final SiteFileRepository siteFileRepository;
+	private final GalleryFileService galleryFileService;
 	private final AclService                   aclService;
 	private final AccessService                accessService;
 
@@ -36,7 +36,7 @@ public class GalleryService {
 
 		for (Gallery gallery : fullList) {
 			if (accessService.hasReadPermission(gallery.getAclId())) {
-				populateGallery(gallery);
+				populateGalleryWithSiteFiles(gallery);
 				galleryList.add(gallery);
 			}
 		}
@@ -50,7 +50,7 @@ public class GalleryService {
 
 		for (Gallery gallery : galleries) {
 			if (queryDetailEnum == QueryDetailEnum.FULL) {
-				populateGallery(gallery);
+				populateGalleryWithSiteFiles(gallery);
 			}
 
 			var response = gallery.getResponse();
@@ -71,7 +71,7 @@ public class GalleryService {
 			return null;
 		}
 
-		populateGallery(gallery);
+		populateGalleryWithSiteFiles(gallery);
 		return gallery.getResponse();
 	}
 
@@ -98,7 +98,7 @@ public class GalleryService {
 			throw new VempainAclException("Could not create ACLs for new gallery with ID: " + newGallery.getId());
 		}
 
-		populateGallery(newGallery);
+		populateGalleryWithSiteFiles(newGallery);
 		return newGallery.getResponse();
 	}
 
@@ -128,7 +128,7 @@ public class GalleryService {
 			throw new VempainAclException("Could not update ACLs for gallery with ID: " + galleryRequest.getId());
 		}
 
-		populateGallery(updatedGallery);
+		populateGalleryWithSiteFiles(updatedGallery);
 		return updatedGallery.getResponse();
 	}
 
@@ -137,18 +137,18 @@ public class GalleryService {
 		galleryRepository.deleteById(galleryId);
 	}
 
-	private void populateGallery(Gallery gallery) {
+	private void populateGalleryWithSiteFiles(Gallery gallery) {
 		var aclList = aclService.findAclByAclId(gallery.getAclId());
 		gallery.setAcls(aclList);
 		var galleryFiles = galleryFileService.findGalleryFileByGalleryId(gallery.getId());
 
-		var fileCommons = new ArrayList<FileCommon>();
+		var fileCommons = new ArrayList<SiteFile>();
 
 		for (var galleryFile : galleryFiles) {
-			fileCommonPageableRepository.findById(galleryFile.getFileCommonId()).ifPresent(fileCommons::add);
+			siteFileRepository.findById(galleryFile.getSiteFileId()).ifPresent(fileCommons::add);
 		}
 
-		gallery.setCommonFiles(fileCommons);
+		gallery.setSiteFiles(fileCommons);
 	}
 
 	public Iterable<Gallery> findAll() {

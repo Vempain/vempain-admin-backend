@@ -4,7 +4,6 @@ import fi.poltsi.vempain.admin.entity.Component;
 import fi.poltsi.vempain.admin.entity.Form;
 import fi.poltsi.vempain.admin.entity.Layout;
 import fi.poltsi.vempain.admin.entity.Page;
-import fi.poltsi.vempain.admin.entity.file.FileCommon;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.exception.VempainLayoutException;
@@ -52,10 +51,10 @@ public class AclConsistencySchedule {
 	private final FileService      fileService;
 
 	// internal state (not injected)
-	private Set<Long>                        tableAcls           = new HashSet<>();
-	private Set<Long>                        missingAcls         = new HashSet<>();
-	private Set<Long>                        orphanAcls          = new HashSet<>();
-	private ArrayList<AbstractVempainEntity> duplicateAclObjects = new ArrayList<>();
+	private       Set<Long> tableAcls   = new HashSet<>();
+	private final Set<Long>                        missingAcls         = new HashSet<>();
+	private final Set<Long>                        orphanAcls          = new HashSet<>();
+	private final ArrayList<AbstractVempainEntity> duplicateAclObjects = new ArrayList<>();
 
 	@Scheduled(fixedDelay = DELAY, initialDelayString = INITIAL_DELAY)
 	public void verify() {
@@ -234,10 +233,6 @@ public class AclConsistencySchedule {
 					entity.setAclId(aclId);
 					switch (entity) {
 						case Component inst -> componentService.save(inst);
-						case FileCommon inst -> {
-							log.debug("Saving FileCommon with new ACL: {}", inst);
-							fileService.saveFileCommon(inst);
-						}
 						case Form inst -> formService.save(inst);
 						case Gallery inst -> fileService.saveGallery(inst);
 						case Layout inst -> layoutService.save(inst);
@@ -316,7 +311,6 @@ public class AclConsistencySchedule {
 		acls.addAll(getAclsFromObject(pageService.findAll(), "page"));
 		acls.addAll(getAclsFromObject(unitService.findAll(), "unit"));
 		acls.addAll(getAclsFromObject(userService.findAll(), "user"));
-		acls.addAll(getAclsFromObject(fileService.findAllFileCommon(), "file_common"));
 		acls.addAll(getAclsFromObject(fileService.findAllGalleries(), "gallery"));
 		return acls;
 	}

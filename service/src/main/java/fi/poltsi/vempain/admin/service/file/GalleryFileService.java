@@ -27,7 +27,7 @@ public class GalleryFileService {
 	public void deleteGalleryFile(Long galleryId, Long fileId, Long sortOrder) {
 		var query = entityManager.createNativeQuery("DELETE FROM gallery_file " +
 													  "WHERE gallery_id = :galleryId " +
-													  "  AND file_common_id = :fileId " +
+													  "  AND site_file_id = :fileId " +
 													  "  AND sort_order = :sortOrder");
 		query.setParameter("galleryId", galleryId);
 		query.setParameter("fileId", fileId);
@@ -36,7 +36,7 @@ public class GalleryFileService {
 	}
 
 	public List<GalleryFile> findGalleryFileByGalleryId(Long galleryId) {
-		var query = entityManager.createNativeQuery("SELECT gf.gallery_id, gf.file_common_id, gf.sort_order " +
+		var query = entityManager.createNativeQuery("SELECT gf.gallery_id, gf.site_file_id, gf.sort_order " +
 													  "FROM gallery_file gf " +
 													  "WHERE gf.gallery_id = :galleryId " +
 													  "ORDER BY gf.sort_order");
@@ -54,7 +54,7 @@ public class GalleryFileService {
 			var intSortOrder = (Long) o[2];
 			galleryFiles.add(GalleryFile.builder()
 											.galleryId(intFormId )
-											.fileCommonId(intCompId)
+											.siteFileId(intCompId)
 											.sortOrder(intSortOrder)
 											.build());
 		}
