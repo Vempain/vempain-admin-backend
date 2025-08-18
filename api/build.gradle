@@ -1,6 +1,7 @@
 plugins {
     id 'java-library'
     id "io.freefair.lombok" version "${ioFreeFairLombok}"
+    id 'maven-publish'
 }
 
 repositories {
@@ -22,6 +23,12 @@ jar {
 	archiveFileName = "${rootProject.name}-api-${version}.jar"
 }
 
+java {
+    // Attach sources and javadoc for Maven consumers
+    withSourcesJar()
+    withJavadocJar()
+}
+
 dependencies {
 	// https://mvnrepository.com/artifact/org.springframework.data/spring-data-jpa
 	api group: 'org.springframework.data', name: 'spring-data-jpa', version: '3.5.2'
@@ -39,4 +46,41 @@ dependencies {
     implementation group: 'jakarta.validation', name: 'jakarta.validation-api', version: '3.1.1'
 	// https://mvnrepository.com/artifact/jakarta.persistence/jakarta.persistence-api
 	implementation group: 'jakarta.persistence', name: 'jakarta.persistence-api', version: '3.1.0'
+}
+
+// Publish the API module to GitHub Packages when invoked by CI
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            // Optional: keep artifactId as project name ('api')
+            groupId = project.group
+            artifactId = project.name
+            version = project.version
+            pom {
+                name = "vempain-admin-backend-api"
+                description = "Public API (DTOs and interfaces) for Vempain Admin backend"
+                url = "https://github.com/Vempain/vempain-admin-backend"
+                licenses {
+                    license {
+                        name = "MIT License"
+                        url = "https://opensource.org/licenses/MIT"
+                    }
+                }
+                scm {
+                    url = "https://github.com/Vempain/vempain-admin-backend"
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/Vempain/vempain-admin-backend")
+            credentials {
+                username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+                password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
 }

@@ -59,8 +59,8 @@ jobs:
           overwrite: true
           if-no-files-found: warn
 
-  build-docker:
-    name: Build and push Docker image
+  build-upload:
+    name: Build Docker image and optionally publish API
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
@@ -112,6 +112,12 @@ jobs:
       - name: Build jar-file with Gradle
         shell: bash
         run: ./gradlew clean bootJar -Pversion=${newVersion}
+        env:
+          newVersion: ${{ steps.newVer.outputs.newVersion }}
+
+      - name: Publish API to GitHub Packages (Maven)
+        if: contains(github.event.head_commit.message, 'Merge pull request')
+        run: ./gradlew :api:clean :api:publish -PreleaseVersion=${newVersion}
         env:
           newVersion: ${{ steps.newVer.outputs.newVersion }}
 
