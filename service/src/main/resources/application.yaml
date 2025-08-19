@@ -85,7 +85,6 @@ vempain:
     jwtExpirationMs: 86400000
   test: true
   admin:
-    service-psk: override-me
     file:
       image-format: "jpeg"
       thumbnail-size: 250

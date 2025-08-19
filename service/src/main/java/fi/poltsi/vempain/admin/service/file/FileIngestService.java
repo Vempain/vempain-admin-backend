@@ -6,17 +6,21 @@ import fi.poltsi.vempain.admin.api.response.file.FileIngestResponse;
 import fi.poltsi.vempain.admin.configuration.StorageDirectoryConfiguration;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
+import fi.poltsi.vempain.admin.exception.VempainIngestException;
 import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
 import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
+import fi.poltsi.vempain.auth.entity.Acl;
+import fi.poltsi.vempain.auth.repository.AclRepository;
 import fi.poltsi.vempain.tools.LocalFileTools;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,12 +35,10 @@ import static fi.poltsi.vempain.tools.LocalFileTools.createAndVerifyDirectory;
 @Service
 @RequiredArgsConstructor
 public class FileIngestService {
-	private final SiteFileRepository  siteFileRepository;
-	private final GalleryRepository   galleryRepository;
+	private final SiteFileRepository            siteFileRepository;
+	private final GalleryRepository             galleryRepository;
+	private final AclRepository                 aclRepository;
 	private final StorageDirectoryConfiguration storageDirectoryConfiguration;
-
-	@Value("${vempain.admin.service-psk}")
-	private String expectedPsk;
 
 	@Value("${vempain.admin.file.site-file-directory}")
 	private String siteFileDirectory;
@@ -49,7 +51,7 @@ public class FileIngestService {
 		var siteFilePath = Path.of(siteFileDirectory);
 
 		if (!siteFilePath.toFile()
-						  .exists()) {
+						 .exists()) {
 			try {
 				createAndVerifyDirectory(siteFilePath);
 			} catch (Exception e) {
@@ -64,90 +66,118 @@ public class FileIngestService {
 		}
 	}
 
-	public FileIngestResponse ingest(String providedPsk, FileIngestRequest fileIngestRequest, MultipartFile file) throws Exception {
-		requireValidPsk(providedPsk);
-		ValidateFileIngestRequest(fileIngestRequest, file);
+	// Public entry point: delegates to internal ingest and ensures cleanup on failure
+	public FileIngestResponse ingest(FileIngestRequest fileIngestRequest, MultipartFile multipartFile) throws Exception {
+		try {
+			return ingestInternal(fileIngestRequest, multipartFile);
+		} catch (VempainIngestException vex) {
+			// Attempt to delete locally stored file if present
+			Path stored = vex.getStoredFile();
+			if (stored != null) {
+				try {
+					if (Files.deleteIfExists(stored)) {
+						log.info("Deleted stored file after ingest failure: {}", stored);
+					}
+				} catch (IOException ioe) {
+					log.warn("Failed to delete stored file after ingest failure: {}", stored, ioe);
+				}
+			}
+			// Rethrow the original cause if it is a checked Exception, else rethrow the wrapper
+			Throwable cause = vex.getCause();
+			if (cause instanceof Exception) {
+				throw (Exception) cause;
+			}
+			throw vex;
+		}
+	}
 
-		// Determine main class directory by mimetype (fallback to "other" if configured)
-		final var fileClassByMimetype = FileClassEnum.getFileClassByMimetype(fileIngestRequest.getMimeType());
-		final String baseDir = resolveBaseDir(fileClassByMimetype);
+	// Internal implementation: wraps any failure into VempainIngestException including the stored file path
+	@Transactional
+	protected FileIngestResponse ingestInternal(FileIngestRequest fileIngestRequest, MultipartFile multipartFile) throws VempainIngestException {
+		Path storedFile = null;
+		try {
+			ValidateFileIngestRequest(fileIngestRequest, multipartFile);
 
-		// Sanitize and resolve target paths
-		final String cleanFileName = sanitizeFileName(fileIngestRequest.getFileName());
-		final String cleanRelPath = sanitizeRelativePath(Optional.ofNullable(fileIngestRequest.getFilePath())
-																 .orElse(""));
-		final Path basePath = Paths.get(baseDir)
-								   .toAbsolutePath()
-								   .normalize();
-		final Path targetDir = basePath.resolve(cleanRelPath)
+			// Determine main class directory by mimetype (fallback to "other" if configured)
+			final var fileClassByMimetype = FileClassEnum.getFileClassByMimetype(fileIngestRequest.getMimeType());
+			final String baseDir = resolveBaseDir(fileClassByMimetype);
+			log.info("Resolved base directory for file class {}: {}", fileClassByMimetype, baseDir);
+
+			// Sanitize and resolve target paths
+			final String cleanFileName = sanitizeFileName(fileIngestRequest.getFileName());
+			final String cleanRelPath = sanitizeRelativePath(Optional.ofNullable(fileIngestRequest.getFilePath())
+																	 .orElse(""));
+			final Path basePath = Paths.get(baseDir)
+									   .toAbsolutePath()
 									   .normalize();
+			final Path targetDir = basePath.resolve(cleanRelPath)
+										   .normalize();
 
-		ensureWithinBase(targetDir, basePath);
-		Files.createDirectories(targetDir);
+			ensureWithinBase(targetDir, basePath);
+			Files.createDirectories(targetDir);
 
-		final Path targetFile = targetDir.resolve(cleanFileName)
-										 .normalize();
-		ensureWithinBase(targetFile.getParent(), basePath);
+			final Path targetFile = targetDir.resolve(cleanFileName)
+											 .normalize();
+			ensureWithinBase(targetFile.getParent(), basePath);
 
-		final boolean existed = Files.exists(targetFile);
-		Files.copy(file.getInputStream(), targetFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+			final boolean existed = Files.exists(targetFile);
+			Files.copy(multipartFile.getInputStream(), targetFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+			// Mark stored file for potential cleanup
+			storedFile = targetFile;
 
-		// Verify that the sha256 checksum of the created file matches the provided checksum
-		var checksum = LocalFileTools.computeSha256(targetFile.toFile());
+			// Verify that the sha256 checksum of the created file matches the provided checksum
+			var checksum = LocalFileTools.computeSha256(targetFile.toFile());
+			if (!fileIngestRequest.getSha256sum()
+								  .equals(checksum)) {
+				log.error("SHA-256 checksum mismatch for file: {}. Expected: {}, Actual: {}",
+						  targetFile, fileIngestRequest.getSha256sum(), checksum);
+				throw new VempainIngestException("SHA parity check failed", null, null);
+			}
 
-		if (!fileIngestRequest.getSha256sum().equals(checksum)) {
-			log.error("SHA-256 checksum mismatch for file: {}. Expected: {}, Actual: {}",
-					  targetFile, fileIngestRequest.getSha256sum(), checksum);
-			throw new IllegalArgumentException("SHA-256 checksum mismatch");
+			final long size = multipartFile.getSize();
+			final Instant now = Instant.now();
+
+			// Upsert SiteFile entity
+			var siteFile = siteFileRepository.findByFilePathAndFileName(cleanRelPath, cleanFileName)
+											 .orElseGet(SiteFile::new);
+
+			siteFile.setFileName(cleanFileName);
+			siteFile.setFilePath(cleanRelPath);
+			siteFile.setMimeType(fileIngestRequest.getMimeType());
+			siteFile.setFileClass(FileClassEnum.getFileClassByMimetype(fileIngestRequest.getMimeType()));
+			siteFile.setSize(size);
+			siteFile.setSha256sum(fileIngestRequest.getSha256sum());
+
+			if (siteFile.getId() == null) {
+				siteFile.setCreator(fileIngestRequest.getUserId());
+				siteFile.setCreated(now);
+			} else {
+				siteFile.setModifier(fileIngestRequest.getUserId());
+				siteFile.setModified(now);
+			}
+
+			siteFile = siteFileRepository.save(siteFile);
+
+			// Upsert Gallery per requirements
+			upsertGallery(fileIngestRequest);
+
+			return new FileIngestResponse(siteFile.getId(), existed);
+		} catch (Exception e) {
+			throw new VempainIngestException("Ingest failed", e, storedFile);
 		}
-
-		final long size = file.getSize();
-		final Instant now = Instant.now();
-
-		// Upsert SiteFile entity
-		var siteFile = siteFileRepository.findByFilePathAndFileName(cleanRelPath, cleanFileName)
-										 .orElseGet(SiteFile::new);
-
-		siteFile.setFileName(cleanFileName);
-		siteFile.setFilePath(cleanRelPath);
-		siteFile.setMimeType(fileIngestRequest.getMimeType());
-		siteFile.setFileClass(FileClassEnum.getFileClassByMimetype(fileIngestRequest.getMimeType()));
-		siteFile.setSize(size);
-		siteFile.setSha256sum(fileIngestRequest.getSha256sum());
-
-		if (siteFile.getId() == null) {
-			siteFile.setCreator(fileIngestRequest.getUserId());
-			siteFile.setCreated(now);
-		} else {
-			siteFile.setModifier(fileIngestRequest.getUserId());
-			siteFile.setModified(now);
-		}
-
-		siteFile = siteFileRepository.save(siteFile);
-
-		// Upsert Gallery per requirements
-		upsertGallery(fileIngestRequest);
-
-		return new FileIngestResponse(siteFile.getId(), existed);
 	}
 
-	private void requireValidPsk(String providedPsk) {
-		if (expectedPsk == null || expectedPsk.isBlank() || !Objects.equals(expectedPsk, providedPsk)) {
-			throw new AccessDeniedException("Invalid PSK");
-		}
-	}
-
-	private void ValidateFileIngestRequest(FileIngestRequest fileIngestRequest, MultipartFile file) {
-		if (fileIngestRequest == null || file == null || file.isEmpty()) {
+	private void ValidateFileIngestRequest(FileIngestRequest fileIngestRequest, MultipartFile multipartFile) {
+		if (fileIngestRequest == null || multipartFile == null || multipartFile.isEmpty()) {
 			throw new IllegalArgumentException("Missing payload");
 		}
 		if (fileIngestRequest.getFileName() == null || fileIngestRequest.getFileName()
-											  .isBlank()) {
+																		.isBlank()) {
 			throw new IllegalArgumentException("Missing file name");
 		}
 		if (fileIngestRequest.getMimeType() == null || fileIngestRequest.getMimeType()
-											  .isBlank() || !fileIngestRequest.getMimeType()
-																 .contains("/")) {
+																		.isBlank() || !fileIngestRequest.getMimeType()
+																										.contains("/")) {
 			throw new IllegalArgumentException("Invalid mimetype");
 		}
 		if (fileIngestRequest.getUserId() == null) {
@@ -155,21 +185,25 @@ public class FileIngestService {
 		}
 		// Calculate SHA-256 checksum of the file
 		if (fileIngestRequest.getSha256sum() == null || fileIngestRequest.getSha256sum()
-											  .isBlank()) {
+																		 .isBlank()) {
 			throw new IllegalArgumentException("Missing SHA-256 checksum");
 		}
-
 	}
 
 	private String resolveBaseDir(FileClassEnum fileClassEnum) {
+		var fileClass = fileClassEnum.name()
+									 .toLowerCase();
+		log.info("Resolving base directory for file class: {}", fileClass);
 		var storageLocations = storageDirectoryConfiguration.storageLocations();
+		log.info("Checking if {} contains {}", storageLocations, fileClass);
 
-		if (storageLocations.containsKey(fileClassEnum.name())) {
-			return storageLocations.get(fileClassEnum.name());
+		if (storageLocations.containsKey(fileClass)) {
+			return storageLocations.get(fileClass);
 		}
 		if (storageLocations.containsKey("other")) {
 			return storageLocations.get("other");
 		}
+
 		throw new IllegalArgumentException("Unsupported FileClassEnum class: " + fileClassEnum);
 	}
 
@@ -201,7 +235,8 @@ public class FileIngestService {
 		}
 	}
 
-	private void upsertGallery(FileIngestRequest fileIngestRequest) {
+	@Transactional
+	protected void upsertGallery(FileIngestRequest fileIngestRequest) {
 		// If gallery ID exists, update fields if changed; otherwise create if name/description is provided
 		if (fileIngestRequest.getGalleryId() != null) {
 			var opt = galleryRepository.findById(fileIngestRequest.getGalleryId());
@@ -213,13 +248,16 @@ public class FileIngestService {
 					gallery.setShortname(fileIngestRequest.getGalleryName());
 					changed = true;
 				}
+
 				if (fileIngestRequest.getGalleryDescription() != null && !Objects.equals(gallery.getDescription(), fileIngestRequest.getGalleryDescription())) {
 					gallery.setDescription(fileIngestRequest.getGalleryDescription());
 					changed = true;
 				}
+
 				if (changed) {
 					galleryRepository.save(gallery);
 				}
+
 				return;
 			}
 			// fallthrough: ID provided but not found -> create
@@ -229,11 +267,28 @@ public class FileIngestService {
 																			 .isBlank())
 			|| (fileIngestRequest.getGalleryDescription() != null && !fileIngestRequest.getGalleryDescription()
 																					   .isBlank())) {
-			var g = new Gallery();
-			g.setShortname(fileIngestRequest.getGalleryName());
-			g.setDescription(fileIngestRequest.getGalleryDescription());
-			galleryRepository.save(g);
+			// Fetch new acl for the gallery
+			var aclId = aclRepository.getNextAvailableAclId();
+			var acl = Acl.builder()
+						 .aclId(aclId)
+						 .userId(fileIngestRequest.getUserId())
+						 .readPrivilege(true)
+						 .createPrivilege(true)
+						 .deletePrivilege(true)
+						 .modifyPrivilege(true)
+						 .build();
+			aclRepository.save(acl);
+
+			var gallery = Gallery.builder()
+								 .shortname(fileIngestRequest.getGalleryName())
+								 .description(fileIngestRequest.getGalleryDescription())
+								 .siteFiles(new java.util.ArrayList<>())
+								 .aclId(aclId)
+								 .creator(fileIngestRequest.getUserId())
+								 .locked(false)
+								 .created(Instant.now())
+								 .build();
+			galleryRepository.save(gallery);
 		}
 	}
 }
-
