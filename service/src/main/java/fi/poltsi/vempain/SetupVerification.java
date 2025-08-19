@@ -33,7 +33,6 @@ class SetupVerification implements ApplicationContextAware {
 	private final String[][] requiredKeys = {{"vempain.admin.file.image-format", TYPE_STRING},
 											 {"vempain.admin.file.thumbnail-size", TYPE_NUMBER},
 											 {"vempain.admin.file.site-file-directory", TYPE_PATH},
-											 {"vempain.admin.service-psk", TYPE_STRING},
 											 {"vempain.admin.ssh.user", TYPE_STRING},
 											 {"vempain.admin.ssh.home-dir", TYPE_PATH},
 											 {"vempain.admin.ssh.private-key", TYPE_PATH},

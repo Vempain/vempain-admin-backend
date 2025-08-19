@@ -13,7 +13,6 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -34,9 +33,6 @@ public class FileIngestService {
 	private final SiteFileRepository  siteFileRepository;
 	private final GalleryRepository   galleryRepository;
 	private final StorageDirectoryConfiguration storageDirectoryConfiguration;
-
-	@Value("${vempain.admin.service-psk}")
-	private String expectedPsk;
 
 	@Value("${vempain.admin.file.site-file-directory}")
 	private String siteFileDirectory;
@@ -64,14 +60,13 @@ public class FileIngestService {
 		}
 	}
 
-	public FileIngestResponse ingest(String providedPsk, FileIngestRequest fileIngestRequest, MultipartFile file) throws Exception {
-		requireValidPsk(providedPsk);
-		ValidateFileIngestRequest(fileIngestRequest, file);
+	public FileIngestResponse ingest(FileIngestRequest fileIngestRequest, MultipartFile multipartFile) throws Exception {
+		ValidateFileIngestRequest(fileIngestRequest, multipartFile);
 
 		// Determine main class directory by mimetype (fallback to "other" if configured)
 		final var fileClassByMimetype = FileClassEnum.getFileClassByMimetype(fileIngestRequest.getMimeType());
 		final String baseDir = resolveBaseDir(fileClassByMimetype);
-
+		log.info("Resolved base directory for file class {}: {}", fileClassByMimetype, baseDir);
 		// Sanitize and resolve target paths
 		final String cleanFileName = sanitizeFileName(fileIngestRequest.getFileName());
 		final String cleanRelPath = sanitizeRelativePath(Optional.ofNullable(fileIngestRequest.getFilePath())
@@ -90,7 +85,7 @@ public class FileIngestService {
 		ensureWithinBase(targetFile.getParent(), basePath);
 
 		final boolean existed = Files.exists(targetFile);
-		Files.copy(file.getInputStream(), targetFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+		Files.copy(multipartFile.getInputStream(), targetFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 
 		// Verify that the sha256 checksum of the created file matches the provided checksum
 		var checksum = LocalFileTools.computeSha256(targetFile.toFile());
@@ -101,7 +96,7 @@ public class FileIngestService {
 			throw new IllegalArgumentException("SHA-256 checksum mismatch");
 		}
 
-		final long size = file.getSize();
+		final long size = multipartFile.getSize();
 		final Instant now = Instant.now();
 
 		// Upsert SiteFile entity
@@ -131,14 +126,8 @@ public class FileIngestService {
 		return new FileIngestResponse(siteFile.getId(), existed);
 	}
 
-	private void requireValidPsk(String providedPsk) {
-		if (expectedPsk == null || expectedPsk.isBlank() || !Objects.equals(expectedPsk, providedPsk)) {
-			throw new AccessDeniedException("Invalid PSK");
-		}
-	}
-
-	private void ValidateFileIngestRequest(FileIngestRequest fileIngestRequest, MultipartFile file) {
-		if (fileIngestRequest == null || file == null || file.isEmpty()) {
+	private void ValidateFileIngestRequest(FileIngestRequest fileIngestRequest, MultipartFile multipartFile) {
+		if (fileIngestRequest == null || multipartFile == null || multipartFile.isEmpty()) {
 			throw new IllegalArgumentException("Missing payload");
 		}
 		if (fileIngestRequest.getFileName() == null || fileIngestRequest.getFileName()
@@ -162,14 +151,18 @@ public class FileIngestService {
 	}
 
 	private String resolveBaseDir(FileClassEnum fileClassEnum) {
+		var fileClass = fileClassEnum.name().toLowerCase();
+		log.info("Resolving base directory for file class: {}", fileClass);
 		var storageLocations = storageDirectoryConfiguration.storageLocations();
+		log.info("Checking if {} contains {}", storageLocations, fileClass);
 
-		if (storageLocations.containsKey(fileClassEnum.name())) {
-			return storageLocations.get(fileClassEnum.name());
+		if (storageLocations.containsKey(fileClass)) {
+			return storageLocations.get(fileClass);
 		}
 		if (storageLocations.containsKey("other")) {
 			return storageLocations.get("other");
 		}
+
 		throw new IllegalArgumentException("Unsupported FileClassEnum class: " + fileClassEnum);
 	}
 

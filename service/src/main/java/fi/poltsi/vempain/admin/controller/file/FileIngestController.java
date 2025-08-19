@@ -18,9 +18,9 @@ public class FileIngestController implements FileIngestApi {
 	private final FileIngestService fileIngestService;
 
 	@Override
-	public ResponseEntity<FileIngestResponse> ingest(String preSharedKey, FileIngestRequest fileIngestRequest, MultipartFile file) {
+	public ResponseEntity<FileIngestResponse> ingest(FileIngestRequest fileIngestRequest, MultipartFile multipartFile) {
 		try {
-			var result = fileIngestService.ingest(preSharedKey, fileIngestRequest, file);
+			var result = fileIngestService.ingest(fileIngestRequest, multipartFile);
 			return ResponseEntity.ok(result);
 		} catch (IllegalArgumentException e) {
 			log.warn("Bad request in file ingest: {}", e.getMessage());
@@ -34,4 +34,3 @@ public class FileIngestController implements FileIngestApi {
 		}
 	}
 }
-
