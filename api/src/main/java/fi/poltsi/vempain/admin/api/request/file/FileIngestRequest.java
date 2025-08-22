@@ -6,10 +6,12 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
+import lombok.Builder;
 import lombok.Data;
 
-@Schema(name = "FileIngestRequest", description = "Metadata for ingesting a file into site storage")
 @Data
+@Builder
+@Schema(name = "FileIngestRequest", description = "Metadata for ingesting a file into site storage")
 public class FileIngestRequest {
 	@Schema(description = "Target file name", example = "img_001.jpg", requiredMode = Schema.RequiredMode.REQUIRED)
 	@NotBlank

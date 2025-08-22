@@ -7,6 +7,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
 
+/**
+ * Abstract class representing a file response in the Vempain Admin API.
+ * Contains common properties for file responses, such as ID and site file data.
+ */
+
 @SuperBuilder
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
