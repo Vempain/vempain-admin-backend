@@ -2,11 +2,13 @@ package fi.poltsi.vempain.admin.api.response.file;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Schema(name = "FileIngestResponse", description = "Result of file ingest operation")
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class FileIngestResponse {

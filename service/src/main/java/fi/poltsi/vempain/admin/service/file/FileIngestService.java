@@ -55,7 +55,7 @@ public class FileIngestService {
 			try {
 				createAndVerifyDirectory(siteFilePath);
 			} catch (Exception e) {
-				log.error("Could not create converted main file storage: {}", siteFilePath);
+				log.error("Could not create converted main site file storage: {}", siteFilePath);
 				throw new FileSystemNotFoundException(exceptionMessage);
 			}
 		}

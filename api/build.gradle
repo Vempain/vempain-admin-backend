@@ -29,6 +29,11 @@ java {
     withJavadocJar()
 }
 
+// Quiet javadoc warnings as we're using Lombok which does not generate documentation for the generated methods
+tasks.withType(Javadoc).configureEach {
+	options.addStringOption('Xdoclint:all,-missing', '-quiet') // keep other checks, ignore missing docs
+}
+
 dependencies {
 	// https://mvnrepository.com/artifact/org.springframework.data/spring-data-jpa
 	api group: 'org.springframework.data', name: 'spring-data-jpa', version: '3.5.2'
