@@ -2,7 +2,7 @@ package fi.poltsi.vempain.admin.controller.file;
 
 import fi.poltsi.vempain.admin.api.request.file.FileIngestRequest;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestResponse;
-import fi.poltsi.vempain.admin.rest.file.FileIngestApi;
+import fi.poltsi.vempain.admin.rest.file.FileIngestAPI;
 import fi.poltsi.vempain.admin.service.file.FileIngestService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-public class FileIngestController implements FileIngestApi {
+public class FileIngestController implements FileIngestAPI {
 	private final FileIngestService fileIngestService;
 
 	@Override

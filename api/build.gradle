@@ -35,18 +35,15 @@ tasks.withType(Javadoc).configureEach {
 }
 
 dependencies {
-	// https://mvnrepository.com/artifact/org.springframework.data/spring-data-jpa
-	api group: 'org.springframework.data', name: 'spring-data-jpa', version: '3.5.2'
-	// https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations
 	api group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: "${jacksonVersion}"
-	// https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
 	api group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: "${jacksonVersion}"
-	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-web
 	api  group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: "${springBootVersion}"
+	// https://mvnrepository.com/artifact/org.springframework.data/spring-data-jpa
+	api group: 'org.springframework.data', name: 'spring-data-jpa', version: '3.5.3'
 	// This needs to be built first in vempain-auth
 	implementation group: 'fi.poltsi.vempain', name: 'vempain-auth-api', version: "${vempainAuthVersion}"
     // https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-annotations
-    implementation group: 'io.swagger.core.v3', name: 'swagger-annotations', version: '2.2.35'
+    implementation group: 'io.swagger.core.v3', name: 'swagger-annotations', version: '2.2.36'
     // https://mvnrepository.com/artifact/jakarta.validation/jakarta.validation-api
     implementation group: 'jakarta.validation', name: 'jakarta.validation-api', version: '3.1.1'
 	// https://mvnrepository.com/artifact/jakarta.persistence/jakarta.persistence-api
