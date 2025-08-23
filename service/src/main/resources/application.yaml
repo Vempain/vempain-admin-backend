@@ -7,6 +7,9 @@ spring:
   servlet:
     session:
       timeout: 600
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 120MB
   session:
     store-type: jdbc
     jdbc:
@@ -34,6 +37,9 @@ server:
   forward-headers-strategy: native
   servlet:
     context-path: /api
+  tomcat:
+    max-http-form-post-size: 120MB
+    max-swallow-size: -1
 
 actuator:
   enabled: true

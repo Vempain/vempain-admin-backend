@@ -1,6 +1,5 @@
 package fi.poltsi.vempain.admin.rest.file;
 
-import fi.poltsi.vempain.admin.api.Constants;
 import fi.poltsi.vempain.admin.api.request.file.FileIngestRequest;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,9 +15,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
+import static fi.poltsi.vempain.admin.api.Constants.REST_FILE_PREFIX;
+
 @Tag(name = "FileIngestApi", description = "Test API for multiple file uploads and JSON payloads")
-public interface FileIngestApi {
-	String MAIN_PATH = Constants.REST_CONTENT_PREFIX + "/ingest";
+public interface FileIngestAPI {
+	String MAIN_PATH = REST_FILE_PREFIX;
 
 	@Operation(
 			summary = "Ingest a file to the site storage",

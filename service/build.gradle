@@ -35,32 +35,26 @@ repositories {
 }
 
 dependencies {
+	annotationProcessor group: 'org.springframework.boot', name: 'spring-boot-configuration-processor', version: "${springBootVersion}"
 	implementation project(':api')
 	// This needs to be built first in vempain-auth
 	implementation group: 'fi.poltsi.vempain', name: 'vempain-auth-core', version: "${vempainAuthVersion}"
 	implementation group: 'fi.poltsi.vempain', name: 'vempain-auth-api', version: "${vempainAuthVersion}"
+	implementation group: 'org.springframework.boot', name: 'spring-boot', version: "${springBootVersion}"
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: "${springBootVersion}"
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version: "${springBootVersion}"
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation', version: "${springBootVersion}"
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-jdbc', version: "${springBootVersion}"
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: "${springBootVersion}"
+	implementation group: 'io.jsonwebtoken', name: 'jjwt-api', version: "${jjwtVersion}"
+	implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: "${jacksonVersion}"
+	implementation group: 'org.flywaydb', name: 'flyway-core', version: "${flywayVersion}"
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-text
 	implementation group: 'org.apache.commons', name: 'commons-text', version: '1.14.0'
-	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot
-	implementation group: 'org.springframework.boot', name: 'spring-boot', version: "${springBootVersion}"
-	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-security
-	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: "${springBootVersion}"
-	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-actuator
-	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version: "${springBootVersion}"
-	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-validation
-	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation', version: "${springBootVersion}"
-	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-jdbc
-	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-jdbc', version: "${springBootVersion}"
 	// https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui
-	implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.8.9'
+	implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.8.10'
 	// https://mvnrepository.com/artifact/org.hibernate.orm/hibernate-core
-	implementation group: 'org.hibernate.orm', name: 'hibernate-core', version: '6.6.24.Final'
-	// https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-api
-	implementation group: 'io.jsonwebtoken', name: 'jjwt-api', version: "${jjwtVersion}"
-	// https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310
-	implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: "${jacksonVersion}"
-	// https://mvnrepository.com/artifact/org.flywaydb/flyway-core
-	implementation group: 'org.flywaydb', name: 'flyway-core', version: "${flywayVersion}"
+	implementation group: 'org.hibernate.orm', name: 'hibernate-core', version: '6.6.26.Final'
 	// https://mvnrepository.com/artifact/org.postgresql/postgresql
 	implementation group: 'org.postgresql', name: 'postgresql', version: '42.7.7'
 	// https://mvnrepository.com/artifact/org.json/json
@@ -68,37 +62,27 @@ dependencies {
 	// https://mvnrepository.com/artifact/net.coobird/thumbnailator
 	implementation group: 'net.coobird', name: 'thumbnailator', version: '0.4.20'
 	// https://mvnrepository.com/artifact/com.github.mwiede/jsch
-	implementation group: 'com.github.mwiede', name: 'jsch', version: '2.27.2'
+	implementation group: 'com.github.mwiede', name: 'jsch', version: '2.27.3'
 	// https://mvnrepository.com/artifact/jakarta.xml.bind/jakarta.xml.bind-api
 	implementation group: 'jakarta.xml.bind', name: 'jakarta.xml.bind-api', version: '4.0.2'
 	// https://mvnrepository.com/artifact/jakarta.annotation/jakarta.annotation-api
 	implementation group: 'jakarta.annotation', name: 'jakarta.annotation-api', version: '3.0.0'
 	// https://mvnrepository.com/artifact/com.github.spotbugs/spotbugs-annotations
 	implementation group: 'com.github.spotbugs', name: 'spotbugs-annotations', version: '4.9.4'
-	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-jpa
-	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: "${springBootVersion}"
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
 	implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.18.0'
 	// https://mvnrepository.com/artifact/commons-codec/commons-codec
-	implementation group: 'commons-codec', name: 'commons-codec', version: '1.18.0'
-	// https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-impl
+	implementation group: 'commons-codec', name: 'commons-codec', version: '1.19.0'
 	runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-impl', version: "${jjwtVersion}"
-	// https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-jackson
 	runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: "${jjwtVersion}"
-	// https://mvnrepository.com/artifact/org.flywaydb/flyway-database-postgresql
 	runtimeOnly group: 'org.flywaydb', name: 'flyway-database-postgresql', version: "${flywayVersion}"
-	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-test
 	testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: "${springBootVersion}"
-	// https://mvnrepository.com/artifact/org.testcontainers/junit-jupiter
 	testImplementation group: 'org.testcontainers', name: 'junit-jupiter', version: "${testContainersVersion}"
-	// https://mvnrepository.com/artifact/org.testcontainers/postgresql
 	testImplementation group: 'org.testcontainers', name: 'postgresql', version: "${testContainersVersion}"
 	// https://mvnrepository.com/artifact/org.mockito/mockito-junit-jupiter
-	testImplementation group: 'org.mockito', name: 'mockito-junit-jupiter', version: '5.18.0'
+	testImplementation group: 'org.mockito', name: 'mockito-junit-jupiter', version: '5.19.0'
 	// https://mvnrepository.com/artifact/org.springframework.security/spring-security-test
-	testImplementation group: 'org.springframework.security', name: 'spring-security-test', version: '6.5.2'
-	// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-configuration-processor
-	annotationProcessor group: 'org.springframework.boot', name: 'spring-boot-configuration-processor', version: "${springBootVersion}"
+	testImplementation group: 'org.springframework.security', name: 'spring-security-test', version: '6.5.3'
 }
 
 application {

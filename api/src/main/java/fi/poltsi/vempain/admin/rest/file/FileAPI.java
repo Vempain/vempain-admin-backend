@@ -1,6 +1,5 @@
 package fi.poltsi.vempain.admin.rest.file;
 
-import fi.poltsi.vempain.admin.api.Constants;
 import fi.poltsi.vempain.admin.api.FileClassEnum;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
 import fi.poltsi.vempain.admin.api.response.RefreshResponse;
@@ -21,9 +20,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import static fi.poltsi.vempain.admin.api.Constants.REST_FILE_PREFIX;
+
 @Tag(name = "File", description = "REST API for Vempain image file objects")
 public interface FileAPI {
-	String MAIN_PATH = Constants.REST_FILE_PREFIX;
+	String MAIN_PATH = REST_FILE_PREFIX;
 
 	/* Audio */
 	@Operation(summary = "Get site files as a pageable", description = "Fetch all site files in pageable format", tags = "File")

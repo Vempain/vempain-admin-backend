@@ -1,6 +1,5 @@
 package fi.poltsi.vempain.admin.rest.file;
 
-import fi.poltsi.vempain.admin.api.Constants;
 import fi.poltsi.vempain.admin.api.response.file.DirectoryNodeResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -16,9 +15,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 import java.util.List;
 
+import static fi.poltsi.vempain.admin.api.Constants.REST_FILE_PREFIX;
+
 @Tag(name = "FileSystem", description = "REST API for Vempain image filesystem operations")
 public interface FileSystemAPI {
-	String MAIN_PATH = Constants.REST_FILE_PREFIX;
+	String MAIN_PATH = REST_FILE_PREFIX;
 
 	@Operation(summary = "Return the site file directory tree",
 			   description = "Return a tree structure of the site file directory sub directories",
