@@ -114,6 +114,7 @@ public class FileIngestService {
 										   .normalize();
 
 			ensureWithinBase(targetDir, basePath);
+			log.info("Creating target directory: {}", targetDir);
 			Files.createDirectories(targetDir);
 
 			final Path targetFile = targetDir.resolve(cleanFileName)
