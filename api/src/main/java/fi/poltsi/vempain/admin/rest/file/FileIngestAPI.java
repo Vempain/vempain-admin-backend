@@ -1,12 +1,7 @@
 package fi.poltsi.vempain.admin.rest.file;
 
-import fi.poltsi.vempain.admin.api.request.file.FileIngestRequest;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestResponse;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Encoding;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.MediaType;
@@ -33,10 +28,6 @@ public interface FileIngestAPI {
 			consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
 			produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<FileIngestResponse> ingest(
-			@RequestPart("request")
-			@RequestBody(content = @Content(encoding = @Encoding(name = "request", contentType = MediaType.APPLICATION_JSON_VALUE)))
-			@Parameter(
-					description = "File ingest request accompanying the file",
-					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)) final FileIngestRequest fileIngestRequest,
-			@RequestPart(value = "site_file") @Parameter(description = "Site file") final MultipartFile siteFile);
+			@RequestPart("request") final String fileIngestRequestJSON,
+			@RequestPart(value = "site_file") final MultipartFile siteFile);
 }
