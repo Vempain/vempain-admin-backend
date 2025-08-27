@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -51,6 +52,7 @@ public class FileIngestRequest {
 
 	@Schema(description = "User ID performing the ingest", example = "42", requiredMode = Schema.RequiredMode.REQUIRED)
 	@NotNull
+	@Min(1L)
 	private Long   userId;             // required
 
 	@Schema(description = "Existing gallery ID to associate with (if any)", example = "1001")
