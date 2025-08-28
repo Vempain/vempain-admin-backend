@@ -25,34 +25,39 @@ import java.util.stream.StreamSupport;
 @Component
 @AllArgsConstructor
 class SetupVerification implements ApplicationContextAware {
-	private final String TYPE_STRING  = "string";
-	private final String TYPE_NUMBER  = "number";
-	private final String TYPE_PATH    = "path";
+	private final String TYPE_STRING = "string";
+	private final String TYPE_NUMBER = "number";
+	private final String TYPE_PATH   = "path";
 	private final String TYPE_FILE   = "file";
 
-	private final String[][] requiredKeys = {{"vempain.admin.file.image-format", TYPE_STRING},
-											 {"vempain.admin.file.thumbnail-size", TYPE_NUMBER},
-											 {"vempain.admin.file.site-file-directory", TYPE_PATH},
-											 {"vempain.admin.ssh.user", TYPE_STRING},
-											 {"vempain.admin.ssh.home-dir", TYPE_PATH},
-											 {"vempain.admin.ssh.private-key", TYPE_PATH},
-											 {"vempain.cmd-line.exiftool", TYPE_FILE},
-											 {"vempain.site.ssh.address", TYPE_STRING},
-											 {"vempain.site.ssh.port", TYPE_NUMBER},
-											 {"vempain.site.ssh.user", TYPE_STRING},
-											 {"vempain.site.ssh.home-dir", TYPE_STRING}, // This needs to be a string because it is located on the remote
-											 {"vempain.site.www-root", TYPE_STRING},
-											 {"vempain.site.image-size", TYPE_NUMBER},
-											 {"spring.admin-datasource.url", TYPE_STRING},
-											 {"spring.admin-datasource.username", TYPE_STRING},
-											 {"spring.site-datasource.url", TYPE_STRING},
-											 {"spring.site-datasource.username", TYPE_STRING}};
+	private final String[][] requiredKeys = {
+			{"vempain.app.frontend-url", TYPE_STRING},
+			{"vempain.app.jwt-secret", TYPE_STRING},
+			{"vempain.admin.file.site-file-directory", TYPE_PATH},
+			{"vempain.admin.ssh.user", TYPE_STRING},
+			{"vempain.admin.ssh.home-dir", TYPE_PATH},
+			{"vempain.site.www-root", TYPE_STRING},
+			{"vempain.site.ssh.user", TYPE_STRING},
+			{"vempain.site.ssh.home-dir", TYPE_STRING}, // This needs to be a string because it is located on the remote
+			{"vempain.site.ssh.address", TYPE_STRING},
+			{"vempain.cmd-line.exiftool", TYPE_FILE},
+			// Following are already defined with default values, but we want to make sure they're of the correct type
+			{"vempain.app.jwt-expiration-ms", TYPE_NUMBER},
+			{"vempain.admin.file.thumbnail-size", TYPE_NUMBER},
+			{"vempain.site.image-size", TYPE_NUMBER},
+			{"vempain.site.ssh.port", TYPE_NUMBER},
+			{"vempain.cors.max-age", TYPE_NUMBER},
+			{"spring.admin-datasource.url", TYPE_STRING},
+			{"spring.admin-datasource.username", TYPE_STRING},
+			{"spring.site-datasource.url", TYPE_STRING},
+			{"spring.site-datasource.username", TYPE_STRING}};
 
 	private ApplicationContext applicationContext;
 
 	@EventListener
 	public void checkEssentialConfigurations(ContextRefreshedEvent event) {
-		final Environment env = event.getApplicationContext().getEnvironment();
+		final Environment env = event.getApplicationContext()
+									 .getEnvironment();
 
 		for (String[] keyPair : requiredKeys) {
 			var value = env.getProperty(keyPair[0]);
@@ -108,7 +113,8 @@ class SetupVerification implements ApplicationContextAware {
 
 	@EventListener
 	public void printAllConfiguration(ContextRefreshedEvent event) {
-		final Environment env = event.getApplicationContext().getEnvironment();
+		final Environment env = event.getApplicationContext()
+									 .getEnvironment();
 		log.info("====== Environment and configuration ======");
 		log.info("Active profiles: {}", Arrays.toString(env.getActiveProfiles()));
 		final MutablePropertySources sources = ((AbstractEnvironment) env).getPropertySources();
@@ -118,6 +124,7 @@ class SetupVerification implements ApplicationContextAware {
 					 .flatMap(Arrays::stream)
 					 .distinct()
 					 .filter(prop -> !(prop.contains("credentials") || prop.contains("password")))
+					 .sorted()
 					 .forEach(prop -> printProperty(env, prop));
 		log.info("===========================================");
 	}
