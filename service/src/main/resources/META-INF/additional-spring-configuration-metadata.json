@@ -51,12 +51,12 @@
       "description": "Session time-out, in seconds."
     },
     {
-      "name": "vempain.app.jwtSecret",
+      "name": "vempain.app.jwt-secret",
       "type": "java.lang.String",
       "description": "JWT secret passphrase, base64 encoded."
     },
     {
-      "name": "vempain.app.jwtExpirationMs",
+      "name": "vempain.app.jwt-expiration-ms",
       "type": "java.lang.Long",
       "description": "JWT timeout in milliseconds."
     },
