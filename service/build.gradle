@@ -38,17 +38,19 @@ dependencies {
 	annotationProcessor group: 'org.springframework.boot', name: 'spring-boot-configuration-processor', version: "${springBootVersion}"
 	implementation project(':api')
 	// This needs to be built first in vempain-auth
-	implementation group: 'fi.poltsi.vempain', name: 'vempain-auth-core', version: "${vempainAuthVersion}"
-	implementation group: 'fi.poltsi.vempain', name: 'vempain-auth-api', version: "${vempainAuthVersion}"
+	implementation "fi.poltsi.vempain:vempain-auth-core:${vempainAuthVersion}"
+	implementation "fi.poltsi.vempain:vempain-auth-api:${vempainAuthVersion}"
 	implementation group: 'org.springframework.boot', name: 'spring-boot', version: "${springBootVersion}"
-	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: "${springBootVersion}"
-	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version: "${springBootVersion}"
+	implementation "org.springframework.boot:spring-boot-starter-security:${springBootVersion}"
+	implementation "org.springframework.boot:spring-boot-starter-actuator:${springBootVersion}"
 	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation', version: "${springBootVersion}"
 	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-jdbc', version: "${springBootVersion}"
-	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa', version: "${springBootVersion}"
+	implementation "org.springframework.boot:spring-boot-starter-data-jpa:${springBootVersion}"
 	implementation group: 'io.jsonwebtoken', name: 'jjwt-api', version: "${jjwtVersion}"
 	implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: "${jacksonVersion}"
 	implementation group: 'org.flywaydb', name: 'flyway-core', version: "${flywayVersion}"
+	implementation "io.micrometer:micrometer-registry-prometheus:${micrometerVersion}"
+	implementation "io.micrometer:micrometer-registry-elastic:${micrometerVersion}"
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-text
 	implementation group: 'org.apache.commons', name: 'commons-text', version: '1.14.0'
 	// https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui
@@ -73,8 +75,8 @@ dependencies {
 	implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.18.0'
 	// https://mvnrepository.com/artifact/commons-codec/commons-codec
 	implementation group: 'commons-codec', name: 'commons-codec', version: '1.19.0'
-	runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-impl', version: "${jjwtVersion}"
-	runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: "${jjwtVersion}"
+	runtimeOnly "io.jsonwebtoken:jjwt-impl:${jjwtVersion}"
+	runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jjwtVersion}"
 	runtimeOnly group: 'org.flywaydb', name: 'flyway-database-postgresql', version: "${flywayVersion}"
 	testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: "${springBootVersion}"
 	testImplementation group: 'org.testcontainers', name: 'junit-jupiter', version: "${testContainersVersion}"
@@ -112,9 +114,15 @@ jacocoTestReport {
 }
 
 processResources {
+	// capture once at configuration time (CC-safe)
+	def ver = version.toString()
+	// declare as input for configuration cache
+	inputs.property("projectVersion", ver)
+
 	filesMatching("**/application.yaml") {
-		filter(ReplaceTokens, tokens: [
-				'project.version': project.version
-		])
+		filteringCharset = "UTF-8"
+		filter(ReplaceTokens,
+				tokens: [projectVersion: ver]
+		)
 	}
 }
