@@ -67,6 +67,7 @@ public class FileIngestService {
 	}
 
 	// Public entry point: delegates to internal ingest and ensures cleanup on failure
+	@Transactional
 	public FileIngestResponse ingest(FileIngestRequest fileIngestRequest, MultipartFile multipartFile) throws Exception {
 		try {
 			return ingestInternal(fileIngestRequest, multipartFile);
@@ -95,6 +96,7 @@ public class FileIngestService {
 	@Transactional
 	protected FileIngestResponse ingestInternal(FileIngestRequest fileIngestRequest, MultipartFile multipartFile) throws VempainIngestException {
 		Path storedFile = null;
+
 		try {
 			ValidateFileIngestRequest(fileIngestRequest, multipartFile);
 
@@ -264,10 +266,13 @@ public class FileIngestService {
 			// fallthrough: ID provided but not found -> create
 		}
 
+		log.info("No gallery ID given, creating new gallery if name/description provided in request: {}", fileIngestRequest);
+
 		if ((fileIngestRequest.getGalleryName() != null && !fileIngestRequest.getGalleryName()
 																			 .isBlank())
 			|| (fileIngestRequest.getGalleryDescription() != null && !fileIngestRequest.getGalleryDescription()
 																					   .isBlank())) {
+			log.info("Creating new gallery for ingest request: {}", fileIngestRequest);
 			// Fetch new acl for the gallery
 			var aclId = aclRepository.getNextAvailableAclId();
 			var acl = Acl.builder()
