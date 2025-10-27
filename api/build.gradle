@@ -40,7 +40,7 @@ dependencies {
 	api "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
 	api "org.springframework.boot:spring-boot-starter-web:${springBootVersion}"
 	// https://mvnrepository.com/artifact/org.springframework.data/spring-data-jpa
-	api group: 'org.springframework.data', name: 'spring-data-jpa', version: '3.5.4'
+	api "org.springframework.data:spring-data-jpa:3.5.5"
 	// This needs to be built first in vempain-auth
 	implementation "fi.poltsi.vempain:vempain-auth-api:${vempainAuthVersion}"
     // https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-annotations
@@ -48,9 +48,9 @@ dependencies {
     // https://mvnrepository.com/artifact/jakarta.validation/jakarta.validation-api
 	implementation "jakarta.validation:jakarta.validation-api:3.1.1"
 	// https://mvnrepository.com/artifact/jakarta.persistence/jakarta.persistence-api
-	implementation group: 'jakarta.persistence', name: 'jakarta.persistence-api', version: '3.1.0'
+	implementation "jakarta.persistence:jakarta.persistence-api:3.1.0"
 	// https://mvnrepository.com/artifact/org.mockito/mockito-junit-jupiter
-	testImplementation group: 'org.mockito', name: 'mockito-junit-jupiter', version: '5.20.0'
+	testImplementation "org.mockito:mockito-junit-jupiter:5.20.0"
 	// https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter
 	testImplementation "org.junit.jupiter:junit-jupiter:${junitVersion}"
 	// https://mvnrepository.com/artifact/org.junit.platform/junit-platform-launcher
