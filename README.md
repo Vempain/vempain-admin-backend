@@ -1,3 +1,7 @@
+[![Dependabot Updates](https://github.com/Vempain/vempain-admin-backend/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/Vempain/vempain-admin-backend/actions/workflows/dependabot/dependabot-updates)
+[![CodeQL](https://github.com/Vempain/vempain-admin-backend/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/Vempain/vempain-admin-backend/actions/workflows/github-code-scanning/codeql)
+[![CI](https://github.com/Vempain/vempain-admin-backend/actions/workflows/ci.yaml/badge.svg)](https://github.com/Vempain/vempain-admin-backend/actions/workflows/ci.yaml)
+
 # Vempain Admin service, VAS
 
 ## REST API
