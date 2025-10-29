@@ -103,7 +103,7 @@ public class TestUTCTools {
 
 	public static List<AclResponse> generateAclResponses(long aclId, long count) {
 		ArrayList<AclResponse> aclResponses = new ArrayList<>();
-		List<Acl>              acls         = generateAclList(aclId, count);
+		List<Acl> acls = generateAclList(aclId, count);
 
 		for (Acl acl : acls) {
 			aclResponses.add(acl.toResponse());
@@ -121,7 +121,8 @@ public class TestUTCTools {
 						.locked(false)
 						.aclId(aclId)
 						.creator(1L)
-						.created(Instant.now().minus(1, ChronoUnit.HOURS))
+						.created(Instant.now()
+										.minus(1, ChronoUnit.HOURS))
 						.modifier(1L)
 						.modified(Instant.now())
 						.build();
@@ -154,8 +155,8 @@ public class TestUTCTools {
 	}
 
 	public static List<ComponentRequest> generateComponentRequestList(long count) {
-		ArrayList<ComponentRequest> requests   = new ArrayList<>();
-		List<Component>             components = generateComponentList(count);
+		ArrayList<ComponentRequest> requests = new ArrayList<>();
+		List<Component> components = generateComponentList(count);
 
 		for (Component component : components) {
 			requests.add(generateComponentRequestFromComponent(component));
@@ -183,7 +184,8 @@ public class TestUTCTools {
 				   .aclId(aclId)
 				   .locked(false)
 				   .creator(1L)
-				   .created(Instant.now().minus(1, ChronoUnit.HOURS))
+				   .created(Instant.now()
+								   .minus(1, ChronoUnit.HOURS))
 				   .modifier(1L)
 				   .modified(Instant.now())
 				   .build();
@@ -284,7 +286,8 @@ public class TestUTCTools {
 				   .locked(false)
 				   .aclId(index)
 				   .creator(1L)
-				   .created(Instant.now().minus(1, ChronoUnit.HOURS))
+				   .created(Instant.now()
+								   .minus(1, ChronoUnit.HOURS))
 				   .modifier(1L)
 				   .modified(Instant.now())
 				   .build();
@@ -329,7 +332,8 @@ public class TestUTCTools {
 					 .locked(false)
 					 .aclId(layoutId)
 					 .creator(1L)
-					 .created(Instant.now().minus(1, ChronoUnit.HOURS))
+					 .created(Instant.now()
+									 .minus(1, ChronoUnit.HOURS))
 					 .modifier(1L)
 					 .modified(Instant.now())
 					 .build();
@@ -358,7 +362,7 @@ public class TestUTCTools {
 	}
 
 	public static List<LayoutResponse> generateLayoutResponseList(long count) {
-		List<Layout>         layouts         = generateLayoutList(count);
+		List<Layout> layouts = generateLayoutList(count);
 		List<LayoutResponse> layoutResponses = new ArrayList<>();
 
 		for (Layout layout : layouts) {
@@ -368,13 +372,12 @@ public class TestUTCTools {
 		return layoutResponses;
 	}
 
-	////////////////// FILE
+	/// /////////////// FILE
 
 	// FileCommon
 
 	// Create a converted file from a test file in our resources
-
-	public static SiteFile generateSiteFile(long siteFileId, String storageDirSetup) {
+	public static SiteFile generateImageSiteFile(long siteFileId, String storageDirSetup) {
 		// The original file that we use as test material
 		var originalFile = Path.of("src/test/resources/files/Norja-2019-0097.jpeg");
 
@@ -386,11 +389,13 @@ public class TestUTCTools {
 		var storageDir = Path.of(storageDirSetup);
 
 		// Give the file a random name
-		var randomFileName = RandomStringUtils.secure().nextAlphanumeric(12) + ".jpeg";
+		var randomFileName = RandomStringUtils.secure()
+											  .nextAlphanumeric(12) + ".jpeg";
 		var convertedPath = FileClassEnum.getFileClassNameByMimetype("image/jpeg")
-							+ File.separator + RandomStringUtils.secure().nextAlphanumeric(12);
+							+ File.separator + RandomStringUtils.secure()
+																.nextAlphanumeric(12);
 		var absoluteConvertedPath = Path.of(storageDir + File.separator + convertedPath);
-		var convertedFile         = Path.of(convertedPath + File.separator + randomFileName);
+		var convertedFile = Path.of(convertedPath + File.separator + randomFileName);
 		var absoluteConvertedFile = Path.of(storageDir + File.separator + convertedFile);
 		log.info("OriginalFile: {}", originalFile);
 		log.info("StorageDir: {}", storageDir);
@@ -418,15 +423,19 @@ public class TestUTCTools {
 
 		// The convertedFile should be relative to the main convertedDirectory, this is setting the absolute path
 		return SiteFile.builder()
-						 .id(siteFileId)
-						 .mimeType("image/jpeg")
-						 .filePath(convertedFile.getParent().toString())
-						 .fileName(convertedFile.getFileName().toString())
-						 .sha256sum("so-Sha1sum" + siteFileId)
-						 .comment("Test FileCommon")
-						 .creator(1L)
-						 .created(Instant.now().minus(1, ChronoUnit.HOURS))
-						 .build();
+					   .id(siteFileId)
+					   .mimeType("image/jpeg")
+					   .filePath(convertedFile.getParent()
+											  .toString())
+					   .fileName(convertedFile.getFileName()
+											  .toString())
+					   .sha256sum("so-Sha1sum" + siteFileId)
+					   .comment("Test SiteFile")
+					   .fileClass(FileClassEnum.IMAGE)
+					   .creator(1L)
+					   .created(Instant.now()
+									   .minus(1, ChronoUnit.HOURS))
+					   .build();
 	}
 
 	// Generic

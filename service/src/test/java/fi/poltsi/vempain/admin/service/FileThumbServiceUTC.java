@@ -47,7 +47,7 @@ class FileThumbServiceUTC {
 	void setUp() {
 		removeDirectory(TEST_STORAGE_DIR);
 		createAndVerifyDirectory(Path.of(TEST_STORAGE_DIR));
-		fileThumbService.setConvertedDirectory(TEST_STORAGE_DIR);
+		fileThumbService.setSiteFileDirectory(TEST_STORAGE_DIR);
 		fileThumbService.setImageFormat("jpeg");
 		fileThumbService.setThumbnailSize(250);
 	}
@@ -55,7 +55,7 @@ class FileThumbServiceUTC {
 	@Test
 	void generateThumbFileOk() {
 		var siteFileId = 1L;
-		var siteFile = TestUTCTools.generateSiteFile(siteFileId, TEST_STORAGE_DIR);
+		var siteFile = TestUTCTools.generateImageSiteFile(siteFileId, TEST_STORAGE_DIR);
 		assertNotNull(siteFile);
 		when(siteFileRepository.findById(siteFileId)).thenReturn(Optional.of(siteFile));
 

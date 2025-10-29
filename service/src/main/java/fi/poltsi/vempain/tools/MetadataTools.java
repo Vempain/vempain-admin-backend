@@ -19,7 +19,6 @@ public class MetadataTools {
 
 	public void copyMetadata(File sourceFile, File destinationFile) {
 		var builder = new ProcessBuilder();
-		log.info("XXXXXXXXXXX The configured exifTool path is: {}", exifToolPath);
 		builder.command(exifToolPath, "-overwrite_original_in_place", "-TagsFromFile", sourceFile.getAbsolutePath(), "-all:all",
 						destinationFile.getAbsolutePath());
 		var output = new StringBuilder();
@@ -69,7 +68,6 @@ public class MetadataTools {
 	}
 
 	private int runCommand(ProcessBuilder builder, StringBuilder output) throws IOException, InterruptedException {
-		log.info("XXXXXXXXXXX The configured exifTool path is: {}", exifToolPath);
 		var process = builder.start();
 		var bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 

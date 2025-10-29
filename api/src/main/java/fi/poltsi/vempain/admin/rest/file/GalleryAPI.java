@@ -32,11 +32,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.time.Instant;
 import java.util.List;
 
-import static fi.poltsi.vempain.admin.api.Constants.REST_FILE_PREFIX;
+import static fi.poltsi.vempain.admin.api.Constants.REST_CONTENT_PREFIX;
 
 @Tag(name = "Gallery", description = "REST API for Vempain gallery objects")
 public interface GalleryAPI {
-	String MAIN_PATH = REST_FILE_PREFIX + "/galleries";
+	String MAIN_PATH = REST_CONTENT_PREFIX + "/galleries";
 
 	@Operation(summary = "Get galleries", description = "Fetch all galleries", tags = "Gallery")
 	@Parameter(name = "details", description = "How much details should be included", example = "FULL", required = true)
