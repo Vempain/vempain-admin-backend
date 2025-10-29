@@ -16,7 +16,7 @@ setup_database_container() {
         -e "POSTGRES_HOST_AUTH_METHOD=trust" \
         --name "${container_name}" postgres:17
 
-    echo "Waiting for postgres to start..."
+    echo "Waiting for postgresql to start..."
     until docker exec "${container_name}" psql --host=localhost --port=5432 --username postgres -c '\l' > /dev/null 2>&1; do
         sleep 0.5
     done
@@ -37,9 +37,9 @@ setup_database_container() {
 }
 
 # Setup first database for vempain_admin
-setup_database_container "vempain_admin" "vempain_admin" "vempain_admin_password" 5432
+setup_database_container "vempain_admin" "vempain_admin" "vempain_admin_password" 5433
 
 # Setup second database for vempain_site listening on port 5433
-setup_database_container "vempain_site" "vempain_site" "vempain_site_password" 5433
+setup_database_container "vempain_site" "vempain_site" "vempain_site_password" 5434
 
 echo "All databases setup completed."
