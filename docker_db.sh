@@ -37,9 +37,9 @@ setup_database_container() {
 }
 
 # Setup first database for vempain_admin
-setup_database_container "vempain_admin" "vempain_admin" "vempain_admin_password" 5433
+setup_database_container "vempain_admin" "vempain_admin" "vempain_admin_password" 5432
 
 # Setup second database for vempain_site listening on port 5433
-setup_database_container "vempain_site" "vempain_site" "vempain_site_password" 5434
+setup_database_container "vempain_site" "vempain_site" "vempain_site_password" 5433
 
 echo "All databases setup completed."
