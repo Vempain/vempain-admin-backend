@@ -36,7 +36,7 @@ public class FileThumbService {
 	private final ImageTools                  imageTools;
 
 	@Value("${vempain.admin.file.site-file-directory}")
-	private String convertedDirectory;
+	private String siteFileDirectory;
 	@Value("${vempain.admin.file.image-format}")
 	private String imageFormat;
 	@Value("${vempain.admin.file.thumbnail-size}")
@@ -44,21 +44,23 @@ public class FileThumbService {
 
 
 	@Transactional
-	public void generateThumbFile(long fileCommonId) {
-		if (fileCommonId < 1) {
-			log.error("Common file ID {} is invalid", fileCommonId);
+	public void generateThumbFile(long siteFileId) {
+		if (siteFileId < 1) {
+			log.error("Site file ID {} is invalid", siteFileId);
 			return;
 		}
 
-		var optionalSiteFile = siteFileRepository.findById(fileCommonId);
+		var optionalSiteFile = siteFileRepository.findById(siteFileId);
 
 		if (optionalSiteFile.isEmpty()) {
-			log.warn("Common file ID {} does not exist in database", fileCommonId);
+			log.warn("Common file ID {} does not exist in database", siteFileId);
 			return;
 		}
 
 		var siteFile = optionalSiteFile.get();
-		var sourcePath = Path.of((convertedDirectory != null ? convertedDirectory : "") + File.separator + siteFile.getFileName());
+		var sourcePath =
+				Path.of((siteFileDirectory != null ? siteFileDirectory : "") +
+						File.separator + siteFile.getFileClass().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName());
 
 		generateThumbFile(siteFile.getId(), sourcePath,
 						  Path.of(siteFile.getFileName())
@@ -70,7 +72,7 @@ public class FileThumbService {
 	protected void generateThumbFile(long commonId, Path sourceFile, Path destination, FileClassEnum fileClassEnum) {
 		// We add the thumb class to the beginning of the relative path
 		var relativeDestinationPath = Path.of(FileClassEnum.THUMB.shortName + File.separator + destination);
-		var absoluteDestinationPath = Path.of(convertedDirectory + File.separator + relativeDestinationPath);
+		var absoluteDestinationPath = Path.of(siteFileDirectory + File.separator + relativeDestinationPath);
 		// Set the correct file extension
 		var thumbFilename = setExtension(sourceFile.getFileName()
 												   .toString(), (imageFormat != null ? imageFormat : "jpeg"));

@@ -38,6 +38,9 @@ public class FileIngestService {
 	private final SiteFileRepository            siteFileRepository;
 	private final GalleryRepository             galleryRepository;
 	private final AclRepository                 aclRepository;
+
+	private final GalleryFileService galleryFileService;
+
 	private final StorageDirectoryConfiguration storageDirectoryConfiguration;
 
 	@Value("${vempain.admin.file.site-file-directory}")
@@ -162,7 +165,18 @@ public class FileIngestService {
 			siteFile = siteFileRepository.save(siteFile);
 
 			// Upsert Gallery per requirements
-			upsertGallery(fileIngestRequest);
+			var gallery = upsertGallery(fileIngestRequest);
+
+			// Add link between SiteFile and Gallery if gallery specified
+			if (gallery != null) {
+				var galleryFileList = galleryFileService.findGalleryFileByGalleryId(gallery.getId());
+				var finalSiteFile = siteFile;
+				boolean alreadyLinked = galleryFileList.stream()
+													   .anyMatch(gf -> Objects.equals(gf.getSiteFileId(), finalSiteFile.getId()));
+				if (!alreadyLinked) {
+					galleryFileService.addGalleryFile(gallery.getId(), siteFile.getId(), (long) galleryFileList.size());
+				}
+			}
 
 			return new FileIngestResponse(siteFile.getId(), existed);
 		} catch (Exception e) {
@@ -239,31 +253,38 @@ public class FileIngestService {
 	}
 
 	@Transactional
-	protected void upsertGallery(FileIngestRequest fileIngestRequest) {
+	protected Gallery upsertGallery(FileIngestRequest fileIngestRequest) {
 		// If gallery ID exists, update fields if changed; otherwise create if name/description is provided
+		Optional<Gallery> opt = Optional.empty();
+
 		if (fileIngestRequest.getGalleryId() != null) {
-			var opt = galleryRepository.findById(fileIngestRequest.getGalleryId());
-			if (opt.isPresent()) {
-				var gallery = opt.get();
-				boolean changed = false;
+			opt = galleryRepository.findById(fileIngestRequest.getGalleryId());
+		} else if (!fileIngestRequest.getGalleryName()
+									 .trim()
+									 .isBlank()) {
+			opt = galleryRepository.findByShortname(fileIngestRequest.getGalleryName());
+		}
 
-				if (fileIngestRequest.getGalleryName() != null && !Objects.equals(gallery.getShortname(), fileIngestRequest.getGalleryName())) {
-					gallery.setShortname(fileIngestRequest.getGalleryName());
-					changed = true;
-				}
+		if (opt.isPresent()) {
+			var gallery = opt.get();
+			log.info("Found existing gallery for ingest request: {}", gallery);
+			boolean changed = false;
 
-				if (fileIngestRequest.getGalleryDescription() != null && !Objects.equals(gallery.getDescription(), fileIngestRequest.getGalleryDescription())) {
-					gallery.setDescription(fileIngestRequest.getGalleryDescription());
-					changed = true;
-				}
-
-				if (changed) {
-					galleryRepository.save(gallery);
-				}
-
-				return;
+			if (fileIngestRequest.getGalleryName() != null && !Objects.equals(gallery.getShortname(), fileIngestRequest.getGalleryName())) {
+				gallery.setShortname(fileIngestRequest.getGalleryName());
+				changed = true;
 			}
-			// fallthrough: ID provided but not found -> create
+
+			if (fileIngestRequest.getGalleryDescription() != null && !Objects.equals(gallery.getDescription(), fileIngestRequest.getGalleryDescription())) {
+				gallery.setDescription(fileIngestRequest.getGalleryDescription());
+				changed = true;
+			}
+
+			if (changed) {
+				gallery = galleryRepository.save(gallery);
+			}
+
+			return gallery;
 		}
 
 		log.info("No gallery ID given, creating new gallery if name/description provided in request: {}", fileIngestRequest);
@@ -294,7 +315,9 @@ public class FileIngestService {
 								 .locked(false)
 								 .created(Instant.now())
 								 .build();
-			galleryRepository.save(gallery);
+			return galleryRepository.save(gallery);
 		}
+
+		return null;
 	}
 }

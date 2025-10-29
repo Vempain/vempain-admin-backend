@@ -47,7 +47,6 @@ public class ComponentService {
 
 		for (Component component : allComponents) {
 			if (accessService.hasReadPermission(component.getAclId())) {
-				log.info("XXXXXXXXXXXXXXXX Adding {}", component);
 				accessableComponents.add(component);
 			}
 		}

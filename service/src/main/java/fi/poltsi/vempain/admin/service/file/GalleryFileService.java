@@ -63,16 +63,16 @@ public class GalleryFileService {
 	}
 
 	@Transactional(propagation = Propagation.REQUIRED)
-	public void addGalleryFile(Long galleryId, Long fileCommonId, Long sortOrder) {
+	public void addGalleryFile(Long galleryId, Long siteFileId, Long sortOrder) {
 		var query = entityManager.createNativeQuery("INSERT INTO gallery_file (gallery_id, site_file_id, sort_order) " +
-													  "VALUES (:galleryId, :fileCommonId, :sortOrder)");
+													"VALUES (:galleryId, :siteFileId, :sortOrder)");
 		query.setParameter("galleryId", galleryId);
-		query.setParameter("fileCommonId", fileCommonId);
+		query.setParameter("siteFileId", siteFileId);
 		query.setParameter("sortOrder", sortOrder);
 		query.executeUpdate();
 
 		// Make also sure that the thumb file exists
-		fileThumbService.generateThumbFile(fileCommonId);
+		fileThumbService.generateThumbFile(siteFileId);
 	}
 
 	@Transactional(propagation = Propagation.REQUIRED)
