@@ -2,34 +2,33 @@ package fi.poltsi.vempain.admin.entity.file;
 
 import fi.poltsi.vempain.admin.api.FileClassEnum;
 import fi.poltsi.vempain.admin.api.response.file.SiteFileResponse;
+import fi.poltsi.vempain.auth.entity.AbstractVempainEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
-import java.time.Instant;
+import java.io.Serializable;
 
-@Builder
+@EqualsAndHashCode(callSuper = true)
+@SuperBuilder
 @Getter
 @Setter
 @Entity
+@ToString(callSuper = true)
 @AllArgsConstructor
 @RequiredArgsConstructor
 @Table(name = "site_file", indexes = {
 		@Index(name = "ux_site_file_path_name", columnList = "file_path, file_name", unique = true)
 })
-public class SiteFile {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+public class SiteFile extends AbstractVempainEntity implements Serializable {
 
 	@Column(name = "file_name", nullable = false, length = 255)
 	private String fileName;
@@ -54,18 +53,6 @@ public class SiteFile {
 
 	@Column(name = "sha256sum", nullable = false)
 	private String sha256sum;
-
-	@Column(name = "creator", length = 255)
-	private long creator;
-
-	@Column(name = "created")
-	private Instant created;
-
-	@Column(name = "modifier", length = 255)
-	private Long modifier;
-
-	@Column(name = "modified")
-	private Instant modified;
 
 	public SiteFileResponse toResponse() {
 		return SiteFileResponse.builder()

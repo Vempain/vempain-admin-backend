@@ -1,7 +1,7 @@
 package fi.poltsi.vempain.admin.rest;
 
 import fi.poltsi.vempain.admin.api.Constants;
-import fi.poltsi.vempain.admin.api.request.UnitRequest;
+import fi.poltsi.vempain.auth.api.request.UnitRequest;
 import fi.poltsi.vempain.auth.api.response.UnitResponse;
 import fi.poltsi.vempain.auth.api.response.UserResponse;
 import io.swagger.v3.oas.annotations.Operation;

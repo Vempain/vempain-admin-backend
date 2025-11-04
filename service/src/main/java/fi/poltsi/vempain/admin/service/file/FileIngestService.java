@@ -9,6 +9,7 @@ import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.exception.VempainIngestException;
 import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
 import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
+import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.auth.entity.Acl;
 import fi.poltsi.vempain.auth.repository.AclRepository;
 import fi.poltsi.vempain.tools.LocalFileTools;
@@ -35,9 +36,10 @@ import static fi.poltsi.vempain.tools.LocalFileTools.createAndVerifyDirectory;
 @Service
 @RequiredArgsConstructor
 public class FileIngestService {
-	private final SiteFileRepository            siteFileRepository;
-	private final GalleryRepository             galleryRepository;
-	private final AclRepository                 aclRepository;
+	private final SiteFileRepository siteFileRepository;
+	private final GalleryRepository  galleryRepository;
+	private final AclRepository      aclRepository;
+	private       AccessService      accessService;
 
 	private final GalleryFileService galleryFileService;
 
@@ -143,6 +145,13 @@ public class FileIngestService {
 			final long size = multipartFile.getSize();
 			final Instant now = Instant.now();
 
+			// Fetch user account
+			var userId = accessService.getUserId();
+
+			if (userId == null || userId < 1) {
+				throw new VempainIngestException("Unauthorized S2S call: user ID mismatch", null, storedFile);
+			}
+
 			// Upsert SiteFile entity
 			var siteFile = siteFileRepository.findByFilePathAndFileName(cleanRelPath, cleanFileName)
 											 .orElseGet(SiteFile::new);
@@ -155,17 +164,20 @@ public class FileIngestService {
 			siteFile.setSha256sum(fileIngestRequest.getSha256sum());
 
 			if (siteFile.getId() == null) {
-				siteFile.setCreator(fileIngestRequest.getUserId());
+				var nextAclId = aclRepository.getNextAvailableAclId();
+				siteFile.setAclId(nextAclId);
+
+				siteFile.setCreator(userId);
 				siteFile.setCreated(now);
 			} else {
-				siteFile.setModifier(fileIngestRequest.getUserId());
+				siteFile.setModifier(userId);
 				siteFile.setModified(now);
 			}
 
 			siteFile = siteFileRepository.save(siteFile);
 
 			// Upsert Gallery per requirements
-			var gallery = upsertGallery(fileIngestRequest);
+			var gallery = upsertGallery(fileIngestRequest, userId);
 
 			// Add link between SiteFile and Gallery if gallery specified
 			if (gallery != null) {
@@ -197,9 +209,7 @@ public class FileIngestService {
 																										.contains("/")) {
 			throw new IllegalArgumentException("Invalid mimetype");
 		}
-		if (fileIngestRequest.getUserId() == null) {
-			throw new IllegalArgumentException("Missing user ID");
-		}
+
 		// Calculate SHA-256 checksum of the file
 		if (fileIngestRequest.getSha256sum() == null || fileIngestRequest.getSha256sum()
 																		 .isBlank()) {
@@ -253,7 +263,7 @@ public class FileIngestService {
 	}
 
 	@Transactional
-	protected Gallery upsertGallery(FileIngestRequest fileIngestRequest) {
+	protected Gallery upsertGallery(FileIngestRequest fileIngestRequest, long userId) {
 		// If gallery ID exists, update fields if changed; otherwise create if name/description is provided
 		Optional<Gallery> opt = Optional.empty();
 
@@ -298,7 +308,7 @@ public class FileIngestService {
 			var aclId = aclRepository.getNextAvailableAclId();
 			var acl = Acl.builder()
 						 .aclId(aclId)
-						 .userId(fileIngestRequest.getUserId())
+						 .userId(userId)
 						 .readPrivilege(true)
 						 .createPrivilege(true)
 						 .deletePrivilege(true)
@@ -311,7 +321,7 @@ public class FileIngestService {
 								 .description(fileIngestRequest.getGalleryDescription())
 								 .siteFiles(new java.util.ArrayList<>())
 								 .aclId(aclId)
-								 .creator(fileIngestRequest.getUserId())
+								 .creator(userId)
 								 .locked(false)
 								 .created(Instant.now())
 								 .build();

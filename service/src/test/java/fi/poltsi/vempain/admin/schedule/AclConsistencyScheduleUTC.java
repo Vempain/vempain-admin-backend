@@ -8,13 +8,13 @@ import fi.poltsi.vempain.admin.service.ComponentService;
 import fi.poltsi.vempain.admin.service.FormService;
 import fi.poltsi.vempain.admin.service.LayoutService;
 import fi.poltsi.vempain.admin.service.PageService;
-import fi.poltsi.vempain.admin.service.UnitService;
 import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
 import fi.poltsi.vempain.auth.entity.Acl;
 import fi.poltsi.vempain.auth.entity.Unit;
 import fi.poltsi.vempain.auth.entity.UserAccount;
 import fi.poltsi.vempain.auth.service.AclService;
+import fi.poltsi.vempain.auth.service.UnitService;
 import fi.poltsi.vempain.auth.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,7 +39,7 @@ class AclConsistencyScheduleUTC {
     @Mock
     private LayoutService    layoutService;
     @Mock
-    private PageService pageService;
+	private PageService pageService;
     @Mock
     private UnitService      unitService;
     @Mock
