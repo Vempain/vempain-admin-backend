@@ -48,6 +48,7 @@ CREATE TABLE subject
 CREATE TABLE site_file
 (
 	id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	acl_id   BIGINT    NOT NULL UNIQUE,
 	file_name  VARCHAR(255)  NOT NULL,
 	file_path  VARCHAR(2048) NOT NULL,
 	mime_type  VARCHAR(255)  NOT NULL,
@@ -56,10 +57,11 @@ CREATE TABLE site_file
 	sha256sum  VARCHAR(255)  NOT NULL,
 	comment    TEXT,
 	metadata   TEXT,
-	creator    BIGINT        NOT NULL,
-	created    TIMESTAMP,
-	modifier   BIGINT,
-	modified   TIMESTAMP,
+	locked   BOOLEAN   NOT NULL DEFAULT false,
+	creator  BIGINT    NOT NULL,
+	created  TIMESTAMP NOT NULL,
+	modifier BIGINT,
+	modified TIMESTAMP,
 	FOREIGN KEY (creator) REFERENCES user_account (id),
 	FOREIGN KEY (modifier) REFERENCES user_account (id)
 );

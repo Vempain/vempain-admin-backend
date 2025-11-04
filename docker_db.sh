@@ -2,9 +2,10 @@
 
 setup_database_container() {
     local db_name="$1"
-    local db_user="$2"
-    local db_password="$3"
-    local port="$4"
+    local schema_name="$2"
+    local db_user="$3"
+    local db_password="$4"
+    local port="$5"
 
     local container_name="dev_${db_name}"
     local volume_name="${container_name}_volume"
@@ -16,7 +17,7 @@ setup_database_container() {
         -e "POSTGRES_HOST_AUTH_METHOD=trust" \
         --name "${container_name}" postgres:17
 
-    echo "Waiting for postgresql to start..."
+    echo "Waiting for postgres to start..."
     until docker exec "${container_name}" psql --host=localhost --port=5432 --username postgres -c '\l' > /dev/null 2>&1; do
         sleep 0.5
     done
@@ -33,8 +34,15 @@ setup_database_container() {
     echo "Set user ${db_user} as owner on database ${db_name}..."
     docker exec -it "${container_name}" psql -U postgres -c "ALTER DATABASE ${db_name} OWNER TO ${db_user};"
 
-    echo "Database setup for ${db_name} completed."
+    echo "Creating schema ${schema_name}..."
+    docker exec -it "${container_name}" psql -U postgres -d "${db_name}" -c "CREATE SCHEMA ${schema_name} AUTHORIZATION ${db_user};"
+
+    echo "Setting search path to schema ${schema_name} for user ${db_user}..."
+    docker exec -it "${container_name}" psql -U postgres -d "${db_name}" -c "ALTER ROLE ${db_user} SET search_path TO ${schema_name};"
+
+    echo "Database setup for ${db_name} with schema ${schema_name} completed."
 }
+
 
 # Setup first database for vempain_admin
 setup_database_container "vempain_admin" "vempain_admin" "vempain_admin_password" 5432

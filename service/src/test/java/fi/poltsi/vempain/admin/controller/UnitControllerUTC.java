@@ -1,9 +1,9 @@
 package fi.poltsi.vempain.admin.controller;
 
-import fi.poltsi.vempain.admin.service.UnitService;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
 import fi.poltsi.vempain.auth.api.response.UnitResponse;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
+import fi.poltsi.vempain.auth.service.UnitService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class UnitControllerUTC {
     @Mock
-    UnitService unitService;
+	UnitService unitService;
 
 	@InjectMocks
     private UnitController unitController;

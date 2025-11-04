@@ -19,61 +19,10 @@ class FileIngestRequestUTC {
 			.comment("Some comment")
 			.metadata("{\"some-field\":\"some value\"}")
 			.sha256sum("abc123")
-			.userId(42L)
 			.galleryId(1001L)
 			.galleryName("Summer 2025")
 			.galleryDescription("A sunny album from August 2025")
 			.build();
-	}
-
-	@Test
-	void getFileName() {
-		assertEquals("img_001.jpg", sample().getFileName());
-	}
-
-	@Test
-	void getFilePath() {
-		assertEquals("gallery/2025/08", sample().getFilePath());
-	}
-
-	@Test
-	void getMimeType() {
-		assertEquals("image/jpeg", sample().getMimeType());
-	}
-
-	@Test
-	void getComment() {
-		assertEquals("Some comment", sample().getComment());
-	}
-
-	@Test
-	void getMetadata() {
-		assertEquals("{\"some-field\":\"some value\"}", sample().getMetadata());
-	}
-
-	@Test
-	void getSha256sum() {
-		assertEquals("abc123", sample().getSha256sum());
-	}
-
-	@Test
-	void getUserId() {
-		assertEquals(42L, sample().getUserId());
-	}
-
-	@Test
-	void getGalleryId() {
-		assertEquals(1001L, sample().getGalleryId());
-	}
-
-	@Test
-	void getGalleryName() {
-		assertEquals("Summer 2025", sample().getGalleryName());
-	}
-
-	@Test
-	void getGalleryDescription() {
-		assertEquals("A sunny album from August 2025", sample().getGalleryDescription());
 	}
 
 	@Test
@@ -116,13 +65,6 @@ class FileIngestRequestUTC {
 		FileIngestRequest r = sample();
 		r.setSha256sum("def456");
 		assertEquals("def456", r.getSha256sum());
-	}
-
-	@Test
-	void setUserId() {
-		FileIngestRequest r = sample();
-		r.setUserId(99L);
-		assertEquals(99L, r.getUserId());
 	}
 
 	@Test
@@ -190,7 +132,6 @@ class FileIngestRequestUTC {
 			.comment("c")
 			.metadata("{}")
 			.sha256sum("sum")
-			.userId(1L)
 			.galleryId(2L)
 			.galleryName("G")
 			.galleryDescription("Desc")
@@ -202,7 +143,6 @@ class FileIngestRequestUTC {
 			() -> assertEquals("c", r.getComment()),
 			() -> assertEquals("{}", r.getMetadata()),
 			() -> assertEquals("sum", r.getSha256sum()),
-			() -> assertEquals(1L, r.getUserId()),
 			() -> assertEquals(2L, r.getGalleryId()),
 			() -> assertEquals("G", r.getGalleryName()),
 			() -> assertEquals("Desc", r.getGalleryDescription())
@@ -219,7 +159,6 @@ class FileIngestRequestUTC {
 		  "comment": "Some comment",
 		  "metadata": "{\\"some_field\\":\\"some value\\"}",
 		  "sha256sum": "3f786850e387550fdab836ed7e6dc881de23001b",
-		  "user_id": 1,
 		  "gallery_id": 1,
 		  "gallery_name": "Summer 2025",
 		  "gallery_description": "A sunny album from August 2025"
@@ -234,7 +173,6 @@ class FileIngestRequestUTC {
 			() -> assertEquals("Some comment", r.getComment()),
 			() -> assertEquals("{\"some_field\":\"some value\"}", r.getMetadata()),
 			() -> assertEquals("3f786850e387550fdab836ed7e6dc881de23001b", r.getSha256sum()),
-			() -> assertEquals(1L, r.getUserId()),
 			() -> assertEquals(1L, r.getGalleryId()),
 			() -> assertEquals("Summer 2025", r.getGalleryName()),
 			() -> assertEquals("A sunny album from August 2025", r.getGalleryDescription())

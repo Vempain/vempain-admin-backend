@@ -12,14 +12,14 @@ import fi.poltsi.vempain.admin.entity.Form;
 import fi.poltsi.vempain.admin.entity.FormComponent;
 import fi.poltsi.vempain.admin.entity.Layout;
 import fi.poltsi.vempain.admin.entity.Page;
-import fi.poltsi.vempain.admin.entity.UserUnit;
-import fi.poltsi.vempain.admin.entity.UserUnitId;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.auth.api.request.AclRequest;
 import fi.poltsi.vempain.auth.api.response.AclResponse;
 import fi.poltsi.vempain.auth.entity.Acl;
 import fi.poltsi.vempain.auth.entity.Unit;
 import fi.poltsi.vempain.auth.entity.UserAccount;
+import fi.poltsi.vempain.auth.entity.UserUnit;
+import fi.poltsi.vempain.auth.entity.UserUnitId;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 

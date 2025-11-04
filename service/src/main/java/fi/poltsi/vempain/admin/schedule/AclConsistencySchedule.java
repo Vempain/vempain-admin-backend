@@ -11,7 +11,6 @@ import fi.poltsi.vempain.admin.service.ComponentService;
 import fi.poltsi.vempain.admin.service.FormService;
 import fi.poltsi.vempain.admin.service.LayoutService;
 import fi.poltsi.vempain.admin.service.PageService;
-import fi.poltsi.vempain.admin.service.UnitService;
 import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.auth.entity.AbstractVempainEntity;
 import fi.poltsi.vempain.auth.entity.Acl;
@@ -21,6 +20,7 @@ import fi.poltsi.vempain.auth.exception.VempainAbstractException;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.AclService;
+import fi.poltsi.vempain.auth.service.UnitService;
 import fi.poltsi.vempain.auth.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,13 +41,13 @@ public class AclConsistencySchedule {
 	private static final String INITIAL_DELAY = "#{ 30 * 1000 + T(java.util.concurrent.ThreadLocalRandom).current().nextInt(" + DELAY + ") }";
 	private static final long   OPERATOR_ID   = 1;
 
-	private final AclService       aclService;
+	private final AclService  aclService;
 	private final ComponentService componentService;
 	private final FormService      formService;
 	private final LayoutService    layoutService;
-	private final PageService      pageService;
-	private final UnitService      unitService;
-	private final UserService      userService;
+	private final PageService pageService;
+	private final UnitService unitService;
+	private final UserService userService;
 	private final FileService      fileService;
 
 	// internal state (not injected)

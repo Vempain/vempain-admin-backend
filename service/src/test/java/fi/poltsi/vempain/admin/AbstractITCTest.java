@@ -13,13 +13,13 @@ import fi.poltsi.vempain.admin.service.FormService;
 import fi.poltsi.vempain.admin.service.LayoutService;
 import fi.poltsi.vempain.admin.service.PageService;
 import fi.poltsi.vempain.admin.service.PublishService;
-import fi.poltsi.vempain.admin.service.UnitService;
 import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.admin.tools.TestITCTools;
 import fi.poltsi.vempain.auth.repository.AclRepository;
 import fi.poltsi.vempain.auth.repository.UnitRepository;
-import fi.poltsi.vempain.auth.repository.UserRepository;
+import fi.poltsi.vempain.auth.repository.UserAccountRepository;
 import fi.poltsi.vempain.auth.service.AclService;
+import fi.poltsi.vempain.auth.service.UnitService;
 import fi.poltsi.vempain.auth.service.UserService;
 import fi.poltsi.vempain.site.repository.SitePageRepository;
 import fi.poltsi.vempain.tools.JschClient;
@@ -66,47 +66,36 @@ public abstract class AbstractITCTest {
 			.withDatabaseName("vempain_site")
 			.withUsername("test")
 			.withPassword("test");
-
 	@Autowired
-	@Qualifier("adminFlyway")
-	private Flyway adminFlyway;
-
-	@Autowired
-	@Qualifier("siteFlyway")
-	private Flyway siteFlyway;
-
-	@Autowired
-	protected TestITCTools                 testITCTools;
-	@Autowired
-	private   EntityManager                entityManager;
+	protected TestITCTools          testITCTools;
 	// Services
 	@Autowired
-	protected AclService                   aclService;
+	protected AclService            aclService;
 	@Autowired
-	protected FormService                  formService;
+	protected FormService           formService;
 	@Autowired
-	protected ComponentService             componentService;
+	protected ComponentService      componentService;
 	@Autowired
-	protected LayoutService                layoutService;
+	protected LayoutService         layoutService;
 	@Autowired
-	protected FileService                  fileService;
+	protected FileService           fileService;
 	@Autowired
-	protected PageService                  pageService;
+	protected PageService           pageService;
 	@Autowired
-	protected FormComponentService         formComponentService;
+	protected FormComponentService  formComponentService;
 	@Autowired
-	protected UnitService                  unitService;
+	protected UnitService           unitService;
 	@Autowired
-	protected UserService                  userService;
+	protected UserService           userService;
 	@Autowired
-	protected PublishService               publishService;
+	protected PublishService        publishService;
 	// Repositories
 	@Autowired
-	protected AclRepository                aclRepository;
+	protected AclRepository         aclRepository;
 	@Autowired
-	protected FormRepository               formRepository;
+	protected FormRepository        formRepository;
 	@Autowired
-	protected ComponentRepository          componentRepository;
+	protected ComponentRepository   componentRepository;
 	@Autowired
 	protected LayoutRepository            layoutRepository;
 	@Autowired
@@ -114,22 +103,35 @@ public abstract class AbstractITCTest {
 	@Autowired
 	protected FileThumbPageableRepository fileThumbPageableRepository;
 	@Autowired
-	protected PageRepository               pageRepository;
+	protected PageRepository        pageRepository;
 	@Autowired
-	protected UnitRepository               unitRepository;
+	protected UnitRepository        unitRepository;
 	@Autowired
-	protected UserRepository               userRepository;
+	protected UserAccountRepository userAccountRepository;
 	@Autowired
-	protected GalleryRepository            galleryRepository;
+	protected GalleryRepository     galleryRepository;
 	@Autowired
-	protected SitePageRepository           sitePageRepository;
+	protected SitePageRepository    sitePageRepository;
 	@Autowired
-	protected JschClient                   jschClient;
-
+	protected JschClient            jschClient;
+	@Autowired
+	@Qualifier("adminFlyway")
+	private   Flyway                adminFlyway;
+	@Autowired
+	@Qualifier("siteFlyway")
+	private   Flyway                siteFlyway;
+	@Autowired
+	private   EntityManager         entityManager;
 	@Value("${vempain.site.www-root}")
 	private String siteWwwRoot;
 	@Value("${vempain.site.ssh.home-dir}")
 	private String siteSshHomeDir;
+
+	private static <T> boolean hasItems(Iterable<T> iterable) {
+		return StreamSupport.stream(iterable.spliterator(), false)
+							.findAny()
+							.isPresent();
+	}
 
 	@Transactional
 	@BeforeEach
@@ -150,11 +152,5 @@ public abstract class AbstractITCTest {
 		removeDirectory("/var/tmp/vempain-www");
 		createAndVerifyDirectory(Path.of("/var/tmp/vempain-www"));
 		log.info("=============================================================");
-	}
-
-	private static <T> boolean hasItems(Iterable<T> iterable) {
-		return StreamSupport.stream(iterable.spliterator(), false)
-							.findAny()
-							.isPresent();
 	}
 }
