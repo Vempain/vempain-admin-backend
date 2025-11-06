@@ -89,6 +89,7 @@ public class FileService {
 		return gallery;
 	}
 
+	@Transactional
 	public Gallery createGallery(String shortName, String description, long userId, List<SiteFile> SiteFileList) {
 		long aclId;
 
@@ -120,10 +121,12 @@ public class FileService {
 		return gallery;
 	}
 
+	@Transactional
 	public Gallery createEmptyGallery(String shortName, String description, Long userId) {
 		return createGallery(shortName, description, userId, new ArrayList<>());
 	}
 
+	@Transactional
 	public void saveGallery(Gallery gallery) {
 		galleryRepository.save(gallery);
 	}
@@ -137,8 +140,10 @@ public class FileService {
 		return siteFileRepository.findById(siteFileId);
 	}
 
-	public SiteFile saveSiteFile(SiteFile fileCommon) {
-		return siteFileRepository.save(fileCommon);
+	@Transactional
+	public SiteFile saveSiteFile(SiteFile siteFile) {
+		// Ensure the insert is flushed so downstream native queries see the row
+		return siteFileRepository.saveAndFlush(siteFile);
 	}
 
 	public Set<Long> findAllSiteFileIdWithSubject() {

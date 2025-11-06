@@ -19,29 +19,36 @@ public class SubjectService {
 	private final SubjectRepository subjectRepository;
 	private final EntityManager     entityManager;
 
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Transactional(propagation = Propagation.REQUIRED)
 	public void saveTagsAsSubjects(List<TagRequest> tagRequests, long siteFileId) {
 		removeAllSubjectsFromFile(siteFileId);
 
 		for (TagRequest tagRequest : tagRequests) {
-			var subject = Subject.builder()
-								 .subjectName(tagRequest.getTagName())
-								 .subjectNameDe(tagRequest.getTagNameDe())
-								 .subjectNameEn(tagRequest.getTagNameEn())
-								 .subjectNameFi(tagRequest.getTagNameFi())
-								 .subjectNameSe(tagRequest.getTagNameSv())
-								 .subjectNameEs(tagRequest.getTagNameEs())
-								 .build();
-			subject = subjectRepository.save(subject);
+			// Check if the subject already exists in the subject table
+			var existingSubject = subjectRepository.findSubjectBySubjectName(tagRequest.getTagName());
+			var subject = existingSubject.orElse(null);
+
+			if (existingSubject.isEmpty()) {
+				var newSubject = Subject.builder()
+										.subjectName(tagRequest.getTagName())
+										.subjectNameDe(tagRequest.getTagNameDe())
+										.subjectNameEn(tagRequest.getTagNameEn())
+										.subjectNameFi(tagRequest.getTagNameFi())
+										.subjectNameSe(tagRequest.getTagNameSv())
+										.subjectNameEs(tagRequest.getTagNameEs())
+										.build();
+				subject = subjectRepository.save(newSubject);
+			}
+
 			addSubjectToFile(siteFileId, subject.getId());
 		}
 	}
 
 	@Transactional(propagation = Propagation.REQUIRED)
-	public void addSubjectToFile(Long subjectId, Long siteFileId) {
-		entityManager.createNativeQuery("INSERT INTO file_subject (subject_id, site_file_id) VALUES (:subjectId, :siteFileId)")
-					 .setParameter("subjectId", subjectId)
+	public void addSubjectToFile(Long siteFileId, Long subjectId) {
+		entityManager.createNativeQuery("INSERT INTO file_subject (site_file_id, subject_id) VALUES (:siteFileId, :subjectId)")
 					 .setParameter("siteFileId", siteFileId)
+					 .setParameter("subjectId", subjectId)
 					 .executeUpdate();
 	}
 
