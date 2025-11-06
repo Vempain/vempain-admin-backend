@@ -49,20 +49,20 @@ CREATE TABLE subject
 CREATE TABLE site_file
 (
 	id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	acl_id   BIGINT    NOT NULL UNIQUE,
+	acl_id     BIGINT       NOT NULL UNIQUE,
 	file_name  VARCHAR(255)  NOT NULL,
 	file_path  VARCHAR(2048) NOT NULL,
 	mime_type  VARCHAR(255)  NOT NULL,
 	size       BIGINT        NOT NULL,
-	file_class BIGINT        NOT NULL,
+	file_class VARCHAR(255) NOT NULL,
 	sha256sum  VARCHAR(255)  NOT NULL,
 	comment    TEXT,
 	metadata   TEXT,
-	locked   BOOLEAN   NOT NULL DEFAULT false,
-	creator  BIGINT    NOT NULL,
-	created  TIMESTAMP NOT NULL,
-	modifier BIGINT,
-	modified TIMESTAMP,
+	locked     BOOLEAN      NOT NULL DEFAULT false,
+	creator    BIGINT       NOT NULL,
+	created    TIMESTAMP    NOT NULL,
+	modifier   BIGINT,
+	modified   TIMESTAMP,
 	FOREIGN KEY (creator) REFERENCES user_account (id),
 	FOREIGN KEY (modifier) REFERENCES user_account (id)
 );
@@ -79,7 +79,8 @@ CREATE TABLE file_subject
 CREATE TABLE file_thumb
 (
 	id            BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	parent_id     BIGINT NOT NULL UNIQUE,
+	parent_id    BIGINT       NOT NULL UNIQUE,
+	parent_class VARCHAR(255) NOT NULL,
 	filename      VARCHAR(255),
 	filepath      VARCHAR(255),
 	site_filename VARCHAR(255),
