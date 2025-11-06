@@ -21,6 +21,10 @@ public class SubjectService {
 
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void saveTagsAsSubjects(List<TagRequest> tagRequests, long siteFileId) {
+		// Ensure all pending inserts (including SiteFile saved by caller) are flushed
+		// so the FK from file_subject(site_file_id) can reference an existing row.
+		entityManager.flush();
+
 		removeAllSubjectsFromFile(siteFileId);
 
 		for (TagRequest tagRequest : tagRequests) {
@@ -38,15 +42,54 @@ public class SubjectService {
 										.subjectNameEs(tagRequest.getTagNameEs())
 										.build();
 				subject = subjectRepository.save(newSubject);
+			} else {
+				// Update existing subject names in other languages if they are missing or have changed
+				boolean updated = false;
+
+				if (tagRequest.getTagNameDe() != null
+					&& !tagRequest.getTagNameDe()
+								  .equals(subject.getSubjectNameDe())) {
+					subject.setSubjectNameDe(tagRequest.getTagNameDe());
+					updated = true;
+				}
+				if (tagRequest.getTagNameEn() != null
+					&& !tagRequest.getTagNameEn()
+								  .equals(subject.getSubjectNameEn())) {
+					subject.setSubjectNameEn(tagRequest.getTagNameEn());
+					updated = true;
+				}
+				if (tagRequest.getTagNameFi() != null
+					&& !tagRequest.getTagNameFi()
+								  .equals(subject.getSubjectNameFi())) {
+					subject.setSubjectNameFi(tagRequest.getTagNameFi());
+					updated = true;
+				}
+				if (tagRequest.getTagNameSv() != null
+					&& !tagRequest.getTagNameSv()
+								  .equals(subject.getSubjectNameSe())) {
+					subject.setSubjectNameSe(tagRequest.getTagNameSv());
+					updated = true;
+				}
+				if (tagRequest.getTagNameEs() != null
+					&& !tagRequest.getTagNameEs()
+								  .equals(subject.getSubjectNameEs())) {
+					subject.setSubjectNameEs(tagRequest.getTagNameEs());
+					updated = true;
+				}
+				if (updated) {
+					subject = subjectRepository.save(subject);
+				}
 			}
 
+			// Link subject to file (FK order: site_file_id, subject_id)
 			addSubjectToFile(siteFileId, subject.getId());
 		}
 	}
 
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void addSubjectToFile(Long siteFileId, Long subjectId) {
-		entityManager.createNativeQuery("INSERT INTO file_subject (site_file_id, subject_id) VALUES (:siteFileId, :subjectId)")
+		entityManager.createNativeQuery(
+							 "INSERT INTO file_subject (site_file_id, subject_id) VALUES (:siteFileId, :subjectId)")
 					 .setParameter("siteFileId", siteFileId)
 					 .setParameter("subjectId", subjectId)
 					 .executeUpdate();
