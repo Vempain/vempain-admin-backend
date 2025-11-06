@@ -43,11 +43,10 @@ setup_database_container() {
     echo "Database setup for ${db_name} with schema ${schema_name} completed."
 }
 
-
 # Setup first database for vempain_admin
-setup_database_container "vempain_admin" "vempain_admin" "vempain_admin_password" 5432
+setup_database_container "vempain_admin_db" "vempain_admin" "vempain_admin" "vempain_admin_password" 5433
 
 # Setup second database for vempain_site listening on port 5433
-setup_database_container "vempain_site" "vempain_site" "vempain_site_password" 5433
+setup_database_container "vempain_site_db" "vempain_site" "vempain_site" "vempain_site_password" 5434
 
 echo "All databases setup completed."
