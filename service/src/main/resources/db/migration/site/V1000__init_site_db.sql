@@ -22,23 +22,23 @@ CREATE TABLE file
 (
 	id       BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 	file_id  BIGINT       NOT NULL,
-	comment  TEXT DEFAULT NULL,
+	comment  TEXT   DEFAULT NULL,
 	path     VARCHAR(512) NOT NULL,
 	mimetype VARCHAR(255) NOT NULL,
-	width    BIGINT  DEFAULT NULL,
-	height   BIGINT  DEFAULT NULL,
-	length   BIGINT  DEFAULT NULL,
-	pages    BIGINT  DEFAULT NULL,
-	metadata TEXT DEFAULT NULL
+	width    BIGINT DEFAULT NULL,
+	height   BIGINT DEFAULT NULL,
+	length   BIGINT DEFAULT NULL,
+	pages    BIGINT DEFAULT NULL,
+	metadata TEXT   DEFAULT NULL
 );
 
 CREATE TABLE subject
 (
 	id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	subject_id BIGINT NOT NULL,
 	subject    VARCHAR(255) DEFAULT NULL,
 	subject_de VARCHAR(255) DEFAULT NULL,
 	subject_en VARCHAR(255) DEFAULT NULL,
+	subject_es VARCHAR(255) DEFAULT NULL,
 	subject_fi VARCHAR(255) DEFAULT NULL,
 	subject_se VARCHAR(255) DEFAULT NULL
 );
@@ -47,7 +47,8 @@ CREATE TABLE file_subject
 (
 	file_id    BIGINT NOT NULL,
 	subject_id BIGINT NOT NULL,
-	CONSTRAINT fk_file_subject_file_id FOREIGN KEY (file_id) REFERENCES file (id) ON DELETE CASCADE
+	CONSTRAINT fk_file_subject_file_id FOREIGN KEY (file_id) REFERENCES file (id) ON DELETE CASCADE,
+	CONSTRAINT fk_file_subject_subject_id FOREIGN KEY (subject_id) REFERENCES subject (id) ON DELETE CASCADE
 );
 
 CREATE TABLE page_subject

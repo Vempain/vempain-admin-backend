@@ -30,6 +30,13 @@ repositories {
 			password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
 		}
 	}
+	maven {
+		url = "https://maven.pkg.github.com/Vempain/vempain-file-backend-api"
+		credentials {
+			username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+			password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+		}
+	}
 	maven { url = 'https://repo.spring.io/milestone' }
 	maven { url = "https://mvn.0110.be/releases" }
 }
@@ -40,6 +47,7 @@ dependencies {
 	// This needs to be built first in vempain-auth
 	implementation "fi.poltsi.vempain:vempain-auth-core:${vempainAuthVersion}"
 	implementation "fi.poltsi.vempain:vempain-auth-api:${vempainAuthVersion}"
+	implementation "fi.poltsi.vempain:vempain-file-backend-api:${vempainFileVersion}"
 	implementation "org.springframework.boot:spring-boot:${springBootVersion}"
 	implementation "org.springframework.boot:spring-boot-starter-security:${springBootVersion}"
 	implementation "org.springframework.boot:spring-boot-starter-actuator:${springBootVersion}"
@@ -49,8 +57,6 @@ dependencies {
 	implementation "io.jsonwebtoken:jjwt-api:${jjwtVersion}"
 	implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}"
 	implementation "org.flywaydb:flyway-core:${flywayVersion}"
-	implementation "io.micrometer:micrometer-registry-prometheus:${micrometerVersion}"
-	implementation "io.micrometer:micrometer-registry-elastic:${micrometerVersion}"
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-text
 	implementation "org.apache.commons:commons-text:1.14.0"
 	// https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui

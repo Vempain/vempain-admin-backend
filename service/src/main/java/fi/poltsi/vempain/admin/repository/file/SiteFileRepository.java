@@ -22,7 +22,7 @@ public interface SiteFileRepository extends ListPagingAndSortingRepository<SiteF
 
 	List<SiteFile> findByIdIn(ArrayList<Long> siteFileIdList);
 
-	@Query(nativeQuery = true, value = "SELECT DISTINCT s.id FROM site_file s JOIN subject_file sf ON s.id = sf.site_file_id")
+	@Query(nativeQuery = true, value = "SELECT DISTINCT s.id FROM site_file s JOIN file_subject sf ON s.id = sf.site_file_id")
 	List<Long> findAllSiteFileIdWithSubject();
 
 	// Class-only listing for default view
@@ -45,14 +45,14 @@ public interface SiteFileRepository extends ListPagingAndSortingRepository<SiteF
 	@Query(
 		value = """
 			SELECT s.* FROM site_file s
-			JOIN subject_file sf ON s.id = sf.site_file_id
+				JOIN file_subject sf ON s.id = sf.site_file_id
 			JOIN subject su ON su.id = sf.subject_id
 			WHERE LOWER(su.name) LIKE LOWER(CONCAT('%', :subjectName, '%'))
 			  AND s.file_class = :fileClassOrdinal
 			""",
 		countQuery = """
 			SELECT COUNT(*) FROM site_file s
-			JOIN subject_file sf ON s.id = sf.site_file_id
+				JOIN file_subject sf ON s.id = sf.site_file_id
 			JOIN subject su ON su.id = sf.subject_id
 			WHERE LOWER(su.name) LIKE LOWER(CONCAT('%', :subjectName, '%'))
 			  AND s.file_class = :fileClassOrdinal

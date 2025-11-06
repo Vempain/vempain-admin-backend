@@ -77,10 +77,11 @@ public class JschClient {
 		}
 
 		for (var siteFile : siteFiles) {
-			var absolutePathConvertedFile = siteFileDirectory + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName();
+			var absolutePathConvertedFile =
+					siteFileDirectory + File.separator + siteFile.getFileClass().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName();
 			log.debug("Transferring file {} to {}", absolutePathConvertedFile, siteWwwRoot);
 
-			var targetSubDir = siteFile.getFilePath();
+			var targetSubDir = siteFile.getFileClass().shortName + File.separator + siteFile.getFilePath();
 			var targetDir    = siteWwwRoot + File.separator + targetSubDir;
 
 			// We remove the leading / from the subdir so that it can be later split correctly

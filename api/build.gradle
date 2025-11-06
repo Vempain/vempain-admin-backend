@@ -41,7 +41,8 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.springframework.data/spring-data-jpa
 	api "org.springframework.data:spring-data-jpa:3.5.5"
 	// This needs to be built first in vempain-auth
-	implementation "fi.poltsi.vempain:vempain-auth-api:${vempainAuthVersion}"
+	api "fi.poltsi.vempain:vempain-auth-api:${vempainAuthVersion}"
+	api "fi.poltsi.vempain:vempain-file-backend-api:${vempainFileVersion}"
     // https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-annotations
 	implementation "io.swagger.core.v3:swagger-annotations:2.2.39"
     // https://mvnrepository.com/artifact/jakarta.validation/jakarta.validation-api
@@ -71,8 +72,8 @@ publishing {
                 url = "https://github.com/Vempain/vempain-admin-backend"
                 licenses {
                     license {
-                        name = "MIT License"
-                        url = "https://opensource.org/licenses/MIT"
+						name = "GPL-2.0 License"
+						url = "https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html"
                     }
                 }
                 scm {

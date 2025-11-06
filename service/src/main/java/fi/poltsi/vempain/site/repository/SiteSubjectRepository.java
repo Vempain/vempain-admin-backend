@@ -16,5 +16,5 @@ public interface SiteSubjectRepository extends ListPagingAndSortingRepository<Si
 	@Query(value = "INSERT INTO file_subject (file_id, subject_id) VALUES (:fileId, :subjectId)", nativeQuery = true)
 	void saveSiteFileSubject(@Param("fileId") long fileId, @Param("subjectId") long subjectId);
 
-	SiteSubject findBySubject(String subjectName);
+	SiteSubject findBySubjectName(String subjectName);
 }
