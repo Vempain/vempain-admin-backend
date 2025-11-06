@@ -24,23 +24,25 @@ import java.io.Serializable;
 @Table(name = "subject")
 public class Subject implements Serializable {
 	@Id
-	@GeneratedValue(strategy= GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
 	private long   id;
 	@Basic
 	@Column(name = "subject")
 	private String subjectName;
 	@Basic
+	@Column(name = "subject_de")
+	private String subjectNameDe;
+	@Basic
 	@Column(name = "subject_en")
 	private String subjectNameEn;
+	@Basic
+	@Column(name = "subject_es")
+	private String subjectNameEs;
 	@Basic
 	@Column(name = "subject_fi")
 	private String subjectNameFi;
 	@Basic
 	@Column(name = "subject_se")
 	private String subjectNameSe;
-	@Basic
-	@Column(name = "subject_de")
-	private String subjectNameDe;
-
 }

@@ -28,24 +28,24 @@ public class SiteSubjectService {
 	}
 
 	public SiteSubject saveFromAdminSubject(Subject subject) {
-		var siteSubject = siteSubjectRepository.findBySubject(subject.getSubjectName());
+		var siteSubject = siteSubjectRepository.findBySubjectName(subject.getSubjectName());
 
 		if (siteSubject != null) {
-			siteSubject.setSubjectId(subject.getId());
 			// We update the existing site subject translations
-			siteSubject.setSubjectDe(subject.getSubjectNameDe());
-			siteSubject.setSubjectEn(subject.getSubjectNameEn());
-			siteSubject.setSubjectFi(subject.getSubjectNameFi());
-			siteSubject.setSubjectSe(subject.getSubjectNameSe());
+			siteSubject.setSubjectNameDe(subject.getSubjectNameDe());
+			siteSubject.setSubjectNameEn(subject.getSubjectNameEn());
+			siteSubject.setSubjectNameEs(subject.getSubjectNameEs());
+			siteSubject.setSubjectNameFi(subject.getSubjectNameFi());
+			siteSubject.setSubjectNameSe(subject.getSubjectNameSe());
 			return siteSubjectRepository.save(siteSubject);
 		} else {
 			var newSiteSubject = SiteSubject.builder()
-											.subjectId(subject.getId())
-											.subject(subject.getSubjectName())
-											.subjectDe(subject.getSubjectNameDe())
-											.subjectEn(subject.getSubjectNameEn())
-											.subjectFi(subject.getSubjectNameFi())
-											.subjectSe(subject.getSubjectNameSe())
+											.subjectName(subject.getSubjectName())
+											.subjectNameDe(subject.getSubjectNameDe())
+											.subjectNameEn(subject.getSubjectNameEn())
+											.subjectNameEs(subject.getSubjectNameEs())
+											.subjectNameFi(subject.getSubjectNameFi())
+											.subjectNameSe(subject.getSubjectNameSe())
 											.build();
 			return siteSubjectRepository.save(newSiteSubject);
 		}

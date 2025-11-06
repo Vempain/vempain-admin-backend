@@ -3,6 +3,7 @@ package fi.poltsi.vempain.admin.api.request.file;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import fi.poltsi.vempain.file.api.request.TagRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -14,6 +15,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+
+import java.util.List;
 
 @Data
 @Builder
@@ -62,4 +65,7 @@ public class FileIngestRequest {
 	@Schema(description = "Gallery description (created/updated if provided)", example = "A sunny album from August 2025")
 	@Size(max = 2048)
 	private String galleryDescription;
+
+	@Schema(description = "List of tags linked to the file", example = "[list of tag requests]", requiredMode = Schema.RequiredMode.REQUIRED)
+	private List<TagRequest> tags;
 }

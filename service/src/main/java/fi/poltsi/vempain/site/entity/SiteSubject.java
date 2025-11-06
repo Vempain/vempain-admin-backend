@@ -1,5 +1,6 @@
 package fi.poltsi.vempain.site.entity;
 
+import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -19,19 +20,25 @@ import lombok.NoArgsConstructor;
 @Table(name = "subject")
 public class SiteSubject {
 	@Id
-	@GeneratedValue(strategy= GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
-	protected long    id;
-	@Column(name = "subject_id")
-	private long   subjectId;
-	@Column(name = "subject", nullable = false)
-	private   String subject;
-	@Column(name = "subject_de", nullable = false)
-	private   String subjectDe;
-	@Column(name = "subject_en", nullable = false)
-	private   String subjectEn;
-	@Column(name = "subject_fi", nullable = false)
-	private   String subjectFi;
-	@Column(name = "subject_se", nullable = false)
-	private   String subjectSe;
+	private long   id;
+	@Basic
+	@Column(name = "subject")
+	private String subjectName;
+	@Basic
+	@Column(name = "subject_de")
+	private String subjectNameDe;
+	@Basic
+	@Column(name = "subject_en")
+	private String subjectNameEn;
+	@Basic
+	@Column(name = "subject_es")
+	private String subjectNameEs;
+	@Basic
+	@Column(name = "subject_fi")
+	private String subjectNameFi;
+	@Basic
+	@Column(name = "subject_se")
+	private String subjectNameSe;
 }

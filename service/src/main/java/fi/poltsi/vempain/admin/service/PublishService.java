@@ -208,7 +208,7 @@ public class PublishService {
 			jschClient.close();
 		}
 
-		//// Update the site database
+		//** Update the site database
 		// Remove any existing gallery data if present, the gallery - file relation is removed by cascade
 		siteGalleryRepository.deleteByGalleryId(galleryId);
 
@@ -227,7 +227,7 @@ public class PublishService {
 			var webSiteFile = WebSiteFile.builder()
 										 .fileId(siteFile.getId())
 										 .comment(siteFile.getComment())
-										 .path(siteFile.getFilePath() + File.pathSeparator + siteFile.getFileName())
+										 .path(siteFile.getFilePath() + File.pathSeparator + siteFile.getFileClass().shortName + File.pathSeparator + siteFile.getFileName())
 										 .mimetype(siteFile.getMimeType())
 										 .metadata(siteFile.getMetadata())
 										 .build();

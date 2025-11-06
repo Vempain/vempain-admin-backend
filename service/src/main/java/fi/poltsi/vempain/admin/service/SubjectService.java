@@ -2,6 +2,7 @@ package fi.poltsi.vempain.admin.service;
 
 import fi.poltsi.vempain.admin.entity.Subject;
 import fi.poltsi.vempain.admin.repository.file.SubjectRepository;
+import fi.poltsi.vempain.file.api.request.TagRequest;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,10 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -21,19 +19,22 @@ public class SubjectService {
 	private final SubjectRepository subjectRepository;
 	private final EntityManager     entityManager;
 
-	public Optional<Subject> getSubjectById(long subjectId) {
-		return subjectRepository.findById(subjectId);
-	}
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	public void saveTagsAsSubjects(List<TagRequest> tagRequests, long siteFileId) {
+		removeAllSubjectsFromFile(siteFileId);
 
-	public Map<Long, List<Subject>> getCommonFileSubjectListMap(long[] fileCommonIds) {
-		var commonFileIdSubjectMap = new HashMap<Long, List<Subject>>();
-
-		for (long fileCommonId : fileCommonIds) {
-			var subjects = subjectRepository.getSubjectsByFileId(fileCommonId);
-			commonFileIdSubjectMap.put(fileCommonId, subjects);
+		for (TagRequest tagRequest : tagRequests) {
+			var subject = Subject.builder()
+								 .subjectName(tagRequest.getTagName())
+								 .subjectNameDe(tagRequest.getTagNameDe())
+								 .subjectNameEn(tagRequest.getTagNameEn())
+								 .subjectNameFi(tagRequest.getTagNameFi())
+								 .subjectNameSe(tagRequest.getTagNameSv())
+								 .subjectNameEs(tagRequest.getTagNameEs())
+								 .build();
+			subject = subjectRepository.save(subject);
+			addSubjectToFile(siteFileId, subject.getId());
 		}
-
-		return commonFileIdSubjectMap;
 	}
 
 	@Transactional(propagation = Propagation.REQUIRED)

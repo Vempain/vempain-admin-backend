@@ -38,11 +38,13 @@ CREATE TABLE gallery
 CREATE TABLE subject
 (
 	id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	subject    VARCHAR(255) NOT NULL UNIQUE,
-	subject_de VARCHAR(255),
-	subject_en VARCHAR(255),
-	subject_fi VARCHAR(255),
-	subject_se VARCHAR(255)
+	subject_id BIGINT NOT NULL,
+	subject    VARCHAR(255) DEFAULT NULL,
+	subject_de VARCHAR(255) DEFAULT NULL,
+	subject_en VARCHAR(255) DEFAULT NULL,
+	subject_es VARCHAR(255) DEFAULT NULL,
+	subject_fi VARCHAR(255) DEFAULT NULL,
+	subject_se VARCHAR(255) DEFAULT NULL
 );
 
 CREATE TABLE site_file

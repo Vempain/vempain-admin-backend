@@ -10,8 +10,9 @@ import fi.poltsi.vempain.admin.exception.VempainIngestException;
 import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
 import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.service.AccessService;
+import fi.poltsi.vempain.admin.service.SubjectService;
 import fi.poltsi.vempain.auth.entity.Acl;
-import fi.poltsi.vempain.auth.repository.AclRepository;
+import fi.poltsi.vempain.auth.service.AclService;
 import fi.poltsi.vempain.tools.LocalFileTools;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -38,12 +39,13 @@ import static fi.poltsi.vempain.tools.LocalFileTools.createAndVerifyDirectory;
 public class FileIngestService {
 	private final SiteFileRepository siteFileRepository;
 	private final GalleryRepository  galleryRepository;
-	private final AclRepository      aclRepository;
-	private       AccessService      accessService;
+	private final AclService    aclService;
+	private final AccessService accessService;
 
 	private final GalleryFileService galleryFileService;
 
 	private final StorageDirectoryConfiguration storageDirectoryConfiguration;
+	private final SubjectService subjectService;
 
 	@Value("${vempain.admin.file.site-file-directory}")
 	private String siteFileDirectory;
@@ -164,8 +166,17 @@ public class FileIngestService {
 			siteFile.setSha256sum(fileIngestRequest.getSha256sum());
 
 			if (siteFile.getId() == null) {
-				var nextAclId = aclRepository.getNextAvailableAclId();
-				siteFile.setAclId(nextAclId);
+				var nextAclId = aclService.getNextAclId();
+				var acl = Acl.builder()
+							 .aclId(nextAclId)
+							 .userId(userId)
+							 .readPrivilege(true)
+							 .createPrivilege(true)
+							 .deletePrivilege(true)
+							 .modifyPrivilege(true)
+							 .build();
+				var siteFileAcl = aclService.save(acl);
+				siteFile.setAclId(siteFileAcl.getAclId());
 
 				siteFile.setCreator(userId);
 				siteFile.setCreated(now);
@@ -174,7 +185,11 @@ public class FileIngestService {
 				siteFile.setModified(now);
 			}
 
+			log.debug("Storing new SiteFile: {}", siteFile);
 			siteFile = siteFileRepository.save(siteFile);
+
+			log.debug("Save the tags: {}", fileIngestRequest.getTags());
+			subjectService.saveTagsAsSubjects(fileIngestRequest.getTags(), siteFile.getId());
 
 			// Upsert Gallery per requirements
 			var gallery = upsertGallery(fileIngestRequest, userId);
@@ -305,7 +320,7 @@ public class FileIngestService {
 																					   .isBlank())) {
 			log.info("Creating new gallery for ingest request: {}", fileIngestRequest);
 			// Fetch new acl for the gallery
-			var aclId = aclRepository.getNextAvailableAclId();
+			var aclId = aclService.getNextAclId();
 			var acl = Acl.builder()
 						 .aclId(aclId)
 						 .userId(userId)
@@ -314,13 +329,18 @@ public class FileIngestService {
 						 .deletePrivilege(true)
 						 .modifyPrivilege(true)
 						 .build();
-			aclRepository.save(acl);
+			try {
+				acl = aclService.save(acl);
+			} catch (Exception e) {
+				log.error("Failed to create ACL for new gallery during ingest", e);
+				return null;
+			}
 
 			var gallery = Gallery.builder()
 								 .shortname(fileIngestRequest.getGalleryName())
 								 .description(fileIngestRequest.getGalleryDescription())
 								 .siteFiles(new java.util.ArrayList<>())
-								 .aclId(aclId)
+								 .aclId(acl.getAclId())
 								 .creator(userId)
 								 .locked(false)
 								 .created(Instant.now())
