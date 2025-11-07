@@ -46,6 +46,7 @@ public class FileIngestService {
 
 	private final StorageDirectoryConfiguration storageDirectoryConfiguration;
 	private final SubjectService subjectService;
+	private final FileService fileService;
 
 	@Value("${vempain.admin.file.site-file-directory}")
 	private String siteFileDirectory;
@@ -186,7 +187,7 @@ public class FileIngestService {
 			}
 
 			log.debug("Storing new SiteFile: {}", siteFile);
-			siteFile = siteFileRepository.save(siteFile);
+			siteFile = fileService.saveSiteFile(siteFile);
 
 			log.debug("Save the tags: {}", fileIngestRequest.getTags());
 			subjectService.saveTagsAsSubjects(fileIngestRequest.getTags(), siteFile.getId());

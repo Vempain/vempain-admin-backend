@@ -33,21 +33,21 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Service
 public class PublishService {
-	private final PageService                 pageService;
-	private final FormService                 formService;
-	private final ComponentService            componentService;
-	private final FileService        fileService;
-	private final SiteFileRepository siteFileRepository;
-	private final LayoutService      layoutService;
-	private final UserService                 userService;
-	private final SubjectService              subjectService;
+	private final SiteFileRepository    siteFileRepository;
 	private final SitePageRepository    sitePageRepository;
-	private final WebSiteFileRepository webSiteFileRepository;
 	private final SiteGalleryRepository siteGalleryRepository;
-	private final GalleryFileService          galleryFileService;
-	private final SiteSubjectService          siteSubjectService;
-	private final PageGalleryService          pageGalleryService;
-	private final JschClient                  jschClient;
+	private final WebSiteFileRepository webSiteFileRepository;
+	private final PageService           pageService;
+	private final FormService           formService;
+	private final ComponentService      componentService;
+	private final FileService           fileService;
+	private final LayoutService         layoutService;
+	private final UserService           userService;
+	private final SubjectService        subjectService;
+	private final GalleryFileService    galleryFileService;
+	private final SiteSubjectService    siteSubjectService;
+	private final PageGalleryService    pageGalleryService;
+	private final JschClient            jschClient;
 
 	@Value("${vempain.site.ssh.address}")
 	private String siteSshAddress;
@@ -60,7 +60,7 @@ public class PublishService {
 	@Value("${vempain.admin.ssh.private-key}")
 	private String adminSshPrivateKey;
 
-	//////////// Pages
+	/// ///////// Pages
 
 	@Transactional
 	public void publishAllPages() throws VempainEntityNotFoundException {
@@ -76,10 +76,10 @@ public class PublishService {
 
 	@Transactional(propagation = Propagation.REQUIRED)
 	public long publishPage(Long pageId) throws VempainEntityNotFoundException {
-		var page           = pageService.findById(pageId);
-		var form           = formService.findById(page.getFormId());
+		var page = pageService.findById(pageId);
+		var form = formService.findById(page.getFormId());
 		var formComponents = formService.findAllFormComponentsByFormId(page.getFormId());
-		var layout         = layoutService.findById(form.getLayoutId());
+		var layout = layoutService.findById(form.getLayoutId());
 
 		var pageBody = layout.getStructure();
 		pageBody = pageBody.replace("<!--page-->", page.getBody());
@@ -101,11 +101,13 @@ public class PublishService {
 		}
 
 		var optionalSitePage = sitePageRepository.findByPageId(pageId);
-		var creator          = userService.findUserResponseById(page.getCreator()).getNick();
-		var modifier         = "";
+		var creator = userService.findUserResponseById(page.getCreator())
+								 .getNick();
+		var modifier = "";
 
 		if (page.getModifier() != null) {
-			modifier = userService.findUserResponseById(page.getModifier()).getNick();
+			modifier = userService.findUserResponseById(page.getModifier())
+								  .getNick();
 		} else {
 			modifier = null;
 		}
@@ -196,13 +198,13 @@ public class PublishService {
 			log.debug("Using SSH home dir {}", adminSshHomeDir);
 			log.debug("Using SSH private key {}", adminSshPrivateKey);
 			jschClient.connect(siteSshAddress, siteSshPort, siteSshUser, adminSshHomeDir, adminSshPrivateKey);
-			log.debug("Transferring files to site-server");
+			log.debug("Transferring thumb files to site-server: {}", fileThumbList);
 			jschClient.transferFilesToSite(gallery.getSiteFiles(), fileThumbList);
 		} catch (JSchException e) {
 			log.error("Failed to create a SSH connection to site-server {}", siteSshAddress, e);
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to create a SSH connection to site-server: " + siteSshAddress);
 		} catch (SftpException e) {
-			log.error("Failed to transfer files to site-server", e);
+			log.error("Failed to transfer files to site-server: {}", e.getMessage());
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to transfer files to site");
 		} finally {
 			jschClient.close();
@@ -219,7 +221,8 @@ public class PublishService {
 
 		// File data
 		for (var galleryFile : galleryFileList) {
-			var siteFile = siteFileRepository.findById(galleryFile.getSiteFileId()).orElseThrow(VempainEntityNotFoundException::new);
+			var siteFile = siteFileRepository.findById(galleryFile.getSiteFileId())
+											 .orElseThrow(VempainEntityNotFoundException::new);
 			// Remove the web site file if it exists
 			log.debug("Deleting web site file by file ID: {}", siteFile.getId());
 			webSiteFileRepository.deleteByFileId(siteFile.getId());
@@ -227,7 +230,7 @@ public class PublishService {
 			var webSiteFile = WebSiteFile.builder()
 										 .fileId(siteFile.getId())
 										 .comment(siteFile.getComment())
-										 .path(siteFile.getFilePath() + File.pathSeparator + siteFile.getFileClass().shortName + File.pathSeparator + siteFile.getFileName())
+										 .path(siteFile.getFileClass().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName())
 										 .mimetype(siteFile.getMimeType())
 										 .metadata(siteFile.getMetadata())
 										 .build();

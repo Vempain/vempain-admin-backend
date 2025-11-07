@@ -30,10 +30,10 @@ import static fi.poltsi.vempain.tools.LocalFileTools.setExtension;
 @RequiredArgsConstructor
 @Service
 public class FileThumbService {
-	private static final String                       RESPONSE_STATUS_EXCEPTION_MESSAGE = "Unknown error";
-	private final FileThumbPageableRepository fileThumbPageableRepository;
-	private final SiteFileRepository          siteFileRepository;
-	private final ImageTools                  imageTools;
+	private static final String                      RESPONSE_STATUS_EXCEPTION_MESSAGE = "Unknown error";
+	private final        FileThumbPageableRepository fileThumbPageableRepository;
+	private final        SiteFileRepository          siteFileRepository;
+	private final        ImageTools                  imageTools;
 
 	@Value("${vempain.admin.file.site-file-directory}")
 	private String siteFileDirectory;
@@ -62,17 +62,16 @@ public class FileThumbService {
 				Path.of((siteFileDirectory != null ? siteFileDirectory : "") +
 						File.separator + siteFile.getFileClass().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName());
 
-		generateThumbFile(siteFile.getId(), sourcePath,
-						  Path.of(siteFile.getFileName())
-							  .getParent(),
-						  FileClassEnum.getFileClassByMimetype(siteFile.getMimeType()));
+		generateThumbFile(siteFile.getId(), sourcePath, Path.of(siteFile.getFilePath()), siteFile.getFileClass());
 	}
 
 	@Transactional(propagation = Propagation.REQUIRED)
 	protected void generateThumbFile(long commonId, Path sourceFile, Path destination, FileClassEnum fileClassEnum) {
 		// We add the thumb class to the beginning of the relative path
-		var relativeDestinationPath = Path.of(FileClassEnum.THUMB.shortName + File.separator + destination);
+		var relativeDestinationPath = Path.of(FileClassEnum.THUMB.shortName + File.separator + fileClassEnum.shortName + File.separator + destination);
 		var absoluteDestinationPath = Path.of(siteFileDirectory + File.separator + relativeDestinationPath);
+		log.debug("Relative thumb path: {}", relativeDestinationPath);
+		log.debug("Absolute thumb path: {}", absoluteDestinationPath);
 		// Set the correct file extension
 		var thumbFilename = setExtension(sourceFile.getFileName()
 												   .toString(), (imageFormat != null ? imageFormat : "jpeg"));
@@ -127,6 +126,7 @@ public class FileThumbService {
 								 .filename(thumbDestinationFilename)
 								 .filesize(filesize)
 								 .parentId(commonId)
+								 .parentClass(fileClassEnum)
 								 .height(dimensions.height)
 								 .width(dimensions.width)
 								 .sha1sum(sha1sum)

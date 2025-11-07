@@ -104,9 +104,8 @@ public class JschClient {
 		}
 
 		for (FileThumb fileThumb : thumbList) {
-			var absolutePathThumbFile =
-					siteFileDirectory + File.separator + fileThumb.getFilepath() + File.separator + fileThumb.getFilename();
-			var targetDir = siteWwwRoot + File.separator + fileThumb.getSiteFile()
+			var absolutePathThumbFile = siteFileDirectory + File.separator + fileThumb.getFilepath() + File.separator + fileThumb.getFilename();
+			var targetDir = siteWwwRoot + File.separator + fileThumb.getParentClass().shortName + File.separator + fileThumb.getSiteFile()
 																	.getFilePath() + File.separator + thumbSubDir;
 			log.info("Transferring thumb {} to {}", absolutePathThumbFile, targetDir);
 			channelSftp.put(absolutePathThumbFile, targetDir);
