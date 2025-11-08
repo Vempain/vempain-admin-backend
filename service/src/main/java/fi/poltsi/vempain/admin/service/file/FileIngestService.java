@@ -165,6 +165,8 @@ public class FileIngestService {
 			siteFile.setFileClass(FileClassEnum.getFileClassByMimetype(fileIngestRequest.getMimeType()));
 			siteFile.setSize(size);
 			siteFile.setSha256sum(fileIngestRequest.getSha256sum());
+			siteFile.setComment(fileIngestRequest.getComment());
+			siteFile.setMetadata(fileIngestRequest.getMetadata());
 
 			if (siteFile.getId() == null) {
 				var nextAclId = aclService.getNextAclId();
