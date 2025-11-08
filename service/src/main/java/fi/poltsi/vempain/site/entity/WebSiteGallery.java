@@ -19,8 +19,8 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "gallery")
-public class SiteGallery {
+@Table(name = "web_site_gallery")
+public class WebSiteGallery {
 	@Id
 	@GeneratedValue(strategy= GenerationType.IDENTITY)
 	@Column(name = "id")

@@ -18,8 +18,8 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "page")
-public class SitePage {
+@Table(name = "web_site_page")
+public class WebSitePage {
 	@Id
 	@GeneratedValue(strategy= GenerationType.IDENTITY)
 	@Column(name = "id")

@@ -1,7 +1,7 @@
 package fi.poltsi.vempain.site.service;
 
 import fi.poltsi.vempain.admin.entity.Subject;
-import fi.poltsi.vempain.site.entity.SiteSubject;
+import fi.poltsi.vempain.site.entity.WebSiteSubject;
 import fi.poltsi.vempain.site.repository.SiteSubjectRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,8 +17,8 @@ import java.util.List;
 public class SiteSubjectService {
 	private final SiteSubjectRepository siteSubjectRepository;
 
-	public List<SiteSubject> saveAllFromAdminSubject(List<Subject> subjects) {
-		var siteSubjects = new ArrayList<SiteSubject>();
+	public List<WebSiteSubject> saveAllFromAdminSubject(List<Subject> subjects) {
+		var siteSubjects = new ArrayList<WebSiteSubject>();
 
 		for (Subject subject : subjects) {
 			siteSubjects.add(saveFromAdminSubject(subject));
@@ -27,7 +27,7 @@ public class SiteSubjectService {
 		return siteSubjects;
 	}
 
-	public SiteSubject saveFromAdminSubject(Subject subject) {
+	public WebSiteSubject saveFromAdminSubject(Subject subject) {
 		var siteSubject = siteSubjectRepository.findBySubjectName(subject.getSubjectName());
 
 		if (siteSubject != null) {
@@ -39,21 +39,21 @@ public class SiteSubjectService {
 			siteSubject.setSubjectNameSe(subject.getSubjectNameSe());
 			return siteSubjectRepository.save(siteSubject);
 		} else {
-			var newSiteSubject = SiteSubject.builder()
-											.subjectName(subject.getSubjectName())
-											.subjectNameDe(subject.getSubjectNameDe())
-											.subjectNameEn(subject.getSubjectNameEn())
-											.subjectNameEs(subject.getSubjectNameEs())
-											.subjectNameFi(subject.getSubjectNameFi())
-											.subjectNameSe(subject.getSubjectNameSe())
-											.build();
+			var newSiteSubject = WebSiteSubject.builder()
+											   .subjectName(subject.getSubjectName())
+											   .subjectNameDe(subject.getSubjectNameDe())
+											   .subjectNameEn(subject.getSubjectNameEn())
+											   .subjectNameEs(subject.getSubjectNameEs())
+											   .subjectNameFi(subject.getSubjectNameFi())
+											   .subjectNameSe(subject.getSubjectNameSe())
+											   .build();
 			return siteSubjectRepository.save(newSiteSubject);
 		}
 	}
 
 	@Transactional
-	public void saveSiteFileSubject(long fileId, List<SiteSubject> siteSubjects) {
-		for (var siteSubject : siteSubjects) {
+	public void saveSiteFileSubject(long fileId, List<WebSiteSubject> webSiteSubjects) {
+		for (var siteSubject : webSiteSubjects) {
 			siteSubjectRepository.saveSiteFileSubject(fileId, siteSubject.getId());
 		}
 	}

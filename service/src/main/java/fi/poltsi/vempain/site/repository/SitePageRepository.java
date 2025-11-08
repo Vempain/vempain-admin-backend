@@ -1,6 +1,6 @@
 package fi.poltsi.vempain.site.repository;
 
-import fi.poltsi.vempain.site.entity.SitePage;
+import fi.poltsi.vempain.site.entity.WebSitePage;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -11,10 +11,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 @Repository
-public interface SitePageRepository extends CrudRepository<SitePage, Long> {
-	SitePage findByPath(String path);
+public interface SitePageRepository extends CrudRepository<WebSitePage, Long> {
+	WebSitePage findByPath(String path);
 
-	Optional<SitePage> findByPageId(long pageId);
+	Optional<WebSitePage> findByPageId(long pageId);
 
 	void deletePageById(long id);
 

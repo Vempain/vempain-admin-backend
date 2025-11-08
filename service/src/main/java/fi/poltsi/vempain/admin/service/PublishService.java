@@ -9,8 +9,8 @@ import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.admin.service.file.GalleryFileService;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.UserService;
-import fi.poltsi.vempain.site.entity.SitePage;
 import fi.poltsi.vempain.site.entity.WebSiteFile;
+import fi.poltsi.vempain.site.entity.WebSitePage;
 import fi.poltsi.vempain.site.repository.SiteGalleryRepository;
 import fi.poltsi.vempain.site.repository.SitePageRepository;
 import fi.poltsi.vempain.site.repository.WebSiteFileRepository;
@@ -113,23 +113,23 @@ public class PublishService {
 		}
 
 		var published = Instant.now();
-		SitePage sitePage = optionalSitePage.orElseGet(SitePage::new);
+		WebSitePage webSitePage = optionalSitePage.orElseGet(WebSitePage::new);
 
-		sitePage.setPageId(page.getId());
-		sitePage.setParentId(page.getParentId());
-		sitePage.setPath(page.getPath());
-		sitePage.setSecure(page.isSecure());
-		sitePage.setIndexList(page.isIndexList());
-		sitePage.setTitle(page.getTitle());
-		sitePage.setHeader(page.getHeader());
-		sitePage.setBody(pageBody);
-		sitePage.setCreator(creator);
-		sitePage.setCreated(page.getCreated());
-		sitePage.setModifier(modifier);
-		sitePage.setModified(page.getModified());
-		sitePage.setCache(null);
-		sitePage.setPublished(published);
-		var savedPage = sitePageRepository.save(sitePage);
+		webSitePage.setPageId(page.getId());
+		webSitePage.setParentId(page.getParentId());
+		webSitePage.setPath(page.getPath());
+		webSitePage.setSecure(page.isSecure());
+		webSitePage.setIndexList(page.isIndexList());
+		webSitePage.setTitle(page.getTitle());
+		webSitePage.setHeader(page.getHeader());
+		webSitePage.setBody(pageBody);
+		webSitePage.setCreator(creator);
+		webSitePage.setCreated(page.getCreated());
+		webSitePage.setModifier(modifier);
+		webSitePage.setModified(page.getModified());
+		webSitePage.setCache(null);
+		webSitePage.setPublished(published);
+		var savedPage = sitePageRepository.save(webSitePage);
 
 		log.debug("Published page: {}", savedPage);
 		// We update the page setting the published timestamp
@@ -247,7 +247,7 @@ public class PublishService {
 		}
 	}
 
-	public Optional<SitePage> fetchSitePage(Long pageId) {
+	public Optional<WebSitePage> fetchSitePage(Long pageId) {
 		return sitePageRepository.findById(pageId);
 	}
 

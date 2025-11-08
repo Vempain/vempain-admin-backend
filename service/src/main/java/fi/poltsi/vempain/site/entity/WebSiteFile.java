@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "file")
+@Table(name = "web_site_file")
 public class WebSiteFile {
 	@Id
 	@GeneratedValue(strategy= GenerationType.IDENTITY)
@@ -25,6 +25,9 @@ public class WebSiteFile {
 
 	@Column(name = "file_id")
 	protected long    fileId;
+
+	@Column(name = "acl_id")
+	protected long aclId;
 
 	@Column(name = "comment")
 	private   String comment;

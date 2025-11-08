@@ -3,7 +3,7 @@ package fi.poltsi.vempain;
 import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.entity.Page;
 import fi.poltsi.vempain.admin.repository.PageRepository;
-import fi.poltsi.vempain.site.entity.SitePage;
+import fi.poltsi.vempain.site.entity.WebSitePage;
 import fi.poltsi.vempain.site.repository.SitePageRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ class MultiDbITC extends AbstractITCTest {
 		var createdPageId = setupTests();
 		var fetchAdminPage = adminPageRepository.findById(createdPageId);
 		assertNotNull(fetchAdminPage);
-		var sitePage = SitePage.builder()
+		var sitePage = WebSitePage.builder()
 							   .pageId(fetchAdminPage.getId())
 							   .body(fetchAdminPage.getBody())
 							   .header(fetchAdminPage.getHeader())

@@ -17,8 +17,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "subject")
-public class SiteSubject {
+@Table(name = "web_site_subject")
+public class WebSiteSubject {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")

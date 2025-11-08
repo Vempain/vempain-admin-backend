@@ -5,7 +5,7 @@ import fi.poltsi.vempain.admin.api.response.file.SiteFileResponse;
 import fi.poltsi.vempain.auth.api.response.AclResponse;
 import fi.poltsi.vempain.auth.entity.AbstractVempainEntity;
 import fi.poltsi.vempain.auth.entity.Acl;
-import fi.poltsi.vempain.site.entity.SiteGallery;
+import fi.poltsi.vempain.site.entity.WebSiteGallery;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -70,15 +70,15 @@ public class Gallery extends AbstractVempainEntity implements Serializable {
 							  .build();
 	}
 
-	public SiteGallery getSiteGallery() {
-		return SiteGallery.builder()
-						  .galleryId(this.id)
-						  .description(this.description)
-						  .shortname(this.shortname)
-						  .creator(this.creator)
-						  .created(this.created)
-						  .modifier(this.modifier)
-						  .modified(this.modified)
-						  .build();
+	public WebSiteGallery getSiteGallery() {
+		return WebSiteGallery.builder()
+							 .galleryId(this.id)
+							 .description(this.description)
+							 .shortname(this.shortname)
+							 .creator(this.creator)
+							 .created(this.created)
+							 .modifier(this.modifier)
+							 .modified(this.modified)
+							 .build();
 	}
 }
