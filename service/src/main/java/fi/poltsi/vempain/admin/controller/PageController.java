@@ -38,7 +38,7 @@ public class PageController implements PageAPI {
 
 	@Override
 	public ResponseEntity<List<PageResponse>> getPages(QueryDetailEnum queryDetailEnum) {
-		var pageList  = pageService.findAllByUser();
+		var pageList = pageService.findAllByUser();
 		var responses = new ArrayList<PageResponse>();
 
 		if (queryDetailEnum == QueryDetailEnum.FULL) {
@@ -84,7 +84,8 @@ public class PageController implements PageAPI {
 
 		if (page == null) {
 			log.error("Could not retrieve page with ID {}", pageId);
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+			return ResponseEntity.status(HttpStatus.NOT_FOUND)
+								 .body(null);
 		}
 
 		var pageResponse = pageService.populateResponse(page);
@@ -110,7 +111,7 @@ public class PageController implements PageAPI {
 
 		verifyPageRequest(pageRequest);
 
-		var page         = pageService.updateFromRequest(pageRequest);
+		var page = pageService.updateFromRequest(pageRequest);
 		var pageResponse = pageService.populateResponse(page);
 		return ResponseEntity.ok(pageResponse);
 	}
@@ -146,7 +147,7 @@ public class PageController implements PageAPI {
 		if (publishDate != null) {
 			var pages = pageService.findAll();
 
-			for (var page: pages) {
+			for (var page : pages) {
 				createPagePublishSchedule(publishDate, page.getId(), "Publish all pages");
 			}
 
@@ -203,7 +204,8 @@ public class PageController implements PageAPI {
 									  .message("Could not find page")
 									  .timestamp(Instant.now())
 									  .build();
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+			return ResponseEntity.status(HttpStatus.NOT_FOUND)
+								 .body(response);
 		}
 
 		return ResponseEntity.ok(response);
@@ -250,10 +252,14 @@ public class PageController implements PageAPI {
 
 	private void verifyPageRequest(PageRequest pageRequest) {
 		if (pageRequest == null
-			|| (pageRequest.getPath() == null || pageRequest.getPath().isBlank())
-			|| (pageRequest.getTitle() == null || pageRequest.getTitle().isBlank())
-			|| (pageRequest.getHeader() == null || pageRequest.getHeader().isBlank())
-			|| (pageRequest.getAcls() == null || pageRequest.getAcls().isEmpty())) {
+			|| (pageRequest.getPath() == null || pageRequest.getPath()
+															.isBlank())
+			|| (pageRequest.getTitle() == null || pageRequest.getTitle()
+															 .isBlank())
+			|| (pageRequest.getHeader() == null || pageRequest.getHeader()
+															  .isBlank())
+			|| (pageRequest.getAcls() == null || pageRequest.getAcls()
+															.isEmpty())) {
 			log.error("Malformed request when creating new page: {}", pageRequest);
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Malformed page creation request");
 		}

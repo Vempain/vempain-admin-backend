@@ -77,7 +77,8 @@ class FormServiceITC extends AbstractITCTest {
 						.aclId(aclId)
 						.locked(false)
 						.creator(userId)
-						.created(Instant.now().minus(1, ChronoUnit.HOURS))
+						.created(Instant.now()
+										.minus(1, ChronoUnit.HOURS))
 						.modifier(null)
 						.modified(null)
 						.build();
@@ -95,7 +96,9 @@ class FormServiceITC extends AbstractITCTest {
 
 		try {
 			for (var formComponent : formComponentList) {
-				Form         form         = formService.findById(formComponent.keySet().iterator().next());
+				Form form = formService.findById(formComponent.keySet()
+															  .iterator()
+															  .next());
 				FormResponse formResponse = formService.getFormResponse(form);
 				assertNotNull(formResponse);
 			}

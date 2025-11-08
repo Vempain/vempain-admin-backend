@@ -7,13 +7,13 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 @Slf4j
 class UnauthorizedAccessExceptionUTC {
-    @Test
-    void throwOk() {
-        try {
-            throw new UnauthorizedAccessException();
-        } catch (UnauthorizedAccessException e) {
-            log.info("Exception: ", e);
-            assertNull(e.getMessage());
-        }
-    }
+	@Test
+	void throwOk() {
+		try {
+			throw new UnauthorizedAccessException();
+		} catch (UnauthorizedAccessException e) {
+			log.info("Exception: ", e);
+			assertNull(e.getMessage());
+		}
+	}
 }

@@ -17,7 +17,7 @@ import lombok.experimental.SuperBuilder;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Schema(description = "Abstract pageable response")
-public class  AbstractPageableResponse {
+public class AbstractPageableResponse {
 	@Schema(description = "Page number of the current page list", example = "3", requiredMode = Schema.RequiredMode.REQUIRED)
 	@Valid
 	PageableResponse page;

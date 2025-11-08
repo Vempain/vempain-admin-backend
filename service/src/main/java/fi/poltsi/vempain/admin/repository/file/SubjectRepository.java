@@ -23,9 +23,9 @@ public interface SubjectRepository extends PagingAndSortingRepository<Subject, L
 	Optional<Subject> findSubjectBySubjectNameSe(String subjectNameSe);
 
 	@Query(value = """
-            SELECT s.* FROM subject s, file_subject fs
-            WHERE fs.site_file_id = :siteFileId
-            AND   fs.subject_id = s.id
-            """, nativeQuery = true)
+			SELECT s.* FROM subject s, file_subject fs
+			WHERE fs.site_file_id = :siteFileId
+			AND   fs.subject_id = s.id
+			""", nativeQuery = true)
 	List<Subject> getSubjectsByFileId(@Param("siteFileId") Long siteFileId);
 }

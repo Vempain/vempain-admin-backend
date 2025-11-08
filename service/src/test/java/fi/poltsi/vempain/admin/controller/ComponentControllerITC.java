@@ -63,7 +63,9 @@ class ComponentControllerITC extends AbstractITCTest {
 			assertNotNull(componentResponse.getAcls());
 			var userId = testITCTools.generateUser();
 			AclRequest aclRequest = AclRequest.builder()
-											  .aclId(componentResponse.getAcls().getFirst().getAclId())
+											  .aclId(componentResponse.getAcls()
+																	  .getFirst()
+																	  .getAclId())
 											  .user(userId)
 											  .unit(null)
 											  .createPrivilege(true)

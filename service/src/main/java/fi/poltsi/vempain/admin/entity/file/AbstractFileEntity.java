@@ -27,10 +27,10 @@ public class AbstractFileEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
-	protected Long   id;
+	protected Long id;
 	@Basic
 	@Column(name = "parent_id")
-	private   long   parentId;
+	private   long parentId;
 
 	@Transient
 	private SiteFile siteFile;

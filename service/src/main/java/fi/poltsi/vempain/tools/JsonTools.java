@@ -28,16 +28,17 @@ public class JsonTools {
 
 	/**
 	 * Fetch full sub-section (XMP/IPTC...) of a metadata structure in JSON format
+	 *
 	 * @param parent Parent section of JSON
-	 * @param key Key to be retrieved
+	 * @param key    Key to be retrieved
 	 * @return Retuns an Optional<JSONObject>
 	 */
 	public static Optional<JSONObject> getJSONObject(JSONObject parent, String key) {
 		Optional<JSONObject> optional = Optional.empty();
-		JSONObject           jsonObject;
+		JSONObject jsonObject;
 		try {
 			jsonObject = parent.getJSONObject(key);
-			optional   = Optional.of(jsonObject);
+			optional = Optional.of(jsonObject);
 		} catch (JSONException e) {
 			log.error("Did not find {} in JSON object", key);
 		}
@@ -47,6 +48,7 @@ public class JsonTools {
 
 	/**
 	 * Extract the comment/description field from given metadata
+	 *
 	 * @param jsonObject Extracted JSON formatted metadata (from @MetadataTools.getMetadataAsJSON())
 	 * @return String value retrieved, or null if none were found
 	 */
@@ -60,6 +62,7 @@ public class JsonTools {
 
 	/**
 	 * Extract the mimetype from the given metadata
+	 *
 	 * @param jsonObject Extracted JSON formatted metadata (from @MetadataTools.getMetadataAsJSON())
 	 * @return String value retrieved, or null if none were found
 	 */
@@ -73,6 +76,7 @@ public class JsonTools {
 
 	/**
 	 * Extract the  original time of creation from the given metadata in JSON format
+	 *
 	 * @param jsonObject Extracted JSON formatted metadata (from @MetadataTools.getMetadataAsJSON())
 	 * @return String value retrieved, or null if none were found
 	 */
@@ -90,6 +94,7 @@ public class JsonTools {
 
 	/**
 	 * Extract the fraction of second of the original time of creation from the given metadata in JSON format
+	 *
 	 * @param jsonObject Extracted JSON formatted metadata (from @MetadataTools.getMetadataAsJSON())
 	 * @return String value retrieved, or null if none were found
 	 */
@@ -108,6 +113,7 @@ public class JsonTools {
 
 	/**
 	 * Extract the document ID from the given metadata in JSON format
+	 *
 	 * @param jsonObject Extracted JSON formatted metadata (from @MetadataTools.getMetadataAsJSON())
 	 * @return String value retrieved, or null if none were found
 	 */
@@ -120,6 +126,7 @@ public class JsonTools {
 
 	/**
 	 * Extract the list of subjects/keywords from the given metadata in JSON format
+	 *
 	 * @param jsonObject Extracted JSON formatted metadata (from @MetadataTools.getMetadataAsJSON())
 	 * @return String value retrieved, or null if none were found
 	 */
@@ -131,7 +138,7 @@ public class JsonTools {
 		locations.put(IPTC_KEY, List.of(IPTC_KEYWORD_KEY));
 
 		// We try first to extract an array of strings
-		var subjectList= extractJsonArray(jsonObject, locations);
+		var subjectList = extractJsonArray(jsonObject, locations);
 
 		// If the array is empty, we try to extract a single string
 		if (subjectList.isEmpty()) {
@@ -147,8 +154,10 @@ public class JsonTools {
 	private static String extractJsonString(JSONObject jsonObject, Map<String, List<String>> locations) {
 		for (Map.Entry<String, List<String>> location : locations.entrySet()) {
 			for (String key : location.getValue()) {
-				if (jsonObject.has(location.getKey()) && jsonObject.getJSONObject(location.getKey()).has(key)) {
-					return jsonObject.getJSONObject(location.getKey()).getString(key);
+				if (jsonObject.has(location.getKey()) && jsonObject.getJSONObject(location.getKey())
+																   .has(key)) {
+					return jsonObject.getJSONObject(location.getKey())
+									 .getString(key);
 				}
 			}
 		}
@@ -159,15 +168,18 @@ public class JsonTools {
 	private static Number extractJsonNumber(JSONObject jsonObject, Map<String, List<String>> locations) {
 		for (Map.Entry<String, List<String>> location : locations.entrySet()) {
 			for (String key : location.getValue()) {
-				if (jsonObject.has(location.getKey()) && jsonObject.getJSONObject(location.getKey()).has(key)) {
+				if (jsonObject.has(location.getKey()) && jsonObject.getJSONObject(location.getKey())
+																   .has(key)) {
 
 					Number number;
 					try {
-						number = jsonObject.getJSONObject(location.getKey()).getNumber(key);
+						number = jsonObject.getJSONObject(location.getKey())
+										   .getNumber(key);
 						return number;
 					} catch (JSONException e) {
 						log.warn("Failed to retrieve JSON number from location {}, trying to get it as String instead", key);
-						var stringValue = jsonObject.getJSONObject(location.getKey()).getString(key);
+						var stringValue = jsonObject.getJSONObject(location.getKey())
+													.getString(key);
 
 						try {
 							return Integer.parseInt(stringValue);
@@ -185,10 +197,15 @@ public class JsonTools {
 	public static List<String> extractJsonArray(JSONObject jsonObject, Map<String, List<String>> locations) {
 		for (Map.Entry<String, List<String>> location : locations.entrySet()) {
 			for (String key : location.getValue()) {
-				if (jsonObject.has(location.getKey()) && jsonObject.getJSONObject(location.getKey()).has(key)) {
+				if (jsonObject.has(location.getKey()) && jsonObject.getJSONObject(location.getKey())
+																   .has(key)) {
 					try {
-						var objectList = jsonObject.getJSONObject(location.getKey()).getJSONArray(key).toList();
-						return objectList.stream().map(o -> Objects.toString(o, null)).toList();
+						var objectList = jsonObject.getJSONObject(location.getKey())
+												   .getJSONArray(key)
+												   .toList();
+						return objectList.stream()
+										 .map(o -> Objects.toString(o, null))
+										 .toList();
 					} catch (JSONException e) {
 						log.error("Failed to retrieve JSON array from location {}, value is: {}", key, jsonObject.getJSONObject(location.getKey()));
 					}

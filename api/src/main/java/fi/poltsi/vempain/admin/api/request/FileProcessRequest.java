@@ -41,7 +41,7 @@ public class FileProcessRequest {
 	@Schema(description = "Gallery page body this is located above the gallery component itself, if it should be created", example = "A pleasant gallery")
 	private String  pageBody;
 	@Schema(description = "Form ID of the gallery page, if it should be created", example = "1")
-	private Long  pageFormId;
+	private Long pageFormId;
 	@Schema(description = "Should the file processing be scheduled instead", example = "true")
 	private boolean schedule;
 }

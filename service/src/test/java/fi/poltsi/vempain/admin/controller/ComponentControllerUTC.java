@@ -117,7 +117,7 @@ class ComponentControllerUTC {
 
 	@Test
 	void addComponentOk() throws VempainComponentException {
-		Component        component        = TestUTCTools.generateComponent(1L, 1L);
+		Component component = TestUTCTools.generateComponent(1L, 1L);
 		ComponentRequest componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
 		when(componentService.saveFromRequest(componentRequest)).thenReturn(component);
 		List<AclResponse> aclResponses = TestUTCTools.generateAclResponses(1L, 2L);
@@ -187,9 +187,10 @@ class ComponentControllerUTC {
 
 	@Test
 	void addComponentNameAlreadyExistsFail() {
-		Component        component        = TestUTCTools.generateComponent(1L, 1L);
+		Component component = TestUTCTools.generateComponent(1L, 1L);
 		ComponentRequest componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
-		doThrow(new ResponseStatusException(HttpStatus.CONFLICT, "Test exception")).when(componentService).saveFromRequest(componentRequest);
+		doThrow(new ResponseStatusException(HttpStatus.CONFLICT, "Test exception")).when(componentService)
+																				   .saveFromRequest(componentRequest);
 
 		try {
 			componentController.addComponent(componentRequest);
@@ -204,9 +205,10 @@ class ComponentControllerUTC {
 
 	@Test
 	void addComponentResponseStatusExceptionFail() {
-		Component        component        = TestUTCTools.generateComponent(1L, 1L);
+		Component component = TestUTCTools.generateComponent(1L, 1L);
 		ComponentRequest componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
-		doThrow(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, VempainMessages.INTERNAL_ERROR)).when(componentService).saveFromRequest(componentRequest);
+		doThrow(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, VempainMessages.INTERNAL_ERROR)).when(componentService)
+																											  .saveFromRequest(componentRequest);
 
 		try {
 			componentController.addComponent(componentRequest);
@@ -221,7 +223,7 @@ class ComponentControllerUTC {
 
 	@Test
 	void updateComponentOk() throws VempainAclException, VempainEntityNotFoundException, VempainComponentException, VempainAbstractException {
-		Component        component        = TestUTCTools.generateComponent(1L, 1L);
+		Component component = TestUTCTools.generateComponent(1L, 1L);
 		ComponentRequest componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
 		when(componentService.updateFromRequest(componentRequest)).thenReturn(component);
 
@@ -241,7 +243,7 @@ class ComponentControllerUTC {
 	}
 
 	private void updateComponentFailInvalidId(Long componentId) {
-		var        component        = TestUTCTools.generateComponent(1L, 1L);
+		var component = TestUTCTools.generateComponent(1L, 1L);
 		var componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
 		componentRequest.setId(componentId);
 
@@ -258,9 +260,10 @@ class ComponentControllerUTC {
 
 	@Test
 	void updateAccessDeniedFail() throws VempainAclException, VempainEntityNotFoundException, VempainComponentException, VempainAbstractException {
-		Component        component        = TestUTCTools.generateComponent(1L, 1L);
+		Component component = TestUTCTools.generateComponent(1L, 1L);
 		ComponentRequest componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
-		doThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, VempainMessages.INVALID_USER_SESSION)).when(componentService).updateFromRequest(componentRequest);
+		doThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, VempainMessages.INVALID_USER_SESSION)).when(componentService)
+																										   .updateFromRequest(componentRequest);
 
 		try {
 			componentController.updateComponent(componentRequest);
@@ -292,9 +295,10 @@ class ComponentControllerUTC {
 	}
 
 	void updateComponentUpdateFails(Exception ex) throws VempainAclException, VempainEntityNotFoundException, VempainComponentException, VempainAbstractException {
-		Component        component        = TestUTCTools.generateComponent(1L, 1L);
+		Component component = TestUTCTools.generateComponent(1L, 1L);
 		ComponentRequest componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
-		doThrow(ex).when(componentService).updateFromRequest(componentRequest);
+		doThrow(ex).when(componentService)
+				   .updateFromRequest(componentRequest);
 
 		try {
 			componentController.updateComponent(componentRequest);
@@ -310,10 +314,11 @@ class ComponentControllerUTC {
 	@Test
 	void updateComponentNotFoundFail() throws VempainAclException, VempainEntityNotFoundException, VempainComponentException,
 											  VempainAbstractException {
-		Component        component        = TestUTCTools.generateComponent(1L, 1L);
+		Component component = TestUTCTools.generateComponent(1L, 1L);
 		ComponentRequest componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
 		doThrow(new VempainEntityNotFoundException("test exception", "component"))
-				.when(componentService).updateFromRequest(componentRequest);
+				.when(componentService)
+				.updateFromRequest(componentRequest);
 
 		try {
 			componentController.updateComponent(componentRequest);
@@ -360,7 +365,8 @@ class ComponentControllerUTC {
 
 	@Test
 	void removeComponentByIdVempainAclExceptionFail() throws VempainEntityNotFoundException {
-		doThrow(new VempainEntityNotFoundException("Test fail", "Component")).when(deleteService).deleteComponentById(1L);
+		doThrow(new VempainEntityNotFoundException("Test fail", "Component")).when(deleteService)
+																			 .deleteComponentById(1L);
 
 		try {
 			componentController.deleteComponentById(1L);

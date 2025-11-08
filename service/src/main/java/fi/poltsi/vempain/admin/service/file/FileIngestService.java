@@ -46,7 +46,7 @@ public class FileIngestService {
 
 	private final StorageDirectoryConfiguration storageDirectoryConfiguration;
 	private final SubjectService subjectService;
-	private final FileService fileService;
+	private final FileService    fileService;
 
 	@Value("${vempain.admin.file.site-file-directory}")
 	private String siteFileDirectory;

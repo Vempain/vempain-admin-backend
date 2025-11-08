@@ -28,29 +28,30 @@ class MultiDbITC extends AbstractITCTest {
 		var fetchAdminPage = adminPageRepository.findById(createdPageId);
 		assertNotNull(fetchAdminPage);
 		var sitePage = WebSitePage.builder()
-							   .pageId(fetchAdminPage.getId())
-							   .body(fetchAdminPage.getBody())
-							   .header(fetchAdminPage.getHeader())
-							   .parentId(fetchAdminPage.getParentId())
-							   .path(fetchAdminPage.getPath())
-							   .indexList(fetchAdminPage.isIndexList())
-							   .secure(fetchAdminPage.isSecure())
-							   .title(fetchAdminPage.getTitle())
-							   .creator("Erkki")
-							   .created(fetchAdminPage.getCreated())
-							   .modifier("Erkki")
-							   .modified(fetchAdminPage.getModified())
-							   .published(Instant.now())
-							   .build();
+								  .pageId(fetchAdminPage.getId())
+								  .body(fetchAdminPage.getBody())
+								  .header(fetchAdminPage.getHeader())
+								  .parentId(fetchAdminPage.getParentId())
+								  .path(fetchAdminPage.getPath())
+								  .indexList(fetchAdminPage.isIndexList())
+								  .secure(fetchAdminPage.isSecure())
+								  .title(fetchAdminPage.getTitle())
+								  .creator("Erkki")
+								  .created(fetchAdminPage.getCreated())
+								  .modifier("Erkki")
+								  .modified(fetchAdminPage.getModified())
+								  .published(Instant.now())
+								  .build();
 		var createdSitePage = sitePageRepository.save(sitePage);
 		var sitePages = sitePageRepository.findAll();
 		assertNotNull(sitePages);
-		assertEquals(1, StreamSupport.stream(sitePages.spliterator(), false).count());
+		assertEquals(1, StreamSupport.stream(sitePages.spliterator(), false)
+									 .count());
 	}
 
 	private long setupTests() {
 		var userId = testITCTools.generateUser();
-		var aclId  = testITCTools.generateAcl(userId, null, true, true, true, true);
+		var aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
 		var formId = testITCTools.generateForm();
 		var adminPage = Page.builder()
 							.aclId(aclId)

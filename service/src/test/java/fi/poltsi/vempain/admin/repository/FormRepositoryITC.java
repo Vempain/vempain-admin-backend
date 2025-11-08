@@ -25,7 +25,8 @@ class FormRepositoryITC extends AbstractITCTest {
 		testITCTools.generateForms(initCount);
 		var forms = formRepository.findAll();
 		assertNotNull(forms);
-		assertEquals(initCount, StreamSupport.stream(forms.spliterator(), false).count());
+		assertEquals(initCount, StreamSupport.stream(forms.spliterator(), false)
+											 .count());
 
 		for (Form form : forms) {
 			assertForm(form);
@@ -52,8 +53,11 @@ class FormRepositoryITC extends AbstractITCTest {
 	void deleteFormById() {
 		testITCTools.generateForms(initCount);
 		var forms = formRepository.findAll();
-		assertTrue(StreamSupport.stream(forms.spliterator(), false).findAny().isPresent());
-		var form = forms.iterator().next();
+		assertTrue(StreamSupport.stream(forms.spliterator(), false)
+								.findAny()
+								.isPresent());
+		var form = forms.iterator()
+						.next();
 		formRepository.deleteById(form.getId());
 		Optional<Form> noForm = formRepository.findById(form.getId());
 		assertTrue(noForm.isEmpty());
@@ -76,6 +80,7 @@ class FormRepositoryITC extends AbstractITCTest {
 		assertNull(form.getModifier());
 		assertNull(form.getModified());
 		assertTrue(form.getId() > 0);
-		assertTrue(form.getFormName().contains("Test form "));
+		assertTrue(form.getFormName()
+					   .contains("Test form "));
 	}
 }

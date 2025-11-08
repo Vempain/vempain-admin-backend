@@ -34,12 +34,13 @@ public class SiteDatabaseConfiguration {
 	@ConfigurationProperties(prefix = "spring.site-datasource.configuration")
 	public DataSource siteDataSource() {
 		return siteDataSourceProperties().initializeDataSourceBuilder()
-										 .type(HikariDataSource.class).build();
+										 .type(HikariDataSource.class)
+										 .build();
 	}
 
 	@Bean(name = "siteEntityManagerFactory")
 	public LocalContainerEntityManagerFactoryBean siteEntityManagerFactory(EntityManagerFactoryBuilder builder,
-																		  @Qualifier("siteDataSource") DataSource dataSource) {
+																		   @Qualifier("siteDataSource") DataSource dataSource) {
 		return builder
 				.dataSource(dataSource)
 				.packages("fi.poltsi.vempain.site.entity")

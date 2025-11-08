@@ -86,7 +86,7 @@ public class AccessService {
 		}
 	}
 
-/**
+	/**
 	 * Returns the user ID of the currently authenticated user.
 	 * If the user is not authenticated, an frontend compatible exception is thrown.
 	 *

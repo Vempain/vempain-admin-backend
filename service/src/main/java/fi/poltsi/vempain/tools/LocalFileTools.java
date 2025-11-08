@@ -60,9 +60,9 @@ public class LocalFileTools {
 	public static void removeDirectory(String directory) {
 		try {
 			Files.walk(Path.of(directory))
-					.sorted(Comparator.reverseOrder())
-					.map(Path::toFile)
-					.forEach(File::delete);
+				 .sorted(Comparator.reverseOrder())
+				 .map(Path::toFile)
+				 .forEach(File::delete);
 		} catch (IOException e) {
 			log.error("Failed to remove directory {}", directory, e);
 		}

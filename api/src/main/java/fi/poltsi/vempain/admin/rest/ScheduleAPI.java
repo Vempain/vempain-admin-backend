@@ -33,7 +33,7 @@ public interface ScheduleAPI {
 										description = "Got list of schedules",
 										content = {@Content(array = @ArraySchema(schema = @Schema(implementation = ScheduleTriggerResponse.class)),
 															mediaType = MediaType.APPLICATION_JSON_VALUE)}),
-						   @ApiResponse( responseCode = "500", description = "Internal server error", content = @Content)})
+						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = REST_SCHEDULE_PREFIX + "/system-schedules", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<ScheduleTriggerResponse>> getSystemSchedules();
@@ -45,7 +45,7 @@ public interface ScheduleAPI {
 										description = "Got the details of the system schedule",
 										content = {@Content(schema = @Schema(implementation = ScheduleTriggerResponse.class),
 															mediaType = MediaType.APPLICATION_JSON_VALUE)}),
-						   @ApiResponse( responseCode = "500", description = "Internal server error", content = @Content)})
+						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = REST_SCHEDULE_PREFIX + "/system-schedules/{schedule_name}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<ScheduleTriggerResponse> getSystemScheduleByName(@PathVariable("schedule_name") String systemScheduleName);
@@ -57,7 +57,7 @@ public interface ScheduleAPI {
 										content = {@Content(schema = @Schema(implementation = ScheduleTriggerResponse.class),
 															mediaType = MediaType.APPLICATION_JSON_VALUE)}),
 						   @ApiResponse(responseCode = "404", description = "Given schedule does not exist", content = @Content),
-						   @ApiResponse( responseCode = "500", description = "Internal server error", content = @Content)})
+						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@PostMapping(value = REST_SCHEDULE_PREFIX + "/system-schedules", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<ScheduleTriggerResponse> triggerSystemSchedule(@RequestBody @NotNull TriggerSystemScheduleRequest schedule);
@@ -67,7 +67,7 @@ public interface ScheduleAPI {
 										description = "List retrieved successfully",
 										content = {@Content(array = @ArraySchema(schema = @Schema(implementation = PublishScheduleResponse.class)),
 															mediaType = MediaType.APPLICATION_JSON_VALUE)}),
-						   @ApiResponse( responseCode = "500", description = "Internal server error", content = @Content)})
+						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = REST_SCHEDULE_PREFIX + "/publishing", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<PublishScheduleResponse>> listPublishingSchedules();
@@ -78,7 +78,7 @@ public interface ScheduleAPI {
 										description = "Got the details of the system schedule",
 										content = {@Content(schema = @Schema(implementation = PublishScheduleResponse.class),
 															mediaType = MediaType.APPLICATION_JSON_VALUE)}),
-						   @ApiResponse( responseCode = "500", description = "Internal server error", content = @Content)})
+						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = REST_SCHEDULE_PREFIX + "/publishing/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<PublishScheduleResponse> getPublishingScheduleById(@PathVariable(value = "id") long id);
@@ -90,7 +90,7 @@ public interface ScheduleAPI {
 										content = {@Content(schema = @Schema(implementation = PublishScheduleResponse.class),
 															mediaType = MediaType.APPLICATION_JSON_VALUE)}),
 						   @ApiResponse(responseCode = "404", description = "Given schedule does not exist", content = @Content),
-						   @ApiResponse( responseCode = "500", description = "Internal server error", content = @Content)})
+						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@PostMapping(value = REST_SCHEDULE_PREFIX + "/publishing", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<PublishScheduleResponse> triggerPublishSchedule(@RequestBody @NotNull PublishScheduleRequest publishScheduleRequest);
@@ -100,7 +100,7 @@ public interface ScheduleAPI {
 										description = "List retrieved successfully",
 										content = {@Content(array = @ArraySchema(schema = @Schema(implementation = FileImportScheduleResponse.class)),
 															mediaType = MediaType.APPLICATION_JSON_VALUE)}),
-						   @ApiResponse( responseCode = "500", description = "Internal server error", content = @Content)})
+						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = REST_SCHEDULE_PREFIX + "/file-imports", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<FileImportScheduleResponse>> listFileImportSchedules();
@@ -111,7 +111,7 @@ public interface ScheduleAPI {
 										description = "Got the details of the file import schedule",
 										content = {@Content(schema = @Schema(implementation = FileImportScheduleResponse.class),
 															mediaType = MediaType.APPLICATION_JSON_VALUE)}),
-						   @ApiResponse( responseCode = "500", description = "Internal server error", content = @Content)})
+						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = REST_SCHEDULE_PREFIX + "/file-imports/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<FileImportScheduleResponse> getFileImportScheduleById(@PathVariable(value = "id") long id);

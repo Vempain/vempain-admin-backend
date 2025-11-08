@@ -15,7 +15,7 @@ public class TemplateTools {
 
 		try (InputStream inputStream = resource.getInputStream()) {
 			// Read the content of the template file into a string
-			byte[] fileBytes       = FileCopyUtils.copyToByteArray(inputStream);
+			byte[] fileBytes = FileCopyUtils.copyToByteArray(inputStream);
 			String templateContent = new String(fileBytes, StandardCharsets.UTF_8);
 
 			for (Map.Entry<String, String> entry : replacementMap.entrySet()) {

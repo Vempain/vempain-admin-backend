@@ -47,6 +47,7 @@ import java.util.Set;
 @Service
 public class FileService {
 
+	private static final String RESPONSE_STATUS_EXCEPTION_MESSAGE = "Unknown error";
 	private final FileThumbPageableRepository fileThumbPageableRepository;
 	private final GalleryRepository           galleryRepository;
 	private final SubjectRepository           subjectRepository;
@@ -55,13 +56,21 @@ public class FileService {
 	private final GalleryFileService          galleryFileService;
 	private final SubjectService              subjectService;
 	private final SiteFileRepository          siteFileRepository;
-
 	@Value("${vempain.admin.file.site-file-directory}")
 	private String siteFileDirectory;
 	@Value("${vempain.admin.file.image-format}")
 	private String imageFormat;
 
-	private static final String RESPONSE_STATUS_EXCEPTION_MESSAGE = "Unknown error";
+	private static JSONObject metadataToJsonObject(String metadata) {
+		var jsonArray = new JSONArray(metadata);
+
+		if (jsonArray.isEmpty()) {
+			log.error("Failed to parse the metadata JSON from\n{}", metadata);
+			return null;
+		}
+
+		return jsonArray.getJSONObject(0);
+	}
 
 	// FileGallery
 	public List<Gallery> findAllGalleries() {
@@ -150,17 +159,6 @@ public class FileService {
 		var siteFileIdList = siteFileRepository.findAllSiteFileIdWithSubject();
 
 		return new HashSet<>(siteFileIdList);
-	}
-
-	private static JSONObject metadataToJsonObject(String metadata) {
-		var jsonArray = new JSONArray(metadata);
-
-		if (jsonArray.isEmpty()) {
-			log.error("Failed to parse the metadata JSON from\n{}", metadata);
-			return null;
-		}
-
-		return jsonArray.getJSONObject(0);
 	}
 
 	// FileAudio

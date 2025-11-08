@@ -11,8 +11,8 @@ class FormComponentUTC {
 
 	@Test
 	void testEqualsOk() {
-		var fc1    = TestUTCTools.generateFormComponent(1L, 1L);
-		var fc2    = TestUTCTools.deepCopy(fc1, FormComponent.class);
+		var fc1 = TestUTCTools.generateFormComponent(1L, 1L);
+		var fc2 = TestUTCTools.deepCopy(fc1, FormComponent.class);
 		var equals = fc1.equals(fc2);
 		assertTrue(equals);
 	}
@@ -70,21 +70,24 @@ class FormComponentUTC {
 
 	@Test
 	void setSortOrderOk() {
-		var formComponent = FormComponent.builder().build();
+		var formComponent = FormComponent.builder()
+										 .build();
 		formComponent.setSortOrder(1L);
 		assertEquals(1L, formComponent.getSortOrder());
 	}
 
 	@Test
 	void setFormIdOk() {
-		var formComponent = FormComponent.builder().build();
+		var formComponent = FormComponent.builder()
+										 .build();
 		formComponent.setFormId(1L);
 		assertEquals(1L, formComponent.getFormId());
 	}
 
 	@Test
 	void setComponentOk() {
-		var formComponent = FormComponent.builder().build();
+		var formComponent = FormComponent.builder()
+										 .build();
 		formComponent.setComponentId(1L);
 		assertEquals(1L, formComponent.getComponentId());
 	}
@@ -92,10 +95,10 @@ class FormComponentUTC {
 	@Test
 	void builderOk() {
 		var formComponent = FormComponent.builder()
-							   .sortOrder(1L)
-							   .componentId(1L)
-							   .formId(1L)
-							   .build();
+										 .sortOrder(1L)
+										 .componentId(1L)
+										 .formId(1L)
+										 .build();
 		assertEquals(1L, formComponent.getComponentId());
 		assertEquals(1L, formComponent.getFormId());
 		assertEquals(1L, formComponent.getSortOrder());

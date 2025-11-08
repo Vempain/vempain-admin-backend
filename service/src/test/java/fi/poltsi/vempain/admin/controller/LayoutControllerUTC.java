@@ -106,7 +106,8 @@ class LayoutControllerUTC {
 
 	@Test
 	void getLayoutByIdLayoutExceptionFail() throws VempainEntityNotFoundException {
-		doThrow(new VempainEntityNotFoundException("Test exception", "layout")).when(layoutService).findLayoutResponseByIdByUser(1L);
+		doThrow(new VempainEntityNotFoundException("Test exception", "layout")).when(layoutService)
+																			   .findLayoutResponseByIdByUser(1L);
 
 		try {
 			layoutController.getLayoutById(1L);
@@ -155,7 +156,8 @@ class LayoutControllerUTC {
 
 	@Test
 	void getLayoutByNameLayoutExceptionFail() throws VempainLayoutException {
-		doThrow(new VempainLayoutException(VempainMessages.NO_LAYOUT_FOUND_BY_ID)).when(layoutService).findLayoutResponseByLayoutNameByUser("test");
+		doThrow(new VempainLayoutException(VempainMessages.NO_LAYOUT_FOUND_BY_ID)).when(layoutService)
+																				  .findLayoutResponseByLayoutNameByUser("test");
 
 		try {
 			layoutController.getLayoutByName("test");
@@ -170,7 +172,7 @@ class LayoutControllerUTC {
 
 	@Test
 	void saveLayoutOk() {
-		Layout        layout        = TestUTCTools.generateLayout(1L);
+		Layout layout = TestUTCTools.generateLayout(1L);
 		LayoutRequest layoutRequest = TestUTCTools.generateLayoutRequest(layout);
 		when(layoutService.saveLayoutRequestByUser(layoutRequest)).thenReturn(layout);
 		when(layoutService.createLayoutResponse(layout)).thenReturn(layout.getLayoutResponse());
@@ -197,18 +199,18 @@ class LayoutControllerUTC {
 		String[] emptyNames = {null, "", " ", "\t", " \n"};
 
 		for (String emptyName : emptyNames) {
-			Layout        layout        = TestUTCTools.generateLayout(1L);
+			Layout layout = TestUTCTools.generateLayout(1L);
 			LayoutRequest layoutRequest = TestUTCTools.generateLayoutRequest(layout);
 			layoutRequest.setLayoutName(emptyName);
 			requests.add(layoutRequest);
 		}
 
-		Layout        layout1        = TestUTCTools.generateLayout(1L);
+		Layout layout1 = TestUTCTools.generateLayout(1L);
 		LayoutRequest layoutRequest1 = TestUTCTools.generateLayoutRequest(layout1);
 		layoutRequest1.setAcls(null);
 		requests.add(layoutRequest1);
 
-		Layout        layout2        = TestUTCTools.generateLayout(1L);
+		Layout layout2 = TestUTCTools.generateLayout(1L);
 		LayoutRequest layoutRequest2 = TestUTCTools.generateLayoutRequest(layout2);
 		layoutRequest2.setAcls(new ArrayList<>());
 		requests.add(layoutRequest2);
@@ -228,7 +230,7 @@ class LayoutControllerUTC {
 
 	@Test
 	void updateLayoutOk() {
-		Layout        layout        = TestUTCTools.generateLayout(1L);
+		Layout layout = TestUTCTools.generateLayout(1L);
 		LayoutRequest layoutRequest = TestUTCTools.generateLayoutRequest(layout);
 		when(layoutService.updateByUser(layoutRequest)).thenReturn(layout);
 		when(layoutService.createLayoutResponse(layout)).thenReturn(layout.getLayoutResponse());
@@ -248,7 +250,7 @@ class LayoutControllerUTC {
 
 	@Test
 	void updateLayoutInvalidIdFail() {
-		Layout        layout        = TestUTCTools.generateLayout(1L);
+		Layout layout = TestUTCTools.generateLayout(1L);
 		LayoutRequest layoutRequest = TestUTCTools.generateLayoutRequest(layout);
 		layoutRequest.setId(-1);
 
@@ -283,18 +285,18 @@ class LayoutControllerUTC {
 		String[] emptyNames = {null, "", " ", "\t", " \n"};
 
 		for (String emptyName : emptyNames) {
-			Layout        layout        = TestUTCTools.generateLayout(1L);
+			Layout layout = TestUTCTools.generateLayout(1L);
 			LayoutRequest layoutRequest = TestUTCTools.generateLayoutRequest(layout);
 			layoutRequest.setLayoutName(emptyName);
 			requests.add(layoutRequest);
 		}
 
-		Layout        layout1        = TestUTCTools.generateLayout(1L);
+		Layout layout1 = TestUTCTools.generateLayout(1L);
 		LayoutRequest layoutRequest1 = TestUTCTools.generateLayoutRequest(layout1);
 		layoutRequest1.setAcls(null);
 		requests.add(layoutRequest1);
 
-		Layout        layout2        = TestUTCTools.generateLayout(1L);
+		Layout layout2 = TestUTCTools.generateLayout(1L);
 		LayoutRequest layoutRequest2 = TestUTCTools.generateLayoutRequest(layout2);
 		layoutRequest2.setAcls(new ArrayList<>());
 		requests.add(layoutRequest2);
@@ -314,7 +316,7 @@ class LayoutControllerUTC {
 
 	@Test
 	void removeLayoutByIdOk() {
-		Layout        layout        = TestUTCTools.generateLayout(1L);
+		Layout layout = TestUTCTools.generateLayout(1L);
 		LayoutRequest layoutRequest = TestUTCTools.generateLayoutRequest(layout);
 
 		try {
@@ -353,7 +355,8 @@ class LayoutControllerUTC {
 		exceptions.add(new VempainEntityNotFoundException());
 
 		for (Exception e : exceptions) {
-			doThrow(e).when(deleteService).deleteLayoutById(1L);
+			doThrow(e).when(deleteService)
+					  .deleteLayoutById(1L);
 
 			try {
 				layoutController.removeLayoutById(1L);

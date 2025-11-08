@@ -25,13 +25,12 @@ import java.util.List;
 @Setter
 @Component
 public class JschClient {
+	private static final int SESSION_TIMEOUT = 26_000;
+	private static final int CHANNEL_TIMEOUT = 25_000;
 	private final        JSch        jsch;
 	private              Session     jschSession;
 	private              Channel     channel;
 	private              ChannelSftp channelSftp;
-	private static final int         SESSION_TIMEOUT = 26_000;
-	private static final int         CHANNEL_TIMEOUT = 25_000;
-
 	@Value("${vempain.site.www-root}")
 	private String siteWwwRoot;
 	@Value("${vempain.admin.file.site-file-directory}")
@@ -82,7 +81,7 @@ public class JschClient {
 			log.debug("Transferring file {} to {}", absolutePathConvertedFile, siteWwwRoot);
 
 			var targetSubDir = siteFile.getFileClass().shortName + File.separator + siteFile.getFilePath();
-			var targetDir    = siteWwwRoot + File.separator + targetSubDir;
+			var targetDir = siteWwwRoot + File.separator + targetSubDir;
 
 			// We remove the leading / from the subdir so that it can be later split correctly
 			if (targetSubDir.startsWith(File.separator)) {
@@ -91,7 +90,7 @@ public class JschClient {
 
 			if (!siteDirectoryExists(targetDir)) {
 				log.debug("Creating site directory: {}", targetDir);
-				var tmpArray     = targetSubDir.split("/");
+				var tmpArray = targetSubDir.split("/");
 				var siteDirPaths = new LinkedList<>(Arrays.asList(tmpArray));
 				// We add as the last item the .thumb directory which will then contain the thumb files
 				siteDirPaths.add(thumbSubDir);
@@ -106,7 +105,7 @@ public class JschClient {
 		for (FileThumb fileThumb : thumbList) {
 			var absolutePathThumbFile = siteFileDirectory + File.separator + fileThumb.getFilepath() + File.separator + fileThumb.getFilename();
 			var targetDir = siteWwwRoot + File.separator + fileThumb.getParentClass().shortName + File.separator + fileThumb.getSiteFile()
-																	.getFilePath() + File.separator + thumbSubDir;
+																															.getFilePath() + File.separator + thumbSubDir;
 			log.info("Transferring thumb {} to {}", absolutePathThumbFile, targetDir);
 			channelSftp.put(absolutePathThumbFile, targetDir);
 		}

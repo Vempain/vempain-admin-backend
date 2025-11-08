@@ -7,13 +7,13 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 @Slf4j
 class DataObjectAlreadyExistsExceptionUTC {
-    @Test
-    void throwOk() {
-        try {
-            throw new DataObjectAlreadyExistsException();
-        } catch (DataObjectAlreadyExistsException e) {
-            log.info("Exception: ", e);
-            assertNull(e.getMessage());
-        }
-    }
+	@Test
+	void throwOk() {
+		try {
+			throw new DataObjectAlreadyExistsException();
+		} catch (DataObjectAlreadyExistsException e) {
+			log.info("Exception: ", e);
+			assertNull(e.getMessage());
+		}
+	}
 }

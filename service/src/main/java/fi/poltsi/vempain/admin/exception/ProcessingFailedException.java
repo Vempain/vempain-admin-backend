@@ -9,5 +9,5 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 @AllArgsConstructor
 @ResponseStatus(code = HttpStatus.INTERNAL_SERVER_ERROR, reason = "Error processing request")
 public class ProcessingFailedException extends Exception {
-    private final String message;
+	private final String message;
 }

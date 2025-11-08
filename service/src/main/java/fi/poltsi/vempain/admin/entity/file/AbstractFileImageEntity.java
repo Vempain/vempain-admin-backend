@@ -24,8 +24,8 @@ import java.io.Serializable;
 public class AbstractFileImageEntity extends AbstractFileEntity implements Serializable {
 	@Basic
 	@Column(name = "width")
-	private   long   width;
+	private long width;
 	@Basic
 	@Column(name = "height")
-	private   long   height;
+	private long height;
 }

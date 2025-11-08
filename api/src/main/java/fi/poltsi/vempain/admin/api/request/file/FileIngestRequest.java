@@ -44,15 +44,15 @@ public class FileIngestRequest {
 
 	@Schema(description = "Comment", example = "Some comment", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
 	@NotNull
-	private String   comment;
+	private String comment;
 
 	@Schema(description = "Metadata of the file in JSON format", example = "{\"some-field\": \"some value\"}", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
 	@NotNull
-	private String   metadata;
+	private String metadata;
 
 	@Schema(description = "SHA 256 sum of the sent file, used to verify the file integrity", example = "a", requiredMode = Schema.RequiredMode.REQUIRED)
 	@NotNull
-	private String   sha256sum;
+	private String sha256sum;
 
 	@Schema(description = "Existing gallery ID to associate with (if any)", example = "1001")
 	@Positive

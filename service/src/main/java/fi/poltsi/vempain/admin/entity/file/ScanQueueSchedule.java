@@ -86,17 +86,17 @@ public class ScanQueueSchedule {
 
 	public FileImportScheduleResponse toResponse() {
 		return FileImportScheduleResponse.builder()
-				.id(id)
-				.sourceDirectory(sourceDirectory)
-				.destinationDirectory(destinationDirectory)
-				.generateGallery(createGallery)
-				.galleryShortname(galleryShortname)
-				.galleryDescription(galleryDescription)
-				.generatePage(createPage)
-				.pageTitle(pageTitle)
-				.pagePath(pagePath)
-				.pageBody(pageBody)
-				.pageFormId(pageFormId)
-				.build();
+										 .id(id)
+										 .sourceDirectory(sourceDirectory)
+										 .destinationDirectory(destinationDirectory)
+										 .generateGallery(createGallery)
+										 .galleryShortname(galleryShortname)
+										 .galleryDescription(galleryDescription)
+										 .generatePage(createPage)
+										 .pageTitle(pageTitle)
+										 .pagePath(pagePath)
+										 .pageBody(pageBody)
+										 .pageFormId(pageFormId)
+										 .build();
 	}
 }

@@ -67,7 +67,8 @@ public class GalleryController implements GalleryAPI {
 			galleryResponse = galleryService.createGallery(galleryRequest);
 		} catch (VempainAclException e) {
 			log.error("Could not create gallery: {}", e.getMessage());
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+								 .build();
 		}
 
 		return ResponseEntity.ok(galleryResponse);
@@ -79,14 +80,16 @@ public class GalleryController implements GalleryAPI {
 
 		if (gallery == null) {
 			log.error("Could not find gallery with ID {} for deletion", galleryId);
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+			return ResponseEntity.status(HttpStatus.NOT_FOUND)
+								 .build();
 		}
 
 		try {
 			galleryService.deleteGallery(galleryId);
 		} catch (Exception e) {
 			log.error("Could not delete gallery with ID {}: {}", galleryId, e.getMessage());
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+								 .build();
 		}
 
 		return ResponseEntity.ok(DeleteResponse.builder()
@@ -104,7 +107,8 @@ public class GalleryController implements GalleryAPI {
 
 		if (galleryRequest.getId() == 0) {
 			log.error("Gallery ID is missing in the request");
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+								 .build();
 		}
 
 		GalleryResponse galleryResponse;
@@ -113,7 +117,8 @@ public class GalleryController implements GalleryAPI {
 			galleryResponse = galleryService.updateGallery(galleryRequest);
 		} catch (VempainAclException e) {
 			log.error("Could not update gallery: {}", e.getMessage());
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+								 .build();
 		}
 
 		return ResponseEntity.ok(galleryResponse);
@@ -136,7 +141,7 @@ public class GalleryController implements GalleryAPI {
 		if (publishDate != null) {
 			var galleries = galleryService.findAll();
 
-			for (var gallery: galleries) {
+			for (var gallery : galleries) {
 				createGalleryPublishSchedule(publishDate, gallery.getId(), "Publish all galleries");
 			}
 

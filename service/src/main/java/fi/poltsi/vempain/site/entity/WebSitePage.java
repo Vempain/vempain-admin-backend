@@ -21,25 +21,25 @@ import java.time.Instant;
 @Table(name = "web_site_page")
 public class WebSitePage {
 	@Id
-	@GeneratedValue(strategy= GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
 	protected long    id;
 	@Column(name = "page_id")
 	protected long    pageId;
 	@Column(name = "parent_id")
-	private   Long   parentId;
+	private   Long    parentId;
 	@Column(name = "path", nullable = false)
-	private   String path;
+	private   String  path;
 	@Column(name = "secure", nullable = false)
-	private   boolean  secure;
+	private   boolean secure;
 	@Column(name = "indexlist", nullable = false)
-	private   boolean  indexList;
+	private   boolean indexList;
 	@Column(name = "title", nullable = false, length = 512)
-	private String title;
+	private   String  title;
 	@Column(name = "header", nullable = false, length = 512)
-	private String header;
+	private   String  header;
 	@Column(name = "body", nullable = false, length = 524288)
-	private String body;
+	private   String  body;
 	@Column(name = "creator", nullable = false, length = 512)
 	private   String  creator;
 	@Column(name = "created", nullable = false)

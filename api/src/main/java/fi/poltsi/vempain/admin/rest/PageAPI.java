@@ -48,7 +48,7 @@ public interface PageAPI {
 						   @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
 						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
 						   @ApiResponse(responseCode = "404", description = "No pages found", content = @Content),
-						   @ApiResponse( responseCode = "500", description = "Internal server error", content = @Content)})
+						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = MAIN_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<PageResponse>> getPages(@RequestParam(name = "details") @NotNull QueryDetailEnum requestForm);
@@ -62,7 +62,7 @@ public interface PageAPI {
 						   @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
 						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
 						   @ApiResponse(responseCode = "404", description = "No pages found", content = @Content),
-						   @ApiResponse( responseCode = "500", description = "Internal server error", content = @Content)})
+						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = MAIN_PATH + "/by-form/{form_id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<PageResponse>> getPagesByFormId(@PathVariable(name = "form_id") long formId);
@@ -76,7 +76,7 @@ public interface PageAPI {
 						   @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
 						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
 						   @ApiResponse(responseCode = "404", description = "No page found", content = @Content),
-						   @ApiResponse( responseCode = "500", description = "Internal server error", content = @Content)})
+						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = MAIN_PATH + "/{page_id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<PageResponse> getPageById(@PathVariable(name = "page_id") long pageId);
@@ -105,7 +105,7 @@ public interface PageAPI {
 						   @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
 						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
 						   @ApiResponse(responseCode = "404", description = "Page did not exist", content = @Content),
-						   @ApiResponse(responseCode = "500", description = "Internal server error",  content = @Content)})
+						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@PutMapping(value = MAIN_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<PageResponse> updatePage(@Valid @RequestBody PageRequest pageRequest);
@@ -135,10 +135,10 @@ public interface PageAPI {
 						   @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
 						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
 						   @ApiResponse(responseCode = "404", description = "No pages found", content = @Content),
-						   @ApiResponse( responseCode = "500", description = "Internal server error", content = @Content)})
+						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = MAIN_PATH + "/publish", produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<PublishResponse> publishAll(@RequestParam(name = "publish_date", required = false)Instant publishDate);
+	ResponseEntity<PublishResponse> publishAll(@RequestParam(name = "publish_date", required = false) Instant publishDate);
 
 	@Operation(summary = "Publish page", description = "Publish a new version of a page", tags = "Page")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Publish request with page ID and optional delay in seconds", required = true)
@@ -149,7 +149,7 @@ public interface PageAPI {
 						   @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
 						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
 						   @ApiResponse(responseCode = "404", description = "No page found", content = @Content),
-						   @ApiResponse( responseCode = "500", description = "Internal server error", content = @Content)})
+						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@PatchMapping(value = MAIN_PATH + "/publish", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<PublishResponse> publishPage(@Valid @RequestBody PublishRequest publishRequest);
@@ -163,7 +163,7 @@ public interface PageAPI {
 						   @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
 						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
 						   @ApiResponse(responseCode = "404", description = "No page found", content = @Content),
-						   @ApiResponse( responseCode = "500", description = "Internal server error", content = @Content)})
+						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@DeleteMapping(value = MAIN_PATH + "/publish/{page_id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<PublishResponse> deletePublishedPage(@PathVariable(name = "page_id") long pageId);

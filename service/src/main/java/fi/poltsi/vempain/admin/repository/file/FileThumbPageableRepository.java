@@ -17,5 +17,5 @@ public interface FileThumbPageableRepository extends PagingAndSortingRepository<
 	@Query(value = "SELECT CONCAT(ft.filepath, '/', ft.filename) FROM FileThumb ft WHERE ft.parentId = :parentId")
 	String getFilePathByParentId(Long parentId);
 
-    void deleteByParentId(long parentId);
+	void deleteByParentId(long parentId);
 }

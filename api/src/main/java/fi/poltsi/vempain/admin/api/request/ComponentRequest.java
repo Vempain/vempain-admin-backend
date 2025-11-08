@@ -17,11 +17,11 @@ import lombok.experimental.SuperBuilder;
 @Schema(description = "Component request")
 public class ComponentRequest extends BaseRequest {
 	@Schema(description = "Component ID", example = "1")
-	private long   id;
+	private long    id;
 	@Schema(description = "Component name", example = "My component")
-	private String compName;
+	private String  compName;
 	@Schema(description = "Component content", example = "<?php print(\"Hello world!\"); ?>")
-	private String compData;
+	private String  compData;
 	@Schema(description = "Whether the component should be locked from editing", example = "NO")
-	private boolean  locked;
+	private boolean locked;
 }

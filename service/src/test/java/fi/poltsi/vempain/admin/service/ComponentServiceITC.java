@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @Slf4j
 class ComponentServiceITC extends AbstractITCTest {
-	private final long initCount  = 10L;
+	private final long initCount = 10L;
 
 	@Test
 	void findAllOk() throws VempainComponentException, VempainAbstractException {
@@ -47,7 +47,8 @@ class ComponentServiceITC extends AbstractITCTest {
 	void deleteByIdOk() throws VempainEntityNotFoundException, VempainComponentException, VempainAbstractException {
 		var componentIds = testITCTools.generateComponents(initCount);
 		Long componentId = componentIds.getFirst();
-		long aclId       = componentService.findById(componentId).getAclId();
+		long aclId = componentService.findById(componentId)
+									 .getAclId();
 
 		componentService.deleteById(componentId);
 
@@ -59,7 +60,8 @@ class ComponentServiceITC extends AbstractITCTest {
 		}
 
 		Iterable<Acl> acls = aclService.findAclByAclId(aclId);
-		assertEquals(0, StreamSupport.stream(acls.spliterator(), false).count());
+		assertEquals(0, StreamSupport.stream(acls.spliterator(), false)
+									 .count());
 	}
 
 	@Test
@@ -69,7 +71,8 @@ class ComponentServiceITC extends AbstractITCTest {
 									   .compName("Test component fail")
 									   .compData("<!-- component data fail -->")
 									   .creator(userId)
-									   .created(Instant.now().minus(1, ChronoUnit.HOURS))
+									   .created(Instant.now()
+													   .minus(1, ChronoUnit.HOURS))
 									   .modifier(userId)
 									   .modified(Instant.now())
 									   .build();
@@ -77,8 +80,9 @@ class ComponentServiceITC extends AbstractITCTest {
 			componentService.save(component);
 			fail("Saving component with no Acl should have failed");
 		} catch (VempainAbstractException e) {
-			assertTrue(e.getMessage().contains("ACL ID is invalid"), "Exception message should have contained \"" +
-																	 "ACL ID is invalid" + "\": " + e.getMessage());
+			assertTrue(e.getMessage()
+						.contains("ACL ID is invalid"), "Exception message should have contained \"" +
+														"ACL ID is invalid" + "\": " + e.getMessage());
 		} catch (Exception e) {
 			fail("We should only have received a VempainAbstractException with invalid ACL ID in component: " + e.getMessage());
 		}
@@ -92,7 +96,8 @@ class ComponentServiceITC extends AbstractITCTest {
 									   .compData("<!-- component data fail -->")
 									   .aclId(aclId)
 									   .creator(userId)
-									   .created(Instant.now().minus(1, ChronoUnit.HOURS))
+									   .created(Instant.now()
+													   .minus(1, ChronoUnit.HOURS))
 									   .modifier(userId)
 									   .modified(Instant.now())
 									   .build();
@@ -100,8 +105,9 @@ class ComponentServiceITC extends AbstractITCTest {
 			componentService.save(component);
 			fail("Saving component with no component name should have failed");
 		} catch (VempainComponentException e) {
-			assertTrue(e.getMessage().contains("Component name is not set"), "Exception message should have contained \"" +
-																			 "Component name is not set" + "\": " + e.getMessage());
+			assertTrue(e.getMessage()
+						.contains("Component name is not set"), "Exception message should have contained \"" +
+																"Component name is not set" + "\": " + e.getMessage());
 		} catch (Exception e) {
 			fail("Should have only received a VempainComponentException when component name is invalid: " + e.getMessage());
 		}
@@ -111,12 +117,13 @@ class ComponentServiceITC extends AbstractITCTest {
 	void saveWithNoCreatorFail() {
 		var userId = testITCTools.generateUser();
 		var unitId = testITCTools.generateUnit();
-		var aclId  = testITCTools.generateAcl(null, unitId, false, true, false, true);
+		var aclId = testITCTools.generateAcl(null, unitId, false, true, false, true);
 		var component = Component.builder()
 								 .compName("Test component Fail")
 								 .compData("<!-- component data fail -->")
 								 .aclId(aclId)
-								 .created(Instant.now().minus(1, ChronoUnit.HOURS))
+								 .created(Instant.now()
+												 .minus(1, ChronoUnit.HOURS))
 								 .modifier(userId)
 								 .modified(Instant.now())
 								 .build();
@@ -124,7 +131,8 @@ class ComponentServiceITC extends AbstractITCTest {
 			componentService.save(component);
 			fail("Saving component with no creator should have failed");
 		} catch (VempainAbstractException e) {
-			assertTrue(e.getMessage().contains("Creator is missing or invalid"));
+			assertTrue(e.getMessage()
+						.contains("Creator is missing or invalid"));
 		} catch (Exception e) {
 			fail("Should have only received a VempainAbstractException when component creator is null: " + e.getMessage());
 		}
@@ -147,7 +155,8 @@ class ComponentServiceITC extends AbstractITCTest {
 			componentService.save(component);
 			fail("Saving component with no created datetime should have failed");
 		} catch (VempainAbstractException e) {
-			assertTrue(e.getMessage().contains("Created datetime is missing"));
+			assertTrue(e.getMessage()
+						.contains("Created datetime is missing"));
 		} catch (Exception e) {
 			fail("Should have only received a VempainAbstractException when component creator is null: " + e.getMessage());
 		}
@@ -163,7 +172,8 @@ class ComponentServiceITC extends AbstractITCTest {
 									   .compData("<!-- component data fail -->")
 									   .aclId(aclId)
 									   .creator(userId)
-									   .created(Instant.now().plus(1, ChronoUnit.HOURS))
+									   .created(Instant.now()
+													   .plus(1, ChronoUnit.HOURS))
 									   .modifier(userId)
 									   .modified(Instant.now())
 									   .build();
@@ -171,7 +181,8 @@ class ComponentServiceITC extends AbstractITCTest {
 			componentService.save(component);
 			fail("Saving component with created timestamp newer than modified should have failed");
 		} catch (VempainAbstractException e) {
-			assertTrue(e.getMessage().contains("Created datetime is more recent than modified"));
+			assertTrue(e.getMessage()
+						.contains("Created datetime is more recent than modified"));
 		} catch (Exception e) {
 			fail("Should have only received a VempainAbstractException when component created is more recent than modified: " + e.getMessage());
 		}
@@ -187,7 +198,8 @@ class ComponentServiceITC extends AbstractITCTest {
 									   .compData("<!-- component data fail -->")
 									   .aclId(aclId)
 									   .creator(-1L)
-									   .created(Instant.now().minus(1, ChronoUnit.HOURS))
+									   .created(Instant.now()
+													   .minus(1, ChronoUnit.HOURS))
 									   .modifier(userId)
 									   .modified(Instant.now())
 									   .build();
@@ -195,7 +207,8 @@ class ComponentServiceITC extends AbstractITCTest {
 			componentService.save(component);
 			fail("Saving component with invalid creator id should have failed");
 		} catch (VempainAbstractException e) {
-			assertTrue(e.getMessage().contains("Creator is missing or invalid"));
+			assertTrue(e.getMessage()
+						.contains("Creator is missing or invalid"));
 		} catch (Exception e) {
 			fail("Should have only received a VempainAbstractException when component creator is invalid: " + e.getMessage());
 		}
@@ -211,7 +224,8 @@ class ComponentServiceITC extends AbstractITCTest {
 									   .compData("<!-- component data fail -->")
 									   .aclId(aclId)
 									   .creator(userId)
-									   .created(Instant.now().minus(1, ChronoUnit.HOURS))
+									   .created(Instant.now()
+													   .minus(1, ChronoUnit.HOURS))
 									   .modifier(-1L)
 									   .modified(Instant.now())
 									   .build();
@@ -219,7 +233,8 @@ class ComponentServiceITC extends AbstractITCTest {
 			componentService.save(component);
 			fail("Saving component with invalid component modifier id should have failed");
 		} catch (VempainAbstractException e) {
-			assertTrue(e.getMessage().contains("Entity modifier is invalid"));
+			assertTrue(e.getMessage()
+						.contains("Entity modifier is invalid"));
 		} catch (Exception e) {
 			fail("Should have only received a VempainAbstractException when component modifier is invalid: " + e.getMessage());
 		}
@@ -235,7 +250,8 @@ class ComponentServiceITC extends AbstractITCTest {
 									   .aclId(aclId)
 									   .locked(false)
 									   .creator(userId)
-									   .created(Instant.now().minus(1, ChronoUnit.HOURS))
+									   .created(Instant.now()
+													   .minus(1, ChronoUnit.HOURS))
 									   .modifier(userId)
 									   .modified(Instant.now())
 									   .build();
@@ -253,7 +269,8 @@ class ComponentServiceITC extends AbstractITCTest {
 		}
 
 		Iterable<Acl> acls = aclService.findAclByAclId(aclId);
-		assertEquals(0, StreamSupport.stream(acls.spliterator(), false).count());
+		assertEquals(0, StreamSupport.stream(acls.spliterator(), false)
+									 .count());
 	}
 
 	private void assertComponent(Component component) {
@@ -266,7 +283,7 @@ class ComponentServiceITC extends AbstractITCTest {
 		assertTrue(component.getCreator() > 0);
 		assertNotNull(component.getCreated());
 
-		if  (component.getModifier() != null) {
+		if (component.getModifier() != null) {
 			assertNotNull(component.getModified());
 		}
 	}

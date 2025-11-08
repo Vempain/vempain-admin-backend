@@ -23,99 +23,99 @@ import static org.mockito.Mockito.doThrow;
 
 @ExtendWith(MockitoExtension.class)
 class AclControllerUTC {
-    static final long count = 10L;
+	static final long count = 10L;
 
-    @Mock
-    private AclService aclService;
+	@Mock
+	private AclService aclService;
 
-    @Mock
-    private AccessService accessService;
+	@Mock
+	private AccessService accessService;
 
-    @InjectMocks
-    private AclController aclController;
+	@InjectMocks
+	private AclController aclController;
 
-    @Test
-    void getAllAclOk() {
-        doNothing().when(accessService)
-                   .checkAuthentication();
-        MockServiceTools.aclServiceFindAllOk(aclService, count);
+	@Test
+	void getAllAclOk() {
+		doNothing().when(accessService)
+				   .checkAuthentication();
+		MockServiceTools.aclServiceFindAllOk(aclService, count);
 
-        ResponseEntity<List<AclResponse>> aclResponseEntity = aclController.getAllAcl();
-        assertNotNull(aclResponseEntity);
-        List<AclResponse> aclResponses = aclResponseEntity.getBody();
-        assertNotNull(aclResponses);
-        assertEquals(8 * count, aclResponses.size());
-    }
+		ResponseEntity<List<AclResponse>> aclResponseEntity = aclController.getAllAcl();
+		assertNotNull(aclResponseEntity);
+		List<AclResponse> aclResponses = aclResponseEntity.getBody();
+		assertNotNull(aclResponses);
+		assertEquals(8 * count, aclResponses.size());
+	}
 
-    @Test
-    void getAllAclOkNoAcl() {
-        doNothing().when(accessService)
-                   .checkAuthentication();
-        MockServiceTools.aclServiceFindAllOk(aclService, 0);
+	@Test
+	void getAllAclOkNoAcl() {
+		doNothing().when(accessService)
+				   .checkAuthentication();
+		MockServiceTools.aclServiceFindAllOk(aclService, 0);
 
-        ResponseEntity<List<AclResponse>> aclResponseEntity = aclController.getAllAcl();
-        assertNotNull(aclResponseEntity);
-        List<AclResponse> aclResponses = aclResponseEntity.getBody();
-        assertNotNull(aclResponses);
-        assertEquals(0, aclResponses.size());
-    }
+		ResponseEntity<List<AclResponse>> aclResponseEntity = aclController.getAllAcl();
+		assertNotNull(aclResponseEntity);
+		List<AclResponse> aclResponses = aclResponseEntity.getBody();
+		assertNotNull(aclResponses);
+		assertEquals(0, aclResponses.size());
+	}
 
-    @Test
-    void getAllAclFailNoAccess() {
-        doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "User must be logged on to use this resource"))
-                .when(accessService)
-                .checkAuthentication();
-        // MockServiceTools.aclServiceFindAllOk(aclService, count);
+	@Test
+	void getAllAclFailNoAccess() {
+		doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "User must be logged on to use this resource"))
+				.when(accessService)
+				.checkAuthentication();
+		// MockServiceTools.aclServiceFindAllOk(aclService, count);
 
-        try {
-            aclController.getAllAcl();
-            fail("We should have gotten an exception");
-        } catch (ResponseStatusException e) {
-            assertEquals(HttpStatus.FORBIDDEN, e.getStatusCode());
-            assertEquals("403 FORBIDDEN \"User must be logged on to use this resource\"", e.getMessage());
-        }
-    }
+		try {
+			aclController.getAllAcl();
+			fail("We should have gotten an exception");
+		} catch (ResponseStatusException e) {
+			assertEquals(HttpStatus.FORBIDDEN, e.getStatusCode());
+			assertEquals("403 FORBIDDEN \"User must be logged on to use this resource\"", e.getMessage());
+		}
+	}
 
-    @Test
-    void getAclOk() {
-        doNothing().when(accessService)
-                   .checkAuthentication();
-        MockServiceTools.aclServicefindAclByAclIdOk(aclService, 1L);
-        ResponseEntity<List<AclResponse>> responseEntity = aclController.getAcl(1L);
-        assertNotNull(responseEntity);
-        List<AclResponse> aclResponses = responseEntity.getBody();
-        assertNotNull(aclResponses);
-        assertEquals(8, aclResponses.size());
-    }
+	@Test
+	void getAclOk() {
+		doNothing().when(accessService)
+				   .checkAuthentication();
+		MockServiceTools.aclServicefindAclByAclIdOk(aclService, 1L);
+		ResponseEntity<List<AclResponse>> responseEntity = aclController.getAcl(1L);
+		assertNotNull(responseEntity);
+		List<AclResponse> aclResponses = responseEntity.getBody();
+		assertNotNull(aclResponses);
+		assertEquals(8, aclResponses.size());
+	}
 
-    @Test
-    void getAclFailNoAccess() {
-        doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "User must be logged on to use this resource"))
-                .when(accessService)
-                .checkAuthentication();
-        // MockServiceTools.aclServicefindAclByAclIdOk(aclService, 1L);
+	@Test
+	void getAclFailNoAccess() {
+		doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "User must be logged on to use this resource"))
+				.when(accessService)
+				.checkAuthentication();
+		// MockServiceTools.aclServicefindAclByAclIdOk(aclService, 1L);
 
-        try {
-            aclController.getAcl(1L);
-            fail("We should have gotten an exception");
-        } catch (ResponseStatusException e) {
-            assertEquals(HttpStatus.FORBIDDEN, e.getStatusCode());
-            assertEquals("403 FORBIDDEN \"User must be logged on to use this resource\"", e.getMessage());
-        }
-    }
+		try {
+			aclController.getAcl(1L);
+			fail("We should have gotten an exception");
+		} catch (ResponseStatusException e) {
+			assertEquals(HttpStatus.FORBIDDEN, e.getStatusCode());
+			assertEquals("403 FORBIDDEN \"User must be logged on to use this resource\"", e.getMessage());
+		}
+	}
 
-    @Test
-    void getAclFailNoAcl() {
-        doNothing().when(accessService)
-                   .checkAuthentication();
-        MockServiceTools.aclServicefindAclByAclIdEmptyList(aclService, 1L);
+	@Test
+	void getAclFailNoAcl() {
+		doNothing().when(accessService)
+				   .checkAuthentication();
+		MockServiceTools.aclServicefindAclByAclIdEmptyList(aclService, 1L);
 
-        try {
-            aclController.getAcl(1L);
-            fail("We should have gotten an exception");
-        } catch (ResponseStatusException e) {
-            assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
-            assertEquals("404 NOT_FOUND \"There are no ACL in the database\"", e.getMessage());
-        }
-    }
+		try {
+			aclController.getAcl(1L);
+			fail("We should have gotten an exception");
+		} catch (ResponseStatusException e) {
+			assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
+			assertEquals("404 NOT_FOUND \"There are no ACL in the database\"", e.getMessage());
+		}
+	}
 }

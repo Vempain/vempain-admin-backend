@@ -91,7 +91,7 @@ public class PageGalleryService {
 
 		if (!pgObjects.isEmpty()) {
 			for (Object[] o : pgObjects) {
-				var pageId    = (Long) o[0];
+				var pageId = (Long) o[0];
 				var galleryId = (Long) o[1];
 				var sortOrder = (Long) o[2];
 				formComponents.add(PageGallery.builder()

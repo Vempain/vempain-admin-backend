@@ -21,18 +21,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 public class ContainerTestITC {
-    @Container
-    public static PostgreSQLContainer<?> postgresqlContainer = new PostgreSQLContainer<>("postgres:latest")
-        .withDatabaseName("vempain_admin")
-        .withUsername("test")
-        .withPassword("test");
-
+	@Container
+	public static PostgreSQLContainer<?> postgresqlContainer = new PostgreSQLContainer<>("postgres:latest")
+			.withDatabaseName("vempain_admin")
+			.withUsername("test")
+			.withPassword("test");
+	@Autowired
+	protected     AclService             aclService;
 	@Autowired
 	@Qualifier("adminFlyway")
 	private Flyway adminFlyway;
-
-	@Autowired
-	protected AclService aclService;
 
 	@BeforeEach
 	public void resetDatabase() {

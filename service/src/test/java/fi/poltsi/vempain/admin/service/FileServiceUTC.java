@@ -34,32 +34,32 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class FileServiceUTC {
 	@Mock
-	private AclService                     aclService;
+	private AclService                  aclService;
 	@Mock
-	private FileThumbPageableRepository    fileThumbPageableRepository;
+	private FileThumbPageableRepository fileThumbPageableRepository;
 	@Mock
-	private GalleryRepository              galleryRepository;
+	private GalleryRepository           galleryRepository;
 	@Mock
-	private GalleryFileService             galleryFileService;
+	private GalleryFileService          galleryFileService;
 	@Mock
-	private AccessService                  accessService;
+	private AccessService               accessService;
 	@Mock
-	private SubjectRepository              subjectRepository;
+	private SubjectRepository           subjectRepository;
 	@Mock
-	private FileThumbService               fileThumbService;
+	private FileThumbService            fileThumbService;
 	@Mock
-	private SubjectService                 subjectService;
+	private SubjectService              subjectService;
 	@Mock
-	private PageService                    pageService;
+	private PageService                 pageService;
 	@Mock
-	private PageGalleryService             pageGalleryService;
+	private PageGalleryService          pageGalleryService;
 
 	@InjectMocks
 	private FileService fileService;
 
 	@Test
 	void findAllGalleriesOk() {
-		String shortName   = "Test Gallery";
+		String shortName = "Test Gallery";
 		String description = "Test gallery description";
 
 		List<Gallery> results = new ArrayList<>();
@@ -86,7 +86,7 @@ class FileServiceUTC {
 
 	@Test
 	void createGalleryOk() {
-		String shortName   = "Test Gallery";
+		String shortName = "Test Gallery";
 		String description = "Test gallery description";
 
 		Gallery gallery = Gallery.builder()
@@ -107,10 +107,10 @@ class FileServiceUTC {
 
 		for (int i = 0; i < 4; i++) {
 			var siteFile = SiteFile.builder()
-											  .id(Integer.toUnsignedLong(i))
-											  .fileClass(FileClassEnum.IMAGE)
-											  .metadata("Metadata " + i)
-											  .build();
+								   .id(Integer.toUnsignedLong(i))
+								   .fileClass(FileClassEnum.IMAGE)
+								   .metadata("Metadata " + i)
+								   .build();
 			siteFiles.add(siteFile);
 		}
 
@@ -125,7 +125,7 @@ class FileServiceUTC {
 
 	@Test
 	void createEmptyGalleryOk() {
-		String shortName   = "Test Gallery";
+		String shortName = "Test Gallery";
 		String description = "Test gallery description";
 
 		Gallery gallery = Gallery.builder()

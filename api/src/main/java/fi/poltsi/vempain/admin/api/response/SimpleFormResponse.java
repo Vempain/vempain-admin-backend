@@ -24,11 +24,11 @@ public class SimpleFormResponse {
 	@Schema(description = "Layout ID", example = "1")
 	private Long          layoutId;
 	@Schema(description = "ACL ID", example = "1")
-	private Long  aclId;
+	private Long    aclId;
 	@Schema(description = "Whether the form should be locked from editing", example = "false")
 	private boolean locked;
 	@Schema(description = "User ID of the creator", example = "1")
-	private Long  creator;
+	private Long    creator;
 	@Schema(description = "User ID of the last modifier", example = "10")
 	private Long          modifier;
 	@Schema(description = "When was the form created", example = "2020-03-15 13:30:45")

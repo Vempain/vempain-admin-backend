@@ -58,7 +58,8 @@ public class ScheduleService {
 	public FileImportScheduleResponse getFileImportScheduleById(long id) {
 		var optionalScanQueueSchedule = scanQueueScheduleRepository.findById(id);
 
-		return optionalScanQueueSchedule.map(ScanQueueSchedule::toResponse).orElse(null);
+		return optionalScanQueueSchedule.map(ScanQueueSchedule::toResponse)
+										.orElse(null);
 	}
 
 	public PublishScheduleResponse schedulePublish(Instant publishTime, long itemId, ContentTypeEnum contentTypeEnum, String publishMessage) {
@@ -100,7 +101,8 @@ public class ScheduleService {
 	public PublishScheduleResponse getPublishScheduleById(long id) {
 		var publishSchedule = publishScheduleRepository.findById(id);
 
-		return publishSchedule.map(PublishSchedule::toResponse).orElse(null);
+		return publishSchedule.map(PublishSchedule::toResponse)
+							  .orElse(null);
 	}
 
 	public PublishScheduleResponse triggerPublishSchedule(PublishScheduleRequest publishScheduleRequest) {
@@ -110,7 +112,8 @@ public class ScheduleService {
 			var schedule = publishSchedule.get();
 			schedule.setPublishTime(publishScheduleRequest.getPublishTime());
 
-			if (!publishScheduleRequest.getPublishTime().isAfter(Instant.now())) {
+			if (!publishScheduleRequest.getPublishTime()
+									   .isAfter(Instant.now())) {
 				schedule.setPublishStatus(PublishStatusEnum.PROCESSING);
 			} else {
 				schedule.setPublishStatus(PublishStatusEnum.NOT_PUBLISHED);

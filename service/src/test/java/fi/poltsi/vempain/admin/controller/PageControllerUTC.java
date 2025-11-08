@@ -61,7 +61,8 @@ class PageControllerUTC {
 
 		for (Page page : pages) {
 			var pageResponse = page.toResponse();
-			pageResponse.setPublished(Instant.now().minus(20, ChronoUnit.MINUTES));
+			pageResponse.setPublished(Instant.now()
+											 .minus(20, ChronoUnit.MINUTES));
 			pageResponse.setAcls(acls);
 			when(pageService.populateResponse(page)).thenReturn(pageResponse);
 		}
@@ -76,7 +77,8 @@ class PageControllerUTC {
 			for (PageResponse pageResponse : pageResponses) {
 				assertNotNull(pageResponse);
 				assertNotNull(pageResponse.getAcls());
-				assertFalse(pageResponse.getAcls().isEmpty());
+				assertFalse(pageResponse.getAcls()
+										.isEmpty());
 			}
 		} catch (Exception e) {
 			fail("Should not have received an exception: " + e);
@@ -98,14 +100,15 @@ class PageControllerUTC {
 
 	@Test
 	void addPageOk() {
-		var page        = TestUTCTools.generatePage(1L);
+		var page = TestUTCTools.generatePage(1L);
 		var pageRequest = TestUTCTools.generatePageRequestFromPage(page);
-		var acls        = TestUTCTools.generateAclResponses(1L, 1L);
+		var acls = TestUTCTools.generateAclResponses(1L, 1L);
 
 		when(pageService.saveFromPageRequest(pageRequest)).thenReturn(page);
 
 		var populatedPageResponse = page.toResponse();
-		populatedPageResponse.setPublished(Instant.now().minus(20, ChronoUnit.MINUTES));
+		populatedPageResponse.setPublished(Instant.now()
+												  .minus(20, ChronoUnit.MINUTES));
 		populatedPageResponse.setAcls(acls);
 		when(pageService.populateResponse(any())).thenReturn(populatedPageResponse);
 
@@ -195,10 +198,11 @@ class PageControllerUTC {
 
 	@Test
 	void addPageSaveServiceUnauthorizedExceptionFail() {
-		Page        page        = TestUTCTools.generatePage(1L);
+		Page page = TestUTCTools.generatePage(1L);
 		PageRequest pageRequest = TestUTCTools.generatePageRequestFromPage(page);
 
-		doThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, VempainMessages.INVALID_USER_SESSION)).when(pageService).saveFromPageRequest(pageRequest);
+		doThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, VempainMessages.INVALID_USER_SESSION)).when(pageService)
+																										   .saveFromPageRequest(pageRequest);
 
 		try {
 			pageController.addPage(pageRequest);
@@ -213,10 +217,11 @@ class PageControllerUTC {
 
 	@Test
 	void addPageSaveServiceConflictExceptionFail() {
-		Page        page        = TestUTCTools.generatePage(1L);
+		Page page = TestUTCTools.generatePage(1L);
 		PageRequest pageRequest = TestUTCTools.generatePageRequestFromPage(page);
 
-		doThrow(new ResponseStatusException(HttpStatus.CONFLICT, VempainMessages.OBJECT_NAME_ALREADY_EXISTS)).when(pageService).saveFromPageRequest(pageRequest);
+		doThrow(new ResponseStatusException(HttpStatus.CONFLICT, VempainMessages.OBJECT_NAME_ALREADY_EXISTS)).when(pageService)
+																											 .saveFromPageRequest(pageRequest);
 
 		try {
 			pageController.addPage(pageRequest);
@@ -231,14 +236,15 @@ class PageControllerUTC {
 
 	@Test
 	void updatePageOk() {
-		var page        = TestUTCTools.generatePage(1L);
+		var page = TestUTCTools.generatePage(1L);
 		var pageRequest = TestUTCTools.generatePageRequestFromPage(page);
 		when(pageService.updateFromRequest(pageRequest)).thenReturn(page);
 
 		var acls = TestUTCTools.generateAclResponses(1L, 1L);
 
 		var populatedPageResponse = page.toResponse();
-		populatedPageResponse.setPublished(Instant.now().minus(20, ChronoUnit.MINUTES));
+		populatedPageResponse.setPublished(Instant.now()
+												  .minus(20, ChronoUnit.MINUTES));
 		populatedPageResponse.setAcls(acls);
 		when(pageService.populateResponse(any())).thenReturn(populatedPageResponse);
 
@@ -248,7 +254,8 @@ class PageControllerUTC {
 			var pageResponse = response.getBody();
 			assertNotNull(pageResponse);
 			assertNotNull(pageResponse.getAcls());
-			assertFalse(pageResponse.getAcls().isEmpty());
+			assertFalse(pageResponse.getAcls()
+									.isEmpty());
 		} catch (Exception e) {
 			fail("Should not have received an exception: " + e);
 		}
@@ -256,7 +263,7 @@ class PageControllerUTC {
 
 	@Test
 	void updatePageMalformedIdFail() {
-		Page        page        = TestUTCTools.generatePage(1L);
+		Page page = TestUTCTools.generatePage(1L);
 		PageRequest pageRequest = TestUTCTools.generatePageRequestFromPage(page);
 		pageRequest.setId(-1);
 
@@ -282,7 +289,7 @@ class PageControllerUTC {
 
 	@Test
 	void deletePageMalformedIdFail() {
-		Page        page        = TestUTCTools.generatePage(1L);
+		Page page = TestUTCTools.generatePage(1L);
 		PageRequest pageRequest = TestUTCTools.generatePageRequestFromPage(page);
 
 		try {
