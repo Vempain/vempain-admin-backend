@@ -1,4 +1,4 @@
 package fi.poltsi.vempain.site.entity;
 
-public class SiteGalleryFile {
+public class WebSiteGalleryFile {
 }

@@ -109,11 +109,14 @@ public class ComponentController implements ComponentAPI {
 	private void verifyComponentRequest(ComponentRequest componentRequest) {
 		if (componentRequest == null ||
 			componentRequest.getCompName() == null ||
-			componentRequest.getCompName().isBlank() ||
+			componentRequest.getCompName()
+							.isBlank() ||
 			componentRequest.getCompData() == null ||
-			componentRequest.getCompData().isBlank() ||
+			componentRequest.getCompData()
+							.isBlank() ||
 			componentRequest.getAcls() == null ||
-			componentRequest.getAcls().isEmpty()) {
+			componentRequest.getAcls()
+							.isEmpty()) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST);
 		}
 	}

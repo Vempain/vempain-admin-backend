@@ -28,9 +28,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 class LayoutRTC {
-	@Autowired
-	private MockMvc mockMvc;
-
 	final static private String payload = """
 			{
 			  "id": 0,
@@ -55,28 +52,38 @@ class LayoutRTC {
 			  "modified": "2021-06-11T14:26:07.983Z"
 			}
 			""";
+	@Autowired
+	private MockMvc mockMvc;
 
 	@Disabled("Somehow the JSON becomes mangled in the process")
 	@Test
 	void addLayout() throws Exception {
-		MvcResult result = mockMvc.perform(post("/content-management/layouts").contentType(MediaType.APPLICATION_JSON).content(payload))
+		MvcResult result = mockMvc.perform(post("/content-management/layouts").contentType(MediaType.APPLICATION_JSON)
+																			  .content(payload))
 								  .andExpect(status().isOk())
 								  .andExpect(content().contentType(MediaType.APPLICATION_JSON))
 								  .andReturn();
 		assertNotNull(result);
 		assertNotNull(result.getResponse());
 		ObjectMapper objectMapper = new ObjectMapper();
-		LayoutResponse layoutResponse = objectMapper.readValue(result.getResponse().getContentAsString(), LayoutResponse.class);
+		LayoutResponse layoutResponse = objectMapper.readValue(result.getResponse()
+																	 .getContentAsString(), LayoutResponse.class);
 		assertNotNull(layoutResponse);
 		assertNotNull(layoutResponse.getAcls());
 		List<AclResponse> aclResponses = layoutResponse.getAcls();
 		assertFalse(aclResponses.isEmpty());
 		assertEquals(1, aclResponses.size());
-		assertTrue(aclResponses.getFirst().isReadPrivilege());
-		assertTrue(aclResponses.getFirst().isModifyPrivilege());
-		assertFalse(aclResponses.getFirst().isCreatePrivilege());
-		assertFalse(aclResponses.getFirst().isDeletePrivilege());
-		assertEquals(1, aclResponses.getFirst().getUser());
-		assertNull(aclResponses.getFirst().getUnit());
+		assertTrue(aclResponses.getFirst()
+							   .isReadPrivilege());
+		assertTrue(aclResponses.getFirst()
+							   .isModifyPrivilege());
+		assertFalse(aclResponses.getFirst()
+								.isCreatePrivilege());
+		assertFalse(aclResponses.getFirst()
+								.isDeletePrivilege());
+		assertEquals(1, aclResponses.getFirst()
+									.getUser());
+		assertNull(aclResponses.getFirst()
+							   .getUnit());
 	}
 }

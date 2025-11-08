@@ -23,9 +23,9 @@ import lombok.experimental.SuperBuilder;
 @Schema(description = "Gallery request")
 public class GalleryRequest extends BaseRequest {
 	@Schema(description = "Short name of the Gallery", example = "My Gallery")
-	private String                        shortName;
+	private String shortName;
 	@Schema(description = "Description of the Gallery", example = "Gallery of our trip to Venezuela")
-	private String            description;
+	private String description;
 	@Schema(description = "List of common file IDs that belong to this gallery", example = "[1,2,3,4]")
 	private long[] commonFilesId;
 }

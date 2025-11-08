@@ -30,14 +30,15 @@ public class ScheduleController implements ScheduleAPI {
 
 	@Override
 	public ResponseEntity<List<ScheduleTriggerResponse>> getSystemSchedules() {
-		Set<ScheduledTask>                 scheduledTaskSet         = postProcessor.getScheduledTasks();
+		Set<ScheduledTask> scheduledTaskSet = postProcessor.getScheduledTasks();
 		ArrayList<ScheduleTriggerResponse> scheduleTriggerResponses = new ArrayList<>();
-		var                                idCounter                = 1L;
+		var idCounter = 1L;
 
 		for (ScheduledTask scheduledTask : scheduledTaskSet) {
 			scheduleTriggerResponses.add(ScheduleTriggerResponse.builder()
 																.id(idCounter)
-																.scheduleName(scheduledTask.getTask().toString())
+																.scheduleName(scheduledTask.getTask()
+																						   .toString())
 																.status("ACTIVE")
 																.build());
 			idCounter++;
@@ -56,7 +57,8 @@ public class ScheduleController implements ScheduleAPI {
 							 .equals(systemScheduleName)) {
 				return ResponseEntity.ok(ScheduleTriggerResponse.builder()
 																.id(1L)
-																.scheduleName(scheduledTask.getTask().toString())
+																.scheduleName(scheduledTask.getTask()
+																						   .toString())
 																.status("ACTIVE")
 																.build());
 			}
@@ -75,11 +77,14 @@ public class ScheduleController implements ScheduleAPI {
 			if (scheduledTask.getTask()
 							 .toString()
 							 .equals(schedule.getScheduleName())) {
-				taskScheduler.schedule(scheduledTask.getTask().getRunnable(), Instant.now().plusSeconds(schedule.getDelay()));
+				taskScheduler.schedule(scheduledTask.getTask()
+													.getRunnable(), Instant.now()
+																		   .plusSeconds(schedule.getDelay()));
 
 				return ResponseEntity.ok(ScheduleTriggerResponse.builder()
 																.id(1L)
-																.scheduleName(scheduledTask.getTask().toString())
+																.scheduleName(scheduledTask.getTask()
+																						   .toString())
 																.status("ACTIVE")
 																.build());
 			}
@@ -87,7 +92,8 @@ public class ScheduleController implements ScheduleAPI {
 
 		log.error("Failed to trigger system schedule with name: {}", schedule.getScheduleName());
 
-		return ResponseEntity.notFound().build();
+		return ResponseEntity.notFound()
+							 .build();
 	}
 
 	@Override
@@ -117,7 +123,8 @@ public class ScheduleController implements ScheduleAPI {
 		var publishScheduleResponse = scheduleService.triggerPublishSchedule(publishScheduleRequest);
 
 		if (publishScheduleResponse == null) {
-			return ResponseEntity.notFound().build();
+			return ResponseEntity.notFound()
+								 .build();
 		}
 
 		return ResponseEntity.ok(publishScheduleResponse);

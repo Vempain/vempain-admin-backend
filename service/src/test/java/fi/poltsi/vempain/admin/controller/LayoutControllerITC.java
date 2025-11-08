@@ -47,14 +47,15 @@ class LayoutControllerITC extends AbstractITCTest {
 			assertNotNull(layoutResponse.getCreated());
 			assertNull(layoutResponse.getModified());
 			assertNotNull(layoutResponse.getAcls());
-			assertEquals(1, layoutResponse.getAcls().size());
+			assertEquals(1, layoutResponse.getAcls()
+										  .size());
 		}
 	}
 
 	@Test
 	@DisplayName("Add a new layout")
 	void saveLayoutOk() {
-		String layoutName      = "LayoutRTC " + (initCount + 1);
+		String layoutName = "LayoutRTC " + (initCount + 1);
 		String layoutStructure = "<!--comp_0-->" + (initCount + 1);
 		var userId = testITCTools.generateUser();
 
@@ -95,10 +96,12 @@ class LayoutControllerITC extends AbstractITCTest {
 	void getLayoutOk() {
 		testITCTools.generateLayouts(initCount);
 		var layouts = layoutRepository.findAll();
-		var optionalLayout = StreamSupport.stream(layouts.spliterator(), false).findFirst();
+		var optionalLayout = StreamSupport.stream(layouts.spliterator(), false)
+										  .findFirst();
 		assertTrue(optionalLayout.isPresent());
 		// By name
-		ResponseEntity < LayoutResponse > layoutResponseEntity1 = layoutController.getLayoutByName(optionalLayout.get().getLayoutName());
+		ResponseEntity<LayoutResponse> layoutResponseEntity1 = layoutController.getLayoutByName(optionalLayout.get()
+																											  .getLayoutName());
 		assertNotNull(layoutResponseEntity1);
 		assertEquals(HttpStatus.OK, layoutResponseEntity1.getStatusCode());
 		LayoutResponse layoutResponse1 = layoutResponseEntity1.getBody();
@@ -151,9 +154,11 @@ class LayoutControllerITC extends AbstractITCTest {
 	void removeLayoutByIdOk() {
 		testITCTools.generateLayouts(initCount);
 		var layouts = layoutRepository.findAll();
-		var optionalLayout = StreamSupport.stream(layouts.spliterator(), false).findFirst();
+		var optionalLayout = StreamSupport.stream(layouts.spliterator(), false)
+										  .findFirst();
 		assertTrue(optionalLayout.isPresent());
-		var layoutName = optionalLayout.get().getLayoutName();
+		var layoutName = optionalLayout.get()
+									   .getLayoutName();
 		ResponseEntity<LayoutResponse> layoutEntity = layoutController.getLayoutByName(layoutName);
 		assertNotNull(layoutEntity);
 		assertEquals(HttpStatus.OK, layoutEntity.getStatusCode());

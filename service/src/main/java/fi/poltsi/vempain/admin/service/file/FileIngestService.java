@@ -46,7 +46,7 @@ public class FileIngestService {
 
 	private final StorageDirectoryConfiguration storageDirectoryConfiguration;
 	private final SubjectService subjectService;
-	private final FileService fileService;
+	private final FileService    fileService;
 
 	@Value("${vempain.admin.file.site-file-directory}")
 	private String siteFileDirectory;
@@ -165,6 +165,8 @@ public class FileIngestService {
 			siteFile.setFileClass(FileClassEnum.getFileClassByMimetype(fileIngestRequest.getMimeType()));
 			siteFile.setSize(size);
 			siteFile.setSha256sum(fileIngestRequest.getSha256sum());
+			siteFile.setComment(fileIngestRequest.getComment());
+			siteFile.setMetadata(fileIngestRequest.getMetadata());
 
 			if (siteFile.getId() == null) {
 				var nextAclId = aclService.getNextAclId();

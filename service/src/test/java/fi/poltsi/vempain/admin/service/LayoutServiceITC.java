@@ -28,9 +28,9 @@ class LayoutServiceITC extends AbstractITCTest {
 
 	@Test
 	void getAllLayouts() {
-		var              foundLayoutIds = new ArrayList<Long>();
-		var              layoutIds      = testITCTools.generateLayouts(initCount);
-		Iterable<Layout> layouts        = layoutService.findAll();
+		var foundLayoutIds = new ArrayList<Long>();
+		var layoutIds = testITCTools.generateLayouts(initCount);
+		Iterable<Layout> layouts = layoutService.findAll();
 		Assertions.assertNotNull(layouts);
 
 		for (Layout layout : layouts) {
@@ -55,8 +55,8 @@ class LayoutServiceITC extends AbstractITCTest {
 		var layoutIds = testITCTools.generateLayouts(initCount);
 
 		try {
-			var    nonExistId = Collections.max(layoutIds) + 1L;
-			Layout layout     = layoutService.findById(nonExistId);
+			var nonExistId = Collections.max(layoutIds) + 1L;
+			Layout layout = layoutService.findById(nonExistId);
 			fail("A layout should have not been found with id: " + nonExistId + " -> " + layout);
 		} catch (VempainEntityNotFoundException e) {
 			assertEquals("layout", e.getEntityName());
@@ -67,7 +67,7 @@ class LayoutServiceITC extends AbstractITCTest {
 	@Test
 	void findByLayoutName() throws VempainLayoutException {
 		var userId = testITCTools.generateUser();
-		var aclId  = testITCTools.generateAcl(userId, null, true, true, true, true);
+		var aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
 		var layout = Layout.builder()
 						   .layoutName("Test layout 1")
 						   .structure("<!--comp_0--><!--comp_1--><!--page--><!--comp_2-->")
@@ -143,7 +143,7 @@ class LayoutServiceITC extends AbstractITCTest {
 	@Test
 	void save() {
 		var userId = testITCTools.generateUser();
-		var aclId  = testITCTools.generateAcl(userId, null, true, true, true, true);
+		var aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
 		Layout layout = Layout.builder()
 							  .layoutName("Test layout save")
 							  .structure("Test layout structure save")
@@ -164,8 +164,8 @@ class LayoutServiceITC extends AbstractITCTest {
 
 	@Test
 	void saveWithoutModifyOk() {
-		var  userId = testITCTools.generateUser();
-		long aclId  = testITCTools.generateAcl(userId, null, true, true, true, true);
+		var userId = testITCTools.generateUser();
+		long aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
 		Layout layout = Layout.builder()
 							  .layoutName("Test layout save")
 							  .structure("Test layout structure save")
@@ -184,8 +184,8 @@ class LayoutServiceITC extends AbstractITCTest {
 
 	@Test
 	void saveFailWithNoName() {
-		var  userId = testITCTools.generateUser();
-		long aclId  = testITCTools.generateAcl(userId, null, true, true, true, true);
+		var userId = testITCTools.generateUser();
+		long aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
 		Layout layout = Layout.builder()
 							  .structure("Test layout structure save")
 							  .locked(false)
@@ -234,8 +234,8 @@ class LayoutServiceITC extends AbstractITCTest {
 
 	@Test
 	void saveFailWithNoCreator() {
-		var  userId = testITCTools.generateUser();
-		long aclId  = testITCTools.generateAcl(userId, null, true, true, true, true);
+		var userId = testITCTools.generateUser();
+		long aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
 		Layout layout = Layout.builder()
 							  .layoutName("Test layout save")
 							  .structure("Test layout structure save")
@@ -261,8 +261,8 @@ class LayoutServiceITC extends AbstractITCTest {
 
 	@Test
 	void saveFailWithNoCreated() {
-		var  userId = testITCTools.generateUser();
-		long aclId  = testITCTools.generateAcl(userId, null, true, true, true, true);
+		var userId = testITCTools.generateUser();
+		long aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
 		Layout layout = Layout.builder()
 							  .layoutName("Test layout save")
 							  .structure("Test layout structure save")
@@ -286,15 +286,16 @@ class LayoutServiceITC extends AbstractITCTest {
 
 	@Test
 	void saveFailWithNoModifier() {
-		var  userId = testITCTools.generateUser();
-		long aclId  = testITCTools.generateAcl(userId, null, true, true, true, true);
+		var userId = testITCTools.generateUser();
+		long aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
 		Layout layout = Layout.builder()
 							  .layoutName("Test layout save")
 							  .structure("Test layout structure save")
 							  .locked(false)
 							  .aclId(aclId)
 							  .creator(userId)
-							  .created(Instant.now().minus(1, ChronoUnit.HOURS))
+							  .created(Instant.now()
+											  .minus(1, ChronoUnit.HOURS))
 							  .modified(Instant.now())
 							  .build();
 
@@ -304,14 +305,15 @@ class LayoutServiceITC extends AbstractITCTest {
 		} catch (VempainLayoutException e) {
 			fail("We should have received a VempainAbstractException");
 		} catch (VempainAbstractException e) {
-			assertTrue(e.getMessage().contains("Modifier is missing"));
+			assertTrue(e.getMessage()
+						.contains("Modifier is missing"));
 		}
 	}
 
 	@Test
 	void saveFailWithNoModified() {
 		var userId = testITCTools.generateUser();
-		var aclId  = testITCTools.generateAcl(userId, null, true, true, true, true);
+		var aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
 		Layout layout = Layout.builder()
 							  .layoutName("Test layout save")
 							  .structure("Test layout structure save")
@@ -336,8 +338,8 @@ class LayoutServiceITC extends AbstractITCTest {
 
 	@Test
 	void saveFailWithCreatedLaterThanModified() {
-		var  userId = testITCTools.generateUser();
-		long aclId  = testITCTools.generateAcl(userId, null, true, true, true, true);
+		var userId = testITCTools.generateUser();
+		long aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
 		Layout layout = Layout.builder()
 							  .layoutName("Test layout save")
 							  .structure("Test layout structure save")

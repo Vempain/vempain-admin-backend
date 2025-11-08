@@ -17,4 +17,5 @@ import java.util.List;
 public class DirectoryNodeResponse {
 	@Schema(description = "Name of the directory", example = "someDirectory", requiredMode = Schema.RequiredMode.REQUIRED)
 	private String                      directoryName;
-	private List<DirectoryNodeResponse> children;}
+	private List<DirectoryNodeResponse> children;
+}

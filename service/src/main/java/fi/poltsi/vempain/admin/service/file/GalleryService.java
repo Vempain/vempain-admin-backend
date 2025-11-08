@@ -27,12 +27,12 @@ public class GalleryService {
 	private final GalleryRepository  galleryRepository;
 	private final SiteFileRepository siteFileRepository;
 	private final GalleryFileService galleryFileService;
-	private final AclService                   aclService;
-	private final AccessService                accessService;
+	private final AclService    aclService;
+	private final AccessService accessService;
 
 	public List<Gallery> findAllForUser() {
 		var galleryList = new ArrayList<Gallery>();
-		var fullList    = galleryRepository.findAll();
+		var fullList = galleryRepository.findAll();
 
 		for (Gallery gallery : fullList) {
 			if (accessService.hasReadPermission(gallery.getAclId())) {
@@ -61,7 +61,8 @@ public class GalleryService {
 	}
 
 	public GalleryResponse findById(long galleryId) {
-		var gallery = galleryRepository.findById(galleryId).orElse(null);
+		var gallery = galleryRepository.findById(galleryId)
+									   .orElse(null);
 
 		if (gallery == null) {
 			return null;
@@ -88,7 +89,7 @@ public class GalleryService {
 							 .modified(null)
 							 .locked(false)
 							 .build();
-		var newGallery= galleryRepository.save(gallery);
+		var newGallery = galleryRepository.save(gallery);
 		galleryFileService.addGalleryFiles(newGallery.getId(), galleryRequest.getCommonFilesId());
 
 		try {
@@ -105,7 +106,8 @@ public class GalleryService {
 	@Transactional(propagation = Propagation.REQUIRED)
 	public GalleryResponse updateGallery(GalleryRequest galleryRequest) throws VempainAclException {
 		log.debug("Received gallery request: {}", galleryRequest);
-		var currentGallery = galleryRepository.findById(galleryRequest.getId()).orElse(null);
+		var currentGallery = galleryRepository.findById(galleryRequest.getId())
+											  .orElse(null);
 
 		if (currentGallery == null) {
 			log.warn("Could not find gallery with ID: {}", galleryRequest.getId());
@@ -145,7 +147,8 @@ public class GalleryService {
 		var fileCommons = new ArrayList<SiteFile>();
 
 		for (var galleryFile : galleryFiles) {
-			siteFileRepository.findById(galleryFile.getSiteFileId()).ifPresent(fileCommons::add);
+			siteFileRepository.findById(galleryFile.getSiteFileId())
+							  .ifPresent(fileCommons::add);
 		}
 
 		gallery.setSiteFiles(fileCommons);

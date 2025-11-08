@@ -53,7 +53,7 @@ public class DuplicateFileRemovalSchedule {
 				log.info("Removing thumb file {} because it does not refer to valid common file", iteratingThumb);
 				fileService.deleteFileThumb(iteratingThumb);
 			} else {
-				if (counter > 0){
+				if (counter > 0) {
 					log.info("Found a duplicate image {} with valid common: {}", iteratingThumb, optionalFileCommon);
 				}
 

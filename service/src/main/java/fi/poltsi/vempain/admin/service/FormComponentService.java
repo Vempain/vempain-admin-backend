@@ -65,9 +65,9 @@ public class FormComponentService {
 
 		if (!fcObjects.isEmpty()) {
 			for (Object[] o : fcObjects) {
-				var formId      = (Long) o[0];
+				var formId = (Long) o[0];
 				var componentId = (Long) o[1];
-				var sortOrder   = (Long) o[2];
+				var sortOrder = (Long) o[2];
 				formComponents.add(FormComponent.builder()
 												.formId(formId)
 												.componentId(componentId)

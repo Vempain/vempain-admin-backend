@@ -4,7 +4,6 @@
 ![GitHub Tag](https://img.shields.io/github/v/tag/Vempain/vempain-admin-backend)
 ![GitHub License](https://img.shields.io/github/license/Vempain/vempain-admin-backend?color=green)
 
-
 # Vempain Admin service, VAS
 
 ## REST API
@@ -112,7 +111,8 @@ FLUSH PRIVILEGES;
 
 ### Create admin user for UI
 
-The scripts create a default admin user which is disabled. To enable the user, you need to set the password for the user. You can generate the password with the following command:
+The scripts create a default admin user which is disabled. To enable the user, you need to set the password for the user. You can generate the password with the
+following command:
 
 ```shell
 htpasswd -bnBC 12 "" testPassword  | tr -d ':'
@@ -225,7 +225,7 @@ prefixed with ENV_, which you can set from the command line. The following varia
 | ENV_VEMPAIN_SITE_SSH_USER          | The user to connect to the vempain site.                                                                 | vempain         |
 | ENV_VEMPAIN_SITE_WWW_ROOT          | Remote path on the site where the web root is.                                                           | /var/www/site   |
 
-Using all these variables, the docker compose can be started with the following command: 
+Using all these variables, the docker compose can be started with the following command:
 
 ```shell
 ENV_VEMPAIN_ADMIN_VERSION=1.2.3 \

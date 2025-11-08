@@ -62,70 +62,70 @@ public abstract class AbstractITCTest {
 			.withPassword("test");
 
 	@Container
-	public static PostgreSQLContainer<?> vempainSiteContainer = new PostgreSQLContainer<>("postgres:17")
+	public static PostgreSQLContainer<?>      vempainSiteContainer = new PostgreSQLContainer<>("postgres:17")
 			.withDatabaseName("vempain_site")
 			.withUsername("test")
 			.withPassword("test");
 	@Autowired
-	protected TestITCTools          testITCTools;
+	protected     TestITCTools                testITCTools;
 	// Services
 	@Autowired
-	protected AclService            aclService;
+	protected     AclService                  aclService;
 	@Autowired
-	protected FormService           formService;
+	protected     FormService                 formService;
 	@Autowired
-	protected ComponentService      componentService;
+	protected     ComponentService            componentService;
 	@Autowired
-	protected LayoutService         layoutService;
+	protected     LayoutService               layoutService;
 	@Autowired
-	protected FileService           fileService;
+	protected     FileService                 fileService;
 	@Autowired
-	protected PageService           pageService;
+	protected     PageService                 pageService;
 	@Autowired
-	protected FormComponentService  formComponentService;
+	protected     FormComponentService        formComponentService;
 	@Autowired
-	protected UnitService           unitService;
+	protected     UnitService                 unitService;
 	@Autowired
-	protected UserService           userService;
+	protected     UserService                 userService;
 	@Autowired
-	protected PublishService        publishService;
+	protected     PublishService              publishService;
 	// Repositories
 	@Autowired
-	protected AclRepository         aclRepository;
+	protected     AclRepository               aclRepository;
 	@Autowired
-	protected FormRepository        formRepository;
+	protected     FormRepository              formRepository;
 	@Autowired
-	protected ComponentRepository   componentRepository;
+	protected     ComponentRepository         componentRepository;
 	@Autowired
-	protected LayoutRepository            layoutRepository;
+	protected     LayoutRepository            layoutRepository;
 	@Autowired
-	protected SiteFileRepository          siteFileRepository;
+	protected     SiteFileRepository          siteFileRepository;
 	@Autowired
-	protected FileThumbPageableRepository fileThumbPageableRepository;
+	protected     FileThumbPageableRepository fileThumbPageableRepository;
 	@Autowired
-	protected PageRepository        pageRepository;
+	protected     PageRepository              pageRepository;
 	@Autowired
-	protected UnitRepository        unitRepository;
+	protected     UnitRepository              unitRepository;
 	@Autowired
-	protected UserAccountRepository userAccountRepository;
+	protected     UserAccountRepository       userAccountRepository;
 	@Autowired
-	protected GalleryRepository     galleryRepository;
+	protected     GalleryRepository           galleryRepository;
 	@Autowired
-	protected SitePageRepository    sitePageRepository;
+	protected     SitePageRepository          sitePageRepository;
 	@Autowired
-	protected JschClient            jschClient;
+	protected     JschClient                  jschClient;
 	@Autowired
 	@Qualifier("adminFlyway")
-	private   Flyway                adminFlyway;
+	private       Flyway                      adminFlyway;
 	@Autowired
 	@Qualifier("siteFlyway")
-	private   Flyway                siteFlyway;
+	private       Flyway                      siteFlyway;
 	@Autowired
-	private   EntityManager         entityManager;
+	private       EntityManager               entityManager;
 	@Value("${vempain.site.www-root}")
-	private String siteWwwRoot;
+	private       String                      siteWwwRoot;
 	@Value("${vempain.site.ssh.home-dir}")
-	private String siteSshHomeDir;
+	private       String                      siteSshHomeDir;
 
 	private static <T> boolean hasItems(Iterable<T> iterable) {
 		return StreamSupport.stream(iterable.spliterator(), false)

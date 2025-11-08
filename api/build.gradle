@@ -1,7 +1,7 @@
 plugins {
-    id 'java-library'
-    id "io.freefair.lombok" version "${ioFreeFairLombok}"
-    id 'maven-publish'
+	id 'java-library'
+	id "io.freefair.lombok" version "${ioFreeFairLombok}"
+	id 'maven-publish'
 	id "jacoco"
 }
 
@@ -24,9 +24,9 @@ jar {
 }
 
 java {
-    // Attach sources and javadoc for Maven consumers
-    withSourcesJar()
-    withJavadocJar()
+	// Attach sources and javadoc for Maven consumers
+	withSourcesJar()
+	withJavadocJar()
 }
 
 // Quiet javadoc warnings as we're using Lombok which does not generate documentation for the generated methods
@@ -43,9 +43,9 @@ dependencies {
 	// This needs to be built first in vempain-auth
 	api "fi.poltsi.vempain:vempain-auth-api:${vempainAuthVersion}"
 	api "fi.poltsi.vempain:vempain-file-backend-api:${vempainFileVersion}"
-    // https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-annotations
+	// https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-annotations
 	implementation "io.swagger.core.v3:swagger-annotations:2.2.39"
-    // https://mvnrepository.com/artifact/jakarta.validation/jakarta.validation-api
+	// https://mvnrepository.com/artifact/jakarta.validation/jakarta.validation-api
 	implementation "jakarta.validation:jakarta.validation-api:3.1.1"
 	// https://mvnrepository.com/artifact/jakarta.persistence/jakarta.persistence-api
 	implementation "jakarta.persistence:jakarta.persistence-api:3.1.0"
@@ -59,39 +59,39 @@ dependencies {
 
 // Publish the API module to GitHub Packages when invoked by CI
 publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-            // Optional: keep artifactId as project name ('api')
-            groupId = project.group
-            artifactId = "vempain-admin-backend-api"
-            version = project.version
-            pom {
-                name = "vempain-admin-backend-api"
-                description = "Public API (DTOs and interfaces) for Vempain Admin backend"
-                url = "https://github.com/Vempain/vempain-admin-backend"
-                licenses {
-                    license {
+	publications {
+		mavenJava(MavenPublication) {
+			from components.java
+			// Optional: keep artifactId as project name ('api')
+			groupId = project.group
+			artifactId = "vempain-admin-backend-api"
+			version = project.version
+			pom {
+				name = "vempain-admin-backend-api"
+				description = "Public API (DTOs and interfaces) for Vempain Admin backend"
+				url = "https://github.com/Vempain/vempain-admin-backend"
+				licenses {
+					license {
 						name = "GPL-2.0 License"
 						url = "https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html"
-                    }
-                }
-                scm {
-                    url = "https://github.com/Vempain/vempain-admin-backend"
-                }
-            }
-        }
-    }
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/Vempain/vempain-admin-backend")
-            credentials {
-                username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
-                password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
-            }
-        }
-    }
+					}
+				}
+				scm {
+					url = "https://github.com/Vempain/vempain-admin-backend"
+				}
+			}
+		}
+	}
+	repositories {
+		maven {
+			name = "GitHubPackages"
+			url = uri("https://maven.pkg.github.com/Vempain/vempain-admin-backend")
+			credentials {
+				username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+				password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+			}
+		}
+	}
 }
 
 jacoco {

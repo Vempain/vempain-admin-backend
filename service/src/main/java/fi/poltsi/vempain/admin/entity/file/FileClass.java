@@ -26,14 +26,14 @@ import java.io.Serializable;
 @Table(name = "file_class")
 public class FileClass implements Serializable {
 	@Id
-	@GeneratedValue(strategy= GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
-	protected long id;
+	protected long   id;
 	@Basic
 	@Column(name = "shortname")
-	private String shortname;
+	private   String shortname;
 	@Basic
 	@Column(name = "description")
-	private String description;
+	private   String description;
 
 }

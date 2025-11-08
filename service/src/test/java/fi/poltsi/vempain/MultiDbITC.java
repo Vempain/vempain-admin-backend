@@ -3,7 +3,7 @@ package fi.poltsi.vempain;
 import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.entity.Page;
 import fi.poltsi.vempain.admin.repository.PageRepository;
-import fi.poltsi.vempain.site.entity.SitePage;
+import fi.poltsi.vempain.site.entity.WebSitePage;
 import fi.poltsi.vempain.site.repository.SitePageRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -27,30 +27,31 @@ class MultiDbITC extends AbstractITCTest {
 		var createdPageId = setupTests();
 		var fetchAdminPage = adminPageRepository.findById(createdPageId);
 		assertNotNull(fetchAdminPage);
-		var sitePage = SitePage.builder()
-							   .pageId(fetchAdminPage.getId())
-							   .body(fetchAdminPage.getBody())
-							   .header(fetchAdminPage.getHeader())
-							   .parentId(fetchAdminPage.getParentId())
-							   .path(fetchAdminPage.getPath())
-							   .indexList(fetchAdminPage.isIndexList())
-							   .secure(fetchAdminPage.isSecure())
-							   .title(fetchAdminPage.getTitle())
-							   .creator("Erkki")
-							   .created(fetchAdminPage.getCreated())
-							   .modifier("Erkki")
-							   .modified(fetchAdminPage.getModified())
-							   .published(Instant.now())
-							   .build();
+		var sitePage = WebSitePage.builder()
+								  .pageId(fetchAdminPage.getId())
+								  .body(fetchAdminPage.getBody())
+								  .header(fetchAdminPage.getHeader())
+								  .parentId(fetchAdminPage.getParentId())
+								  .path(fetchAdminPage.getPath())
+								  .indexList(fetchAdminPage.isIndexList())
+								  .secure(fetchAdminPage.isSecure())
+								  .title(fetchAdminPage.getTitle())
+								  .creator("Erkki")
+								  .created(fetchAdminPage.getCreated())
+								  .modifier("Erkki")
+								  .modified(fetchAdminPage.getModified())
+								  .published(Instant.now())
+								  .build();
 		var createdSitePage = sitePageRepository.save(sitePage);
 		var sitePages = sitePageRepository.findAll();
 		assertNotNull(sitePages);
-		assertEquals(1, StreamSupport.stream(sitePages.spliterator(), false).count());
+		assertEquals(1, StreamSupport.stream(sitePages.spliterator(), false)
+									 .count());
 	}
 
 	private long setupTests() {
 		var userId = testITCTools.generateUser();
-		var aclId  = testITCTools.generateAcl(userId, null, true, true, true, true);
+		var aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
 		var formId = testITCTools.generateForm();
 		var adminPage = Page.builder()
 							.aclId(aclId)

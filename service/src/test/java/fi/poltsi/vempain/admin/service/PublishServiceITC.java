@@ -49,9 +49,10 @@ class PublishServiceITC extends AbstractITCTest {
 
 	@Test
 	void dateParsingTest() {
-		var datetimeString   = "2017:06:09 13:23:30+02:00";
+		var datetimeString = "2017:06:09 13:23:30+02:00";
 		var referenceDateTime = Instant.parse("2017-06-09T11:23:30Z");
-		var dtm = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ssXXX").withZone(ZoneId.systemDefault());
+		var dtm = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ssXXX")
+								   .withZone(ZoneId.systemDefault());
 		var originalDateTime = dtm.parse(datetimeString, Instant::from);
 		assertEquals(referenceDateTime, originalDateTime);
 	}

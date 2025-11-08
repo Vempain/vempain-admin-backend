@@ -16,37 +16,40 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "file")
+@Table(name = "web_site_file")
 public class WebSiteFile {
 	@Id
-	@GeneratedValue(strategy= GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
-	protected long    id;
+	protected long id;
 
 	@Column(name = "file_id")
-	protected long    fileId;
+	protected long fileId;
+
+	@Column(name = "acl_id")
+	protected long aclId;
 
 	@Column(name = "comment")
-	private   String comment;
+	private String comment;
 
 	@Column(name = "path", nullable = false)
-	private   String path;
+	private String path;
 
 	@Column(name = "mimetype", nullable = false)
-	private   String mimetype;
+	private String mimetype;
 
 	@Column(name = "width")
-	private   long width;
+	private long width;
 
 	@Column(name = "height")
-	private   long height;
+	private long height;
 
 	@Column(name = "length")
-	private   long length;
+	private long length;
 
 	@Column(name = "pages")
-	private   long pages;
+	private long pages;
 
 	@Column(name = "metadata", nullable = false)
-	private   String metadata;
+	private String metadata;
 }

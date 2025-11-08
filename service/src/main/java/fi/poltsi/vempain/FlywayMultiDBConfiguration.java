@@ -31,14 +31,16 @@ public class FlywayMultiDBConfiguration {
 						.baselineOnMigrate(true)
 		);
 
-		log.info("Flyway admin username is: {} and cleanDisabled is: {}", flyway.getConfiguration().getUser(), flyway.getConfiguration().isCleanDisabled());
+		log.info("Flyway admin username is: {} and cleanDisabled is: {}", flyway.getConfiguration()
+																				.getUser(), flyway.getConfiguration()
+																								  .isCleanDisabled());
 		return flyway;
 	}
 
 	@Bean(initMethod = "migrate")
 	@FlywayDataSource
 	public Flyway siteFlyway(@Qualifier("siteDataSource") DataSource dataSource) {
-		var flyway =  new Flyway(
+		var flyway = new Flyway(
 				new FluentConfiguration()
 						.locations("db/migration/site")
 						.dataSource(dataSource)
@@ -46,7 +48,9 @@ public class FlywayMultiDBConfiguration {
 						.baselineOnMigrate(true)
 		);
 
-		log.info("Flyway site username is: {} and cleanDisabled is: {}", flyway.getConfiguration().getUser(), flyway.getConfiguration().isCleanDisabled());
+		log.info("Flyway site username is: {} and cleanDisabled is: {}", flyway.getConfiguration()
+																			   .getUser(), flyway.getConfiguration()
+																								 .isCleanDisabled());
 		return flyway;
 	}
 }

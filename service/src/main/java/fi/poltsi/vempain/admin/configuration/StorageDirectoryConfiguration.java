@@ -24,7 +24,7 @@ public class StorageDirectoryConfiguration {
 	@Bean
 	public Map<String, String> storageLocations() {
 		HashMap<String, String> storageLocations = new HashMap<>();
-		var                     exceptionMessage = "Unable to generate storage location map";
+		var exceptionMessage = "Unable to generate storage location map";
 
 		for (String fileClassName : FileClassEnum.getFileClassNames()) {
 			var tmpPath = siteFileStorage + File.separator + fileClassName;

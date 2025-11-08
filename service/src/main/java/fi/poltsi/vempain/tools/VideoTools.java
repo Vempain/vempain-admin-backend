@@ -50,7 +50,7 @@ public class VideoTools {
 			return new Dimension(0, 0);
 		}
 
-		for (String trackName : List.of("Composite", "File", "RIFF","Track1", "Track2", "Track3")) {
+		for (String trackName : List.of("Composite", "File", "RIFF", "Track1", "Track2", "Track3")) {
 			if (jsonObject.has(trackName)) {
 				JSONObject metadataSection = jsonObject.getJSONObject(trackName);
 
@@ -104,7 +104,7 @@ public class VideoTools {
 			return 0L;
 		}
 
-		long hours   = Long.parseLong(hmsParts[0]);
+		long hours = Long.parseLong(hmsParts[0]);
 		long minutes = Long.parseLong(hmsParts[1]);
 		long seconds = Long.parseLong(hmsParts[2]);
 

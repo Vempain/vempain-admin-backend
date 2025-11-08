@@ -12,13 +12,13 @@ public class EntityAlreadyExistsException extends Exception {
 
 	public EntityAlreadyExistsException(String message, String entityName) {
 		super();
-		this.message    = message;
+		this.message = message;
 		this.entityName = entityName;
 	}
 
 	public EntityAlreadyExistsException() {
 		super();
-		this.message    = "The object already exists in the repository";
+		this.message = "The object already exists in the repository";
 		this.entityName = "";
 	}
 }

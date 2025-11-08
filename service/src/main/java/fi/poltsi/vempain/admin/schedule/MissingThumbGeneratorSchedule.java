@@ -25,7 +25,7 @@ public class MissingThumbGeneratorSchedule {
 	private String siteFileDirectory;
 
 	public MissingThumbGeneratorSchedule(FileService fileService, FileThumbService fileThumbService) {
-		this.fileService      = fileService;
+		this.fileService = fileService;
 		this.fileThumbService = fileThumbService;
 	}
 
@@ -37,7 +37,8 @@ public class MissingThumbGeneratorSchedule {
 	private void checkMissingInFileSystem() {
 		var thumbs = fileService.findAllFileThumbs();
 
-		if (thumbs != null && thumbs.iterator().hasNext()) {
+		if (thumbs != null && thumbs.iterator()
+									.hasNext()) {
 			for (FileThumb fileThumb : thumbs) {
 				var optionalSiteFile = fileService.findSiteFileById(fileThumb.getParentId());
 
@@ -51,7 +52,8 @@ public class MissingThumbGeneratorSchedule {
 					}
 
 					// The thumb is created from the converted file, so it can't be empty
-					if (siteFile.getFileName() != null && !siteFile.getFileName().isEmpty()) {
+					if (siteFile.getFileName() != null && !siteFile.getFileName()
+																   .isEmpty()) {
 						var thumbFile = Paths.get(siteFileDirectory + File.separator +
 												  fileThumb.getFilepath() + File.separator +
 												  fileThumb.getFilename());

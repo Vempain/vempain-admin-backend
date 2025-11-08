@@ -41,7 +41,7 @@ public class DeleteService {
 		}
 
 		var layout = optionalLayout.get();
-		var forms  = formRepository.findByLayoutId(layoutId);
+		var forms = formRepository.findByLayoutId(layoutId);
 
 		for (var form : forms) {
 			deleteFormById(form.getId());

@@ -55,7 +55,7 @@ public interface FileAPI {
 	/* Video */
 
 	@Operation(summary = "Refresh the file information of a gallery", description = "Reload all the file data of the files belonging to a gallery",
-			   tags ="File")
+			   tags = "File")
 	@Parameter(name = "gallery_id", example = "123", description = "ID of the gallery to be refreshed", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Gallery files refreshed",
@@ -70,7 +70,7 @@ public interface FileAPI {
 
 
 	@Operation(summary = "Refresh the file information of all galleries", description = "Reload all the file data of the files belonging any gallery",
-			   tags ="File")
+			   tags = "File")
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "All gallery files refreshed",
 										content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,

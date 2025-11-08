@@ -18,10 +18,10 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = false)
 @Schema(description = "Layout request")
 public class LayoutRequest extends BaseRequest {
-    @Schema(description = "Layout ID", example = "1")
-    private long   id;
-    @Schema(description = "Layout name", example = "My layout")
-    private String layoutName;
-    @Schema(description = "Layout structure", example = "<!--comp_1-->")
-    private String structure;
+	@Schema(description = "Layout ID", example = "1")
+	private long   id;
+	@Schema(description = "Layout name", example = "My layout")
+	private String layoutName;
+	@Schema(description = "Layout structure", example = "<!--comp_1-->")
+	private String structure;
 }

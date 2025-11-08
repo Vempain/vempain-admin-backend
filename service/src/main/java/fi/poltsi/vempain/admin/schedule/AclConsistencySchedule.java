@@ -49,12 +49,11 @@ public class AclConsistencySchedule {
 	private final UnitService unitService;
 	private final UserService userService;
 	private final FileService      fileService;
-
-	// internal state (not injected)
-	private       Set<Long> tableAcls   = new HashSet<>();
 	private final Set<Long>                        missingAcls         = new HashSet<>();
 	private final Set<Long>                        orphanAcls          = new HashSet<>();
 	private final ArrayList<AbstractVempainEntity> duplicateAclObjects = new ArrayList<>();
+	// internal state (not injected)
+	private       Set<Long>   tableAcls = new HashSet<>();
 
 	@Scheduled(fixedDelay = DELAY, initialDelayString = INITIAL_DELAY)
 	public void verify() {

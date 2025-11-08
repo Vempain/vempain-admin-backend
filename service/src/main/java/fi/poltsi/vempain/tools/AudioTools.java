@@ -16,11 +16,11 @@ public class AudioTools {
 			return 0L;
 		}
 
-		AudioFormat      format            = audioInputStream.getFormat();
-		long             audioFileLength   = audioFile.length();
-		int              frameSize         = format.getFrameSize();
-		float            frameRate         = format.getFrameRate();
-		float            durationInSeconds = (audioFileLength / (frameSize * frameRate));
+		AudioFormat format = audioInputStream.getFormat();
+		long audioFileLength = audioFile.length();
+		int frameSize = format.getFrameSize();
+		float frameRate = format.getFrameRate();
+		float durationInSeconds = (audioFileLength / (frameSize * frameRate));
 		// Convert float to long
 		return (long) durationInSeconds;
 	}

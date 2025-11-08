@@ -43,21 +43,21 @@ public interface SiteFileRepository extends ListPagingAndSortingRepository<SiteF
 
 	// Subject-name search (native) + class (bind enum ordinal to match numeric column)
 	@Query(
-		value = """
-			SELECT s.* FROM site_file s
-				JOIN file_subject sf ON s.id = sf.site_file_id
-			JOIN subject su ON su.id = sf.subject_id
-			WHERE LOWER(su.name) LIKE LOWER(CONCAT('%', :subjectName, '%'))
-			  AND s.file_class = :fileClassOrdinal
-			""",
-		countQuery = """
-			SELECT COUNT(*) FROM site_file s
-				JOIN file_subject sf ON s.id = sf.site_file_id
-			JOIN subject su ON su.id = sf.subject_id
-			WHERE LOWER(su.name) LIKE LOWER(CONCAT('%', :subjectName, '%'))
-			  AND s.file_class = :fileClassOrdinal
-			""",
-		nativeQuery = true
+			value = """
+					SELECT s.* FROM site_file s
+						JOIN file_subject sf ON s.id = sf.site_file_id
+					JOIN subject su ON su.id = sf.subject_id
+					WHERE LOWER(su.name) LIKE LOWER(CONCAT('%', :subjectName, '%'))
+					  AND s.file_class = :fileClassOrdinal
+					""",
+			countQuery = """
+					SELECT COUNT(*) FROM site_file s
+						JOIN file_subject sf ON s.id = sf.site_file_id
+					JOIN subject su ON su.id = sf.subject_id
+					WHERE LOWER(su.name) LIKE LOWER(CONCAT('%', :subjectName, '%'))
+					  AND s.file_class = :fileClassOrdinal
+					""",
+			nativeQuery = true
 	)
 	Page<SiteFile> findBySubjectNameContainingIgnoreCaseAndFileClass(@Param("subjectName") String subjectName, @Param("fileClassOrdinal") int fileClassOrdinal, PageRequest pageRequest, Pageable pageable);
 

@@ -47,23 +47,23 @@ public class LayoutController implements LayoutAPI {
 
 	@Override
 	public ResponseEntity<LayoutResponse> getLayoutByName(String layoutName) {
-        if (layoutName == null) {
-            log.error("The given layout name is null");
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_NAME_IN_REQUEST);
-        }
+		if (layoutName == null) {
+			log.error("The given layout name is null");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_NAME_IN_REQUEST);
+		}
 
 		layoutName = layoutName.trim();
 
 		if (layoutName.isBlank()) {
 			log.error("The given layout name is empty or malformed: {}", layoutName);
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_NAME_IN_REQUEST);
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_NAME_IN_REQUEST);
 		}
 
 		try {
 			return ResponseEntity.ok(layoutService.findLayoutResponseByLayoutNameByUser(layoutName));
 		} catch (VempainLayoutException e) {
 			log.error("Failed to fetch layout with given layout name: {}", layoutName);
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND);
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND);
 		}
 	}
 
@@ -71,7 +71,7 @@ public class LayoutController implements LayoutAPI {
 	public ResponseEntity<LayoutResponse> saveLayout(LayoutRequest layoutRequest) {
 		// Check that we have relevant data set
 		if (validateLayoutRequest(layoutRequest)) {
-		    log.debug("Saving layout request");
+			log.debug("Saving layout request");
 			var layout = layoutService.saveLayoutRequestByUser(layoutRequest);
 			return ResponseEntity.ok(layoutService.createLayoutResponse(layout));
 		} else {
@@ -82,16 +82,16 @@ public class LayoutController implements LayoutAPI {
 
 	@Override
 	public ResponseEntity<LayoutResponse> updateLayout(LayoutRequest layoutRequest) {
-        log.debug("Updating layout {}", layoutRequest);
+		log.debug("Updating layout {}", layoutRequest);
 
-        if ((layoutRequest == null) || layoutRequest.getId() < 1) {
-            log.error(VempainMessages.MALFORMED_ID_IN_REQUEST_MSG, layoutRequest);
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_ID_IN_REQUEST);
+		if ((layoutRequest == null) || layoutRequest.getId() < 1) {
+			log.error(VempainMessages.MALFORMED_ID_IN_REQUEST_MSG, layoutRequest);
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_ID_IN_REQUEST);
 		}
 
 		// Check that we have relevant data set
 		if (validateLayoutRequest(layoutRequest)) {
-            log.debug("Layout request validated: {}", layoutRequest);
+			log.debug("Layout request validated: {}", layoutRequest);
 			var layout = layoutService.updateByUser(layoutRequest);
 			return ResponseEntity.ok(layoutService.createLayoutResponse(layout));
 		} else {
@@ -102,9 +102,9 @@ public class LayoutController implements LayoutAPI {
 
 	@Override
 	public ResponseEntity<DeleteResponse> removeLayoutById(Long layoutId) {
-        if ((layoutId == null) || layoutId < 1) {
-            log.error(VempainMessages.MALFORMED_ID_IN_REQUEST_MSG, layoutId);
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_ID_IN_REQUEST);
+		if ((layoutId == null) || layoutId < 1) {
+			log.error(VempainMessages.MALFORMED_ID_IN_REQUEST_MSG, layoutId);
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_ID_IN_REQUEST);
 		}
 
 		try {
@@ -124,9 +124,11 @@ public class LayoutController implements LayoutAPI {
 	}
 
 	private boolean validateLayoutRequest(LayoutRequest layoutRequest) {
-	    log.debug("Validating layout request: {}", layoutRequest);
+		log.debug("Validating layout request: {}", layoutRequest);
 		return layoutRequest != null && layoutRequest.getLayoutName() != null &&
-			   !layoutRequest.getLayoutName().isBlank() &&
-			   layoutRequest.getAcls() != null && !layoutRequest.getAcls().isEmpty();
+			   !layoutRequest.getLayoutName()
+							 .isBlank() &&
+			   layoutRequest.getAcls() != null && !layoutRequest.getAcls()
+																.isEmpty();
 	}
 }

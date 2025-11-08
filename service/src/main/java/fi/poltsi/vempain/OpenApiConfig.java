@@ -22,6 +22,7 @@ import java.util.Collections;
 )
 @Configuration
 public class OpenApiConfig {
+	final Environment environment;
 	private final String devName;
 	private final String devUrl;
 	private final String devEmail;
@@ -30,16 +31,14 @@ public class OpenApiConfig {
 	private final String devVersion;
 	private final String serverDescription;
 
-	final Environment environment;
-
 	public OpenApiConfig(Environment environment) {
-		this.environment       = environment;
-		this.devName           = environment.getProperty("vempain.developer.name");
-		this.devUrl            = environment.getProperty("vempain.developer.url");
-		this.devEmail          = environment.getProperty("vempain.developer.email");
-		this.devLicense        = environment.getProperty("vempain.license");
-		this.devLicenseUrl     = environment.getProperty("vempain.license-url");
-		this.devVersion        = environment.getProperty("vempain.version");
+		this.environment = environment;
+		this.devName = environment.getProperty("vempain.developer.name");
+		this.devUrl = environment.getProperty("vempain.developer.url");
+		this.devEmail = environment.getProperty("vempain.developer.email");
+		this.devLicense = environment.getProperty("vempain.license");
+		this.devLicenseUrl = environment.getProperty("vempain.license-url");
+		this.devVersion = environment.getProperty("vempain.version");
 		this.serverDescription = environment.getProperty("server.description");
 	}
 

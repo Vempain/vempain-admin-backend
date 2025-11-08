@@ -18,7 +18,7 @@ import java.time.Instant;
 @Schema(description = "Publish request, this is used by the individual publish endpoints to publish items such as pages and galleries")
 public class PublishRequest {
 	@Schema(description = "Publish ID", example = "123")
-	private long id;
+	private long   id;
 	@Schema(description = "Should the item have a specific publishing time", example = "true")
 	private boolean publishSchedule;
 	@Schema(description = "Publish message", example = "Publishing item")

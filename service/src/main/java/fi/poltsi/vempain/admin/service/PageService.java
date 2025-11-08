@@ -38,7 +38,7 @@ public class PageService {
 	}
 
 	public List<Page> findAllByUser() {
-		Iterable<Page>  pages           = findAll();
+		Iterable<Page> pages = findAll();
 		ArrayList<Page> accessiblePages = new ArrayList<>();
 
 		for (Page page : pages) {
@@ -89,10 +89,13 @@ public class PageService {
 		var page = Page.builder()
 					   .aclId(aclId)
 					   .formId(request.getFormId())
-					   .header(request.getHeader().trim())
-					   .title(request.getTitle().trim())
+					   .header(request.getHeader()
+									  .trim())
+					   .title(request.getTitle()
+									 .trim())
 					   .path(request.getPath())
-					   .body(request.getBody().trim())
+					   .body(request.getBody()
+									.trim())
 					   .indexList(request.isIndexList())
 					   .locked(false)
 					   .secure(request.isSecure())
@@ -153,14 +156,20 @@ public class PageService {
 		}
 
 		// If the path is updated, then make sure it is not already used by some other page
-		if (!request.getPath().trim().equals(page.getPath().trim())) {
+		if (!request.getPath()
+					.trim()
+					.equals(page.getPath()
+								.trim())) {
 			log.info("User is updating the path of page ID {} from {} to {}", request.getId(), page.getPath(), request.getPath());
 
 			try {
-				var pathPage = findByPath(request.getPath().trim());
+				var pathPage = findByPath(request.getPath()
+												 .trim());
 
-				if (!pathPage.getId().equals(page.getId())) {
-					log.error("Failed to update page as the path {} already exists and belongs to page ID {}", request.getPath().trim(), pathPage.getId());
+				if (!pathPage.getId()
+							 .equals(page.getId())) {
+					log.error("Failed to update page as the path {} already exists and belongs to page ID {}", request.getPath()
+																													  .trim(), pathPage.getId());
 					throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST);
 				}
 			} catch (VempainEntityNotFoundException e) {
@@ -176,10 +185,14 @@ public class PageService {
 		}
 
 		try {
-			page.setBody(request.getBody().trim());
-			page.setPath(request.getPath().trim());
-			page.setTitle(request.getTitle().trim());
-			page.setHeader(request.getHeader().trim());
+			page.setBody(request.getBody()
+								.trim());
+			page.setPath(request.getPath()
+								.trim());
+			page.setTitle(request.getTitle()
+								 .trim());
+			page.setHeader(request.getHeader()
+								  .trim());
 			page.setIndexList(request.isIndexList());
 			page.setFormId(request.getFormId());
 			page.setParentId(request.getParentId());
