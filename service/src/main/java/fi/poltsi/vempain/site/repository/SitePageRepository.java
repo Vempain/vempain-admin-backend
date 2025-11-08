@@ -20,11 +20,11 @@ public interface SitePageRepository extends CrudRepository<WebSitePage, Long> {
 
 	@Transactional
 	@Modifying
-	@Query(value = "UPDATE page SET cache = NULL", nativeQuery = true)
+	@Query(value = "UPDATE web_site_page SET cache = NULL", nativeQuery = true)
 	void resetCache();
 
 	@Transactional
 	@Modifying
-	@Query(value = "UPDATE page SET cache = NULL WHERE id = :pageId", nativeQuery = true)
+	@Query(value = "UPDATE web_site_page SET cache = NULL WHERE id = :pageId", nativeQuery = true)
 	void resetCacheByPageId(@Param("pageId") long pageId);
 }

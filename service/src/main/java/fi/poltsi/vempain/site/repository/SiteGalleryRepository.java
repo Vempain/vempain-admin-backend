@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 public interface SiteGalleryRepository extends ListPagingAndSortingRepository<WebSiteGallery, Long>, CrudRepository<WebSiteGallery, Long> {
 	@Modifying
 	@Transactional
-	@Query(nativeQuery = true, value = "INSERT INTO gallery_file (gallery_id, file_id, sort_order) VALUES (:galleryId, :fileId, :sortOrder)")
+	@Query(nativeQuery = true, value = "INSERT INTO web_site_gallery_file (gallery_id, file_id, sort_order) VALUES (:galleryId, :fileId, :sortOrder)")
 	void saveGalleryFile(@Param("galleryId") long galleryId, @Param("fileId") long fileId, @Param("sortOrder") long sortOrder);
 
 	@Modifying
