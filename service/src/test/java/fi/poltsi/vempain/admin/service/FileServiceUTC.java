@@ -1,6 +1,5 @@
 package fi.poltsi.vempain.admin.service;
 
-import fi.poltsi.vempain.admin.api.FileClassEnum;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.repository.file.FileThumbPageableRepository;
@@ -11,6 +10,7 @@ import fi.poltsi.vempain.admin.service.file.FileThumbService;
 import fi.poltsi.vempain.admin.service.file.GalleryFileService;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
 import fi.poltsi.vempain.auth.service.AclService;
+import fi.poltsi.vempain.file.api.FileTypeEnum;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -108,7 +108,7 @@ class FileServiceUTC {
 		for (int i = 0; i < 4; i++) {
 			var siteFile = SiteFile.builder()
 								   .id(Integer.toUnsignedLong(i))
-								   .fileClass(FileClassEnum.IMAGE)
+								   .fileType(FileTypeEnum.IMAGE)
 								   .metadata("Metadata " + i)
 								   .build();
 			siteFiles.add(siteFile);

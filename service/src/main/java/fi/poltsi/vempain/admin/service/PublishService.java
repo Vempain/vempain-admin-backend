@@ -230,7 +230,7 @@ public class PublishService {
 			var webSiteFile = WebSiteFile.builder()
 										 .fileId(siteFile.getId())
 										 .comment(siteFile.getComment())
-										 .path(siteFile.getFileClass().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName())
+										 .path(siteFile.getFileType().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName())
 										 .mimetype(siteFile.getMimeType())
 										 .metadata(siteFile.getMetadata())
 										 .build();

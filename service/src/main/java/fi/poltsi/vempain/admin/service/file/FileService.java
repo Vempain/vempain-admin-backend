@@ -1,6 +1,5 @@
 package fi.poltsi.vempain.admin.service.file;
 
-import fi.poltsi.vempain.admin.api.FileClassEnum;
 import fi.poltsi.vempain.admin.api.PublishResultEnum;
 import fi.poltsi.vempain.admin.api.response.RefreshDetailResponse;
 import fi.poltsi.vempain.admin.api.response.RefreshResponse;
@@ -18,6 +17,7 @@ import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.SubjectService;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.service.AclService;
+import fi.poltsi.vempain.file.api.FileTypeEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
@@ -162,7 +162,7 @@ public class FileService {
 	}
 
 	// FileAudio
-	public Page<SiteFileResponse> findAllSiteFilesAsPageableResponseFiltered(FileClassEnum fileClassEnum, PageRequest pageRequest, String filter, String filterColumn) {
+	public Page<SiteFileResponse> findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum FileTypeEnum, PageRequest pageRequest, String filter, String filterColumn) {
 		Page<SiteFile> siteFiles;
 		// Generate required Pageable alongside the incoming PageRequest
 		Pageable pageable = PageRequest.of(pageRequest.getPageNumber(), pageRequest.getPageSize(), pageRequest.getSort());
@@ -170,26 +170,26 @@ public class FileService {
 		if (filter == null || filter.isBlank()
 			|| filterColumn == null || filterColumn.isBlank()) {
 			// Filter only by file class
-			siteFiles = siteFileRepository.findByFileClass(fileClassEnum, pageRequest, pageable);
+			siteFiles = siteFileRepository.findByFileType(FileTypeEnum, pageRequest, pageable);
 		} else {
 			siteFiles = switch (filterColumn) {
-				case "filename" -> siteFileRepository.findByFileNameContainingIgnoreCaseAndFileClass(filter, fileClassEnum, pageRequest, pageable);
-				case "filepath" -> siteFileRepository.findByFilePathContainingIgnoreCaseAndFileClass(filter, fileClassEnum, pageRequest, pageable);
-				case "mimetype" -> siteFileRepository.findByMimeTypeContainingIgnoreCaseAndFileClass(filter, fileClassEnum, pageRequest, pageable);
-				case "created" -> siteFileRepository.findByCreatedAfterAndFileClass(Instant.parse(filter), fileClassEnum, pageRequest, pageable);
-				case "modified" -> siteFileRepository.findByModifiedAfterAndFileClass(Instant.parse(filter), fileClassEnum, pageRequest, pageable);
-				case "subject" -> siteFileRepository.findBySubjectNameContainingIgnoreCaseAndFileClass(filter, fileClassEnum.ordinal(), pageRequest, pageable);
+				case "filename" -> siteFileRepository.findByFileNameContainingIgnoreCaseAndFileType(filter, FileTypeEnum, pageRequest, pageable);
+				case "filepath" -> siteFileRepository.findByFilePathContainingIgnoreCaseAndFileType(filter, FileTypeEnum, pageRequest, pageable);
+				case "mimetype" -> siteFileRepository.findByMimeTypeContainingIgnoreCaseAndFileType(filter, FileTypeEnum, pageRequest, pageable);
+				case "created" -> siteFileRepository.findByCreatedAfterAndFileType(Instant.parse(filter), FileTypeEnum, pageRequest, pageable);
+				case "modified" -> siteFileRepository.findByModifiedAfterAndFileType(Instant.parse(filter), FileTypeEnum, pageRequest, pageable);
+				case "subject" -> siteFileRepository.findBySubjectNameContainingIgnoreCaseAndFileType(filter, FileTypeEnum, pageRequest, pageable);
 				case "size" -> {
 					long sizeFilter;
 					try {
 						sizeFilter = Long.parseLong(filter);
 					} catch (NumberFormatException nfe) {
 						log.warn("Invalid size filter '{}', falling back to class-only listing", filter);
-						yield siteFileRepository.findByFileClass(fileClassEnum, pageRequest, pageable);
+						yield siteFileRepository.findByFileType(FileTypeEnum, pageRequest, pageable);
 					}
-					yield siteFileRepository.findBySizeGreaterThanEqualAndFileClass(sizeFilter, fileClassEnum, pageRequest, pageable);
+					yield siteFileRepository.findBySizeGreaterThanEqualAndFileType(sizeFilter, FileTypeEnum, pageRequest, pageable);
 				}
-				default -> siteFileRepository.findByFileClass(fileClassEnum, pageRequest, pageable);
+				default -> siteFileRepository.findByFileType(FileTypeEnum, pageRequest, pageable);
 			};
 		}
 

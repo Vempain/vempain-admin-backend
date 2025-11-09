@@ -13,13 +13,6 @@ CREATE TABLE component
 	FOREIGN KEY (modifier) REFERENCES user_account (id)
 );
 
-CREATE TABLE file_class
-(
-	id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	description VARCHAR(255),
-	shortname   VARCHAR(255)
-);
-
 CREATE TABLE gallery
 (
 	id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -54,7 +47,7 @@ CREATE TABLE site_file
 	file_path  VARCHAR(2048) NOT NULL,
 	mime_type  VARCHAR(255)  NOT NULL,
 	size       BIGINT        NOT NULL,
-	file_class VARCHAR(255) NOT NULL,
+	file_type VARCHAR(255) NOT NULL,
 	sha256sum  VARCHAR(255)  NOT NULL,
 	comment    TEXT,
 	metadata   TEXT,
@@ -223,22 +216,6 @@ CREATE TABLE scan_queue_schedule
 );
 
 -- Data
-INSERT INTO file_class (id, description, shortname)
-	OVERRIDING SYSTEM VALUE
-VALUES (1, 'Binary file', 'binary'),
-	   (2, 'Bitmap image files', 'image'),
-	   (3, 'Vector image files', 'vector'),
-	   (4, 'Audio files', 'audio'),
-	   (5, 'Video files', 'video'),
-	   (6, 'Document files', 'document'),
-	   (7, '(Un)Compressed archive files', 'archive'),
-	   (8, 'Executable files including scripts', 'executable'),
-	   (9, 'Interactive files (Flash, Shockwave etc)', 'interactive'),
-	   (10, 'Various data files, binary or ascii', 'data'),
-	   (11, 'Font files', 'font'),
-	   (12, 'Icon files', 'icon');
-
-SELECT setval('file_class_id_seq', (SELECT MAX(id) + 1 FROM file_class));
 
 INSERT INTO user_account (id, acl_id, birthday, created, creator, locked, email, login_name, name, nick, password, priv_type, public_account, street, status)
 	OVERRIDING SYSTEM VALUE

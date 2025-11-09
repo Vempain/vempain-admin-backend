@@ -1,7 +1,5 @@
 package fi.poltsi.vempain.admin.service.file;
 
-import fi.poltsi.vempain.admin.api.FileClassEnum;
-import fi.poltsi.vempain.admin.api.request.file.FileIngestRequest;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestResponse;
 import fi.poltsi.vempain.admin.configuration.StorageDirectoryConfiguration;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
@@ -13,6 +11,8 @@ import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.SubjectService;
 import fi.poltsi.vempain.auth.entity.Acl;
 import fi.poltsi.vempain.auth.service.AclService;
+import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.file.api.request.FileIngestRequest;
 import fi.poltsi.vempain.tools.LocalFileTools;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -109,9 +109,9 @@ public class FileIngestService {
 			ValidateFileIngestRequest(fileIngestRequest, multipartFile);
 
 			// Determine main class directory by mimetype (fallback to "other" if configured)
-			final var fileClassByMimetype = FileClassEnum.getFileClassByMimetype(fileIngestRequest.getMimeType());
-			final String baseDir = resolveBaseDir(fileClassByMimetype);
-			log.info("Resolved base directory for file class {}: {}", fileClassByMimetype, baseDir);
+			final var fileTypeByMimetype = FileTypeEnum.getFileTypeByMimetype(fileIngestRequest.getMimeType());
+			final String baseDir = resolveBaseDir(fileTypeByMimetype);
+			log.info("Resolved base directory for file type {}: {}", fileTypeByMimetype, baseDir);
 
 			// Sanitize and resolve target paths
 			final String cleanFileName = sanitizeFileName(fileIngestRequest.getFileName());
@@ -162,7 +162,7 @@ public class FileIngestService {
 			siteFile.setFileName(cleanFileName);
 			siteFile.setFilePath(cleanRelPath);
 			siteFile.setMimeType(fileIngestRequest.getMimeType());
-			siteFile.setFileClass(FileClassEnum.getFileClassByMimetype(fileIngestRequest.getMimeType()));
+			siteFile.setFileType(FileTypeEnum.getFileTypeByMimetype(fileIngestRequest.getMimeType()));
 			siteFile.setSize(size);
 			siteFile.setSha256sum(fileIngestRequest.getSha256sum());
 			siteFile.setComment(fileIngestRequest.getComment());
@@ -235,21 +235,20 @@ public class FileIngestService {
 		}
 	}
 
-	private String resolveBaseDir(FileClassEnum fileClassEnum) {
-		var fileClass = fileClassEnum.name()
-									 .toLowerCase();
-		log.info("Resolving base directory for file class: {}", fileClass);
+	private String resolveBaseDir(FileTypeEnum fileTypeEnum) {
+		var fileType = fileTypeEnum.shortName;
+		log.info("Resolving base directory for file class: {}", fileType);
 		var storageLocations = storageDirectoryConfiguration.storageLocations();
-		log.info("Checking if {} contains {}", storageLocations, fileClass);
+		log.info("Checking if {} contains {}", storageLocations, fileType);
 
-		if (storageLocations.containsKey(fileClass)) {
-			return storageLocations.get(fileClass);
+		if (storageLocations.containsKey(fileType)) {
+			return storageLocations.get(fileType);
 		}
 		if (storageLocations.containsKey("other")) {
 			return storageLocations.get("other");
 		}
 
-		throw new IllegalArgumentException("Unsupported FileClassEnum class: " + fileClassEnum);
+		throw new IllegalArgumentException("Unsupported FileTypeEnum class: " + fileTypeEnum);
 	}
 
 	private String sanitizeFileName(String name) {

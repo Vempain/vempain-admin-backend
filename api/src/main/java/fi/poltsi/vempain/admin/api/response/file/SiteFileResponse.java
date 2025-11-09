@@ -3,6 +3,7 @@ package fi.poltsi.vempain.admin.api.response.file;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import fi.poltsi.vempain.file.api.FileTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
@@ -25,7 +26,7 @@ public class SiteFileResponse {
 	private String filePath;
 
 	@Schema(description = "File class", example = "IMAGE")
-	private String fileClass;
+	private FileTypeEnum fileType;
 
 	@Schema(description = "MIME type of the file", example = "image/jpeg")
 	private String mimeType;

@@ -1,6 +1,5 @@
 package fi.poltsi.vempain.admin.tools;
 
-import fi.poltsi.vempain.admin.api.FileClassEnum;
 import fi.poltsi.vempain.admin.api.response.ComponentResponse;
 import fi.poltsi.vempain.admin.api.response.LayoutResponse;
 import fi.poltsi.vempain.admin.entity.Component;
@@ -35,6 +34,7 @@ import fi.poltsi.vempain.auth.repository.UserAccountRepository;
 import fi.poltsi.vempain.auth.service.AclService;
 import fi.poltsi.vempain.auth.service.UnitService;
 import fi.poltsi.vempain.auth.service.UserService;
+import fi.poltsi.vempain.file.api.FileTypeEnum;
 import fi.poltsi.vempain.tools.JsonTools;
 import fi.poltsi.vempain.tools.MetadataTools;
 import jakarta.persistence.EntityManager;
@@ -60,9 +60,9 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static fi.poltsi.vempain.admin.api.Constants.ADMIN_ID;
-import static fi.poltsi.vempain.admin.api.FileClassEnum.getFileClassByMimetype;
 import static fi.poltsi.vempain.admin.tools.TestUserAccountTools.encryptPassword;
 import static fi.poltsi.vempain.admin.tools.TestUserAccountTools.randomPassword;
+import static fi.poltsi.vempain.file.api.FileTypeEnum.getFileTypeByMimetype;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -471,7 +471,7 @@ public class TestITCTools {
 							   .filePath("/uploads/test/" + idx + "/")
 							   .mimeType("image/jpeg")
 							   .size(1024L * 1024L) // 1 MB
-							   .fileClass(FileClassEnum.IMAGE)
+							   .fileType(FileTypeEnum.IMAGE)
 							   .comment("Test file comment " + idx)
 							   .metadata("{}") // Empty metadata for testing
 							   .sha256sum("dummy-sha256sum-" + idx) // Dummy SHA256 for testing
@@ -619,7 +619,7 @@ public class TestITCTools {
 												 .replace(siteFileDirectory + File.separator, ""))
 								   .mimeType("image/jpeg")
 								   .size(0L) // Size will be updated later
-								   .fileClass(FileClassEnum.IMAGE)
+								   .fileType(FileTypeEnum.IMAGE)
 								   .comment("Test file comment for " + file.getFileName())
 								   .metadata("{}") // Empty metadata for testing
 								   .sha256sum("dummy-sha256sum-" + file.getFileName()) // Dummy SHA256 for testing
@@ -663,8 +663,8 @@ public class TestITCTools {
 			var jsonArray = new JSONArray(metadata);
 			var jsonObject = jsonArray.getJSONObject(0);
 			var mimetype = JsonTools.extractMimetype(jsonObject);
-			var fileClass = getFileClassByMimetype(mimetype);
-			var destinationFile = Path.of(siteFileDirectory + File.separator + fileClass.name()
+			var fileType = getFileTypeByMimetype(mimetype);
+			var destinationFile = Path.of(siteFileDirectory + File.separator + fileType.name()
 																						.toLowerCase() + File.separator +
 										  randomImagePath + File.separator + file.getFileName());
 			destinationFileList.add(destinationFile);

@@ -1,8 +1,8 @@
 package fi.poltsi.vempain.admin.entity.file;
 
-import fi.poltsi.vempain.admin.api.FileClassEnum;
 import fi.poltsi.vempain.admin.api.response.file.SiteFileResponse;
 import fi.poltsi.vempain.auth.entity.AbstractVempainEntity;
+import fi.poltsi.vempain.file.api.FileTypeEnum;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -45,8 +45,8 @@ public class SiteFile extends AbstractVempainEntity implements Serializable {
 	private long size;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "file_class", nullable = false)
-	private FileClassEnum fileClass;
+	@Column(name = "file_type", nullable = false)
+	private FileTypeEnum fileType;
 
 	@Column(name = "comment", nullable = false)
 	private String comment;
@@ -62,7 +62,7 @@ public class SiteFile extends AbstractVempainEntity implements Serializable {
 							   .id(this.id)
 							   .fileName(this.fileName)
 							   .filePath(this.filePath)
-							   .fileClass(this.fileClass.name())
+							   .fileType(this.fileType)
 							   .mimeType(this.mimeType)
 							   .size(this.size)
 							   .sha256sum(this.sha256sum)
