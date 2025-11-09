@@ -77,10 +77,10 @@ public class JschClient {
 
 		for (var siteFile : siteFiles) {
 			var absolutePathConvertedFile =
-					siteFileDirectory + File.separator + siteFile.getFileClass().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName();
+					siteFileDirectory + File.separator + siteFile.getFileType().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName();
 			log.debug("Transferring file {} to {}", absolutePathConvertedFile, siteWwwRoot);
 
-			var targetSubDir = siteFile.getFileClass().shortName + File.separator + siteFile.getFilePath();
+			var targetSubDir = siteFile.getFileType().shortName + File.separator + siteFile.getFilePath();
 			var targetDir = siteWwwRoot + File.separator + targetSubDir;
 
 			// We remove the leading / from the subdir so that it can be later split correctly
@@ -104,8 +104,8 @@ public class JschClient {
 
 		for (FileThumb fileThumb : thumbList) {
 			var absolutePathThumbFile = siteFileDirectory + File.separator + fileThumb.getFilepath() + File.separator + fileThumb.getFilename();
-			var targetDir = siteWwwRoot + File.separator + fileThumb.getParentClass().shortName + File.separator + fileThumb.getSiteFile()
-																															.getFilePath() + File.separator + thumbSubDir;
+			var targetDir = siteWwwRoot + File.separator + fileThumb.getParentType().shortName + File.separator + fileThumb.getSiteFile()
+																														   .getFilePath() + File.separator + thumbSubDir;
 			log.info("Transferring thumb {} to {}", absolutePathThumbFile, targetDir);
 			channelSftp.put(absolutePathThumbFile, targetDir);
 		}

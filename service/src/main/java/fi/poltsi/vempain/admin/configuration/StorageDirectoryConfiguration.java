@@ -1,6 +1,6 @@
 package fi.poltsi.vempain.admin.configuration;
 
-import fi.poltsi.vempain.admin.api.FileClassEnum;
+import fi.poltsi.vempain.file.api.FileTypeEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,20 +23,20 @@ public class StorageDirectoryConfiguration {
 
 	@Bean
 	public Map<String, String> storageLocations() {
-		HashMap<String, String> storageLocations = new HashMap<>();
+		var storageLocations = new HashMap<String, String>();
 		var exceptionMessage = "Unable to generate storage location map";
 
-		for (String fileClassName : FileClassEnum.getFileClassNames()) {
-			var tmpPath = siteFileStorage + File.separator + fileClassName;
-			log.info("Initializing, adding storage location {}: {}", fileClassName, tmpPath);
-			storageLocations.put(fileClassName, tmpPath);
+		for (var fileTypeName : FileTypeEnum.getFileTypeNames()) {
+			var tmpPath = siteFileStorage + File.separator + fileTypeName;
+			log.info("Initializing, adding storage location {}: {}", fileTypeName, tmpPath);
+			storageLocations.put(fileTypeName, tmpPath);
 			var tmpDir = new File(tmpPath);
 
 			if (!tmpDir.exists() && !tmpDir.mkdirs()) {
-				log.error("Type {} file storage did not exist and it could not be created as: {}", fileClassName, tmpDir);
+				log.error("Type {} file storage did not exist and it could not be created as: {}", fileTypeName, tmpDir);
 				throw new FileSystemNotFoundException(exceptionMessage);
 			} else if (!Files.isReadable(tmpDir.toPath())) {
-				log.error("Type {} file storage has wrong permission: {}", fileClassName, tmpDir);
+				log.error("Type {} file storage has wrong permission: {}", fileTypeName, tmpDir);
 				throw new FileSystemNotFoundException(exceptionMessage);
 			}
 		}

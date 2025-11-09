@@ -2,7 +2,6 @@ package fi.poltsi.vempain.admin.tools;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fi.poltsi.vempain.admin.api.FileClassEnum;
 import fi.poltsi.vempain.admin.api.request.ComponentRequest;
 import fi.poltsi.vempain.admin.api.request.LayoutRequest;
 import fi.poltsi.vempain.admin.api.request.PageRequest;
@@ -20,6 +19,7 @@ import fi.poltsi.vempain.auth.entity.Unit;
 import fi.poltsi.vempain.auth.entity.UserAccount;
 import fi.poltsi.vempain.auth.entity.UserUnit;
 import fi.poltsi.vempain.auth.entity.UserUnitId;
+import fi.poltsi.vempain.file.api.FileTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 
@@ -391,7 +391,7 @@ public class TestUTCTools {
 		// Give the file a random name
 		var randomFileName = RandomStringUtils.secure()
 											  .nextAlphanumeric(12) + ".jpeg";
-		var convertedPath = FileClassEnum.getFileClassNameByMimetype("image/jpeg")
+		var convertedPath = FileTypeEnum.getFileTypeNameByMimetype("image/jpeg")
 							+ File.separator + RandomStringUtils.secure()
 																.nextAlphanumeric(12);
 		var absoluteConvertedPath = Path.of(storageDir + File.separator + convertedPath);
@@ -431,7 +431,7 @@ public class TestUTCTools {
 											  .toString())
 					   .sha256sum("so-Sha1sum" + siteFileId)
 					   .comment("Test SiteFile")
-					   .fileClass(FileClassEnum.IMAGE)
+					   .fileType(FileTypeEnum.IMAGE)
 					   .creator(1L)
 					   .created(Instant.now()
 									   .minus(1, ChronoUnit.HOURS))

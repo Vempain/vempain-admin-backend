@@ -1,9 +1,9 @@
 package fi.poltsi.vempain.admin.rest.file;
 
-import fi.poltsi.vempain.admin.api.FileClassEnum;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
 import fi.poltsi.vempain.admin.api.response.RefreshResponse;
 import fi.poltsi.vempain.admin.api.response.file.SiteFileResponse;
+import fi.poltsi.vempain.file.api.FileTypeEnum;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -44,7 +44,7 @@ public interface FileAPI {
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = MAIN_PATH + "/site-files", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<Page<SiteFileResponse>> getPageableSiteFiles(
-			@RequestParam(name = "file_type") @NotNull FileClassEnum fileClassEnum,
+			@RequestParam(name = "file_type") @NotNull FileTypeEnum FileTypeEnum,
 			@RequestParam(name = "page_number") int pageNumber,
 			@RequestParam(name = "page_size") int pageSize,
 			@RequestParam(name = "sorting", defaultValue = "createdAt,desc") String sorting,

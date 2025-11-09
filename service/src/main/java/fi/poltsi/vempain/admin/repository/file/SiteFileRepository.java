@@ -1,7 +1,7 @@
 package fi.poltsi.vempain.admin.repository.file;
 
-import fi.poltsi.vempain.admin.api.FileClassEnum;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
+import fi.poltsi.vempain.file.api.FileTypeEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,20 +26,21 @@ public interface SiteFileRepository extends ListPagingAndSortingRepository<SiteF
 	List<Long> findAllSiteFileIdWithSubject();
 
 	// Class-only listing for default view
-	Page<SiteFile> findByFileClass(FileClassEnum fileClass, PageRequest pageRequest, Pageable pageable);
+	Page<SiteFile> findByFileType(FileTypeEnum fileType, PageRequest pageRequest, Pageable pageable);
 
 	// Text filters + class
-	Page<SiteFile> findByFileNameContainingIgnoreCaseAndFileClass(String filename, FileClassEnum fileClass, PageRequest pageRequest, Pageable pageable);
+	Page<SiteFile> findByFileNameContainingIgnoreCaseAndFileType(String filename, FileTypeEnum fileType, PageRequest pageRequest, Pageable pageable);
 
-	Page<SiteFile> findByFilePathContainingIgnoreCaseAndFileClass(String filePath, FileClassEnum fileClass, PageRequest pageRequest, Pageable pageable);
+	Page<SiteFile> findByFilePathContainingIgnoreCaseAndFileType(String filePath, FileTypeEnum fileType, PageRequest pageRequest, Pageable pageable);
 
-	Page<SiteFile> findByMimeTypeContainingIgnoreCaseAndFileClass(String mimeType, FileClassEnum fileClass, PageRequest pageRequest, Pageable pageable);
+	Page<SiteFile> findByMimeTypeContainingIgnoreCaseAndFileType(String mimeType, FileTypeEnum fileType, PageRequest pageRequest, Pageable pageable);
 
 	// Temporal filters + class
-	Page<SiteFile> findByCreatedAfterAndFileClass(Instant created, FileClassEnum fileClass, PageRequest pageRequest, Pageable pageable);
+	Page<SiteFile> findByCreatedAfterAndFileType(Instant created, FileTypeEnum fileType, PageRequest pageRequest, Pageable pageable);
 
-	@Query("SELECT s FROM SiteFile s WHERE s.modified > :since AND s.fileClass = :fileClass")
-	Page<SiteFile> findByModifiedAfterAndFileClass(@Param("since") Instant since, @Param("fileClass") FileClassEnum fileClass, PageRequest pageRequest, Pageable pageable);
+	@Query("SELECT s FROM SiteFile s WHERE s.modified > :since AND s.fileType = :fileType")
+	Page<SiteFile> findByModifiedAfterAndFileType(@Param("since") Instant since, @Param("fileType") FileTypeEnum fileType, PageRequest pageRequest,
+												  Pageable pageable);
 
 	// Subject-name search (native) + class (bind enum ordinal to match numeric column)
 	@Query(
@@ -48,19 +49,20 @@ public interface SiteFileRepository extends ListPagingAndSortingRepository<SiteF
 						JOIN file_subject sf ON s.id = sf.site_file_id
 					JOIN subject su ON su.id = sf.subject_id
 					WHERE LOWER(su.name) LIKE LOWER(CONCAT('%', :subjectName, '%'))
-					  AND s.file_class = :fileClassOrdinal
+					  AND s.file_type = :fileType
 					""",
 			countQuery = """
 					SELECT COUNT(*) FROM site_file s
 						JOIN file_subject sf ON s.id = sf.site_file_id
 					JOIN subject su ON su.id = sf.subject_id
 					WHERE LOWER(su.name) LIKE LOWER(CONCAT('%', :subjectName, '%'))
-					  AND s.file_class = :fileClassOrdinal
+					  AND s.file_type = :fileType
 					""",
 			nativeQuery = true
 	)
-	Page<SiteFile> findBySubjectNameContainingIgnoreCaseAndFileClass(@Param("subjectName") String subjectName, @Param("fileClassOrdinal") int fileClassOrdinal, PageRequest pageRequest, Pageable pageable);
+	Page<SiteFile> findBySubjectNameContainingIgnoreCaseAndFileType(@Param("subjectName") String subjectName, @Param("fileType") FileTypeEnum fileType,
+																	PageRequest pageRequest, Pageable pageable);
 
 	// Size filter + class
-	Page<SiteFile> findBySizeGreaterThanEqualAndFileClass(Long size, FileClassEnum fileClass, PageRequest pageRequest, Pageable pageable);
+	Page<SiteFile> findBySizeGreaterThanEqualAndFileType(Long size, FileTypeEnum fileType, PageRequest pageRequest, Pageable pageable);
 }

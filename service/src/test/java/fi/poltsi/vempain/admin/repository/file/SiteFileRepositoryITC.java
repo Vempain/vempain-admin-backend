@@ -1,10 +1,10 @@
 package fi.poltsi.vempain.admin.repository.file;
 
 import fi.poltsi.vempain.admin.AbstractITCTest;
-import fi.poltsi.vempain.admin.api.FileClassEnum;
 import fi.poltsi.vempain.admin.entity.Subject;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.service.SubjectService;
+import fi.poltsi.vempain.file.api.FileTypeEnum;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -37,7 +37,7 @@ class SiteFileRepositoryITC extends AbstractITCTest {
 							   .fileName("fileName")
 							   .mimeType("image/jpeg")
 							   .sha256sum("Test-SHA256-Sum")
-							   .fileClass(FileClassEnum.IMAGE)
+							   .fileType(FileTypeEnum.IMAGE)
 							   .creator(userId)
 							   .created(Instant.now())
 							   .modifier(userId)
@@ -54,7 +54,7 @@ class SiteFileRepositoryITC extends AbstractITCTest {
 	}
 
 	@Test
-	void findByFileClassReturnsCorrectResults() {
+	void findByFileTypeReturnsCorrectResults() {
 		var userId = testITCTools.generateUser();
 
 		var aclId1 = testITCTools.generateAcl(userId, null, true, true, true, true);
@@ -64,7 +64,7 @@ class SiteFileRepositoryITC extends AbstractITCTest {
 								.fileName("file1")
 								.mimeType("image/jpeg")
 								.sha256sum("SHA256-1")
-								.fileClass(FileClassEnum.IMAGE)
+								.fileType(FileTypeEnum.IMAGE)
 								.creator(userId)
 								.created(Instant.now())
 								.modifier(userId)
@@ -79,7 +79,7 @@ class SiteFileRepositoryITC extends AbstractITCTest {
 								.fileName("file2")
 								.mimeType("application/pdf")
 								.sha256sum("SHA256-2")
-								.fileClass(FileClassEnum.DOCUMENT)
+								.fileType(FileTypeEnum.DOCUMENT)
 								.creator(userId)
 								.created(Instant.now())
 								.modifier(userId)
@@ -90,7 +90,7 @@ class SiteFileRepositoryITC extends AbstractITCTest {
 		var pageRequest = PageRequest.of(0, 10);
 		var pageable = PageRequest.of(0, 10);
 
-		var result = siteFileRepository.findByFileClass(FileClassEnum.IMAGE, pageRequest, pageable);
+		var result = siteFileRepository.findByFileType(FileTypeEnum.IMAGE, pageRequest, pageable);
 
 		assertEquals(1, result.getTotalElements());
 		assertEquals("file1", result.getContent()
@@ -99,11 +99,11 @@ class SiteFileRepositoryITC extends AbstractITCTest {
 	}
 
 	@Test
-	void findByFileClassReturnsEmptyWhenNoMatch() {
+	void findByFileTypeReturnsEmptyWhenNoMatch() {
 		var pageRequest = PageRequest.of(0, 10);
 		var pageable = PageRequest.of(0, 10);
 
-		var result = siteFileRepository.findByFileClass(FileClassEnum.VIDEO, pageRequest, pageable);
+		var result = siteFileRepository.findByFileType(FileTypeEnum.VIDEO, pageRequest, pageable);
 
 		assertEquals(0, result.getTotalElements());
 	}

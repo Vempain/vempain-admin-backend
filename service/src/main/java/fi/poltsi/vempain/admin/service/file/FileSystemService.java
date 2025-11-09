@@ -1,7 +1,7 @@
 package fi.poltsi.vempain.admin.service.file;
 
-import fi.poltsi.vempain.admin.api.FileClassEnum;
 import fi.poltsi.vempain.admin.api.response.file.DirectoryNodeResponse;
+import fi.poltsi.vempain.file.api.FileTypeEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,7 +33,7 @@ public class FileSystemService {
 		if (files != null) {
 			for (File file : files) {
 				if (file.isDirectory()
-					&& !Objects.equals(file.toString(), siteFileDirectory + File.separator + FileClassEnum.THUMB.shortName)) {
+					&& !Objects.equals(file.toString(), siteFileDirectory + File.separator + FileTypeEnum.THUMB.shortName)) {
 					rootList.add(buildDirectoryTree(file));
 				}
 			}

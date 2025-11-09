@@ -1,7 +1,7 @@
 package fi.poltsi.vempain.admin.entity.file;
 
-import fi.poltsi.vempain.admin.api.FileClassEnum;
 import fi.poltsi.vempain.admin.api.response.file.FileThumbResponse;
+import fi.poltsi.vempain.file.api.FileTypeEnum;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -27,10 +27,10 @@ public class FileThumb extends AbstractFileImageEntity implements Serializable, 
 	@Basic
 	@Enumerated(EnumType.STRING)
 	@Column(name = "parent_class", nullable = false)
-	private FileClassEnum parentClass;
+	private FileTypeEnum parentType;
 	@Basic
 	@Column(name = "filename", columnDefinition = "TEXT")
-	private String        filename;
+	private String       filename;
 	@Basic
 	@Column(name = "filepath", columnDefinition = "TEXT")
 	private String filepath;
@@ -46,7 +46,7 @@ public class FileThumb extends AbstractFileImageEntity implements Serializable, 
 		return FileThumbResponse.builder()
 								.id(this.getId())
 								.parentId(this.getParentId())
-								.parentClass(this.getParentClass())
+								.parentType(this.getParentType())
 								.width(this.getWidth())
 								.height(this.getHeight())
 								.siteFile(this.getSiteFile()

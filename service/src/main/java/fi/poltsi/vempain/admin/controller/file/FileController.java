@@ -1,10 +1,10 @@
 package fi.poltsi.vempain.admin.controller.file;
 
-import fi.poltsi.vempain.admin.api.FileClassEnum;
 import fi.poltsi.vempain.admin.api.response.RefreshResponse;
 import fi.poltsi.vempain.admin.api.response.file.SiteFileResponse;
 import fi.poltsi.vempain.admin.rest.file.FileAPI;
 import fi.poltsi.vempain.admin.service.file.FileService;
+import fi.poltsi.vempain.file.api.FileTypeEnum;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,10 +21,10 @@ public class FileController implements FileAPI {
 	private final FileService fileService;
 
 	@Override
-	public ResponseEntity<Page<SiteFileResponse>> getPageableSiteFiles(@NotNull FileClassEnum fileClassEnum, int pageNumber, int pageSize, String sorting,
+	public ResponseEntity<Page<SiteFileResponse>> getPageableSiteFiles(@NotNull FileTypeEnum FileTypeEnum, int pageNumber, int pageSize, String sorting,
 																	   String filter, String filterColumn) {
 		var pageRequest = getPageRequest(pageNumber, pageSize, sorting);
-		var pageResponse = fileService.findAllSiteFilesAsPageableResponseFiltered(fileClassEnum, pageRequest, filter, filterColumn);
+		var pageResponse = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum, pageRequest, filter, filterColumn);
 		return ResponseEntity.ok(pageResponse);
 	}
 
