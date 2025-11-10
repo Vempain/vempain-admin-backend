@@ -7,7 +7,10 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -18,13 +21,14 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
+import java.time.Instant;
 
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 @Getter
 @Setter
 @Entity
-@ToString(callSuper = true)
+@ToString(callSuper = true, exclude = "metadata")
 @AllArgsConstructor
 @RequiredArgsConstructor
 @Table(name = "site_file", indexes = {
@@ -57,6 +61,34 @@ public class SiteFile extends AbstractVempainEntity implements Serializable {
 	@Column(name = "sha256sum", nullable = false)
 	private String sha256sum;
 
+	@Column(name = "original_datetime")
+	private Instant originalDateTime;
+
+	@Column(name = "rights_holder")
+	private String rightsHolder;
+
+	@Column(name = "rights_terms")
+	private String rightsTerms;
+
+	@Column(name = "rights_url", length = 1024)
+	private String rightsUrl;
+
+	@Column(name = "creator_name")
+	private String creatorName;
+
+	@Column(name = "creator_email")
+	private String creatorEmail;
+
+	@Column(name = "creator_country")
+	private String creatorCountry;
+
+	@Column(name = "creator_url", length = 1024)
+	private String creatorUrl;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "location_id")
+	private GpsLocation location;
+
 	public SiteFileResponse toResponse() {
 		return SiteFileResponse.builder()
 							   .id(this.id)
@@ -70,7 +102,17 @@ public class SiteFile extends AbstractVempainEntity implements Serializable {
 							   .created(this.created)
 							   .modifier(this.modifier)
 							   .modified(this.modified)
+							   .comment(this.comment)
+							   .metadata(this.metadata)
+							   .originalDateTime(this.originalDateTime)
+							   .rightsHolder(this.rightsHolder)
+							   .rightsTerms(this.rightsTerms)
+							   .rightsUrl(this.rightsUrl)
+							   .creatorName(this.creatorName)
+							   .creatorEmail(this.creatorEmail)
+							   .creatorCountry(this.creatorCountry)
+							   .creatorUrl(this.creatorUrl)
+							   .location(this.location != null ? this.location.toResponse() : null)
 							   .build();
 	}
 }
-

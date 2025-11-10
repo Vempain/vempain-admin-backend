@@ -39,6 +39,23 @@ CREATE TABLE subject
 	subject_se VARCHAR(255) DEFAULT NULL
 );
 
+CREATE TABLE IF NOT EXISTS gps_location
+(
+    id              BIGINT PRIMARY KEY,
+    latitude        NUMERIC(15, 5)   NOT NULL,
+    latitude_ref    CHAR(1)          NOT NULL,
+    longitude       NUMERIC(15, 5)   NOT NULL,
+    longitude_ref   CHAR(1)          NOT NULL,
+    altitude        DOUBLE PRECISION NULL,
+    direction       DOUBLE PRECISION NULL,
+    satellite_count INTEGER          NULL,
+    country         VARCHAR(255)     NULL,
+    state           VARCHAR(255)     NULL,
+    city            VARCHAR(255)     NULL,
+    street          VARCHAR(255)     NULL,
+    sub_location    VARCHAR(255)     NULL
+);
+
 CREATE TABLE site_file
 (
 	id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -51,11 +68,21 @@ CREATE TABLE site_file
 	sha256sum  VARCHAR(255)  NOT NULL,
 	comment    TEXT,
 	metadata   TEXT,
-	locked     BOOLEAN      NOT NULL DEFAULT false,
+    original_datetime TIMESTAMPTZ NULL,
+    rights_holder     TEXT        NULL,
+    rights_terms      TEXT        NULL,
+    rights_url        TEXT        NULL,
+    creator_name      TEXT        NULL,
+    creator_email     TEXT        NULL,
+    creator_country   TEXT        NULL,
+    creator_url       TEXT        NULL,
+    location_id       BIGINT      NULL,
+    locked            BOOLEAN     NOT NULL DEFAULT false,
 	creator    BIGINT       NOT NULL,
 	created    TIMESTAMP    NOT NULL,
 	modifier   BIGINT,
 	modified   TIMESTAMP,
+    FOREIGN KEY (location_id) REFERENCES gps_location (id) ON UPDATE NO ACTION ON DELETE SET NULL,
 	FOREIGN KEY (creator) REFERENCES user_account (id),
 	FOREIGN KEY (modifier) REFERENCES user_account (id)
 );

@@ -9,10 +9,12 @@ import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.admin.service.file.GalleryFileService;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.UserService;
+import fi.poltsi.vempain.site.entity.WebGpsLocation;
 import fi.poltsi.vempain.site.entity.WebSiteFile;
 import fi.poltsi.vempain.site.entity.WebSitePage;
 import fi.poltsi.vempain.site.repository.SiteGalleryRepository;
 import fi.poltsi.vempain.site.repository.SitePageRepository;
+import fi.poltsi.vempain.site.repository.WebGpsLocationRepository;
 import fi.poltsi.vempain.site.repository.WebSiteFileRepository;
 import fi.poltsi.vempain.site.service.SiteSubjectService;
 import fi.poltsi.vempain.tools.JschClient;
@@ -48,6 +50,7 @@ public class PublishService {
 	private final SiteSubjectService    siteSubjectService;
 	private final PageGalleryService    pageGalleryService;
 	private final JschClient            jschClient;
+	private final WebGpsLocationRepository webGpsLocationRepository;
 
 	@Value("${vempain.site.ssh.address}")
 	private String siteSshAddress;
@@ -227,12 +230,45 @@ public class PublishService {
 			log.debug("Deleting web site file by file ID: {}", siteFile.getId());
 			webSiteFileRepository.deleteByFileId(siteFile.getId());
 
+			// Map / upsert GPS location into site DB (separate persistence unit)
+			WebGpsLocation webLocation = null;
+			if (siteFile.getLocation() != null) {
+				var adminLoc = siteFile.getLocation();
+				webLocation = webGpsLocationRepository.findById(adminLoc.getId())
+													  .orElseGet(() -> WebGpsLocation.builder()
+																					 .id(adminLoc.getId())
+																					 .build());
+				webLocation.setLatitude(adminLoc.getLatitude());
+				webLocation.setLatitudeRef(adminLoc.getLatitudeRef());
+				webLocation.setLongitude(adminLoc.getLongitude());
+				webLocation.setLongitudeRef(adminLoc.getLongitudeRef());
+				webLocation.setAltitude(adminLoc.getAltitude());
+				webLocation.setDirection(adminLoc.getDirection());
+				webLocation.setSatelliteCount(adminLoc.getSatelliteCount());
+				webLocation.setCountry(adminLoc.getCountry());
+				webLocation.setState(adminLoc.getState());
+				webLocation.setCity(adminLoc.getCity());
+				webLocation.setStreet(adminLoc.getStreet());
+				webLocation.setSubLocation(adminLoc.getSubLocation());
+				webLocation = webGpsLocationRepository.save(webLocation);
+			}
+
 			var webSiteFile = WebSiteFile.builder()
 										 .fileId(siteFile.getId())
 										 .comment(siteFile.getComment())
 										 .path(siteFile.getFileType().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName())
 										 .mimetype(siteFile.getMimeType())
+										 .creatorName(siteFile.getCreatorName())
+										 .originalDateTime(siteFile.getOriginalDateTime())
+										 .rightsHolder(siteFile.getRightsHolder())
+										 .rightsTerms(siteFile.getRightsTerms())
+										 .rightsUrl(siteFile.getRightsUrl())
+										 .creatorEmail(siteFile.getCreatorEmail())
+										 .creatorCountry(siteFile.getCreatorCountry())
+										 .creatorUrl(siteFile.getCreatorUrl())
+										 .location(webLocation)
 										 .metadata(siteFile.getMetadata())
+										 .comment(siteFile.getComment())
 										 .build();
 
 			log.debug("Saving site file: {}", webSiteFile);

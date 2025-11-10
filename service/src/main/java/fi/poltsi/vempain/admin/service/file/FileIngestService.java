@@ -47,6 +47,7 @@ public class FileIngestService {
 	private final StorageDirectoryConfiguration storageDirectoryConfiguration;
 	private final SubjectService subjectService;
 	private final FileService    fileService;
+	private final LocationService locationService;
 
 	@Value("${vempain.admin.file.site-file-directory}")
 	private String siteFileDirectory;
@@ -167,6 +168,32 @@ public class FileIngestService {
 			siteFile.setSha256sum(fileIngestRequest.getSha256sum());
 			siteFile.setComment(fileIngestRequest.getComment());
 			siteFile.setMetadata(fileIngestRequest.getMetadata());
+
+			// Populate new fields
+			siteFile.setOriginalDateTime(fileIngestRequest.getOriginalDateTime());
+			var copyrightRequest = fileIngestRequest.getCopyright();
+
+			if (copyrightRequest != null) {
+				siteFile.setRightsHolder(copyrightRequest.getRightsHolder());
+				siteFile.setRightsTerms(copyrightRequest.getRightsTerms());
+				siteFile.setRightsUrl(copyrightRequest.getRightsUrl());
+				siteFile.setCreatorName(copyrightRequest.getCreatorName());
+				siteFile.setCreatorEmail(copyrightRequest.getCreatorEmail());
+				siteFile.setCreatorCountry(copyrightRequest.getCreatorCountry());
+				siteFile.setCreatorUrl(copyrightRequest.getCreatorUrl());
+			} else {
+				siteFile.setRightsHolder(null);
+				siteFile.setRightsTerms(null);
+				siteFile.setRightsUrl(null);
+				siteFile.setCreatorName(null);
+				siteFile.setCreatorEmail(null);
+				siteFile.setCreatorCountry(null);
+				siteFile.setCreatorUrl(null);
+			}
+
+			// Upsert and link GPS location (shared by multiple files)
+			var location = locationService.upsertAndGet(fileIngestRequest.getLocation());
+			siteFile.setLocation(location);
 
 			if (siteFile.getId() == null) {
 				var nextAclId = aclService.getNextAclId();

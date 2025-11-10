@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.file.api.response.LocationResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
@@ -48,4 +49,37 @@ public class SiteFileResponse {
 
 	@Schema(description = "Last update timestamp of the file", example = "2023-10-01T12:00:00Z")
 	private Instant modified;
+
+	@Schema(description = "Free-form comment associated with the file", example = "Some comment")
+	private String comment;
+
+	@Schema(description = "Arbitrary metadata JSON stored with the file", example = "{\"some-field\":\"some value\"}")
+	private String metadata;
+
+	@Schema(description = "Original (source) datetime of the file", example = "2025-08-15T14:30:00Z")
+	private Instant originalDateTime;
+
+	@Schema(description = "Copyright holder name", example = "John Doe")
+	private String rightsHolder;
+
+	@Schema(description = "Copyright terms", example = "All rights reserved")
+	private String rightsTerms;
+
+	@Schema(description = "Copyright terms URL", example = "https://example.com/copyright")
+	private String rightsUrl;
+
+	@Schema(description = "Creator name", example = "John Doe")
+	private String creatorName;
+
+	@Schema(description = "Creator email", example = "john@example.com")
+	private String creatorEmail;
+
+	@Schema(description = "Creator country", example = "Finland")
+	private String creatorCountry;
+
+	@Schema(description = "Creator URL", example = "https://example.com/creator")
+	private String creatorUrl;
+
+	@Schema(description = "Optional GPS location data (shared between multiple files)")
+	private LocationResponse location;
 }
