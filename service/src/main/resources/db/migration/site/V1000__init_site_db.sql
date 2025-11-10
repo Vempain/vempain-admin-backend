@@ -18,6 +18,24 @@ CREATE TABLE web_site_page
 	cache     TEXT                        DEFAULT NULL
 );
 
+
+CREATE TABLE IF NOT EXISTS web_gps_location
+(
+    id              BIGINT PRIMARY KEY,
+    latitude        NUMERIC(15, 5)   NOT NULL,
+    latitude_ref    CHAR(1)          NOT NULL,
+    longitude       NUMERIC(15, 5)   NOT NULL,
+    longitude_ref   CHAR(1)          NOT NULL,
+    altitude        DOUBLE PRECISION NULL,
+    direction       DOUBLE PRECISION NULL,
+    satellite_count INTEGER          NULL,
+    country         VARCHAR(255)     NULL,
+    state           VARCHAR(255)     NULL,
+    city            VARCHAR(255)     NULL,
+    street          VARCHAR(255)     NULL,
+    sub_location    VARCHAR(255)     NULL
+);
+
 CREATE TABLE web_site_file
 (
 	id       BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -26,11 +44,21 @@ CREATE TABLE web_site_file
 	comment  TEXT   DEFAULT NULL,
 	path     VARCHAR(512) NOT NULL,
 	mimetype VARCHAR(255) NOT NULL,
+    original_datetime TIMESTAMPTZ NULL,
+    rights_holder     TEXT        NULL,
+    rights_terms      TEXT        NULL,
+    rights_url        TEXT        NULL,
+    creator_name      TEXT        NULL,
+    creator_email     TEXT        NULL,
+    creator_country   TEXT        NULL,
+    creator_url       TEXT        NULL,
+    location_id       BIGINT      NULL,
 	width    BIGINT DEFAULT NULL,
 	height   BIGINT DEFAULT NULL,
 	length   BIGINT DEFAULT NULL,
 	pages    BIGINT DEFAULT NULL,
-	metadata TEXT   DEFAULT NULL
+    metadata          TEXT DEFAULT NULL,
+    FOREIGN KEY (location_id) REFERENCES web_gps_location (id) ON UPDATE NO ACTION ON DELETE SET NULL
 );
 
 CREATE TABLE web_site_subject
