@@ -141,10 +141,12 @@ public class FileService {
 	}
 
 	// FileCommon
+	@Transactional(readOnly = true)
 	public Iterable<SiteFile> findAllSiteFiles() {
 		return siteFileRepository.findAll();
 	}
 
+	@Transactional(readOnly = true)
 	public Optional<SiteFile> findSiteFileById(long siteFileId) {
 		return siteFileRepository.findById(siteFileId);
 	}
@@ -155,6 +157,7 @@ public class FileService {
 		return siteFileRepository.saveAndFlush(siteFile);
 	}
 
+	@Transactional(readOnly = true)
 	public Set<Long> findAllSiteFileIdWithSubject() {
 		var siteFileIdList = siteFileRepository.findAllSiteFileIdWithSubject();
 
@@ -162,6 +165,7 @@ public class FileService {
 	}
 
 	// FileAudio
+	@Transactional(readOnly = true)
 	public Page<SiteFileResponse> findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum FileTypeEnum, PageRequest pageRequest, String filter, String filterColumn) {
 		Page<SiteFile> siteFiles;
 		// Generate required Pageable alongside the incoming PageRequest

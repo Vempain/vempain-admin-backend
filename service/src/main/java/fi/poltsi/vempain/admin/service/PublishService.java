@@ -271,7 +271,7 @@ public class PublishService {
 										 .comment(siteFile.getComment())
 										 .build();
 
-			log.debug("Saving site file: {}", webSiteFile);
+			log.debug("Saving web site file: {}", webSiteFile);
 			var newSiteFile = webSiteFileRepository.save(webSiteFile);
 			// Add new gallery file relation
 			siteGalleryRepository.saveGalleryFile(siteGalleryId, newSiteFile.getId(), galleryFile.getSortOrder());

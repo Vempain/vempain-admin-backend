@@ -13,12 +13,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.time.Instant;
 
 @Data
 @Entity
 @Builder
+@ToString(exclude = "metadata")
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "web_site_file")

@@ -44,6 +44,7 @@ public class GalleryService {
 		return galleryList;
 	}
 
+	@Transactional(readOnly = true)
 	public List<GalleryResponse> findAllAsResponsesForUser(QueryDetailEnum queryDetailEnum) {
 		var galleries = findAllForUser();
 		var responses = new ArrayList<GalleryResponse>();
@@ -60,6 +61,7 @@ public class GalleryService {
 		return responses;
 	}
 
+	@Transactional(readOnly = true)
 	public GalleryResponse findById(long galleryId) {
 		var gallery = galleryRepository.findById(galleryId)
 									   .orElse(null);
