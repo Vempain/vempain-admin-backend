@@ -44,11 +44,9 @@ dependencies {
 	api "fi.poltsi.vempain:vempain-auth-api:${vempainAuthVersion}"
 	api "fi.poltsi.vempain:vempain-file-backend-api:${vempainFileVersion}"
 	// https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-annotations
-	implementation "io.swagger.core.v3:swagger-annotations:2.2.39"
+	implementation "io.swagger.core.v3:swagger-annotations:2.2.40"
 	// https://mvnrepository.com/artifact/jakarta.validation/jakarta.validation-api
 	implementation "jakarta.validation:jakarta.validation-api:3.1.1"
-	// https://mvnrepository.com/artifact/jakarta.persistence/jakarta.persistence-api
-	implementation "jakarta.persistence:jakarta.persistence-api:3.1.0"
 	// https://mvnrepository.com/artifact/org.mockito/mockito-junit-jupiter
 	testImplementation "org.mockito:mockito-junit-jupiter:5.20.0"
 	// https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter
