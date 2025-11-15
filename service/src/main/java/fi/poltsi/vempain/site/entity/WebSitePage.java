@@ -24,32 +24,49 @@ public class WebSitePage {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
 	protected long    id;
+
+	@Column(name = "acl_id")
+	protected long aclId;
+
 	@Column(name = "page_id")
 	protected long    pageId;
+
 	@Column(name = "parent_id")
 	private   Long    parentId;
+
 	@Column(name = "path", nullable = false)
 	private   String  path;
+
 	@Column(name = "secure", nullable = false)
 	private   boolean secure;
+
 	@Column(name = "indexlist", nullable = false)
 	private   boolean indexList;
+
 	@Column(name = "title", nullable = false, length = 512)
 	private   String  title;
+
 	@Column(name = "header", nullable = false, length = 512)
 	private   String  header;
+
 	@Column(name = "body", nullable = false, length = 524288)
 	private   String  body;
+
 	@Column(name = "creator", nullable = false, length = 512)
 	private   String  creator;
+
 	@Column(name = "created", nullable = false)
 	private   Instant created;
+
 	@Column(name = "modifier", length = 512)
 	private   String  modifier;
+
 	@Column(name = "modified")
 	private   Instant modified;
+
 	@Column(name = "cache", length = 524288)
 	private   String  cache;
+
 	@Column(name = "published")
 	private   Instant published;
 }

@@ -1,12 +1,12 @@
 package fi.poltsi.vempain.site.entity;
 
+import fi.poltsi.vempain.admin.api.site.response.WebSiteAclResponse;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,36 +19,40 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "web_site_gallery")
-public class WebSiteGallery {
+@Table(name = "web_site_acl")
+public class WebSiteAcl {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
-	private   long    id;
+	private Long id;
 
-	@Column(name = "acl_id")
-	protected long aclId;
+	@Column(name = "acl_id", nullable = false)
+	private Long aclId;
 
-	@Column(name = "gallery_id")
-	private long galleryId;
-
-	@Size(min = 2, max = 2000, message = "Description should be between 2 and 2000 characters")
-	@Column(name = "description")
-	private String description;
-
-	@Size(min = 2, max = 256, message = "Description should be between 2 and 256 characters")
-	@Column(name = "shortname")
-	private String shortname;
+	@Column(name = "user_id", nullable = false)
+	private Long userId;
 
 	@Column(name = "creator", nullable = false)
-	protected Long creator;
+	private Long creator;
 
 	@Column(name = "created", nullable = false)
-	protected Instant created;
+	private Instant created;
 
 	@Column(name = "modifier")
-	protected Long modifier;
+	private Long modifier;
 
 	@Column(name = "modified")
-	protected Instant modified;
+	private Instant modified;
+
+	public WebSiteAclResponse toResponse() {
+		return WebSiteAclResponse.builder()
+								 .id(this.id)
+								 .aclId(this.aclId)
+								 .userId(this.userId)
+								 .creator(this.creator)
+								 .created(this.created)
+								 .modifier(this.modifier)
+								 .modified(this.modified)
+								 .build();
+	}
 }
