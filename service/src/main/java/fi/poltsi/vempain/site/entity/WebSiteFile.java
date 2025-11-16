@@ -1,7 +1,10 @@
 package fi.poltsi.vempain.site.entity;
 
+import fi.poltsi.vempain.file.api.FileTypeEnum;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -44,6 +47,10 @@ public class WebSiteFile {
 
 	@Column(name = "mimetype", nullable = false)
 	private String mimetype;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "file_type", nullable = false)
+	private FileTypeEnum fileType;
 
 	@Column(name = "original_datetime")
 	private Instant originalDateTime;

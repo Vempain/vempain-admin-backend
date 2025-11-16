@@ -1,14 +1,18 @@
 package fi.poltsi.vempain.admin.controller;
 
+import fi.poltsi.vempain.admin.api.site.WebSiteResourceEnum;
 import fi.poltsi.vempain.admin.api.site.request.WebSiteAclRequest;
 import fi.poltsi.vempain.admin.api.site.request.WebSiteUserRequest;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteAclResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteAclUsersResponse;
+import fi.poltsi.vempain.admin.api.site.response.WebSiteResourcePageResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteUserResourcesResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteUserResponse;
 import fi.poltsi.vempain.admin.rest.SiteWebAccessAPI;
 import fi.poltsi.vempain.admin.service.AccessService;
+import fi.poltsi.vempain.file.api.FileTypeEnum;
 import fi.poltsi.vempain.site.service.WebSiteAclService;
+import fi.poltsi.vempain.site.service.WebSiteResourceService;
 import fi.poltsi.vempain.site.service.WebSiteUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +28,7 @@ public class SiteWebAccessController implements SiteWebAccessAPI {
 	private final WebSiteUserService webSiteUserService;
 	private final WebSiteAclService  webSiteAclService;
 	private final AccessService      accessService;
+	private final WebSiteResourceService webSiteResourceService;
 
 	// ========== Site Web User Endpoints ==========
 
@@ -102,5 +107,13 @@ public class SiteWebAccessController implements SiteWebAccessAPI {
 		return ResponseEntity.noContent()
 							 .build();
 	}
-}
 
+	// ========== Site Resource Endpoints ==========
+
+	@Override
+	public ResponseEntity<WebSiteResourcePageResponse> getResources(WebSiteResourceEnum resourceType, FileTypeEnum fileType, String query, Long aclId,
+																	String sort, String direction, int page, int size) {
+		accessService.checkAuthentication();
+		return ResponseEntity.ok(webSiteResourceService.listResources(resourceType, fileType, query, aclId, sort, direction, page, size));
+	}
+}

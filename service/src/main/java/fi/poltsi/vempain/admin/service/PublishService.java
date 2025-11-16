@@ -258,6 +258,7 @@ public class PublishService {
 										 .comment(siteFile.getComment())
 										 .path(siteFile.getFileType().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName())
 										 .mimetype(siteFile.getMimeType())
+										 .fileType(siteFile.getFileType())
 										 .creatorName(siteFile.getCreatorName())
 										 .originalDateTime(siteFile.getOriginalDateTime())
 										 .rightsHolder(siteFile.getRightsHolder())

@@ -44,6 +44,7 @@ CREATE TABLE web_site_file
 	comment  TEXT   DEFAULT NULL,
 	path     VARCHAR(512) NOT NULL,
 	mimetype VARCHAR(255) NOT NULL,
+	file_type VARCHAR(100) NOT NULL,
     original_datetime TIMESTAMPTZ NULL,
     rights_holder     TEXT        NULL,
     rights_terms      TEXT        NULL,
