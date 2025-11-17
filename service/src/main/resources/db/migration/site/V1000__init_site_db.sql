@@ -44,6 +44,7 @@ CREATE TABLE web_site_file
 	comment  TEXT   DEFAULT NULL,
 	path     VARCHAR(512) NOT NULL,
 	mimetype VARCHAR(255) NOT NULL,
+	file_type VARCHAR(100) NOT NULL,
     original_datetime TIMESTAMPTZ NULL,
     rights_holder     TEXT        NULL,
     rights_terms      TEXT        NULL,
@@ -90,6 +91,7 @@ CREATE TABLE web_site_page_subject
 CREATE TABLE web_site_gallery
 (
 	id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	acl_id BIGINT NOT NULL,
 	gallery_id  BIGINT                      NOT NULL,
 	shortname   VARCHAR(255)                DEFAULT NULL,
 	description VARCHAR(255)                DEFAULT NULL,
@@ -112,4 +114,27 @@ CREATE TABLE web_site_gallery_subject
 	gallery_id BIGINT NOT NULL,
 	subject_id BIGINT NOT NULL,
 	CONSTRAINT fk_gallery_subject_gallery_id FOREIGN KEY (gallery_id) REFERENCES web_site_gallery (id) ON DELETE CASCADE
+);
+
+CREATE TABLE web_site_users
+(
+	id            BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	username      VARCHAR(255) NOT NULL,
+	password_hash VARCHAR(255) NOT NULL,
+	creator       BIGINT       NOT NULL,
+	created       TIMESTAMP    NOT NULL,
+	modifier      BIGINT,
+	modified      TIMESTAMP
+);
+
+CREATE TABLE web_site_acl
+(
+	id       BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	acl_id   BIGINT    NOT NULL,
+	user_id  BIGINT    NOT NULL
+		CONSTRAINT fk_acl_user_id REFERENCES web_site_users (id) ON DELETE CASCADE,
+	creator  BIGINT    NOT NULL,
+	created  TIMESTAMP NOT NULL,
+	modifier BIGINT,
+	modified TIMESTAMP
 );

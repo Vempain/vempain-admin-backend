@@ -48,14 +48,16 @@ import java.util.Set;
 public class FileService {
 
 	private static final String RESPONSE_STATUS_EXCEPTION_MESSAGE = "Unknown error";
+
 	private final FileThumbPageableRepository fileThumbPageableRepository;
 	private final GalleryRepository           galleryRepository;
 	private final SubjectRepository           subjectRepository;
+	private final SiteFileRepository siteFileRepository;
 	private final AclService                  aclService;
 	private final AccessService               accessService;
 	private final GalleryFileService          galleryFileService;
 	private final SubjectService              subjectService;
-	private final SiteFileRepository          siteFileRepository;
+
 	@Value("${vempain.admin.file.site-file-directory}")
 	private String siteFileDirectory;
 	@Value("${vempain.admin.file.image-format}")

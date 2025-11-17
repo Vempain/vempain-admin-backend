@@ -206,6 +206,7 @@ public class FileIngestService {
 							 .modifyPrivilege(true)
 							 .build();
 				var siteFileAcl = aclService.save(acl);
+				log.debug("From latest ACL ID {} created new SiteFile ACL: {}", nextAclId, siteFileAcl);
 				siteFile.setAclId(siteFileAcl.getAclId());
 
 				siteFile.setCreator(userId);

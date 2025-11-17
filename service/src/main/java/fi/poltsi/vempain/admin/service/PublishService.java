@@ -17,6 +17,7 @@ import fi.poltsi.vempain.site.repository.SitePageRepository;
 import fi.poltsi.vempain.site.repository.WebGpsLocationRepository;
 import fi.poltsi.vempain.site.repository.WebSiteFileRepository;
 import fi.poltsi.vempain.site.service.SiteSubjectService;
+import fi.poltsi.vempain.site.service.WebSiteResourceService;
 import fi.poltsi.vempain.tools.JschClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +40,8 @@ public class PublishService {
 	private final SitePageRepository    sitePageRepository;
 	private final SiteGalleryRepository siteGalleryRepository;
 	private final WebSiteFileRepository webSiteFileRepository;
+	private final WebGpsLocationRepository webGpsLocationRepository;
+
 	private final PageService           pageService;
 	private final FormService           formService;
 	private final ComponentService      componentService;
@@ -50,7 +53,7 @@ public class PublishService {
 	private final SiteSubjectService    siteSubjectService;
 	private final PageGalleryService    pageGalleryService;
 	private final JschClient            jschClient;
-	private final WebGpsLocationRepository webGpsLocationRepository;
+	private final WebSiteResourceService webSiteResourceService;
 
 	@Value("${vempain.site.ssh.address}")
 	private String siteSshAddress;
@@ -116,7 +119,11 @@ public class PublishService {
 		}
 
 		var published = Instant.now();
-		WebSitePage webSitePage = optionalSitePage.orElseGet(WebSitePage::new);
+		var webSitePage = optionalSitePage.orElseGet(WebSitePage::new);
+
+		if (webSitePage.getAclId() == 0) {
+			webSitePage.setAclId(webSiteResourceService.getNextWebSiteAcl());
+		}
 
 		webSitePage.setPageId(page.getId());
 		webSitePage.setParentId(page.getParentId());
@@ -219,6 +226,7 @@ public class PublishService {
 
 		// Add the gallery
 		var siteGallery = gallery.getSiteGallery();
+		siteGallery.setAclId(webSiteResourceService.getNextWebSiteAcl());
 		var newSiteGallery = siteGalleryRepository.save(siteGallery);
 		var siteGalleryId = newSiteGallery.getId();
 
@@ -253,11 +261,15 @@ public class PublishService {
 				webLocation = webGpsLocationRepository.save(webLocation);
 			}
 
+			// When creating
+
 			var webSiteFile = WebSiteFile.builder()
 										 .fileId(siteFile.getId())
+										 .aclId(webSiteResourceService.getNextWebSiteAcl())
 										 .comment(siteFile.getComment())
 										 .path(siteFile.getFileType().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName())
 										 .mimetype(siteFile.getMimeType())
+										 .fileType(siteFile.getFileType())
 										 .creatorName(siteFile.getCreatorName())
 										 .originalDateTime(siteFile.getOriginalDateTime())
 										 .rightsHolder(siteFile.getRightsHolder())
@@ -272,14 +284,14 @@ public class PublishService {
 										 .build();
 
 			log.debug("Saving web site file: {}", webSiteFile);
-			var newSiteFile = webSiteFileRepository.save(webSiteFile);
+			var newWebSiteFile = webSiteFileRepository.save(webSiteFile);
 			// Add new gallery file relation
-			siteGalleryRepository.saveGalleryFile(siteGalleryId, newSiteFile.getId(), galleryFile.getSortOrder());
+			siteGalleryRepository.saveGalleryFile(siteGalleryId, newWebSiteFile.getId(), galleryFile.getSortOrder());
 			// Save subject on site-side
 			var subjects = subjectService.getSubjectsByFileId(webSiteFile.getId());
 			var siteSubjects = siteSubjectService.saveAllFromAdminSubject(subjects);
 			// Save subject - file relation on site-side
-			siteSubjectService.saveSiteFileSubject(newSiteFile.getId(), siteSubjects);
+			siteSubjectService.saveSiteFileSubject(newWebSiteFile.getId(), siteSubjects);
 		}
 	}
 

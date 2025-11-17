@@ -45,7 +45,10 @@ public class MissingThumbGeneratorSchedule {
 				if (optionalSiteFile.isPresent()) {
 					var siteFile = optionalSiteFile.get();
 					// Make sure the converted file exists
-					var checkFile = Paths.get(siteFileDirectory + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName());
+					var checkFile =
+							Paths.get(siteFileDirectory + File.separator + siteFile.getFileType().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName());
+					log.debug("Checking existence of file for thumb generation: {}", checkFile);
+
 					if (!Files.exists(checkFile)) {
 						log.warn("Could not generate new thumb for parent ID {} because no site file exists", checkFile);
 						continue;

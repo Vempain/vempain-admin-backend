@@ -311,6 +311,7 @@ public class AclConsistencySchedule {
 		acls.addAll(getAclsFromObject(unitService.findAll(), "unit"));
 		acls.addAll(getAclsFromObject(userService.findAll(), "user"));
 		acls.addAll(getAclsFromObject(fileService.findAllGalleries(), "gallery"));
+		acls.addAll(getAclsFromObject(fileService.findAllSiteFiles(), "site-file"));
 		return acls;
 	}
 }
