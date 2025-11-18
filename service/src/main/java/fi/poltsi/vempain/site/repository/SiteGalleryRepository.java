@@ -32,6 +32,9 @@ public interface SiteGalleryRepository extends PagingAndSortingRepository<WebSit
 	Page<WebSiteGallery> findByDescriptionContainingIgnoreCase(String query, @NonNull Pageable pageable);
 
 	@NonNull
+	Page<WebSiteGallery> findByGalleryId(long galleryId, @NonNull Pageable pageable);
+
+	@NonNull
 	Page<WebSiteGallery> findByAclId(long aclId, @NonNull Pageable pageable);
 
 	@NonNull
@@ -39,4 +42,7 @@ public interface SiteGalleryRepository extends PagingAndSortingRepository<WebSit
 
 	@NonNull
 	Page<WebSiteGallery> findByAclIdAndDescriptionContainingIgnoreCase(long aclId, String query, @NonNull Pageable pageable);
+
+	@NonNull
+	Page<WebSiteGallery> findByAclIdAndGalleryId(long aclId, long galleryId, @NonNull Pageable pageable);
 }
