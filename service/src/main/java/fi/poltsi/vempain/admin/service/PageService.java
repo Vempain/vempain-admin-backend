@@ -184,6 +184,8 @@ public class PageService {
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, VempainMessages.INTERNAL_ERROR);
 		}
 
+		var parentId = (request.getParentId() != null && request.getParentId() > 0L) ? request.getParentId() : null;
+
 		try {
 			page.setBody(request.getBody()
 								.trim());
@@ -195,7 +197,7 @@ public class PageService {
 								  .trim());
 			page.setIndexList(request.isIndexList());
 			page.setFormId(request.getFormId());
-			page.setParentId(request.getParentId());
+			page.setParentId(parentId);
 			page.setModifier(userId);
 			page.setModified(Instant.now());
 
