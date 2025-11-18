@@ -41,6 +41,12 @@ public interface SitePageRepository extends PagingAndSortingRepository<WebSitePa
 	Page<WebSitePage> findByPathContainingIgnoreCase(String path, @NonNull Pageable pageable);
 
 	@NonNull
+	Page<WebSitePage> findByBodyContainingIgnoreCase(String body, @NonNull Pageable pageable);
+
+	@NonNull
+	Page<WebSitePage> findByHeaderContainingIgnoreCase(String header, @NonNull Pageable pageable);
+
+	@NonNull
 	Page<WebSitePage> findByAclId(long aclId, @NonNull Pageable pageable);
 
 	@NonNull
@@ -48,4 +54,10 @@ public interface SitePageRepository extends PagingAndSortingRepository<WebSitePa
 
 	@NonNull
 	Page<WebSitePage> findByAclIdAndPathContainingIgnoreCase(long aclId, String path, @NonNull Pageable pageable);
+
+	@NonNull
+	Page<WebSitePage> findByAclIdAndBodyContainingIgnoreCase(long aclId, String body, @NonNull Pageable pageable);
+
+	@NonNull
+	Page<WebSitePage> findByAclIdAndHeaderContainingIgnoreCase(long aclId, String header, @NonNull Pageable pageable);
 }

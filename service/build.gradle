@@ -27,14 +27,14 @@ repositories {
 		url = "https://maven.pkg.github.com/Vempain/vempain-auth"
 		credentials {
 			username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
-			password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+			password = project.findProperty("gpr.token") ?: System.getenv("GITHUB_TOKEN")
 		}
 	}
 	maven {
 		url = "https://maven.pkg.github.com/Vempain/vempain-file-backend-api"
 		credentials {
 			username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
-			password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+			password = project.findProperty("gpr.token") ?: System.getenv("GITHUB_TOKEN")
 		}
 	}
 	maven { url = 'https://repo.spring.io/milestone' }

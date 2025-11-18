@@ -10,7 +10,7 @@ repositories {
 		url = "https://maven.pkg.github.com/Vempain/vempain-auth"
 		credentials {
 			username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
-			password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+			password = project.findProperty("gpr.token") ?: System.getenv("GITHUB_TOKEN")
 		}
 	}
 	mavenCentral()
@@ -86,7 +86,7 @@ publishing {
 			url = uri("https://maven.pkg.github.com/Vempain/vempain-admin-backend")
 			credentials {
 				username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
-				password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+				password = project.findProperty("gpr.token") ?: System.getenv("GITHUB_TOKEN")
 			}
 		}
 	}

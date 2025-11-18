@@ -16,12 +16,17 @@ import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -125,45 +130,82 @@ public class WebSiteResourceService {
 	}
 
 	private Page<WebSitePage> fetchPages(String query, Long aclId, Pageable pageable) {
-		if (aclId != null) {
-			if (query != null && !query.isBlank()) {
-				var titleMatches = sitePageRepository.findByAclIdAndTitleContainingIgnoreCase(aclId, query, pageable);
-				if (!titleMatches.isEmpty()) {
-					return titleMatches;
-				}
-				return sitePageRepository.findByAclIdAndPathContainingIgnoreCase(aclId, query, pageable);
-			}
-			return sitePageRepository.findByAclId(aclId, pageable);
+		List<String> terms = splitTerms(query);
+		if (terms.isEmpty()) {
+			return aclId != null ? sitePageRepository.findByAclId(aclId, pageable) : sitePageRepository.findAll(pageable);
 		}
-		if (query != null && !query.isBlank()) {
-			var titleMatches = sitePageRepository.findByTitleContainingIgnoreCase(query, pageable);
-			if (!titleMatches.isEmpty()) {
-				return titleMatches;
-			}
-			return sitePageRepository.findByPathContainingIgnoreCase(query, pageable);
+
+		LinkedHashMap<Long, WebSitePage> results = new LinkedHashMap<>();
+		for (String term : terms) {
+			accumulatePage(results, aclId != null ? sitePageRepository.findByAclIdAndTitleContainingIgnoreCase(aclId, term, pageable)
+												  : sitePageRepository.findByTitleContainingIgnoreCase(term, pageable));
+			accumulatePage(results, aclId != null ? sitePageRepository.findByAclIdAndPathContainingIgnoreCase(aclId, term, pageable)
+												  : sitePageRepository.findByPathContainingIgnoreCase(term, pageable));
+			accumulatePage(results, aclId != null ? sitePageRepository.findByAclIdAndBodyContainingIgnoreCase(aclId, term, pageable)
+												  : sitePageRepository.findByBodyContainingIgnoreCase(term, pageable));
+			accumulatePage(results, aclId != null ? sitePageRepository.findByAclIdAndHeaderContainingIgnoreCase(aclId, term, pageable)
+												  : sitePageRepository.findByHeaderContainingIgnoreCase(term, pageable));
 		}
-		return sitePageRepository.findAll(pageable);
+		return sliceResults(results, pageable);
 	}
 
 	private Page<WebSiteGallery> fetchGalleries(String query, Long aclId, Pageable pageable) {
-		if (aclId != null) {
-			if (query != null && !query.isBlank()) {
-				var shortMatches = siteGalleryRepository.findByAclIdAndShortnameContainingIgnoreCase(aclId, query, pageable);
-				if (!shortMatches.isEmpty()) {
-					return shortMatches;
-				}
-				return siteGalleryRepository.findByAclIdAndDescriptionContainingIgnoreCase(aclId, query, pageable);
-			}
-			return siteGalleryRepository.findByAclId(aclId, pageable);
+		List<String> terms = splitTerms(query);
+		if (terms.isEmpty()) {
+			return aclId != null ? siteGalleryRepository.findByAclId(aclId, pageable) : siteGalleryRepository.findAll(pageable);
 		}
-		if (query != null && !query.isBlank()) {
-			var shortMatches = siteGalleryRepository.findByShortnameContainingIgnoreCase(query, pageable);
-			if (!shortMatches.isEmpty()) {
-				return shortMatches;
-			}
-			return siteGalleryRepository.findByDescriptionContainingIgnoreCase(query, pageable);
+
+		LinkedHashMap<Long, WebSiteGallery> results = new LinkedHashMap<>();
+		for (String term : terms) {
+			accumulateGallery(results, aclId != null ? siteGalleryRepository.findByAclIdAndShortnameContainingIgnoreCase(aclId, term, pageable)
+													 : siteGalleryRepository.findByShortnameContainingIgnoreCase(term, pageable));
+			accumulateGallery(results, aclId != null ? siteGalleryRepository.findByAclIdAndDescriptionContainingIgnoreCase(aclId, term, pageable)
+													 : siteGalleryRepository.findByDescriptionContainingIgnoreCase(term, pageable));
 		}
-		return siteGalleryRepository.findAll(pageable);
+		return sliceResults(results, pageable);
+	}
+
+	private List<String> splitTerms(String query) {
+		if (query == null) {
+			return List.of();
+		}
+		String trimmed = query.trim();
+		if (trimmed.isEmpty()) {
+			return List.of();
+		}
+		Pattern pattern = Pattern.compile("\"([^\"]+)\"|([^\\s]+)");
+		Matcher matcher = pattern.matcher(trimmed);
+		List<String> tokens = new ArrayList<>();
+		while (matcher.find()) {
+			String term = matcher.group(1) != null ? matcher.group(1) : matcher.group(2);
+			if (term != null && !term.isBlank()) {
+				tokens.add(term);
+			}
+		}
+		return tokens.isEmpty() ? List.of(trimmed) : tokens;
+	}
+
+	private void accumulatePage(LinkedHashMap<Long, WebSitePage> target, Page<WebSitePage> source) {
+		if (source == null || source.isEmpty()) {
+			return;
+		}
+		source.forEach(page -> target.putIfAbsent(page.getId(), page));
+	}
+
+	private void accumulateGallery(LinkedHashMap<Long, WebSiteGallery> target, Page<WebSiteGallery> source) {
+		if (source == null || source.isEmpty()) {
+			return;
+		}
+		source.forEach(gallery -> target.putIfAbsent(gallery.getId(), gallery));
+	}
+
+	private <T> Page<T> sliceResults(LinkedHashMap<Long, T> ordered, Pageable pageable) {
+		List<T> list = new ArrayList<>(ordered.values());
+		long total = list.size();
+		int start = (int) Math.min(pageable.getOffset(), total);
+		int end = (int) Math.min(start + pageable.getPageSize(), total);
+		List<T> content = list.subList(start, end);
+		return new PageImpl<>(content, pageable, total);
 	}
 
 	private WebSiteResourcePageResponse mapFilePage(Page<WebSiteFile> page) {
