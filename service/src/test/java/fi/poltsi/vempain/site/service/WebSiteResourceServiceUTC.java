@@ -2,6 +2,7 @@ package fi.poltsi.vempain.site.service;
 
 import fi.poltsi.vempain.admin.api.site.WebSiteResourceEnum;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteResourcePageResponse;
+import fi.poltsi.vempain.admin.api.site.response.WebSiteResourceResponse;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.file.api.FileTypeEnum;
 import fi.poltsi.vempain.site.entity.WebSiteFile;
@@ -57,22 +58,35 @@ class WebSiteResourceServiceUTC {
 	}
 
 	@Test
-	@DisplayName("Defaults to SITE_FILE type and sorts by id when type is null and sort missing")
-	void listResources_defaultsToSiteFileAndSortIdAsc() {
+	@DisplayName("Null type lists all resource kinds and sorts by id")
+	void listResources_defaultsToAllTypesWhenTypeNull() {
 		var file = WebSiteFile.builder()
 							  .id(10L)
 							  .aclId(5L)
 							  .path("a/b/c.jpg")
 							  .fileType(FileTypeEnum.IMAGE)
 							  .build();
+		var gallery = WebSiteGallery.builder()
+									.id(20L)
+									.aclId(6L)
+									.shortname("Gallery")
+									.description("Desc")
+									.build();
+		var page = WebSitePage.builder()
+							  .id(30L)
+							  .aclId(7L)
+							  .title("Page title")
+							  .path("/page")
+							  .build();
+
 		when(fileRepo.findAll(any(PageRequest.class))).thenAnswer(inv -> new PageImpl<>(List.of(file), inv.getArgument(0), 1));
+		when(galleryRepo.findAll(any(PageRequest.class))).thenAnswer(inv -> new PageImpl<>(List.of(gallery), inv.getArgument(0), 1));
+		when(pageRepo.findAll(any(PageRequest.class))).thenAnswer(inv -> new PageImpl<>(List.of(page), inv.getArgument(0), 1));
 
 		WebSiteResourcePageResponse resp = service.listResources(null, null, null, null, null, null, 0, 10);
-		assertThat(resp.getItems()).hasSize(1);
-		assertThat(resp.getItems()
-					   .getFirst()
-					   .getResourceType()
-					   .name()).isEqualTo("SITE_FILE");
+		assertThat(resp.getItems()).hasSize(3);
+		assertThat(resp.getItems()).extracting(WebSiteResourceResponse::getResourceType)
+								   .containsExactlyInAnyOrder(WebSiteResourceEnum.SITE_FILE, WebSiteResourceEnum.GALLERY, WebSiteResourceEnum.PAGE);
 		assertThat(resp.getPageNumber()).isEqualTo(0);
 	}
 

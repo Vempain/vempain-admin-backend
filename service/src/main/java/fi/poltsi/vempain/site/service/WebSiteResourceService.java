@@ -61,13 +61,16 @@ public class WebSiteResourceService {
 		int safePage = Math.max(page, 0);
 		int safeSize = Math.min(Math.max(size, 1), 200); // cap page size to avoid accidental large scans
 		Sort.Direction dir = "desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC;
-
-		// Null type defaults to SITE_FILE
-		WebSiteResourceEnum effectiveType = (type == null ? WebSiteResourceEnum.SITE_FILE : type);
+		boolean allTypes = (type == null);
+		WebSiteResourceEnum effectiveType = allTypes ? WebSiteResourceEnum.SITE_FILE : type;
 
 		String resolvedSort = resolveSortField(effectiveType, sort);
 		Sort sortSpec = Sort.by(dir, resolvedSort);
 		PageRequest pageable = PageRequest.of(safePage, safeSize, sortSpec);
+
+		if (allTypes) {
+			return listAllResourceTypes(query, aclId, sortSpec, safePage, safeSize);
+		}
 
 		return switch (effectiveType) {
 			case GALLERY -> mapGalleryPage(fetchGalleries(query, aclId, pageable));
@@ -271,5 +274,88 @@ public class WebSiteResourceService {
 							.max(Long::compareTo)
 							.orElse(0L);
 		return maxAcl == 0L ? 1L : maxAcl + 1;
+	}
+
+	private WebSiteResourcePageResponse listAllResourceTypes(String query, Long aclId, Sort sortSpec, int safePage, int safeSize) {
+		long requiredLong = (long) (safePage + 1) * safeSize;
+		if (requiredLong > Integer.MAX_VALUE) {
+			throw new IllegalArgumentException("Requested page is too large to materialize");
+		}
+		int required = (int) requiredLong;
+		PageRequest multiPageable = PageRequest.of(0, required, sortSpec);
+
+		Page<WebSiteFile> filePage = fetchFiles(null, query, aclId, multiPageable);
+		Page<WebSiteGallery> galleryPage = fetchGalleries(query, aclId, multiPageable);
+		Page<WebSitePage> pagePage = fetchPages(query, aclId, multiPageable);
+
+		long totalElements = filePage.getTotalElements() + galleryPage.getTotalElements() + pagePage.getTotalElements();
+		if (totalElements == 0) {
+			return WebSiteResourcePageResponse.builder()
+											  .pageNumber(safePage)
+											  .pageSize(safeSize)
+											  .totalElements(0)
+											  .totalPages(0)
+											  .items(List.of())
+											  .build();
+		}
+
+		List<WebSiteResourceResponse> combined = new ArrayList<>();
+		combined.addAll(toFileResponses(filePage));
+		combined.addAll(toGalleryResponses(galleryPage));
+		combined.addAll(toPageResponses(pagePage));
+
+		long start = (long) safePage * safeSize;
+		if (start >= totalElements || start >= combined.size()) {
+			return WebSiteResourcePageResponse.builder()
+											  .pageNumber(safePage)
+											  .pageSize(safeSize)
+											  .totalElements(totalElements)
+											  .totalPages((int) Math.ceil((double) totalElements / safeSize))
+											  .items(List.of())
+											  .build();
+		}
+		int end = (int) Math.min(start + safeSize, Math.min(totalElements, combined.size()));
+		List<WebSiteResourceResponse> pageItems = combined.subList((int) start, end);
+		return WebSiteResourcePageResponse.builder()
+										  .pageNumber(safePage)
+										  .pageSize(safeSize)
+										  .totalElements(totalElements)
+										  .totalPages((int) Math.ceil((double) totalElements / safeSize))
+										  .items(pageItems)
+										  .build();
+	}
+
+	private List<WebSiteResourceResponse> toFileResponses(Page<WebSiteFile> filePage) {
+		return filePage.map(file -> WebSiteResourceResponse.builder()
+														   .resourceType(WebSiteResourceEnum.SITE_FILE)
+														   .resourceId(file.getId())
+														   .name(file.getPath())
+														   .path(file.getPath())
+														   .aclId(file.getAclId())
+														   .fileType(file.getFileType() != null ? file.getFileType().shortName : null)
+														   .build())
+					   .getContent();
+	}
+
+	private List<WebSiteResourceResponse> toGalleryResponses(Page<WebSiteGallery> galleryPage) {
+		return galleryPage.map(gallery -> WebSiteResourceResponse.builder()
+																 .resourceType(WebSiteResourceEnum.GALLERY)
+																 .resourceId(gallery.getId())
+																 .name(gallery.getShortname())
+																 .path(gallery.getDescription())
+																 .aclId(gallery.getAclId())
+																 .build())
+						  .getContent();
+	}
+
+	private List<WebSiteResourceResponse> toPageResponses(Page<WebSitePage> pagePage) {
+		return pagePage.map(sitePage -> WebSiteResourceResponse.builder()
+															   .resourceType(WebSiteResourceEnum.PAGE)
+															   .resourceId(sitePage.getId())
+															   .name(sitePage.getTitle())
+															   .path(sitePage.getPath())
+															   .aclId(sitePage.getAclId())
+															   .build())
+					   .getContent();
 	}
 }
