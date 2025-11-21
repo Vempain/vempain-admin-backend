@@ -6,9 +6,6 @@ import fi.poltsi.vempain.admin.api.site.response.WebSiteAclUsersResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteUserResourcesResponse;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.site.entity.WebSiteAcl;
-import fi.poltsi.vempain.site.entity.WebSiteFile;
-import fi.poltsi.vempain.site.entity.WebSiteGallery;
-import fi.poltsi.vempain.site.entity.WebSiteUser;
 import fi.poltsi.vempain.site.repository.SiteGalleryRepository;
 import fi.poltsi.vempain.site.repository.WebSiteAclRepository;
 import fi.poltsi.vempain.site.repository.WebSiteFileRepository;
@@ -40,7 +37,7 @@ public class WebSiteAclService {
 	 * @return List of ACL responses
 	 */
 	public List<WebSiteAclResponse> findAll() {
-		List<WebSiteAclResponse> responses = new ArrayList<>();
+		var responses = new ArrayList<WebSiteAclResponse>();
 		webSiteAclRepository.findAll()
 							.forEach(acl -> responses.add(acl.toResponse()));
 		return responses;
@@ -68,10 +65,11 @@ public class WebSiteAclService {
 	 * @return Response containing ACL ID and list of users
 	 */
 	public WebSiteAclUsersResponse findUsersByAclId(Long aclId) {
-		List<WebSiteAcl> aclEntries = webSiteAclRepository.findByAclId(aclId);
+		var aclEntries = webSiteAclRepository.findByAclId(aclId);
 
-		List<WebSiteAclUsersResponse.UserSummary> users = new ArrayList<>();
-		for (WebSiteAcl acl : aclEntries) {
+		var users = new ArrayList<WebSiteAclUsersResponse.UserSummary>();
+
+		for (var acl : aclEntries) {
 			webSiteUserRepository.findById(acl.getUserId())
 								 .ifPresent(user ->
 													users.add(WebSiteAclUsersResponse.UserSummary.builder()
@@ -94,17 +92,17 @@ public class WebSiteAclService {
 	 * @return Response containing user info and accessible resources
 	 */
 	public WebSiteUserResourcesResponse findResourcesByUserId(Long userId) {
-		WebSiteUser user = webSiteUserRepository.findById(userId)
+		var user = webSiteUserRepository.findById(userId)
 												.orElseThrow(() -> {
 													log.error("Site web user not found with ID: {}", userId);
 													return new ResponseStatusException(HttpStatus.NOT_FOUND, "Site web user not found");
 												});
 
-		List<Long> aclIds = webSiteAclRepository.findAclIdsByUserId(userId);
-		List<WebSiteUserResourcesResponse.ResourceAccess> resources = new ArrayList<>();
+		var aclIds = webSiteAclRepository.findAclIdsByUserId(userId);
+		var resources = new ArrayList<WebSiteUserResourcesResponse.ResourceAccess>();
 
 		// Find files with matching ACL IDs
-		for (WebSiteFile file : webSiteFileRepository.findAll()) {
+		for (var file : webSiteFileRepository.findAll()) {
 			if (aclIds.contains(file.getAclId())) {
 				resources.add(WebSiteUserResourcesResponse.ResourceAccess.builder()
 																		 .aclId(file.getAclId())
@@ -116,7 +114,7 @@ public class WebSiteAclService {
 		}
 
 		// Find galleries with matching ACL IDs
-		for (WebSiteGallery gallery : siteGalleryRepository.findAll()) {
+		for (var gallery : siteGalleryRepository.findAll()) {
 			if (aclIds.contains(gallery.getAclId())) {
 				resources.add(WebSiteUserResourcesResponse.ResourceAccess.builder()
 																		 .aclId(gallery.getAclId())
@@ -142,7 +140,7 @@ public class WebSiteAclService {
 	 */
 	@Transactional
 	public WebSiteAclResponse create(WebSiteAclRequest request) {
-		Long adminUserId = accessService.getValidUserId();
+		var adminUserId = accessService.getValidUserId();
 
 		// Verify user exists
 		if (!webSiteUserRepository.existsById(request.getUserId())) {
@@ -151,20 +149,20 @@ public class WebSiteAclService {
 		}
 
 		// Check if this ACL assignment already exists
-		WebSiteAcl existing = webSiteAclRepository.findByAclIdAndUserId(request.getAclId(), request.getUserId());
+		var existing = webSiteAclRepository.findByAclIdAndUserId(request.getAclId(), request.getUserId());
 		if (existing != null) {
 			log.error("ACL assignment already exists for ACL ID {} and user ID {}", request.getAclId(), request.getUserId());
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "ACL assignment already exists");
 		}
 
-		WebSiteAcl acl = WebSiteAcl.builder()
+		var acl = WebSiteAcl.builder()
 								   .aclId(request.getAclId())
 								   .userId(request.getUserId())
 								   .creator(adminUserId)
 								   .created(Instant.now())
 								   .build();
 
-		WebSiteAcl saved = webSiteAclRepository.save(acl);
+		var saved = webSiteAclRepository.save(acl);
 		log.info("Created new site ACL entry ID: {} linking ACL ID {} to user ID {} by admin user: {}",
 				 saved.getId(), request.getAclId(), request.getUserId(), adminUserId);
 		return saved.toResponse();
@@ -177,7 +175,7 @@ public class WebSiteAclService {
 	 */
 	@Transactional
 	public void delete(Long id) {
-		Long adminUserId = accessService.getValidUserId();
+		var adminUserId = accessService.getValidUserId();
 
 		if (!webSiteAclRepository.existsById(id)) {
 			log.error("Site ACL entry not found with ID: {}", id);
@@ -195,7 +193,7 @@ public class WebSiteAclService {
 	 */
 	@Transactional
 	public void deleteByAclId(Long aclId) {
-		Long adminUserId = accessService.getValidUserId();
+		var adminUserId = accessService.getValidUserId();
 		webSiteAclRepository.deleteByAclId(aclId);
 		log.info("Deleted all site ACL entries for ACL ID: {} by admin user: {}", aclId, adminUserId);
 	}

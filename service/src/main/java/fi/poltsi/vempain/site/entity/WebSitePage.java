@@ -67,6 +67,9 @@ public class WebSitePage {
 	@Column(name = "cache", length = 524288)
 	private   String  cache;
 
+	@Column(name = "embeds")
+	private String embeds;
+
 	@Column(name = "published")
 	private   Instant published;
 }
