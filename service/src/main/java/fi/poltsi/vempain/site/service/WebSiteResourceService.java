@@ -25,7 +25,6 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -58,15 +57,15 @@ public class WebSiteResourceService {
 		accessService.checkAuthentication();
 
 		// Defensive normalization for paging
-		int safePage = Math.max(page, 0);
-		int safeSize = Math.min(Math.max(size, 1), 200); // cap page size to avoid accidental large scans
-		Sort.Direction dir = "desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC;
-		boolean allTypes = (type == null);
-		WebSiteResourceEnum effectiveType = allTypes ? WebSiteResourceEnum.SITE_FILE : type;
+		var safePage = Math.max(page, 0);
+		var safeSize = Math.min(Math.max(size, 1), 200); // cap page size to avoid accidental large scans
+		var dir = "desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC;
+		var allTypes = (type == null);
+		var effectiveType = allTypes ? WebSiteResourceEnum.SITE_FILE : type;
 
-		String resolvedSort = resolveSortField(effectiveType, sort);
-		Sort sortSpec = Sort.by(dir, resolvedSort);
-		PageRequest pageable = PageRequest.of(safePage, safeSize, sortSpec);
+		var resolvedSort = resolveSortField(effectiveType, sort);
+		var sortSpec = Sort.by(dir, resolvedSort);
+		var pageable = PageRequest.of(safePage, safeSize, sortSpec);
 
 		if (allTypes) {
 			return listAllResourceTypes(query, aclId, sortSpec, safePage, safeSize);
@@ -83,7 +82,8 @@ public class WebSiteResourceService {
 		if (requested == null || requested.isBlank()) {
 			return "id";
 		}
-		String candidate = requested.trim();
+
+		var candidate = requested.trim();
 
 		// 'name' is a virtual field accepted for convenience
 		if (candidate.equalsIgnoreCase("name")) {
@@ -129,16 +129,19 @@ public class WebSiteResourceService {
 		} else if (query != null && !query.isBlank()) {
 			return siteFileRepository.findByPathContainingIgnoreCase(query, pageable);
 		}
+
 		return siteFileRepository.findAll(pageable);
 	}
 
 	private Page<WebSitePage> fetchPages(String query, Long aclId, Pageable pageable) {
-		List<String> terms = splitTerms(query);
+		var terms = splitTerms(query);
+
 		if (terms.isEmpty()) {
 			return aclId != null ? sitePageRepository.findByAclId(aclId, pageable) : sitePageRepository.findAll(pageable);
 		}
 
-		LinkedHashMap<Long, WebSitePage> results = new LinkedHashMap<>();
+		var results = new LinkedHashMap<Long, WebSitePage>();
+
 		for (String term : terms) {
 			accumulatePage(results, aclId != null ? sitePageRepository.findByAclIdAndTitleContainingIgnoreCase(aclId, term, pageable)
 												  : sitePageRepository.findByTitleContainingIgnoreCase(term, pageable));
@@ -149,17 +152,20 @@ public class WebSiteResourceService {
 			accumulatePage(results, aclId != null ? sitePageRepository.findByAclIdAndHeaderContainingIgnoreCase(aclId, term, pageable)
 												  : sitePageRepository.findByHeaderContainingIgnoreCase(term, pageable));
 		}
+
 		return sliceResults(results, pageable);
 	}
 
 	private Page<WebSiteGallery> fetchGalleries(String query, Long aclId, Pageable pageable) {
-		List<String> terms = splitTerms(query);
+		var terms = splitTerms(query);
+
 		if (terms.isEmpty()) {
 			return aclId != null ? siteGalleryRepository.findByAclId(aclId, pageable) : siteGalleryRepository.findAll(pageable);
 		}
 
-		LinkedHashMap<Long, WebSiteGallery> results = new LinkedHashMap<>();
-		for (String term : terms) {
+		var results = new LinkedHashMap<Long, WebSiteGallery>();
+
+		for (var term : terms) {
 			accumulateGallery(results, aclId != null ? siteGalleryRepository.findByAclIdAndShortnameContainingIgnoreCase(aclId, term, pageable)
 													 : siteGalleryRepository.findByShortnameContainingIgnoreCase(term, pageable));
 			accumulateGallery(results, aclId != null ? siteGalleryRepository.findByAclIdAndDescriptionContainingIgnoreCase(aclId, term, pageable)
@@ -172,19 +178,24 @@ public class WebSiteResourceService {
 		if (query == null) {
 			return List.of();
 		}
-		String trimmed = query.trim();
+
+		var trimmed = query.trim();
+
 		if (trimmed.isEmpty()) {
 			return List.of();
 		}
-		Pattern pattern = Pattern.compile("\"([^\"]+)\"|([^\\s]+)");
-		Matcher matcher = pattern.matcher(trimmed);
-		List<String> tokens = new ArrayList<>();
+
+		var pattern = Pattern.compile("\"([^\"]+)\"|([^\\s]+)");
+		var matcher = pattern.matcher(trimmed);
+		var tokens = new ArrayList<String>();
+
 		while (matcher.find()) {
 			String term = matcher.group(1) != null ? matcher.group(1) : matcher.group(2);
 			if (term != null && !term.isBlank()) {
 				tokens.add(term);
 			}
 		}
+
 		return tokens.isEmpty() ? List.of(trimmed) : tokens;
 	}
 
@@ -204,15 +215,15 @@ public class WebSiteResourceService {
 
 	private <T> Page<T> sliceResults(LinkedHashMap<Long, T> ordered, Pageable pageable) {
 		List<T> list = new ArrayList<>(ordered.values());
-		long total = list.size();
-		int start = (int) Math.min(pageable.getOffset(), total);
-		int end = (int) Math.min(start + pageable.getPageSize(), total);
+		var total = list.size();
+		var start = (int) Math.min(pageable.getOffset(), total);
+		var end = (int) Math.min(start + pageable.getPageSize(), total);
 		List<T> content = list.subList(start, end);
 		return new PageImpl<>(content, pageable, total);
 	}
 
 	private WebSiteResourcePageResponse mapFilePage(Page<WebSiteFile> page) {
-		List<WebSiteResourceResponse> items = page.map(file -> WebSiteResourceResponse.builder()
+		var items = page.map(file -> WebSiteResourceResponse.builder()
 																					  .resourceType(WebSiteResourceEnum.SITE_FILE)
 																					  .resourceId(file.getId())
 																					  .name(file.getPath())
@@ -225,7 +236,7 @@ public class WebSiteResourceService {
 	}
 
 	private WebSiteResourcePageResponse mapGalleryPage(Page<WebSiteGallery> page) {
-		List<WebSiteResourceResponse> items = page.map(gallery -> WebSiteResourceResponse.builder()
+		var items = page.map(gallery -> WebSiteResourceResponse.builder()
 																						 .resourceType(WebSiteResourceEnum.GALLERY)
 																						 .resourceId(gallery.getId())
 																						 .name(gallery.getShortname())
@@ -237,7 +248,7 @@ public class WebSiteResourceService {
 	}
 
 	private WebSiteResourcePageResponse mapPagePage(Page<WebSitePage> page) {
-		List<WebSiteResourceResponse> items = page.map(sitePage -> WebSiteResourceResponse.builder()
+		var items = page.map(sitePage -> WebSiteResourceResponse.builder()
 																						  .resourceType(WebSiteResourceEnum.PAGE)
 																						  .resourceId(sitePage.getId())
 																						  .name(sitePage.getTitle())
@@ -269,7 +280,7 @@ public class WebSiteResourceService {
 										   .getSingleResult();
 		log.debug("Max ACLs - File: {}, Gallery: {}, Page: {}", maxFileAcl, maxGalleryAcl, maxPageAcl);
 
-		Long maxAcl = Stream.of(maxFileAcl, maxGalleryAcl, maxPageAcl)
+		var maxAcl = Stream.of(maxFileAcl, maxGalleryAcl, maxPageAcl)
 							.filter(java.util.Objects::nonNull)
 							.max(Long::compareTo)
 							.orElse(0L);
@@ -277,18 +288,21 @@ public class WebSiteResourceService {
 	}
 
 	private WebSiteResourcePageResponse listAllResourceTypes(String query, Long aclId, Sort sortSpec, int safePage, int safeSize) {
-		long requiredLong = (long) (safePage + 1) * safeSize;
+		var requiredLong = (long) (safePage + 1) * safeSize;
+
 		if (requiredLong > Integer.MAX_VALUE) {
 			throw new IllegalArgumentException("Requested page is too large to materialize");
 		}
-		int required = (int) requiredLong;
-		PageRequest multiPageable = PageRequest.of(0, required, sortSpec);
 
-		Page<WebSiteFile> filePage = fetchFiles(null, query, aclId, multiPageable);
-		Page<WebSiteGallery> galleryPage = fetchGalleries(query, aclId, multiPageable);
-		Page<WebSitePage> pagePage = fetchPages(query, aclId, multiPageable);
+		var required = (int) requiredLong;
+		var multiPageable = PageRequest.of(0, required, sortSpec);
 
-		long totalElements = filePage.getTotalElements() + galleryPage.getTotalElements() + pagePage.getTotalElements();
+		var filePage = fetchFiles(null, query, aclId, multiPageable);
+		var galleryPage = fetchGalleries(query, aclId, multiPageable);
+		var pagePage = fetchPages(query, aclId, multiPageable);
+
+		var totalElements = filePage.getTotalElements() + galleryPage.getTotalElements() + pagePage.getTotalElements();
+
 		if (totalElements == 0) {
 			return WebSiteResourcePageResponse.builder()
 											  .pageNumber(safePage)
@@ -299,12 +313,13 @@ public class WebSiteResourceService {
 											  .build();
 		}
 
-		List<WebSiteResourceResponse> combined = new ArrayList<>();
+		var combined = new ArrayList<WebSiteResourceResponse>();
 		combined.addAll(toFileResponses(filePage));
 		combined.addAll(toGalleryResponses(galleryPage));
 		combined.addAll(toPageResponses(pagePage));
 
-		long start = (long) safePage * safeSize;
+		var start = (long) safePage * safeSize;
+
 		if (start >= totalElements || start >= combined.size()) {
 			return WebSiteResourcePageResponse.builder()
 											  .pageNumber(safePage)
@@ -314,8 +329,9 @@ public class WebSiteResourceService {
 											  .items(List.of())
 											  .build();
 		}
-		int end = (int) Math.min(start + safeSize, Math.min(totalElements, combined.size()));
-		List<WebSiteResourceResponse> pageItems = combined.subList((int) start, end);
+
+		var end = (int) Math.min(start + safeSize, Math.min(totalElements, combined.size()));
+		var pageItems = combined.subList((int) start, end);
 		return WebSiteResourcePageResponse.builder()
 										  .pageNumber(safePage)
 										  .pageSize(safeSize)

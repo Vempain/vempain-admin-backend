@@ -15,7 +15,8 @@ CREATE TABLE web_site_page
 	modifier  VARCHAR(512)                DEFAULT NULL,
 	modified  TIMESTAMP WITHOUT TIME ZONE DEFAULT NULL,
 	published TIMESTAMP WITHOUT TIME ZONE DEFAULT NULL,
-	cache     TEXT                        DEFAULT NULL
+	cache  TEXT DEFAULT NULL,
+	embeds TEXT DEFAULT NULL
 );
 
 
@@ -137,4 +138,15 @@ CREATE TABLE web_site_acl
 	created  TIMESTAMP NOT NULL,
 	modifier BIGINT,
 	modified TIMESTAMP
+);
+
+CREATE TABLE web_site_jwt_token
+(
+	id      BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	user_id BIGINT    NOT NULL
+		CONSTRAINT fk_jwt_user_id REFERENCES web_site_users (id) ON DELETE CASCADE,
+	token   TEXT      NOT NULL,
+	creator BIGINT    NOT NULL,
+	created TIMESTAMP NOT NULL,
+	expires TIMESTAMP NOT NULL
 );
