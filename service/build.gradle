@@ -83,8 +83,8 @@ dependencies {
 	runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jjwtVersion}"
 	runtimeOnly "org.flywaydb:flyway-database-postgresql:${flywayVersion}"
 	testImplementation "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
-	testImplementation "org.testcontainers:junit-jupiter:${testContainersVersion}"
-	testImplementation "org.testcontainers:postgresql:${testContainersVersion}"
+	testImplementation "org.testcontainers:testcontainers-junit-jupiter:${testContainersVersion}"
+	testImplementation "org.testcontainers:testcontainers-postgresql:${testContainersVersion}"
 	// https://mvnrepository.com/artifact/org.mockito/mockito-junit-jupiter
 	testImplementation "org.mockito:mockito-junit-jupiter:5.20.0"
 	// https://mvnrepository.com/artifact/org.springframework.security/spring-security-test
