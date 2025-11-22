@@ -35,8 +35,8 @@ tasks.withType(Javadoc).configureEach {
 }
 
 dependencies {
-	api "com.fasterxml.jackson.core:jackson-annotations:2.20"
-	api "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+	api "com.fasterxml.jackson.core:jackson-annotations:3.0-rc5"
+	api "tools.jackson.core:jackson-databind:${jacksonVersion}"
 	api "org.springframework.boot:spring-boot-starter-web:${springBootVersion}"
 	// https://mvnrepository.com/artifact/org.springframework.data/spring-data-jpa
 	api "org.springframework.data:spring-data-jpa:3.5.5"
