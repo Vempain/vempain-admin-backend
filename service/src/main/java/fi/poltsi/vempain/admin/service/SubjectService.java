@@ -28,62 +28,80 @@ public class SubjectService {
 		removeAllSubjectsFromFile(siteFileId);
 
 		for (TagRequest tagRequest : tagRequests) {
+			var tagName = tagRequest.getTagName();
 			// Check if the subject already exists in the subject table
-			var existingSubject = subjectRepository.findSubjectBySubjectName(tagRequest.getTagName());
-			var subject = existingSubject.orElse(null);
+			var subject = subjectRepository.findSubjectBySubjectName(tagName)
+										   .orElse(null);
 
-			if (existingSubject.isEmpty()) {
+			if (subject == null) {
 				var newSubject = Subject.builder()
-										.subjectName(tagRequest.getTagName())
+										.subjectName(tagName)
 										.subjectNameDe(tagRequest.getTagNameDe())
 										.subjectNameEn(tagRequest.getTagNameEn())
 										.subjectNameFi(tagRequest.getTagNameFi())
 										.subjectNameSe(tagRequest.getTagNameSv())
 										.subjectNameEs(tagRequest.getTagNameEs())
 										.build();
-				subject = subjectRepository.save(newSubject);
-			} else {
-				// Update existing subject names in other languages if they are missing or have changed
-				boolean updated = false;
+				try {
+					subject = subjectRepository.save(newSubject);
+				} catch (Exception e) {
+					log.warn("Error saving new subject {}: {}", tagName, e.getMessage());
+					subject = subjectRepository.findSubjectBySubjectName(tagName)
+											   .orElse(null);
 
-				if (tagRequest.getTagNameDe() != null
-					&& !tagRequest.getTagNameDe()
-								  .equals(subject.getSubjectNameDe())) {
-					subject.setSubjectNameDe(tagRequest.getTagNameDe());
-					updated = true;
+					if (subject == null) {
+						log.error("Failed to retrieve subject {} after save error", tagName);
+						continue;
+					}
+					subject = updateExistingSubject(tagRequest, subject);
 				}
-				if (tagRequest.getTagNameEn() != null
-					&& !tagRequest.getTagNameEn()
-								  .equals(subject.getSubjectNameEn())) {
-					subject.setSubjectNameEn(tagRequest.getTagNameEn());
-					updated = true;
-				}
-				if (tagRequest.getTagNameFi() != null
-					&& !tagRequest.getTagNameFi()
-								  .equals(subject.getSubjectNameFi())) {
-					subject.setSubjectNameFi(tagRequest.getTagNameFi());
-					updated = true;
-				}
-				if (tagRequest.getTagNameSv() != null
-					&& !tagRequest.getTagNameSv()
-								  .equals(subject.getSubjectNameSe())) {
-					subject.setSubjectNameSe(tagRequest.getTagNameSv());
-					updated = true;
-				}
-				if (tagRequest.getTagNameEs() != null
-					&& !tagRequest.getTagNameEs()
-								  .equals(subject.getSubjectNameEs())) {
-					subject.setSubjectNameEs(tagRequest.getTagNameEs());
-					updated = true;
-				}
-				if (updated) {
-					subject = subjectRepository.save(subject);
-				}
+			} else {
+				subject = updateExistingSubject(tagRequest, subject);
 			}
 
 			// Link subject to file (FK order: site_file_id, subject_id)
 			addSubjectToFile(siteFileId, subject.getId());
 		}
+	}
+
+	private Subject updateExistingSubject(TagRequest tagRequest, Subject subject) {
+		// Update existing subject names in other languages if they are missing or have changed
+		boolean updated = false;
+
+		if (tagRequest.getTagNameDe() != null
+			&& !tagRequest.getTagNameDe()
+						  .equals(subject.getSubjectNameDe())) {
+			subject.setSubjectNameDe(tagRequest.getTagNameDe());
+			updated = true;
+		}
+		if (tagRequest.getTagNameEn() != null
+			&& !tagRequest.getTagNameEn()
+						  .equals(subject.getSubjectNameEn())) {
+			subject.setSubjectNameEn(tagRequest.getTagNameEn());
+			updated = true;
+		}
+		if (tagRequest.getTagNameFi() != null
+			&& !tagRequest.getTagNameFi()
+						  .equals(subject.getSubjectNameFi())) {
+			subject.setSubjectNameFi(tagRequest.getTagNameFi());
+			updated = true;
+		}
+		if (tagRequest.getTagNameSv() != null
+			&& !tagRequest.getTagNameSv()
+						  .equals(subject.getSubjectNameSe())) {
+			subject.setSubjectNameSe(tagRequest.getTagNameSv());
+			updated = true;
+		}
+		if (tagRequest.getTagNameEs() != null
+			&& !tagRequest.getTagNameEs()
+						  .equals(subject.getSubjectNameEs())) {
+			subject.setSubjectNameEs(tagRequest.getTagNameEs());
+			updated = true;
+		}
+		if (updated) {
+			subject = subjectRepository.save(subject);
+		}
+		return subject;
 	}
 
 	@Transactional(propagation = Propagation.REQUIRED)

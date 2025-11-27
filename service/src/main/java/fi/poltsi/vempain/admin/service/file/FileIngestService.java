@@ -310,18 +310,19 @@ public class FileIngestService {
 	@Transactional
 	protected Gallery upsertGallery(FileIngestRequest fileIngestRequest, long userId) {
 		// If gallery ID exists, update fields if changed; otherwise create if name/description is provided
-		Optional<Gallery> opt = Optional.empty();
+		Optional<Gallery> optionalGallery = Optional.empty();
 
 		if (fileIngestRequest.getGalleryId() != null) {
-			opt = galleryRepository.findById(fileIngestRequest.getGalleryId());
-		} else if (!fileIngestRequest.getGalleryName()
+			optionalGallery = galleryRepository.findById(fileIngestRequest.getGalleryId());
+		} else if (fileIngestRequest.getGalleryName() != null
+				   && !fileIngestRequest.getGalleryName()
 									 .trim()
 									 .isBlank()) {
-			opt = galleryRepository.findByShortname(fileIngestRequest.getGalleryName());
+			optionalGallery = galleryRepository.findByShortname(fileIngestRequest.getGalleryName());
 		}
 
-		if (opt.isPresent()) {
-			var gallery = opt.get();
+		if (optionalGallery.isPresent()) {
+			var gallery = optionalGallery.get();
 			log.info("Found existing gallery for ingest request: {}", gallery);
 			boolean changed = false;
 

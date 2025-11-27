@@ -28,7 +28,7 @@ public class Subject implements Serializable {
 	@Column(name = "id")
 	private long   id;
 	@Basic
-	@Column(name = "subject")
+	@Column(name = "subject", unique = true, nullable = false)
 	private String subjectName;
 	@Basic
 	@Column(name = "subject_de")
