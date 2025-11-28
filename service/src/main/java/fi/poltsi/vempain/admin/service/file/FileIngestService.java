@@ -345,10 +345,12 @@ public class FileIngestService {
 
 		log.info("No gallery ID given, creating new gallery if name/description provided in request: {}", fileIngestRequest);
 
-		if ((fileIngestRequest.getGalleryName() != null && !fileIngestRequest.getGalleryName()
-																			 .isBlank())
-			|| (fileIngestRequest.getGalleryDescription() != null && !fileIngestRequest.getGalleryDescription()
-																					   .isBlank())) {
+		if ((fileIngestRequest.getGalleryName() != null
+			 && !fileIngestRequest.getGalleryName()
+								  .isBlank())
+			|| (fileIngestRequest.getGalleryDescription() != null
+				&& !fileIngestRequest.getGalleryDescription()
+									 .isBlank())) {
 			log.info("Creating new gallery for ingest request: {}", fileIngestRequest);
 			// Fetch new acl for the gallery
 			var aclId = aclService.getNextAclId();
