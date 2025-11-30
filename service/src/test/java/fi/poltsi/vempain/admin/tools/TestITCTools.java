@@ -125,8 +125,13 @@ public class TestITCTools {
 
 	/// //////////////// Acls start
 	public Long generateAcl(Long userId, Long unitId, boolean read, boolean modify, boolean create, boolean delete) {
-		long aclId = aclService.getNextAclId();
-		return generateAclWithId(aclId, userId, unitId, read, modify, create, delete);
+		try {
+			return aclService.createNewAcl(userId, unitId, read, modify, create, delete);
+		} catch (VempainAclException e) {
+			log.error("Failed to create Acl for testing: {}", e.getMessage());
+			fail("Unable to create Acl");
+			return null;
+		}
 	}
 
 	public Long generateAclWithId(Long aclId, Long userId, Long unitId, boolean read, boolean modify, boolean create, boolean delete) {
@@ -156,12 +161,17 @@ public class TestITCTools {
 
 		for (long i = 0; i < counter; i++) {
 			var userId = generateUser();
-			var nextAcl = aclService.getNextAclId();
-			aclList.add(nextAcl);
-			log.info("Creating acl with aclId: {}", nextAcl);
-			generateAclWithId(nextAcl, userId, null, true, true, true, true);
+			var aclId = 0L;
+
+			try {
+				aclId = aclService.createNewAcl(userId, null, true, true, true, true);
+			} catch (VempainAclException e) {
+				log.error("Failed to create Acl list for testing: {}", e.getMessage());
+				fail("Unable to create Acl");
+			}
+			aclList.add(aclId);
 			var unitId = generateUnit();
-			generateAclWithId(nextAcl, null, unitId, true, true, true, true);
+			generateAclWithId(aclId, null, unitId, true, true, true, true);
 		}
 
 		Iterable<Acl> acls = aclService.findAll();

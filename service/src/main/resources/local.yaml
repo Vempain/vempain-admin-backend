@@ -5,9 +5,10 @@ spring:
 
 logging:
   level:
-    root: INFO
+    root: info
     fi:
-      poltsi: DEBUG
+      poltsi: debug
+      poltsi.vempain.auth: info
 vempain:
   cmd-line:
     exiftool: "/usr/bin/exiftool"

@@ -9,7 +9,6 @@ import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
 import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.SubjectService;
-import fi.poltsi.vempain.auth.entity.Acl;
 import fi.poltsi.vempain.auth.service.AclService;
 import fi.poltsi.vempain.file.api.FileTypeEnum;
 import fi.poltsi.vempain.file.api.request.FileIngestRequest;
@@ -196,18 +195,8 @@ public class FileIngestService {
 			siteFile.setLocation(location);
 
 			if (siteFile.getId() == null) {
-				var nextAclId = aclService.getNextAclId();
-				var acl = Acl.builder()
-							 .aclId(nextAclId)
-							 .userId(userId)
-							 .readPrivilege(true)
-							 .createPrivilege(true)
-							 .deletePrivilege(true)
-							 .modifyPrivilege(true)
-							 .build();
-				var siteFileAcl = aclService.save(acl);
-				log.debug("From latest ACL ID {} created new SiteFile ACL: {}", nextAclId, siteFileAcl);
-				siteFile.setAclId(siteFileAcl.getAclId());
+				var nextAclId = aclService.createNewAcl(userId, null, true, true, true, true);
+				siteFile.setAclId(nextAclId);
 
 				siteFile.setCreator(userId);
 				siteFile.setCreated(now);
@@ -310,18 +299,19 @@ public class FileIngestService {
 	@Transactional
 	protected Gallery upsertGallery(FileIngestRequest fileIngestRequest, long userId) {
 		// If gallery ID exists, update fields if changed; otherwise create if name/description is provided
-		Optional<Gallery> opt = Optional.empty();
+		Optional<Gallery> optionalGallery = Optional.empty();
 
 		if (fileIngestRequest.getGalleryId() != null) {
-			opt = galleryRepository.findById(fileIngestRequest.getGalleryId());
-		} else if (!fileIngestRequest.getGalleryName()
+			optionalGallery = galleryRepository.findById(fileIngestRequest.getGalleryId());
+		} else if (fileIngestRequest.getGalleryName() != null
+				   && !fileIngestRequest.getGalleryName()
 									 .trim()
 									 .isBlank()) {
-			opt = galleryRepository.findByShortname(fileIngestRequest.getGalleryName());
+			optionalGallery = galleryRepository.findByShortname(fileIngestRequest.getGalleryName());
 		}
 
-		if (opt.isPresent()) {
-			var gallery = opt.get();
+		if (optionalGallery.isPresent()) {
+			var gallery = optionalGallery.get();
 			log.info("Found existing gallery for ingest request: {}", gallery);
 			boolean changed = false;
 
@@ -344,23 +334,17 @@ public class FileIngestService {
 
 		log.info("No gallery ID given, creating new gallery if name/description provided in request: {}", fileIngestRequest);
 
-		if ((fileIngestRequest.getGalleryName() != null && !fileIngestRequest.getGalleryName()
-																			 .isBlank())
-			|| (fileIngestRequest.getGalleryDescription() != null && !fileIngestRequest.getGalleryDescription()
-																					   .isBlank())) {
+		if ((fileIngestRequest.getGalleryName() != null
+			 && !fileIngestRequest.getGalleryName()
+								  .isBlank())
+			|| (fileIngestRequest.getGalleryDescription() != null
+				&& !fileIngestRequest.getGalleryDescription()
+									 .isBlank())) {
 			log.info("Creating new gallery for ingest request: {}", fileIngestRequest);
 			// Fetch new acl for the gallery
-			var aclId = aclService.getNextAclId();
-			var acl = Acl.builder()
-						 .aclId(aclId)
-						 .userId(userId)
-						 .readPrivilege(true)
-						 .createPrivilege(true)
-						 .deletePrivilege(true)
-						 .modifyPrivilege(true)
-						 .build();
+			long aclId = 0L;
 			try {
-				acl = aclService.save(acl);
+				aclId = aclService.createNewAcl(userId, null, true, true, true, true);
 			} catch (Exception e) {
 				log.error("Failed to create ACL for new gallery during ingest", e);
 				return null;
@@ -370,7 +354,7 @@ public class FileIngestService {
 								 .shortname(fileIngestRequest.getGalleryName())
 								 .description(fileIngestRequest.getGalleryDescription())
 								 .siteFiles(new java.util.ArrayList<>())
-								 .aclId(acl.getAclId())
+								 .aclId(aclId)
 								 .creator(userId)
 								 .locked(false)
 								 .created(Instant.now())
