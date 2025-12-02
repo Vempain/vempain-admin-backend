@@ -19,47 +19,61 @@ public class SubjectService {
 	private final SubjectRepository subjectRepository;
 	private final EntityManager     entityManager;
 
+	// Java
+	private Long upsertSubjectReturnId(TagRequest tagRequest) {
+		var sql = """
+				INSERT INTO subjects (subject, subject_de, subject_en, subject_es, subject_fi, subject_se)
+				VALUES (:subject, :de, :en, :es, :fi, :se)
+				ON CONFLICT (subject) DO UPDATE
+				  SET subject = EXCLUDED.subject
+				RETURNING id
+				""";
+
+		var resList = entityManager.createNativeQuery(sql)
+								   .setParameter("subject", tagRequest.getTagName())
+								   .setParameter("de", tagRequest.getTagNameDe())
+								   .setParameter("en", tagRequest.getTagNameEn())
+								   .setParameter("es", tagRequest.getTagNameEs())
+								   .setParameter("fi", tagRequest.getTagNameFi())
+								   .setParameter("se", tagRequest.getTagNameSv())
+								   .getResultList();
+
+		if (resList.isEmpty()) {
+			throw new IllegalStateException("Upsert returned no id for subject: " + tagRequest.getTagName());
+		}
+
+		Object res = resList.getFirst();
+
+		if (res instanceof Number) {
+			return ((Number) res).longValue();
+		}
+
+		throw new IllegalStateException("Unexpected id type: " + (res == null ? "null" : res.getClass()));
+	}
+
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void saveTagsAsSubjects(List<TagRequest> tagRequests, long siteFileId) {
-		// Ensure all pending inserts (including SiteFile saved by caller) are flushed
-		// so the FK from file_subject(site_file_id) can reference an existing row.
 		entityManager.flush();
-
 		removeAllSubjectsFromFile(siteFileId);
 
 		for (TagRequest tagRequest : tagRequests) {
 			var tagName = tagRequest.getTagName();
-			// Check if the subject already exists in the subject table
 			var subject = subjectRepository.findSubjectBySubjectName(tagName)
 										   .orElse(null);
 
 			if (subject == null) {
-				var newSubject = Subject.builder()
-										.subjectName(tagName)
-										.subjectNameDe(tagRequest.getTagNameDe())
-										.subjectNameEn(tagRequest.getTagNameEn())
-										.subjectNameFi(tagRequest.getTagNameFi())
-										.subjectNameSe(tagRequest.getTagNameSv())
-										.subjectNameEs(tagRequest.getTagNameEs())
-										.build();
-				try {
-					subject = subjectRepository.save(newSubject);
-				} catch (Exception e) {
-					log.warn("Error saving new subject {}: {}", tagName, e.getMessage());
-					subject = subjectRepository.findSubjectBySubjectName(tagName)
-											   .orElse(null);
-
-					if (subject == null) {
-						log.error("Failed to retrieve subject {} after save error", tagName);
-						continue;
-					}
-					subject = updateExistingSubject(tagRequest, subject);
+				Long subjectId = upsertSubjectReturnId(tagRequest);
+				subject = subjectRepository.findById(subjectId)
+										   .orElse(null);
+				if (subject == null) {
+					log.error("Failed to load subject {} after upsert, id={}", tagName, subjectId);
+					continue;
 				}
+				subject = updateExistingSubject(tagRequest, subject);
 			} else {
 				subject = updateExistingSubject(tagRequest, subject);
 			}
 
-			// Link subject to file (FK order: site_file_id, subject_id)
 			addSubjectToFile(siteFileId, subject.getId());
 		}
 	}

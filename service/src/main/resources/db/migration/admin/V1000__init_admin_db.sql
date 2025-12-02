@@ -28,7 +28,7 @@ CREATE TABLE gallery
 	FOREIGN KEY (modifier) REFERENCES user_account (id)
 );
 
-CREATE TABLE subject
+CREATE TABLE subjects
 (
 	id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 	subject VARCHAR(255) NOT NULL UNIQUE,
@@ -93,7 +93,7 @@ CREATE TABLE file_subject
 	subject_id   BIGINT NOT NULL,
 	PRIMARY KEY (site_file_id, subject_id),
 	FOREIGN KEY (site_file_id) REFERENCES site_file (id) ON DELETE CASCADE,
-	FOREIGN KEY (subject_id) REFERENCES subject (id) ON DELETE CASCADE
+	FOREIGN KEY (subject_id) REFERENCES subjects (id) ON DELETE CASCADE
 );
 
 CREATE TABLE file_thumb

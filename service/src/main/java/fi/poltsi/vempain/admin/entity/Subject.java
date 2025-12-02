@@ -21,7 +21,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode
-@Table(name = "subject")
+@Table(name = "subjects")
 public class Subject implements Serializable {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
