@@ -268,3 +268,5 @@ VALUES (1, 2, NOW(), 1, false, null, null, 'Admin group', 'Admin'),
 
 SELECT setval('unit_id_seq', (SELECT MAX(id) + 1 FROM unit));
 
+SELECT setval('acl_acl_id_seq', (SELECT MAX(acl_id) + 1 FROM acl));
+
