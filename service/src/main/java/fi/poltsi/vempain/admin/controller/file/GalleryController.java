@@ -8,6 +8,7 @@ import fi.poltsi.vempain.admin.api.request.PublishRequest;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
 import fi.poltsi.vempain.admin.api.response.DeleteResponse;
 import fi.poltsi.vempain.admin.api.response.PublishResponse;
+import fi.poltsi.vempain.admin.api.response.file.GalleryPageResponse;
 import fi.poltsi.vempain.admin.api.response.file.GalleryResponse;
 import fi.poltsi.vempain.admin.entity.PageGallery;
 import fi.poltsi.vempain.admin.rest.file.GalleryAPI;
@@ -225,5 +226,10 @@ public class GalleryController implements GalleryAPI {
 								  .timestamp(Instant.now())
 								  .build();
 		return ResponseEntity.ok(response);
+	}
+
+	@Override
+	public ResponseEntity<GalleryPageResponse> searchGalleries(int page, int size, String sort, String direction, String search, boolean caseSensitive) {
+		return ResponseEntity.ok(galleryService.searchGalleries(page, size, sort, direction, search, caseSensitive));
 	}
 }

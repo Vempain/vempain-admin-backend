@@ -2,6 +2,7 @@ package fi.poltsi.vempain.admin.service.file;
 
 import fi.poltsi.vempain.admin.api.QueryDetailEnum;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
+import fi.poltsi.vempain.admin.api.response.file.GalleryPageResponse;
 import fi.poltsi.vempain.admin.api.response.file.GalleryResponse;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
@@ -12,6 +13,9 @@ import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.service.AclService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -158,5 +163,42 @@ public class GalleryService {
 
 	public Iterable<Gallery> findAll() {
 		return galleryRepository.findAll();
+	}
+
+	@Transactional(readOnly = true)
+	public GalleryPageResponse searchGalleries(int page, int size, String sort, String direction, String search, boolean caseSensitive) {
+		int safePage = Math.max(page, 0);
+		int safeSize = Math.min(Math.max(size, 1), 200);
+		Sort sortSpec = buildSort(sort, direction);
+		Pageable pageable = PageRequest.of(safePage, safeSize, sortSpec);
+
+		var pageResult = galleryRepository.searchGalleries(search, caseSensitive, pageable);
+
+		// Populate ACL + files for each gallery already authorized
+		var items = new ArrayList<GalleryResponse>();
+
+		for (var gallery : pageResult.getContent()) {
+			if (accessService.hasReadPermission(gallery.getAclId())) {
+				populateGalleryWithSiteFiles(gallery);
+				items.add(gallery.getResponse());
+			}
+		}
+
+		return GalleryPageResponse.builder()
+								  .pageNumber(pageResult.getNumber())
+								  .pageSize(pageResult.getSize())
+								  .totalPages(pageResult.getTotalPages())
+								  .totalElements(pageResult.getTotalElements())
+								  .items(items)
+								  .build();
+	}
+
+	private Sort buildSort(String sort, String direction) {
+		Sort.Direction dir = "desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC;
+		return switch (sort == null ? "" : sort.toLowerCase(Locale.ROOT)) {
+			case "short_name", "shortname" -> Sort.by(dir, "shortname");
+			case "description" -> Sort.by(dir, "description");
+			default -> Sort.by(dir, "id");
+		};
 	}
 }
