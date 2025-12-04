@@ -2,6 +2,7 @@ package fi.poltsi.vempain.admin.rest.file;
 
 import fi.poltsi.vempain.admin.api.QueryDetailEnum;
 import fi.poltsi.vempain.admin.api.request.PublishRequest;
+import fi.poltsi.vempain.admin.api.request.file.GalleryPublishRequest;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
 import fi.poltsi.vempain.admin.api.response.DeleteResponse;
 import fi.poltsi.vempain.admin.api.response.PageResponse;
@@ -207,4 +208,19 @@ public interface GalleryAPI {
 			@RequestParam(name = "direction", defaultValue = "asc") String direction,
 			@RequestParam(name = "search", required = false) String search,
 			@RequestParam(name = "case_sensitive", defaultValue = "false") boolean caseSensitive);
+
+	@Operation(summary = "Publish selected galleries", description = "Publishes a list of galleries", tags = "Publish")
+	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "List of gallery IDs to publish", required = true,
+														  content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+																			 schema = @Schema(implementation = GalleryPublishRequest.class)))
+	@ApiResponses(value = {@ApiResponse(responseCode = "200",
+										description = "Selected galleries publishing triggered",
+										content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+															schema = @Schema(implementation = PublishResponse.class))}),
+						   @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
+						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
+	@SecurityRequirement(name = "Bearer Authentication")
+	@PostMapping(value = MAIN_PATH + "/publish-selected", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	ResponseEntity<PublishResponse> publishSelectedGalleries(@Valid @RequestBody GalleryPublishRequest request);
 }

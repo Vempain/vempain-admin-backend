@@ -5,6 +5,7 @@ import fi.poltsi.vempain.admin.api.ContentTypeEnum;
 import fi.poltsi.vempain.admin.api.PublishResultEnum;
 import fi.poltsi.vempain.admin.api.QueryDetailEnum;
 import fi.poltsi.vempain.admin.api.request.PublishRequest;
+import fi.poltsi.vempain.admin.api.request.file.GalleryPublishRequest;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
 import fi.poltsi.vempain.admin.api.response.DeleteResponse;
 import fi.poltsi.vempain.admin.api.response.PublishResponse;
@@ -206,6 +207,17 @@ public class GalleryController implements GalleryAPI {
 		return ResponseEntity.ok(response);
 	}
 
+	@Override
+	public ResponseEntity<PublishResponse> publishSelectedGalleries(GalleryPublishRequest request) {
+		var response = publishService.publishSelectedGalleries(request.getGalleryIds());
+		return ResponseEntity.ok(response);
+	}
+
+	@Override
+	public ResponseEntity<GalleryPageResponse> searchGalleries(int page, int size, String sort, String direction, String search, boolean caseSensitive) {
+		return ResponseEntity.ok(galleryService.searchGalleries(page, size, sort, direction, search, caseSensitive));
+	}
+
 	private ResponseEntity<PublishResponse> createGalleryPublishSchedule(Instant publishDateTime, Long galleryId, String message) {
 		PublishResponse response;
 		var publishResponse = scheduleService.schedulePublish(publishDateTime, galleryId, ContentTypeEnum.GALLERY, message);
@@ -226,10 +238,5 @@ public class GalleryController implements GalleryAPI {
 								  .timestamp(Instant.now())
 								  .build();
 		return ResponseEntity.ok(response);
-	}
-
-	@Override
-	public ResponseEntity<GalleryPageResponse> searchGalleries(int page, int size, String sort, String direction, String search, boolean caseSensitive) {
-		return ResponseEntity.ok(galleryService.searchGalleries(page, size, sort, direction, search, caseSensitive));
 	}
 }
