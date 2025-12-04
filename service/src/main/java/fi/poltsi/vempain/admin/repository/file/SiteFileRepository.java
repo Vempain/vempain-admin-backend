@@ -65,4 +65,11 @@ public interface SiteFileRepository extends ListPagingAndSortingRepository<SiteF
 
 	// Size filter + class
 	Page<SiteFile> findBySizeGreaterThanEqualAndFileType(Long size, FileTypeEnum fileType, PageRequest pageRequest, Pageable pageable);
+
+	default Optional<SiteFile> findByIdWithoutMetadata(Long id) {
+		return findById(id).map(siteFile -> {
+			siteFile.setMetadata(null);
+			return siteFile;
+		});
+	}
 }

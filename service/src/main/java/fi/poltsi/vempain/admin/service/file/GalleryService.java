@@ -41,7 +41,7 @@ public class GalleryService {
 
 		for (Gallery gallery : fullList) {
 			if (accessService.hasReadPermission(gallery.getAclId())) {
-				populateGalleryWithSiteFiles(gallery);
+				populateGalleryWithSiteFiles(gallery, false);
 				galleryList.add(gallery);
 			}
 		}
@@ -56,7 +56,9 @@ public class GalleryService {
 
 		for (Gallery gallery : galleries) {
 			if (queryDetailEnum == QueryDetailEnum.FULL) {
-				populateGalleryWithSiteFiles(gallery);
+				populateGalleryWithSiteFiles(gallery, true);
+			} else {
+				populateGalleryWithSiteFiles(gallery, false);
 			}
 
 			var response = gallery.getResponse();
@@ -79,7 +81,7 @@ public class GalleryService {
 			return null;
 		}
 
-		populateGalleryWithSiteFiles(gallery);
+		populateGalleryWithSiteFiles(gallery, false);
 		return gallery.getResponse();
 	}
 
@@ -106,7 +108,7 @@ public class GalleryService {
 			throw new VempainAclException("Could not create ACLs for new gallery with ID: " + newGallery.getId());
 		}
 
-		populateGalleryWithSiteFiles(newGallery);
+		populateGalleryWithSiteFiles(newGallery, false);
 		return newGallery.getResponse();
 	}
 
@@ -137,7 +139,7 @@ public class GalleryService {
 			throw new VempainAclException("Could not update ACLs for gallery with ID: " + galleryRequest.getId());
 		}
 
-		populateGalleryWithSiteFiles(updatedGallery);
+		populateGalleryWithSiteFiles(updatedGallery, false);
 		return updatedGallery.getResponse();
 	}
 
@@ -146,7 +148,7 @@ public class GalleryService {
 		galleryRepository.deleteById(galleryId);
 	}
 
-	private void populateGalleryWithSiteFiles(Gallery gallery) {
+	private void populateGalleryWithSiteFiles(Gallery gallery, boolean withMetadata) {
 		var aclList = aclService.findAclByAclId(gallery.getAclId());
 		gallery.setAcls(aclList);
 		var galleryFiles = galleryFileService.findGalleryFileByGalleryId(gallery.getId());
@@ -154,8 +156,13 @@ public class GalleryService {
 		var fileCommons = new ArrayList<SiteFile>();
 
 		for (var galleryFile : galleryFiles) {
-			siteFileRepository.findById(galleryFile.getSiteFileId())
-							  .ifPresent(fileCommons::add);
+			if (withMetadata) {
+				siteFileRepository.findById(galleryFile.getSiteFileId())
+								  .ifPresent(fileCommons::add);
+			} else {
+				siteFileRepository.findByIdWithoutMetadata(galleryFile.getSiteFileId())
+								  .ifPresent(fileCommons::add);
+			}
 		}
 
 		gallery.setSiteFiles(fileCommons);
@@ -179,7 +186,7 @@ public class GalleryService {
 
 		for (var gallery : pageResult.getContent()) {
 			if (accessService.hasReadPermission(gallery.getAclId())) {
-				populateGalleryWithSiteFiles(gallery);
+				populateGalleryWithSiteFiles(gallery, false);
 				items.add(gallery.getResponse());
 			}
 		}
