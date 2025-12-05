@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface GalleryRepository extends ListPagingAndSortingRepository<Gallery, Long>, CrudRepository<Gallery, Long> {
+public interface GalleryRepository extends ListPagingAndSortingRepository<Gallery, Long>, CrudRepository<Gallery, Long>, GalleryRepositoryCustom {
 	Optional<Gallery> findByShortname(String galleryName);
 
 	@Query("SELECT g.id FROM Gallery g")

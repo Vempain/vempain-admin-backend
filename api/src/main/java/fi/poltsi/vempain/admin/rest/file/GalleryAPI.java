@@ -2,13 +2,16 @@ package fi.poltsi.vempain.admin.rest.file;
 
 import fi.poltsi.vempain.admin.api.QueryDetailEnum;
 import fi.poltsi.vempain.admin.api.request.PublishRequest;
+import fi.poltsi.vempain.admin.api.request.file.GalleryPublishRequest;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
 import fi.poltsi.vempain.admin.api.response.DeleteResponse;
 import fi.poltsi.vempain.admin.api.response.PageResponse;
 import fi.poltsi.vempain.admin.api.response.PublishResponse;
+import fi.poltsi.vempain.admin.api.response.file.GalleryPageResponse;
 import fi.poltsi.vempain.admin.api.response.file.GalleryResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -175,4 +178,49 @@ public interface GalleryAPI {
 	@SecurityRequirement(name = "Bearer Authentication")
 	@PatchMapping(value = MAIN_PATH + "/publish", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<PublishResponse> publishGallery(@Valid @RequestBody PublishRequest publishRequest);
+
+	@Operation(summary = "Search and page galleries",
+			   description = "Filter galleries by search term (applied to short name, description, site file name/path) and paginate the results.",
+			   tags = "Gallery")
+	@Parameters(value = {
+			@Parameter(name = "page", description = "Zero-based page number", example = "0"),
+			@Parameter(name = "size", description = "Page size", example = "25"),
+			@Parameter(name = "sort", description = "Sort field: id, short_name, description", example = "id"),
+			@Parameter(name = "direction", description = "Sort direction", example = "asc"),
+			@Parameter(name = "search", description = "Search term applied to gallery metadata and related files", example = "matkailu"),
+			@Parameter(name = "case_sensitive", description = "If true, the search is case-sensitive", example = "false")
+	})
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+						 description = "Paged gallery result",
+						 content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+											schema = @Schema(implementation = GalleryPageResponse.class))),
+			@ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+	})
+	@SecurityRequirement(name = "Bearer Authentication")
+	@GetMapping(value = MAIN_PATH + "/search", produces = MediaType.APPLICATION_JSON_VALUE)
+	ResponseEntity<GalleryPageResponse> searchGalleries(
+			@RequestParam(name = "page", defaultValue = "0") int page,
+			@RequestParam(name = "size", defaultValue = "25") int size,
+			@RequestParam(name = "sort", defaultValue = "id") String sort,
+			@RequestParam(name = "direction", defaultValue = "asc") String direction,
+			@RequestParam(name = "search", required = false) String search,
+			@RequestParam(name = "case_sensitive", defaultValue = "false") boolean caseSensitive);
+
+	@Operation(summary = "Publish selected galleries", description = "Publishes a list of galleries", tags = "Publish")
+	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "List of gallery IDs to publish", required = true,
+														  content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+																			 schema = @Schema(implementation = GalleryPublishRequest.class)))
+	@ApiResponses(value = {@ApiResponse(responseCode = "200",
+										description = "Selected galleries publishing triggered",
+										content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+															schema = @Schema(implementation = PublishResponse.class))}),
+						   @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
+						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
+	@SecurityRequirement(name = "Bearer Authentication")
+	@PostMapping(value = MAIN_PATH + "/publish-selected", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	ResponseEntity<PublishResponse> publishSelectedGalleries(@Valid @RequestBody GalleryPublishRequest request);
 }

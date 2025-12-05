@@ -2,6 +2,8 @@ package fi.poltsi.vempain.admin.service;
 
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
+import fi.poltsi.vempain.admin.api.PublishResultEnum;
+import fi.poltsi.vempain.admin.api.response.PublishResponse;
 import fi.poltsi.vempain.admin.entity.FormComponent;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
@@ -30,6 +32,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.File;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -54,6 +57,7 @@ public class PublishService {
 	private final PageGalleryService    pageGalleryService;
 	private final JschClient            jschClient;
 	private final WebSiteResourceService webSiteResourceService;
+	private final AccessService accessService;
 
 	@Value("${vempain.site.ssh.address}")
 	private String siteSshAddress;
@@ -306,5 +310,48 @@ public class PublishService {
 		for (var gallery : galleries) {
 			publishGallery(gallery.getId());
 		}
+	}
+
+	@Transactional
+	public PublishResponse publishSelectedGalleries(List<Long> galleryIds) {
+		if (galleryIds == null || galleryIds.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Gallery ID list cannot be empty");
+		}
+
+		var publishedCount = 0L;
+
+		for (var galleryId : galleryIds) {
+			if (galleryId == null || galleryId < 1) {
+				log.warn("Skipping invalid gallery ID in publishSelectedGalleries: {}", galleryId);
+				continue;
+			}
+
+			var gallery = fileService.findGalleryById(galleryId);
+			if (gallery == null) {
+				log.warn("Skipping publish for gallery {} because it does not exist", galleryId);
+				continue;
+			}
+
+			if (!accessService.hasModifyPermission(gallery.getAclId())) {
+				log.warn("Skipping publish for gallery {} because user lacks modify permission", galleryId);
+				continue;
+			}
+
+			try {
+				publishGallery(galleryId);
+				publishedCount++;
+			} catch (VempainEntityNotFoundException e) {
+				log.warn("Failed to publish gallery {}: {}", galleryId, e.getMessage());
+			}
+		}
+
+		var skipped = galleryIds.size() - publishedCount;
+		var result = publishedCount > 0 ? PublishResultEnum.OK : PublishResultEnum.FAIL;
+		var message = "Published " + publishedCount + " galleries, skipped " + skipped;
+		return PublishResponse.builder()
+							  .result(result)
+							  .message(message)
+							  .timestamp(Instant.now())
+							  .build();
 	}
 }
