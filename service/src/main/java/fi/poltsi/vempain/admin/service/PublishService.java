@@ -110,6 +110,12 @@ public class PublishService {
 			i++;
 		}
 
+		// Remove any extra empty PHP tags
+		// Ending PGP-tag followed by white space and starting PHP-tag which then again is followed by white space and ending PHP-tag
+		pageBody = pageBody.replaceAll("\\?>\\s*<\\?php\\s*\\?>", "?>");
+		// Starting PHP-tag followed by white space and ending PHP-tag
+		pageBody = pageBody.replaceAll("<\\?php\\s*\\?>", "");
+
 		var optionalSitePage = sitePageRepository.findByPageId(pageId);
 		var creator = userService.findUserResponseById(page.getCreator())
 								 .getNick();
@@ -287,7 +293,11 @@ public class PublishService {
 										 .comment(siteFile.getComment())
 										 .build();
 
-			log.debug("Saving web site file: {}", webSiteFile);
+			log.debug("Saving web site file: {} with metadata length {} from siteFile metadata length {}", webSiteFile,
+					  (webSiteFile.getMetadata() != null ? webSiteFile.getMetadata()
+																	  .length() : 0),
+					  (webSiteFile.getMetadata() != null ? siteFile.getMetadata()
+																   .length() : 0));
 			var newWebSiteFile = webSiteFileRepository.save(webSiteFile);
 			// Add new gallery file relation
 			siteGalleryRepository.saveGalleryFile(siteGalleryId, newWebSiteFile.getId(), galleryFile.getSortOrder());

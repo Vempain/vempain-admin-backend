@@ -67,6 +67,10 @@ public class Gallery extends AbstractVempainEntity implements Serializable {
 							  .shortName(this.shortname)
 							  .description(this.description)
 							  .siteFiles(siteFileResponses)
+							  .creator(this.creator)
+							  .created(this.created)
+							  .modifier(this.modifier)
+							  .modified(this.modified)
 							  .build();
 	}
 
