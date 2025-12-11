@@ -26,7 +26,6 @@ import static fi.poltsi.vempain.admin.api.Constants.REST_FILE_PREFIX;
 public interface FileAPI {
 	String MAIN_PATH = REST_FILE_PREFIX;
 
-	/* Audio */
 	@Operation(summary = "Get site files as a pageable", description = "Fetch all site files in pageable format", tags = "File")
 	@Parameter(name = "page_number", description = "Page number", allowEmptyValue = true, example = "1")
 	@Parameter(name = "page_size", description = "Page number", allowEmptyValue = true, example = "10")
@@ -51,8 +50,6 @@ public interface FileAPI {
 			@RequestParam(name = "filter", defaultValue = "") String filter,
 			@RequestParam(name = "filter_column", defaultValue = "") String filterColumn
 	);
-
-	/* Video */
 
 	@Operation(summary = "Refresh the file information of a gallery", description = "Reload all the file data of the files belonging to a gallery",
 			   tags = "File")

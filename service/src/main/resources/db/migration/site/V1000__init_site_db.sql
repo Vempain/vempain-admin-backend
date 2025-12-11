@@ -86,7 +86,8 @@ CREATE TABLE web_site_page_subject
 (
 	page_id    BIGINT NOT NULL,
 	subject_id BIGINT NOT NULL,
-	CONSTRAINT fk_page_subject_page_id FOREIGN KEY (page_id) REFERENCES web_site_page (id) ON DELETE CASCADE
+	CONSTRAINT fk_page_subject_page_id FOREIGN KEY (page_id) REFERENCES web_site_page (id) ON DELETE CASCADE,
+	CONSTRAINT fk_page_subject_subject_id FOREIGN KEY (subject_id) REFERENCES web_site_subject (id) ON DELETE CASCADE
 );
 
 CREATE TABLE web_site_gallery
@@ -114,7 +115,8 @@ CREATE TABLE web_site_gallery_subject
 (
 	gallery_id BIGINT NOT NULL,
 	subject_id BIGINT NOT NULL,
-	CONSTRAINT fk_gallery_subject_gallery_id FOREIGN KEY (gallery_id) REFERENCES web_site_gallery (id) ON DELETE CASCADE
+	CONSTRAINT fk_gallery_subject_gallery_id FOREIGN KEY (gallery_id) REFERENCES web_site_gallery (id) ON DELETE CASCADE,
+	CONSTRAINT fk_gallery_subject_subject_id FOREIGN KEY (subject_id) REFERENCES web_site_subject (id) ON DELETE CASCADE
 );
 
 CREATE TABLE web_site_users
