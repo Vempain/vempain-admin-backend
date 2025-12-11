@@ -152,3 +152,17 @@ CREATE TABLE web_site_jwt_token
 	created TIMESTAMP NOT NULL,
 	expires TIMESTAMP NOT NULL
 );
+
+CREATE TABLE web_site_configuration
+(
+	id             BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	config_key     VARCHAR(255) NOT NULL UNIQUE,
+	config_type    TEXT         NOT NULL,
+	config_default TEXT         NOT NULL,
+	config_value   TEXT         NOT NULL
+);
+
+INSERT INTO web_site_configuration (config_key, config_type, config_default, config_value)
+VALUES ('site.name', 'STRING', 'My Web Site', 'My Web Site'),
+	   ('site.description', 'STRING', 'A description of my web site.', 'A description of my web site.')
+;
