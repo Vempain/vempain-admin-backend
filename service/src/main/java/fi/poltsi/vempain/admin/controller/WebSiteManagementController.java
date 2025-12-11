@@ -2,16 +2,19 @@ package fi.poltsi.vempain.admin.controller;
 
 import fi.poltsi.vempain.admin.api.site.WebSiteResourceEnum;
 import fi.poltsi.vempain.admin.api.site.request.WebSiteAclRequest;
+import fi.poltsi.vempain.admin.api.site.request.WebSiteConfigurationRequest;
 import fi.poltsi.vempain.admin.api.site.request.WebSiteUserRequest;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteAclResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteAclUsersResponse;
+import fi.poltsi.vempain.admin.api.site.response.WebSiteConfigurationResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteResourcePageResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteUserResourcesResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteUserResponse;
-import fi.poltsi.vempain.admin.rest.SiteWebAccessAPI;
+import fi.poltsi.vempain.admin.rest.WebSiteManagementAPI;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.file.api.FileTypeEnum;
 import fi.poltsi.vempain.site.service.WebSiteAclService;
+import fi.poltsi.vempain.site.service.WebSiteConfigurationService;
 import fi.poltsi.vempain.site.service.WebSiteResourceService;
 import fi.poltsi.vempain.site.service.WebSiteUserService;
 import lombok.RequiredArgsConstructor;
@@ -24,11 +27,12 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 @RestController
-public class SiteWebAccessController implements SiteWebAccessAPI {
+public class WebSiteManagementController implements WebSiteManagementAPI {
 	private final WebSiteUserService webSiteUserService;
 	private final WebSiteAclService  webSiteAclService;
 	private final AccessService      accessService;
 	private final WebSiteResourceService webSiteResourceService;
+	private final WebSiteConfigurationService webSiteConfigurationService;
 
 	// ========== Site Web User Endpoints ==========
 
@@ -115,5 +119,36 @@ public class SiteWebAccessController implements SiteWebAccessAPI {
 																	String sort, String direction, int page, int size) {
 		accessService.checkAuthentication();
 		return ResponseEntity.ok(webSiteResourceService.listResources(resourceType, fileType, query, aclId, sort, direction, page, size));
+	}
+
+	// ========== Site configuration Endpoints ==========
+
+	@Override
+	public ResponseEntity<List<WebSiteConfigurationResponse>> getAllSiteConfigurations() {
+		var configurations = webSiteConfigurationService.getAllConfigurations();
+		return ResponseEntity.ok(configurations);
+	}
+
+	@Override
+	public ResponseEntity<WebSiteConfigurationResponse> getSiteConfigurationById(Long id) {
+		var configuration = webSiteConfigurationService.getConfigurationById(id);
+		if (configuration != null) {
+			return ResponseEntity.ok(configuration);
+		}
+
+		return ResponseEntity.notFound()
+							 .build();
+	}
+
+	@Override
+	public ResponseEntity<WebSiteConfigurationResponse> updateSiteConfiguration(WebSiteConfigurationRequest request) {
+		var updatedConfiguration = webSiteConfigurationService.updateConfiguration(request);
+
+		if (updatedConfiguration == null) {
+			return ResponseEntity.notFound()
+								 .build();
+		}
+
+		return ResponseEntity.ok(updatedConfiguration);
 	}
 }
