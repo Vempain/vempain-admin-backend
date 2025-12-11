@@ -32,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @TestPropertySource(properties = {"vempain.test=false"})
-class SiteWebAccessResourceITC {
+class WebSiteManagementRTC {
 	@Autowired
 	private MockMvc               mockMvc;
 	@Autowired
@@ -95,7 +95,7 @@ class SiteWebAccessResourceITC {
 	@WithUserDetails(value = "admin", userDetailsServiceBeanName = "userDetailsServiceImpl")
 	@DisplayName("List site files default paging")
 	void listSiteFilesDefault() throws Exception {
-		var result = mockMvc.perform(get("/admin-management/site-access/resources").accept(MediaType.APPLICATION_JSON))
+		var result = mockMvc.perform(get("/admin-management/site/resources").accept(MediaType.APPLICATION_JSON))
 							.andExpect(status().isOk())
 							.andReturn();
 		var resp = objectMapper.readValue(result.getResponse()
@@ -108,7 +108,7 @@ class SiteWebAccessResourceITC {
 	@WithUserDetails(value = "admin", userDetailsServiceBeanName = "userDetailsServiceImpl")
 	@DisplayName("Filter by ACL ID and file type")
 	void filterByAclAndFileType() throws Exception {
-		MvcResult result = mockMvc.perform(get("/admin-management/site-access/resources")
+		MvcResult result = mockMvc.perform(get("/admin-management/site/resources")
 												   .param("acl_id", "100")
 												   .param("file_type", FileTypeEnum.IMAGE.name())
 												   .accept(MediaType.APPLICATION_JSON))
@@ -124,7 +124,7 @@ class SiteWebAccessResourceITC {
 	@WithUserDetails(value = "admin", userDetailsServiceBeanName = "userDetailsServiceImpl")
 	@DisplayName("List galleries when type=GALLERY")
 	void listGalleries() throws Exception {
-		MvcResult result = mockMvc.perform(get("/admin-management/site-access/resources")
+		MvcResult result = mockMvc.perform(get("/admin-management/site/resources")
 												   .param("type", WebSiteResourceEnum.GALLERY.name())
 												   .accept(MediaType.APPLICATION_JSON))
 								  .andExpect(status().isOk())
@@ -139,7 +139,7 @@ class SiteWebAccessResourceITC {
 	@WithUserDetails(value = "admin", userDetailsServiceBeanName = "userDetailsServiceImpl")
 	@DisplayName("List pages when type=PAGE with sort=name")
 	void listPagesSortedByVirtualName() throws Exception {
-		MvcResult result = mockMvc.perform(get("/admin-management/site-access/resources")
+		MvcResult result = mockMvc.perform(get("/admin-management/site/resources")
 												   .param("type", WebSiteResourceEnum.PAGE.name())
 												   .param("sort", "name")
 												   .param("direction", "desc")
