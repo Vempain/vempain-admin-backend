@@ -2,10 +2,10 @@ package fi.poltsi.vempain.admin.controller.file;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.poltsi.vempain.admin.api.request.file.FileIngestRequest;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestResponse;
 import fi.poltsi.vempain.admin.rest.file.FileIngestAPI;
 import fi.poltsi.vempain.admin.service.file.FileIngestService;
-import fi.poltsi.vempain.file.api.request.FileIngestRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
