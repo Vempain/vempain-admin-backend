@@ -1,5 +1,6 @@
 package fi.poltsi.vempain.admin.service.file;
 
+import fi.poltsi.vempain.admin.api.request.file.FileIngestRequest;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestResponse;
 import fi.poltsi.vempain.admin.configuration.StorageDirectoryConfiguration;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
@@ -11,7 +12,6 @@ import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.SubjectService;
 import fi.poltsi.vempain.auth.service.AclService;
 import fi.poltsi.vempain.file.api.FileTypeEnum;
-import fi.poltsi.vempain.file.api.request.FileIngestRequest;
 import fi.poltsi.vempain.tools.LocalFileTools;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -104,6 +104,7 @@ public class FileIngestService {
 	@Transactional
 	protected FileIngestResponse ingestInternal(FileIngestRequest fileIngestRequest, MultipartFile multipartFile) throws VempainIngestException {
 		Path storedFile = null;
+		Long galleryId = null;
 
 		try {
 			ValidateFileIngestRequest(fileIngestRequest, multipartFile);
@@ -131,7 +132,7 @@ public class FileIngestService {
 											 .normalize();
 			ensureWithinBase(targetFile.getParent(), basePath);
 
-			final boolean existed = Files.exists(targetFile);
+			final boolean siteFileExisted = Files.exists(targetFile);
 			Files.copy(multipartFile.getInputStream(), targetFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 			// Mark stored file for potential cleanup
 			storedFile = targetFile;
@@ -216,6 +217,8 @@ public class FileIngestService {
 
 			// Add link between SiteFile and Gallery if gallery specified
 			if (gallery != null) {
+				galleryId = gallery.getId();
+
 				var galleryFileList = galleryFileService.findGalleryFileByGalleryId(gallery.getId());
 				var finalSiteFile = siteFile;
 				boolean alreadyLinked = galleryFileList.stream()
@@ -225,7 +228,11 @@ public class FileIngestService {
 				}
 			}
 
-			return new FileIngestResponse(siteFile.getId(), existed);
+			return FileIngestResponse.builder()
+									 .galleryId(galleryId)
+									 .siteFileId(siteFile.getId())
+									 .updated(siteFileExisted)
+									 .build();
 		} catch (Exception e) {
 			throw new VempainIngestException("Ingest failed", e, storedFile);
 		}
