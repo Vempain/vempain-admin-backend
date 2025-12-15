@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.Duration;
 import java.time.Instant;
 
 @Builder
@@ -52,6 +53,18 @@ public class SiteFileResponse {
 
 	@Schema(description = "Free-form comment associated with the file", example = "Some comment")
 	private String comment;
+
+	@Schema(description = "Width of the file (for images/videos)", example = "1920")
+	private Integer width;
+
+	@Schema(description = "Height of the file (for images/videos)", example = "1080")
+	private Integer height;
+
+	@Schema(description = "Length of the file (for audio/videos) in ISO-8601 duration format", example = "PT2M30S")
+	private Duration length;
+
+	@Schema(description = "Number of pages (for documents)", example = "10")
+	private Integer pages;
 
 	@Schema(description = "Arbitrary metadata JSON stored with the file", example = "{\"some-field\":\"some value\"}")
 	private String metadata;

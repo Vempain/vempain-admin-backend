@@ -12,7 +12,6 @@ import fi.poltsi.vempain.admin.service.file.GalleryFileService;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.UserService;
 import fi.poltsi.vempain.site.entity.WebGpsLocation;
-import fi.poltsi.vempain.site.entity.WebSiteFile;
 import fi.poltsi.vempain.site.entity.WebSitePage;
 import fi.poltsi.vempain.site.repository.SiteGalleryRepository;
 import fi.poltsi.vempain.site.repository.SitePageRepository;
@@ -250,6 +249,7 @@ public class PublishService {
 
 			// Map / upsert GPS location into site DB (separate persistence unit)
 			WebGpsLocation webLocation = null;
+
 			if (siteFile.getLocation() != null) {
 				var adminLoc = siteFile.getLocation();
 				webLocation = webGpsLocationRepository.findById(adminLoc.getId())
@@ -272,26 +272,10 @@ public class PublishService {
 			}
 
 			// When creating
-
-			var webSiteFile = WebSiteFile.builder()
-										 .fileId(siteFile.getId())
-										 .aclId(webSiteResourceService.getNextWebSiteAcl())
-										 .comment(siteFile.getComment())
-										 .path(siteFile.getFileType().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName())
-										 .mimetype(siteFile.getMimeType())
-										 .fileType(siteFile.getFileType())
-										 .creatorName(siteFile.getCreatorName())
-										 .originalDateTime(siteFile.getOriginalDateTime())
-										 .rightsHolder(siteFile.getRightsHolder())
-										 .rightsTerms(siteFile.getRightsTerms())
-										 .rightsUrl(siteFile.getRightsUrl())
-										 .creatorEmail(siteFile.getCreatorEmail())
-										 .creatorCountry(siteFile.getCreatorCountry())
-										 .creatorUrl(siteFile.getCreatorUrl())
-										 .location(webLocation)
-										 .metadata(siteFile.getMetadata())
-										 .comment(siteFile.getComment())
-										 .build();
+			var webSiteFile = siteFile.toWebSiteFile();
+			webSiteFile.setAclId(webSiteResourceService.getNextWebSiteAcl());
+			webSiteFile.setPath(siteFile.getFileType().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName());
+			webSiteFile.setLocation(webLocation);
 
 			log.debug("Saving web site file: {} with metadata length {} from siteFile metadata length {}", webSiteFile,
 					  (webSiteFile.getMetadata() != null ? webSiteFile.getMetadata()

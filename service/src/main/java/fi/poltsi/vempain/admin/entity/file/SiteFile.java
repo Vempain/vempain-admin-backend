@@ -2,8 +2,11 @@ package fi.poltsi.vempain.admin.entity.file;
 
 import fi.poltsi.vempain.admin.api.response.file.SiteFileResponse;
 import fi.poltsi.vempain.auth.entity.AbstractVempainEntity;
+import fi.poltsi.vempain.common.DurationToLongConverter;
 import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.site.entity.WebSiteFile;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -20,7 +23,9 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
+import java.io.File;
 import java.io.Serializable;
+import java.time.Duration;
 import java.time.Instant;
 
 @EqualsAndHashCode(callSuper = true)
@@ -31,12 +36,10 @@ import java.time.Instant;
 @ToString(callSuper = true, exclude = "metadata")
 @AllArgsConstructor
 @RequiredArgsConstructor
-@Table(name = "site_file", indexes = {
-		@Index(name = "ux_site_file_path_name", columnList = "file_path, file_name", unique = true)
-})
+@Table(name = "site_file", indexes = {@Index(name = "ux_site_file_path_name", columnList = "file_path, file_name", unique = true)})
 public class SiteFile extends AbstractVempainEntity implements Serializable {
 
-	@Column(name = "file_name", nullable = false, length = 255)
+	@Column(name = "file_name", nullable = false)
 	private String fileName;
 
 	@Column(name = "file_path", nullable = false, length = 2048)
@@ -57,6 +60,18 @@ public class SiteFile extends AbstractVempainEntity implements Serializable {
 
 	@Column(name = "metadata", nullable = false)
 	private String metadata;
+
+	@Column(name = "width")
+	private Integer width;
+	@Column(name = "height")
+	private Integer height;
+
+	@Convert(converter = DurationToLongConverter.class)
+	@Column(name = "length")
+	private Duration length;
+
+	@Column(name = "pages")
+	private Integer pages;
 
 	@Column(name = "sha256sum", nullable = false)
 	private String sha256sum;
@@ -103,6 +118,10 @@ public class SiteFile extends AbstractVempainEntity implements Serializable {
 							   .modifier(this.modifier)
 							   .modified(this.modified)
 							   .comment(this.comment)
+							   .width(this.width)
+							   .height(this.height)
+							   .length(this.length)
+							   .pages(this.pages)
 							   .metadata(this.metadata)
 							   .originalDateTime(this.originalDateTime)
 							   .rightsHolder(this.rightsHolder)
@@ -114,5 +133,30 @@ public class SiteFile extends AbstractVempainEntity implements Serializable {
 							   .creatorUrl(this.creatorUrl)
 							   .location(this.location != null ? this.location.toResponse() : null)
 							   .build();
+	}
+
+	public WebSiteFile toWebSiteFile() {
+		return WebSiteFile.builder()
+						  .fileId(this.id)
+						  .aclId(this.aclId)
+						  .comment(this.comment)
+						  .path(this.filePath + File.pathSeparator + this.fileName)
+						  .mimetype(this.mimeType)
+						  .fileType(this.fileType)
+						  .originalDateTime(this.originalDateTime)
+						  .rightsHolder(this.rightsHolder)
+						  .rightsTerms(this.rightsTerms)
+						  .rightsUrl(this.rightsUrl)
+						  .creatorName(this.creatorName)
+						  .creatorEmail(this.creatorEmail)
+						  .creatorCountry(this.creatorCountry)
+						  .creatorUrl(this.creatorUrl)
+						  .location(this.location != null ? this.location.toWebGpsLocation() : null)
+						  .width(this.width != null ? this.width : 0)
+						  .height(this.height != null ? this.height : 0)
+						  .length(this.length)
+						  .pages(this.pages)
+						  .metadata(this.metadata)
+						  .build();
 	}
 }
