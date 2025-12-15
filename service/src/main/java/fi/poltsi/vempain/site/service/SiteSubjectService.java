@@ -21,7 +21,9 @@ public class SiteSubjectService {
 		var siteSubjects = new ArrayList<WebSiteSubject>();
 
 		for (Subject subject : subjects) {
-			siteSubjects.add(saveFromAdminSubject(subject));
+			var siteSubject = saveFromAdminSubject(subject);
+			log.debug("Saving subject {} with ID {} as site subject ID {}", subject.getSubjectName(), subject.getId(), siteSubject.getId());
+			siteSubjects.add(siteSubject);
 		}
 
 		return siteSubjects;
@@ -29,8 +31,8 @@ public class SiteSubjectService {
 
 	public WebSiteSubject saveFromAdminSubject(Subject subject) {
 		var siteSubject = siteSubjectRepository.findBySubjectName(subject.getSubjectName());
-
 		if (siteSubject != null) {
+			log.debug("Found existing site subject for subject {}: {}", subject.getSubjectName(), siteSubject.getId());
 			// We update the existing site subject translations
 			siteSubject.setSubjectNameDe(subject.getSubjectNameDe());
 			siteSubject.setSubjectNameEn(subject.getSubjectNameEn());
@@ -47,7 +49,9 @@ public class SiteSubjectService {
 											   .subjectNameFi(subject.getSubjectNameFi())
 											   .subjectNameSe(subject.getSubjectNameSe())
 											   .build();
-			return siteSubjectRepository.save(newSiteSubject);
+			var newSiteSubjectSaved = siteSubjectRepository.save(newSiteSubject);
+			log.debug("Created new site subject for subject {} with ID {}: {}", subject.getSubjectName(), subject.getId(), newSiteSubjectSaved.getId());
+			return newSiteSubjectSaved;
 		}
 	}
 

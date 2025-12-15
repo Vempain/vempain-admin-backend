@@ -1,6 +1,7 @@
 package fi.poltsi.vempain.admin.entity.file;
 
 import fi.poltsi.vempain.file.api.response.LocationResponse;
+import fi.poltsi.vempain.site.entity.WebGpsLocation;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -76,5 +77,23 @@ public class GpsLocation {
 							   .street(street)
 							   .subLocation(subLocation)
 							   .build();
+	}
+
+	public WebGpsLocation toWebGpsLocation() {
+		return WebGpsLocation.builder()
+							 .id(id)
+							 .latitude(latitude)
+							 .latitudeRef(latitudeRef)
+							 .longitude(longitude)
+							 .longitudeRef(longitudeRef)
+							 .altitude(altitude)
+							 .direction(direction)
+							 .satelliteCount(satelliteCount)
+							 .country(country)
+							 .state(state)
+							 .city(city)
+							 .street(street)
+							 .subLocation(subLocation)
+							 .build();
 	}
 }

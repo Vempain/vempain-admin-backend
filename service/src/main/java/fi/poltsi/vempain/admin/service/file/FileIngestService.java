@@ -168,6 +168,10 @@ public class FileIngestService {
 			siteFile.setSha256sum(fileIngestRequest.getSha256sum());
 			siteFile.setComment(fileIngestRequest.getComment());
 			siteFile.setMetadata(fileIngestRequest.getMetadata());
+			siteFile.setHeight(fileIngestRequest.getHeight());
+			siteFile.setWidth(fileIngestRequest.getWidth());
+			siteFile.setLength(fileIngestRequest.getLength());
+			siteFile.setPages(fileIngestRequest.getPages());
 
 			// Populate new fields
 			siteFile.setOriginalDateTime(fileIngestRequest.getOriginalDateTime());

@@ -1,7 +1,9 @@
 package fi.poltsi.vempain.site.entity;
 
+import fi.poltsi.vempain.common.DurationToLongConverter;
 import fi.poltsi.vempain.file.api.FileTypeEnum;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -18,6 +20,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.time.Duration;
 import java.time.Instant;
 
 @Data
@@ -81,16 +84,17 @@ public class WebSiteFile {
 	private WebGpsLocation location;
 
 	@Column(name = "width")
-	private long width;
+	private Integer width;
 
 	@Column(name = "height")
-	private long height;
+	private Integer height;
 
+	@Convert(converter = DurationToLongConverter.class)
 	@Column(name = "length")
-	private long length;
+	private Duration length;
 
 	@Column(name = "pages")
-	private long pages;
+	private Integer pages;
 
 	@Column(name = "metadata", nullable = false)
 	private String metadata;

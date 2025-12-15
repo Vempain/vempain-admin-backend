@@ -15,6 +15,7 @@ import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.repository.file.SubjectRepository;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.SubjectService;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.service.AclService;
 import fi.poltsi.vempain.file.api.FileTypeEnum;
@@ -168,44 +169,63 @@ public class FileService {
 
 	// FileAudio
 	@Transactional(readOnly = true)
-	public Page<SiteFileResponse> findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum FileTypeEnum, PageRequest pageRequest, String filter, String filterColumn) {
+	public PagedResponse<SiteFileResponse> findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum FileTypeEnum, PageRequest pageRequest, String filter, String filterColumn) {
 		Page<SiteFile> siteFiles;
-		// Generate required Pageable alongside the incoming PageRequest
-		Pageable pageable = PageRequest.of(pageRequest.getPageNumber(), pageRequest.getPageSize(), pageRequest.getSort());
+		Pageable pageable = sanitizePageable(pageRequest);
 
 		if (filter == null || filter.isBlank()
 			|| filterColumn == null || filterColumn.isBlank()) {
-			// Filter only by file class
-			siteFiles = siteFileRepository.findByFileType(FileTypeEnum, pageRequest, pageable);
+			siteFiles = siteFileRepository.findByFileType(FileTypeEnum, pageable);
 		} else {
 			siteFiles = switch (filterColumn) {
-				case "filename" -> siteFileRepository.findByFileNameContainingIgnoreCaseAndFileType(filter, FileTypeEnum, pageRequest, pageable);
-				case "filepath" -> siteFileRepository.findByFilePathContainingIgnoreCaseAndFileType(filter, FileTypeEnum, pageRequest, pageable);
-				case "mimetype" -> siteFileRepository.findByMimeTypeContainingIgnoreCaseAndFileType(filter, FileTypeEnum, pageRequest, pageable);
-				case "created" -> siteFileRepository.findByCreatedAfterAndFileType(Instant.parse(filter), FileTypeEnum, pageRequest, pageable);
-				case "modified" -> siteFileRepository.findByModifiedAfterAndFileType(Instant.parse(filter), FileTypeEnum, pageRequest, pageable);
-				case "subject" -> siteFileRepository.findBySubjectNameContainingIgnoreCaseAndFileType(filter, FileTypeEnum, pageRequest, pageable);
+				case "filename" -> siteFileRepository.findByFileNameContainingIgnoreCaseAndFileType(filter, FileTypeEnum, pageable);
+				case "filepath" -> siteFileRepository.findByFilePathContainingIgnoreCaseAndFileType(filter, FileTypeEnum, pageable);
+				case "mimetype" -> siteFileRepository.findByMimeTypeContainingIgnoreCaseAndFileType(filter, FileTypeEnum, pageable);
+				case "created" -> siteFileRepository.findByCreatedAfterAndFileType(Instant.parse(filter), FileTypeEnum, pageable);
+				case "modified" -> siteFileRepository.findByModifiedAfterAndFileType(Instant.parse(filter), FileTypeEnum, pageable);
+				case "subject" -> siteFileRepository.findBySubjectNameContainingIgnoreCaseAndFileType(filter, FileTypeEnum, pageable);
 				case "size" -> {
 					long sizeFilter;
 					try {
 						sizeFilter = Long.parseLong(filter);
 					} catch (NumberFormatException nfe) {
 						log.warn("Invalid size filter '{}', falling back to class-only listing", filter);
-						yield siteFileRepository.findByFileType(FileTypeEnum, pageRequest, pageable);
+						yield siteFileRepository.findByFileType(FileTypeEnum, pageable);
 					}
-					yield siteFileRepository.findBySizeGreaterThanEqualAndFileType(sizeFilter, FileTypeEnum, pageRequest, pageable);
+					yield siteFileRepository.findBySizeGreaterThanEqualAndFileType(sizeFilter, FileTypeEnum, pageable);
 				}
-				default -> siteFileRepository.findByFileType(FileTypeEnum, pageRequest, pageable);
+				default -> siteFileRepository.findByFileType(FileTypeEnum, pageable);
 			};
 		}
 
-		populateSiteFilePage(siteFiles);
-		return siteFiles.map(SiteFile::toResponse);
+		return PagedResponse.of(
+				siteFiles.getContent()
+						 .stream()
+						 .map(SiteFile::toResponse)
+						 .toList(),
+				siteFiles.getNumber(),
+				siteFiles.getSize(),
+				siteFiles.getTotalElements(),
+				siteFiles.getTotalPages(),
+				siteFiles.isFirst(),
+				siteFiles.isLast()
+		);
 	}
 
-	private void populateSiteFilePage(Page<SiteFile> siteFilePage) {
-		// No additional enrichment required for SiteFileResponse at this time.
-		// Method kept for future expansion (e.g., preloading related data).
+	private Pageable sanitizePageable(PageRequest pageRequest) {
+		var remappedOrders = pageRequest.getSort()
+										.stream()
+										.map(order -> {
+											var property = switch (order.getProperty()) {
+												case "createdAt" -> "created";
+												case "modifiedAt" -> "modified";
+												default -> order.getProperty();
+											};
+											return order.withProperty(property);
+										})
+										.toList();
+		var sort = remappedOrders.isEmpty() ? Sort.unsorted() : Sort.by(remappedOrders);
+		return PageRequest.of(pageRequest.getPageNumber(), pageRequest.getPageSize(), sort);
 	}
 
 	// FileSubject

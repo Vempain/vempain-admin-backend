@@ -87,10 +87,9 @@ class SiteFileRepositoryITC extends AbstractITCTest {
 								.build();
 		siteFileRepository.save(siteFile2);
 
-		var pageRequest = PageRequest.of(0, 10);
 		var pageable = PageRequest.of(0, 10);
 
-		var result = siteFileRepository.findByFileType(FileTypeEnum.IMAGE, pageRequest, pageable);
+		var result = siteFileRepository.findByFileType(FileTypeEnum.IMAGE, pageable);
 
 		assertEquals(1, result.getTotalElements());
 		assertEquals("file1", result.getContent()
@@ -100,10 +99,9 @@ class SiteFileRepositoryITC extends AbstractITCTest {
 
 	@Test
 	void findByFileTypeReturnsEmptyWhenNoMatch() {
-		var pageRequest = PageRequest.of(0, 10);
 		var pageable = PageRequest.of(0, 10);
 
-		var result = siteFileRepository.findByFileType(FileTypeEnum.VIDEO, pageRequest, pageable);
+		var result = siteFileRepository.findByFileType(FileTypeEnum.VIDEO, pageable);
 
 		assertEquals(0, result.getTotalElements());
 	}

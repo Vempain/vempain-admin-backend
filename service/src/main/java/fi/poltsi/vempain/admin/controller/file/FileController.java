@@ -4,11 +4,11 @@ import fi.poltsi.vempain.admin.api.response.RefreshResponse;
 import fi.poltsi.vempain.admin.api.response.file.SiteFileResponse;
 import fi.poltsi.vempain.admin.rest.file.FileAPI;
 import fi.poltsi.vempain.admin.service.file.FileService;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.file.api.FileTypeEnum;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
@@ -21,8 +21,8 @@ public class FileController implements FileAPI {
 	private final FileService fileService;
 
 	@Override
-	public ResponseEntity<Page<SiteFileResponse>> getPageableSiteFiles(@NotNull FileTypeEnum FileTypeEnum, int pageNumber, int pageSize, String sorting,
-																	   String filter, String filterColumn) {
+	public ResponseEntity<PagedResponse<SiteFileResponse>> getPageableSiteFiles(@NotNull FileTypeEnum FileTypeEnum, int pageNumber, int pageSize, String sorting,
+																				String filter, String filterColumn) {
 		var pageRequest = getPageRequest(pageNumber, pageSize, sorting);
 		var pageResponse = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum, pageRequest, filter, filterColumn);
 		return ResponseEntity.ok(pageResponse);

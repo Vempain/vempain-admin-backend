@@ -3,6 +3,7 @@ package fi.poltsi.vempain.admin.rest.file;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
 import fi.poltsi.vempain.admin.api.response.RefreshResponse;
 import fi.poltsi.vempain.admin.api.response.file.SiteFileResponse;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.file.api.FileTypeEnum;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -13,7 +14,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotNull;
-import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -42,7 +42,7 @@ public interface FileAPI {
 	})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = MAIN_PATH + "/site-files", produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<Page<SiteFileResponse>> getPageableSiteFiles(
+	ResponseEntity<PagedResponse<SiteFileResponse>> getPageableSiteFiles(
 			@RequestParam(name = "file_type") @NotNull FileTypeEnum FileTypeEnum,
 			@RequestParam(name = "page_number") int pageNumber,
 			@RequestParam(name = "page_size") int pageSize,
