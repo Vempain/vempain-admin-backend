@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,9 +30,8 @@ public interface FileAPI {
 	@Operation(summary = "Get site files as a pageable", description = "Fetch all site files in pageable format", tags = "File")
 	@Parameter(name = "page_number", description = "Page number", allowEmptyValue = true, example = "1")
 	@Parameter(name = "page_size", description = "Page number", allowEmptyValue = true, example = "10")
-	@Parameter(name = "sorting",
-			   description = "What field the page should be sorted by, and which direction. The two values should be comma separated",
-			   example = "createdAt,desc")
+	@Parameter(name = "sort_by", description = "What field the page should be sorted by", example = "filename")
+	@Parameter(name = "direction", description = "What direction should the sorting be done", example = "DESC")
 	@Parameter(name = "filter", description = "Filter the column by the string", example = "Find me")
 	@Parameter(name = "filter_column", description = "By which column should the filtering be done", example = "message")
 	@ApiResponses(value = {
@@ -46,7 +46,8 @@ public interface FileAPI {
 			@RequestParam(name = "file_type") @NotNull FileTypeEnum FileTypeEnum,
 			@RequestParam(name = "page_number") int pageNumber,
 			@RequestParam(name = "page_size") int pageSize,
-			@RequestParam(name = "sorting", defaultValue = "createdAt,desc") String sorting,
+			@RequestParam(name = "sort_by", defaultValue = "id") String sortBy,
+			@RequestParam(name = "direction", defaultValue = "ASC") Sort.Direction direction,
 			@RequestParam(name = "filter", defaultValue = "") String filter,
 			@RequestParam(name = "filter_column", defaultValue = "") String filterColumn
 	);

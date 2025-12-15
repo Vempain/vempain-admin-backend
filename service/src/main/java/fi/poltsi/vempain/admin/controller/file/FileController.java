@@ -21,9 +21,9 @@ public class FileController implements FileAPI {
 	private final FileService fileService;
 
 	@Override
-	public ResponseEntity<PagedResponse<SiteFileResponse>> getPageableSiteFiles(@NotNull FileTypeEnum FileTypeEnum, int pageNumber, int pageSize, String sorting,
-																				String filter, String filterColumn) {
-		var pageRequest = getPageRequest(pageNumber, pageSize, sorting);
+	public ResponseEntity<PagedResponse<SiteFileResponse>> getPageableSiteFiles(@NotNull FileTypeEnum FileTypeEnum, int pageNumber, int pageSize, String sortBy,
+																				Sort.Direction direction, String filter, String filterColumn) {
+		var pageRequest = getPageRequest(pageNumber, pageSize, sortBy, direction);
 		var pageResponse = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum, pageRequest, filter, filterColumn);
 		return ResponseEntity.ok(pageResponse);
 	}
@@ -43,7 +43,7 @@ public class FileController implements FileAPI {
 		return ResponseEntity.ok(refreshResponse);
 	}
 
-	private PageRequest getPageRequest(int pageNumber, int pageSize, String sorting) {
+	private PageRequest getPageRequest(int pageNumber, int pageSize, String sortBy, Sort.Direction direction) {
 		if (pageNumber < 0) {
 			pageNumber = 0;
 		}
@@ -51,18 +51,7 @@ public class FileController implements FileAPI {
 			pageSize = 10;
 		}
 
-		// Parse sorting string to separate strings for field and direction
-		var column = sorting.split(",")[0];
-		var direction = sorting.split(",")[1];
-
-		// The frontend sends the direction as "ascend" or "descend", but Spring expects "ASC" or "DESC", so we convert
-		if (direction.equals("ascend")) {
-			direction = "ASC";
-		} else {
-			direction = "DESC";
-		}
-
-		var sort = Sort.by(Sort.Direction.fromString(direction), column);
+		var sort = Sort.by(direction, sortBy);
 		return PageRequest.of(pageNumber, pageSize, sort);
 	}
 }
