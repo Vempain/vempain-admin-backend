@@ -12,10 +12,11 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Nonnull;
 import java.util.Optional;
 
 @Repository
-public interface SitePageRepository extends PagingAndSortingRepository<WebSitePage, Long>, JpaRepository<WebSitePage, Long> {
+public interface WebSitePageRepository extends PagingAndSortingRepository<WebSitePage, Long>, JpaRepository<WebSitePage, Long> {
 	WebSitePage findByPath(String path);
 
 	Optional<WebSitePage> findByPageId(long pageId);
@@ -32,7 +33,8 @@ public interface SitePageRepository extends PagingAndSortingRepository<WebSitePa
 	@Query(value = "UPDATE web_site_page SET cache = NULL WHERE id = :pageId", nativeQuery = true)
 	void resetCacheByPageId(@Param("pageId") long pageId);
 
-	Page<WebSitePage> findAll(Pageable pageable);
+	@Nonnull
+	Page<WebSitePage> findAll(@Nonnull Pageable pageable);
 
 	@NonNull
 	Page<WebSitePage> findByTitleContainingIgnoreCase(String query, @NonNull Pageable pageable);

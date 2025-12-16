@@ -99,7 +99,7 @@ public class GalleryService {
 							 .locked(false)
 							 .build();
 		var newGallery = galleryRepository.save(gallery);
-		galleryFileService.addGalleryFiles(newGallery.getId(), galleryRequest.getCommonFilesId());
+		galleryFileService.addGalleryFiles(newGallery.getId(), galleryRequest.getSiteFilesId());
 
 		try {
 			aclService.saveAclRequests(aclId, galleryRequest.getAcls());
@@ -130,7 +130,7 @@ public class GalleryService {
 		currentGallery.setLocked(false);
 
 		var updatedGallery = galleryRepository.save(currentGallery);
-		galleryFileService.updateGalleryFiles(updatedGallery.getId(), galleryRequest.getCommonFilesId());
+		galleryFileService.updateGalleryFiles(updatedGallery.getId(), galleryRequest.getSiteFilesId());
 
 		try {
 			aclService.updateFromRequestList(galleryRequest.getAcls());

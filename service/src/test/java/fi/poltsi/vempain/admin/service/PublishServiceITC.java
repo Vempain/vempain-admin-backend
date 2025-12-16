@@ -23,7 +23,7 @@ class PublishServiceITC extends AbstractITCTest {
 
 		try {
 			var sitePageId = publishService.publishPage(testPageId);
-			var optionalSitePage = sitePageRepository.findById(sitePageId);
+			var optionalSitePage = webSitePageRepository.findById(sitePageId);
 			assertTrue(optionalSitePage.isPresent());
 			var sitePage = optionalSitePage.get();
 			log.info("Site page: {}", sitePage);

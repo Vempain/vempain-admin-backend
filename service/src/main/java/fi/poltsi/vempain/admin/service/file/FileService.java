@@ -95,9 +95,9 @@ public class FileService {
 			siteFileIdList.add(galleryFile.getSiteFileId());
 		}
 
-		var commonFiles = siteFileRepository.findByIdIn(siteFileIdList);
+		var siteFiles = siteFileRepository.findByIdIn(siteFileIdList);
 
-		gallery.setSiteFiles(commonFiles);
+		gallery.setSiteFiles(siteFiles);
 		return gallery;
 	}
 

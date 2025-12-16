@@ -13,7 +13,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Repository
-public interface SiteGalleryRepository extends PagingAndSortingRepository<WebSiteGallery, Long>, JpaRepository<WebSiteGallery, Long> {
+public interface WebSiteGalleryRepository extends PagingAndSortingRepository<WebSiteGallery, Long>, JpaRepository<WebSiteGallery, Long> {
 	@Modifying
 	@Transactional
 	@Query(nativeQuery = true, value = "INSERT INTO web_site_gallery_file (gallery_id, file_id, sort_order) VALUES (:galleryId, :fileId, :sortOrder)")

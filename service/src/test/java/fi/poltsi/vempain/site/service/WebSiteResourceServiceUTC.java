@@ -8,9 +8,9 @@ import fi.poltsi.vempain.file.api.FileTypeEnum;
 import fi.poltsi.vempain.site.entity.WebSiteFile;
 import fi.poltsi.vempain.site.entity.WebSiteGallery;
 import fi.poltsi.vempain.site.entity.WebSitePage;
-import fi.poltsi.vempain.site.repository.SiteGalleryRepository;
-import fi.poltsi.vempain.site.repository.SitePageRepository;
 import fi.poltsi.vempain.site.repository.WebSiteFileRepository;
+import fi.poltsi.vempain.site.repository.WebSiteGalleryRepository;
+import fi.poltsi.vempain.site.repository.WebSitePageRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,11 +39,11 @@ class WebSiteResourceServiceUTC {
 	@Mock
 	private WebSiteFileRepository  fileRepo;
 	@Mock
-	private SitePageRepository     pageRepo;
+	private WebSitePageRepository    pageRepo;
 	@Mock
-	private SiteGalleryRepository  galleryRepo;
+	private WebSiteGalleryRepository galleryRepo;
 	@Mock
-	private AccessService          accessService;
+	private AccessService            accessService;
 	@InjectMocks
 	private WebSiteResourceService service;
 

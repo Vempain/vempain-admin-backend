@@ -4,7 +4,7 @@ import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.entity.Page;
 import fi.poltsi.vempain.admin.repository.PageRepository;
 import fi.poltsi.vempain.site.entity.WebSitePage;
-import fi.poltsi.vempain.site.repository.SitePageRepository;
+import fi.poltsi.vempain.site.repository.WebSitePageRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +20,7 @@ class MultiDbITC extends AbstractITCTest {
 	@Autowired
 	private PageRepository     adminPageRepository;
 	@Autowired
-	private SitePageRepository sitePageRepository;
+	private WebSitePageRepository webSitePageRepository;
 
 	@Test
 	void copyFromAdminToSite() {
@@ -42,8 +42,8 @@ class MultiDbITC extends AbstractITCTest {
 								  .modified(fetchAdminPage.getModified())
 								  .published(Instant.now())
 								  .build();
-		var createdSitePage = sitePageRepository.save(sitePage);
-		var sitePages = sitePageRepository.findAll();
+		var createdSitePage = webSitePageRepository.save(sitePage);
+		var sitePages = webSitePageRepository.findAll();
 		assertNotNull(sitePages);
 		assertEquals(1, StreamSupport.stream(sitePages.spliterator(), false)
 									 .count());
