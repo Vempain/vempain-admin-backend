@@ -76,11 +76,11 @@ public class GalleryFileService {
 	}
 
 	@Transactional(propagation = Propagation.REQUIRED)
-	public void addGalleryFiles(long galleryId, long[] commonFileIds) {
+	public void addGalleryFiles(long galleryId, long[] siteFileIds) {
 		var orderId = 0L;
 
-		for (var commonFileId : commonFileIds) {
-			addGalleryFile(galleryId, commonFileId, orderId);
+		for (var siteFileId : siteFileIds) {
+			addGalleryFile(galleryId, siteFileId, orderId);
 			orderId++;
 		}
 	}
@@ -94,8 +94,8 @@ public class GalleryFileService {
 	}
 
 	@Transactional(propagation = Propagation.REQUIRED)
-	public void updateGalleryFiles(Long galleryId, long[] commonFileIds) {
+	public void updateGalleryFiles(Long galleryId, long[] siteFileIds) {
 		deleteGalleryFilesByGalleryId(galleryId);
-		addGalleryFiles(galleryId, commonFileIds);
+		addGalleryFiles(galleryId, siteFileIds);
 	}
 }

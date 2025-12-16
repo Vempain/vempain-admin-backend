@@ -8,9 +8,9 @@ import fi.poltsi.vempain.file.api.FileTypeEnum;
 import fi.poltsi.vempain.site.entity.WebSiteFile;
 import fi.poltsi.vempain.site.entity.WebSiteGallery;
 import fi.poltsi.vempain.site.entity.WebSitePage;
-import fi.poltsi.vempain.site.repository.SiteGalleryRepository;
-import fi.poltsi.vempain.site.repository.SitePageRepository;
 import fi.poltsi.vempain.site.repository.WebSiteFileRepository;
+import fi.poltsi.vempain.site.repository.WebSiteGalleryRepository;
+import fi.poltsi.vempain.site.repository.WebSitePageRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -33,9 +33,9 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class WebSiteResourceService {
 	private final WebSiteFileRepository siteFileRepository;
-	private final SitePageRepository    sitePageRepository;
-	private final SiteGalleryRepository siteGalleryRepository;
-	private final AccessService         accessService;
+	private final WebSitePageRepository    webSitePageRepository;
+	private final WebSiteGalleryRepository webSiteGalleryRepository;
+	private final AccessService            accessService;
 
 	@PersistenceContext(unitName = "site")
 	private EntityManager siteEntityManager;
@@ -137,20 +137,20 @@ public class WebSiteResourceService {
 		var terms = splitTerms(query);
 
 		if (terms.isEmpty()) {
-			return aclId != null ? sitePageRepository.findByAclId(aclId, pageable) : sitePageRepository.findAll(pageable);
+			return aclId != null ? webSitePageRepository.findByAclId(aclId, pageable) : webSitePageRepository.findAll(pageable);
 		}
 
 		var results = new LinkedHashMap<Long, WebSitePage>();
 
 		for (String term : terms) {
-			accumulatePage(results, aclId != null ? sitePageRepository.findByAclIdAndTitleContainingIgnoreCase(aclId, term, pageable)
-												  : sitePageRepository.findByTitleContainingIgnoreCase(term, pageable));
-			accumulatePage(results, aclId != null ? sitePageRepository.findByAclIdAndPathContainingIgnoreCase(aclId, term, pageable)
-												  : sitePageRepository.findByPathContainingIgnoreCase(term, pageable));
-			accumulatePage(results, aclId != null ? sitePageRepository.findByAclIdAndBodyContainingIgnoreCase(aclId, term, pageable)
-												  : sitePageRepository.findByBodyContainingIgnoreCase(term, pageable));
-			accumulatePage(results, aclId != null ? sitePageRepository.findByAclIdAndHeaderContainingIgnoreCase(aclId, term, pageable)
-												  : sitePageRepository.findByHeaderContainingIgnoreCase(term, pageable));
+			accumulatePage(results, aclId != null ? webSitePageRepository.findByAclIdAndTitleContainingIgnoreCase(aclId, term, pageable)
+												  : webSitePageRepository.findByTitleContainingIgnoreCase(term, pageable));
+			accumulatePage(results, aclId != null ? webSitePageRepository.findByAclIdAndPathContainingIgnoreCase(aclId, term, pageable)
+												  : webSitePageRepository.findByPathContainingIgnoreCase(term, pageable));
+			accumulatePage(results, aclId != null ? webSitePageRepository.findByAclIdAndBodyContainingIgnoreCase(aclId, term, pageable)
+												  : webSitePageRepository.findByBodyContainingIgnoreCase(term, pageable));
+			accumulatePage(results, aclId != null ? webSitePageRepository.findByAclIdAndHeaderContainingIgnoreCase(aclId, term, pageable)
+												  : webSitePageRepository.findByHeaderContainingIgnoreCase(term, pageable));
 		}
 
 		return sliceResults(results, pageable);
@@ -160,16 +160,16 @@ public class WebSiteResourceService {
 		var terms = splitTerms(query);
 
 		if (terms.isEmpty()) {
-			return aclId != null ? siteGalleryRepository.findByAclId(aclId, pageable) : siteGalleryRepository.findAll(pageable);
+			return aclId != null ? webSiteGalleryRepository.findByAclId(aclId, pageable) : webSiteGalleryRepository.findAll(pageable);
 		}
 
 		var results = new LinkedHashMap<Long, WebSiteGallery>();
 
 		for (var term : terms) {
-			accumulateGallery(results, aclId != null ? siteGalleryRepository.findByAclIdAndShortnameContainingIgnoreCase(aclId, term, pageable)
-													 : siteGalleryRepository.findByShortnameContainingIgnoreCase(term, pageable));
-			accumulateGallery(results, aclId != null ? siteGalleryRepository.findByAclIdAndDescriptionContainingIgnoreCase(aclId, term, pageable)
-													 : siteGalleryRepository.findByDescriptionContainingIgnoreCase(term, pageable));
+			accumulateGallery(results, aclId != null ? webSiteGalleryRepository.findByAclIdAndShortnameContainingIgnoreCase(aclId, term, pageable)
+													 : webSiteGalleryRepository.findByShortnameContainingIgnoreCase(term, pageable));
+			accumulateGallery(results, aclId != null ? webSiteGalleryRepository.findByAclIdAndDescriptionContainingIgnoreCase(aclId, term, pageable)
+													 : webSiteGalleryRepository.findByDescriptionContainingIgnoreCase(term, pageable));
 		}
 		return sliceResults(results, pageable);
 	}

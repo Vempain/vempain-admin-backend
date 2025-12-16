@@ -21,7 +21,7 @@ import fi.poltsi.vempain.auth.repository.UserAccountRepository;
 import fi.poltsi.vempain.auth.service.AclService;
 import fi.poltsi.vempain.auth.service.UnitService;
 import fi.poltsi.vempain.auth.service.UserService;
-import fi.poltsi.vempain.site.repository.SitePageRepository;
+import fi.poltsi.vempain.site.repository.WebSitePageRepository;
 import fi.poltsi.vempain.tools.JschClient;
 import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
@@ -111,7 +111,7 @@ public abstract class AbstractITCTest {
 	@Autowired
 	protected     GalleryRepository           galleryRepository;
 	@Autowired
-	protected     SitePageRepository          sitePageRepository;
+	protected WebSitePageRepository webSitePageRepository;
 	@Autowired
 	protected     JschClient                  jschClient;
 	@Autowired

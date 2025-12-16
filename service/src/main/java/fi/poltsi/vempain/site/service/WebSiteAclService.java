@@ -6,9 +6,9 @@ import fi.poltsi.vempain.admin.api.site.response.WebSiteAclUsersResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteUserResourcesResponse;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.site.entity.WebSiteAcl;
-import fi.poltsi.vempain.site.repository.SiteGalleryRepository;
 import fi.poltsi.vempain.site.repository.WebSiteAclRepository;
 import fi.poltsi.vempain.site.repository.WebSiteFileRepository;
+import fi.poltsi.vempain.site.repository.WebSiteGalleryRepository;
 import fi.poltsi.vempain.site.repository.WebSiteUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +28,7 @@ public class WebSiteAclService {
 	private final WebSiteAclRepository  webSiteAclRepository;
 	private final WebSiteUserRepository webSiteUserRepository;
 	private final WebSiteFileRepository webSiteFileRepository;
-	private final SiteGalleryRepository siteGalleryRepository;
+	private final WebSiteGalleryRepository webSiteGalleryRepository;
 	private final AccessService         accessService;
 
 	/**
@@ -114,7 +114,7 @@ public class WebSiteAclService {
 		}
 
 		// Find galleries with matching ACL IDs
-		for (var gallery : siteGalleryRepository.findAll()) {
+		for (var gallery : webSiteGalleryRepository.findAll()) {
 			if (aclIds.contains(gallery.getAclId())) {
 				resources.add(WebSiteUserResourcesResponse.ResourceAccess.builder()
 																		 .aclId(gallery.getAclId())

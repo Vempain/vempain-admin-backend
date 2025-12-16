@@ -7,10 +7,10 @@ import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.admin.service.file.GalleryFileService;
 import fi.poltsi.vempain.auth.service.UserService;
-import fi.poltsi.vempain.site.repository.SiteGalleryRepository;
-import fi.poltsi.vempain.site.repository.SitePageRepository;
 import fi.poltsi.vempain.site.repository.WebGpsLocationRepository;
 import fi.poltsi.vempain.site.repository.WebSiteFileRepository;
+import fi.poltsi.vempain.site.repository.WebSiteGalleryRepository;
+import fi.poltsi.vempain.site.repository.WebSitePageRepository;
 import fi.poltsi.vempain.site.service.SiteSubjectService;
 import fi.poltsi.vempain.site.service.WebSiteResourceService;
 import fi.poltsi.vempain.tools.JschClient;
@@ -35,9 +35,9 @@ class PublishServiceUTC {
 	@Mock
 	private SiteFileRepository       siteFileRepository;
 	@Mock
-	private SitePageRepository       sitePageRepository;
+	private WebSitePageRepository    webSitePageRepository;
 	@Mock
-	private SiteGalleryRepository    siteGalleryRepository;
+	private WebSiteGalleryRepository webSiteGalleryRepository;
 	@Mock
 	private WebSiteFileRepository    webSiteFileRepository;
 	@Mock

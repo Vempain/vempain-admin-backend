@@ -8,9 +8,9 @@ import fi.poltsi.vempain.file.api.FileTypeEnum;
 import fi.poltsi.vempain.site.entity.WebSiteFile;
 import fi.poltsi.vempain.site.entity.WebSiteGallery;
 import fi.poltsi.vempain.site.entity.WebSitePage;
-import fi.poltsi.vempain.site.repository.SiteGalleryRepository;
-import fi.poltsi.vempain.site.repository.SitePageRepository;
 import fi.poltsi.vempain.site.repository.WebSiteFileRepository;
+import fi.poltsi.vempain.site.repository.WebSiteGalleryRepository;
+import fi.poltsi.vempain.site.repository.WebSitePageRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,11 +36,11 @@ class WebSiteManagementRTC {
 	@Autowired
 	private MockMvc               mockMvc;
 	@Autowired
-	private WebSiteFileRepository fileRepository;
+	private WebSiteFileRepository    fileRepository;
 	@Autowired
-	private SiteGalleryRepository galleryRepository;
+	private WebSiteGalleryRepository galleryRepository;
 	@Autowired
-	private SitePageRepository    pageRepository;
+	private WebSitePageRepository    pageRepository;
 	@Autowired
 	private ObjectMapper          objectMapper;
 

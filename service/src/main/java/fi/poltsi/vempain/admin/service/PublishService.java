@@ -13,10 +13,10 @@ import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.UserService;
 import fi.poltsi.vempain.site.entity.WebGpsLocation;
 import fi.poltsi.vempain.site.entity.WebSitePage;
-import fi.poltsi.vempain.site.repository.SiteGalleryRepository;
-import fi.poltsi.vempain.site.repository.SitePageRepository;
 import fi.poltsi.vempain.site.repository.WebGpsLocationRepository;
 import fi.poltsi.vempain.site.repository.WebSiteFileRepository;
+import fi.poltsi.vempain.site.repository.WebSiteGalleryRepository;
+import fi.poltsi.vempain.site.repository.WebSitePageRepository;
 import fi.poltsi.vempain.site.service.SiteSubjectService;
 import fi.poltsi.vempain.site.service.WebSiteResourceService;
 import fi.poltsi.vempain.tools.JschClient;
@@ -39,9 +39,9 @@ import java.util.Optional;
 @Service
 public class PublishService {
 	private final SiteFileRepository    siteFileRepository;
-	private final SitePageRepository    sitePageRepository;
-	private final SiteGalleryRepository siteGalleryRepository;
-	private final WebSiteFileRepository webSiteFileRepository;
+	private final WebSitePageRepository    webSitePageRepository;
+	private final WebSiteGalleryRepository webSiteGalleryRepository;
+	private final WebSiteFileRepository    webSiteFileRepository;
 	private final WebGpsLocationRepository webGpsLocationRepository;
 
 	private final PageService           pageService;
@@ -80,7 +80,7 @@ public class PublishService {
 		}
 
 		// Reset the site cache
-		sitePageRepository.resetCache();
+		webSitePageRepository.resetCache();
 	}
 
 	@Transactional(propagation = Propagation.REQUIRED)
@@ -115,7 +115,7 @@ public class PublishService {
 		// Starting PHP-tag followed by white space and ending PHP-tag
 		pageBody = pageBody.replaceAll("<\\?php\\s*\\?>", "");
 
-		var optionalSitePage = sitePageRepository.findByPageId(pageId);
+		var optionalSitePage = webSitePageRepository.findByPageId(pageId);
 		var creator = userService.findUserResponseById(page.getCreator())
 								 .getNick();
 		var modifier = "";
@@ -148,7 +148,7 @@ public class PublishService {
 		webSitePage.setModified(page.getModified());
 		webSitePage.setCache(null);
 		webSitePage.setPublished(published);
-		var savedPage = sitePageRepository.save(webSitePage);
+		var savedPage = webSitePageRepository.save(webSitePage);
 
 		log.debug("Published page: {}", savedPage);
 		// We update the page setting the published timestamp
@@ -166,12 +166,12 @@ public class PublishService {
 
 		// Finally, we want to reset the cache for the page which includes the Top10 component
 		// Currently hard coded to page ID 10 which is the front page
-		sitePageRepository.resetCacheByPageId(10L);
+		webSitePageRepository.resetCacheByPageId(10L);
 		return savedPage.getId();
 	}
 
 	public void deletePage(Long pageId) {
-		sitePageRepository.deletePageById(pageId);
+		webSitePageRepository.deletePageById(pageId);
 	}
 
 	//////////// Gallery
@@ -231,12 +231,12 @@ public class PublishService {
 
 		//** Update the site database
 		// Remove any existing gallery data if present, the gallery - file relation is removed by cascade
-		siteGalleryRepository.deleteByGalleryId(galleryId);
+		webSiteGalleryRepository.deleteByGalleryId(galleryId);
 
 		// Add the gallery
 		var siteGallery = gallery.getSiteGallery();
 		siteGallery.setAclId(webSiteResourceService.getNextWebSiteAcl());
-		var newSiteGallery = siteGalleryRepository.save(siteGallery);
+		var newSiteGallery = webSiteGalleryRepository.save(siteGallery);
 		var siteGalleryId = newSiteGallery.getId();
 
 		// File data
@@ -284,7 +284,7 @@ public class PublishService {
 																   .length() : 0));
 			var newWebSiteFile = webSiteFileRepository.save(webSiteFile);
 			// Add new gallery file relation
-			siteGalleryRepository.saveGalleryFile(siteGalleryId, newWebSiteFile.getId(), galleryFile.getSortOrder());
+			webSiteGalleryRepository.saveGalleryFile(siteGalleryId, newWebSiteFile.getId(), galleryFile.getSortOrder());
 			// Save subject on site-side
 			var subjects = subjectService.getSubjectsByFileId(webSiteFile.getId());
 			var siteSubjects = siteSubjectService.saveAllFromAdminSubject(subjects);
@@ -294,7 +294,7 @@ public class PublishService {
 	}
 
 	public Optional<WebSitePage> fetchSitePage(Long pageId) {
-		return sitePageRepository.findById(pageId);
+		return webSitePageRepository.findById(pageId);
 	}
 
 	@Transactional
