@@ -100,7 +100,7 @@ public class SiteFile extends AbstractVempainEntity implements Serializable {
 	@Column(name = "creator_url", length = 1024)
 	private String creatorUrl;
 
-	@ManyToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "location_id")
 	private GpsLocation location;
 
