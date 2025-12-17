@@ -30,6 +30,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
+import static fi.poltsi.vempain.auth.tools.JsonTools.toJson;
 import static fi.poltsi.vempain.tools.LocalFileTools.createAndVerifyDirectory;
 
 @Slf4j
@@ -228,7 +229,7 @@ public class FileIngestService {
 				boolean alreadyLinked = galleryFileList.stream()
 													   .anyMatch(gf -> Objects.equals(gf.getSiteFileId(), finalSiteFile.getId()));
 				if (!alreadyLinked) {
-					galleryFileService.addGalleryFile(gallery.getId(), siteFile.getId(), (long) galleryFileList.size());
+					galleryFileService.addGalleryFile(gallery.getId(), siteFile.getId(), fileIngestRequest.getSortOrder());
 				}
 			}
 
@@ -343,7 +344,7 @@ public class FileIngestService {
 			return gallery;
 		}
 
-		log.info("No gallery ID given, creating new gallery if name/description provided in request: {}", fileIngestRequest);
+		log.debug("No gallery ID given, creating new gallery if name/description provided in request: {}", toJson(fileIngestRequest));
 
 		if ((fileIngestRequest.getGalleryName() != null
 			 && !fileIngestRequest.getGalleryName()
@@ -351,7 +352,7 @@ public class FileIngestService {
 			|| (fileIngestRequest.getGalleryDescription() != null
 				&& !fileIngestRequest.getGalleryDescription()
 									 .isBlank())) {
-			log.info("Creating new gallery for ingest request: {}", fileIngestRequest);
+			log.debug("Creating new gallery for ingest request: {}", toJson(fileIngestRequest));
 			// Fetch new acl for the gallery
 			long aclId = 0L;
 			try {

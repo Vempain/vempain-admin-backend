@@ -7,6 +7,7 @@ import fi.poltsi.vempain.file.api.request.CopyrightRequest;
 import fi.poltsi.vempain.file.api.request.TagRequest;
 import fi.poltsi.vempain.file.api.response.LocationResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -31,6 +32,10 @@ import java.util.List;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Schema(name = "FileIngestRequest", description = "Metadata for ingesting a file into site storage")
 public class FileIngestRequest {
+	@Schema(description = "Sort order of the file in the gallery", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+	@Min(0)
+	private long sortOrder;
+
 	@Schema(description = "Target file name", example = "img_001.jpg", requiredMode = Schema.RequiredMode.REQUIRED)
 	@NotBlank
 	@Size(max = 255)

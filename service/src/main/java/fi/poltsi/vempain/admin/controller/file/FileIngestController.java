@@ -13,6 +13,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import static fi.poltsi.vempain.auth.tools.JsonTools.toJson;
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -27,7 +29,7 @@ public class FileIngestController implements FileIngestAPI {
 
 		try {
 			fileIngestRequest = objectMapper.readValue(fileIngestRequestJSON, FileIngestRequest.class);
-			log.info("Received file ingest request: {}", fileIngestRequest);
+			log.info("Received file ingest request: {}", toJson(fileIngestRequest));
 		} catch (IllegalArgumentException | JsonProcessingException e) {
 			log.warn("Invalid file ingest request JSON: {}", e.getMessage());
 			return ResponseEntity.badRequest()

@@ -34,6 +34,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+import static fi.poltsi.vempain.auth.tools.JsonTools.toJson;
+
 @Slf4j
 @RequiredArgsConstructor
 @Service
@@ -217,7 +219,7 @@ public class PublishService {
 			log.debug("Using SSH home dir {}", adminSshHomeDir);
 			log.debug("Using SSH private key {}", adminSshPrivateKey);
 			jschClient.connect(siteSshAddress, siteSshPort, siteSshUser, adminSshHomeDir, adminSshPrivateKey);
-			log.debug("Transferring thumb files to site-server: {}", fileThumbList);
+			log.debug("Transferring thumb files to site-server: {}", toJson(fileThumbList));
 			jschClient.transferFilesToSite(gallery.getSiteFiles(), fileThumbList);
 		} catch (JSchException e) {
 			log.error("Failed to create a SSH connection to site-server {}", siteSshAddress, e);
@@ -277,7 +279,7 @@ public class PublishService {
 			webSiteFile.setPath(siteFile.getFileType().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName());
 			webSiteFile.setLocation(webLocation);
 
-			log.debug("Saving web site file: {} with metadata length {} from siteFile metadata length {}", webSiteFile,
+			log.debug("Saving web site file: {} with metadata length {} from siteFile metadata length {}", toJson(webSiteFile),
 					  (webSiteFile.getMetadata() != null ? webSiteFile.getMetadata()
 																	  .length() : 0),
 					  (webSiteFile.getMetadata() != null ? siteFile.getMetadata()
@@ -287,6 +289,7 @@ public class PublishService {
 			webSiteGalleryRepository.saveGalleryFile(siteGalleryId, newWebSiteFile.getId(), galleryFile.getSortOrder());
 			// Save subject on site-side
 			var subjects = subjectService.getSubjectsByFileId(webSiteFile.getId());
+			log.debug("Publishing subjects for site file {}: {}", newWebSiteFile.getId(), toJson(subjects));
 			var siteSubjects = siteSubjectService.saveAllFromAdminSubject(subjects);
 			// Save subject - file relation on site-side
 			siteSubjectService.saveSiteFileSubject(newWebSiteFile.getId(), siteSubjects);

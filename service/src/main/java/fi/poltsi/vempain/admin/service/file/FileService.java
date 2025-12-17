@@ -267,6 +267,7 @@ public class FileService {
 		fileThumbPageableRepository.delete(fileThumb);
 	}
 
+	@Transactional(readOnly = true)
 	public List<FileThumb> findAllFileThumbsBySiteFileList(List<SiteFile> siteFiles) {
 		var thumbList = new ArrayList<FileThumb>();
 
@@ -276,7 +277,14 @@ public class FileService {
 			if (optionalFileThumb.isEmpty()) {
 				log.error("SiteFile ID {} is missing a thumb file", siteFile.getId());
 			} else {
-				thumbList.add(optionalFileThumb.get());
+				var fileThumb = optionalFileThumb.get();
+
+				if (fileThumb.getSiteFile() != null) {
+					fileThumb.getSiteFile()
+							 .getLocation(); // Force loading the lazy relation
+				}
+
+				thumbList.add(fileThumb);
 			}
 		}
 
