@@ -35,8 +35,8 @@ public class AclController implements AclAPI {
 	@Override
 	public ResponseEntity<List<AclResponse>> getAcl(Long aclId) {
 		accessService.checkAuthentication();
-		log.info("Acl REST API called with aclId: {}", aclId);
-		log.info("Retrieving all acl info based on ID");
+		log.debug("Acl REST API called with aclId: {}", aclId);
+		log.debug("Retrieving all acl info based on ID");
 		Iterable<Acl> aclData = aclService.findAclByAclId(aclId);
 
 		if (StreamSupport.stream(aclData.spliterator(), false)

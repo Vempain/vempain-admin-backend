@@ -28,7 +28,7 @@ public class StorageDirectoryConfiguration {
 
 		for (var fileTypeName : FileTypeEnum.getFileTypeNames()) {
 			var tmpPath = siteFileStorage + File.separator + fileTypeName;
-			log.info("Initializing, adding storage location {}: {}", fileTypeName, tmpPath);
+			log.debug("Initializing, adding storage location {}: {}", fileTypeName, tmpPath);
 			storageLocations.put(fileTypeName, tmpPath);
 			var tmpDir = new File(tmpPath);
 

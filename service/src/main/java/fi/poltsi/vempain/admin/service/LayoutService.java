@@ -143,8 +143,8 @@ public class LayoutService {
 								   .modified(Instant.now())
 								   .build();
 				var newLayout = save(layout);
-				log.info("Layout ID: {}", newLayout.getId());
-				log.info("Adding layout:\n{}", newLayout);
+				log.debug("Layout ID: {}", newLayout.getId());
+				log.debug("Adding layout:\n{}", newLayout);
 				return newLayout;
 			} catch (VempainAclException e) {
 				log.error("Failed to store ACL list for new layout: ", e);
@@ -206,7 +206,7 @@ public class LayoutService {
 		var layout = optionalLayout.get();
 		// Delete also the Acl
 		try {
-			log.info("Layout ACL ID: {}", layout.getAclId());
+			log.debug("Layout ACL ID: {}", layout.getAclId());
 			aclService.deleteByAclId(layout.getAclId());
 		} catch (VempainEntityNotFoundException e) {
 			log.warn("The layout referred to non-existing ACL ID: {}", layout.getAclId());
@@ -216,7 +216,7 @@ public class LayoutService {
 		}
 
 		try {
-			log.info("Layout ID: {}", layoutId);
+			log.debug("Layout ID: {}", layoutId);
 			layoutRepository.delete(layout);
 		} catch (Exception e) {
 			log.error("Failed to delete layout: {}", layout, e);

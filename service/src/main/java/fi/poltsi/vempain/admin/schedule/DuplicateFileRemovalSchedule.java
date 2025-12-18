@@ -47,14 +47,14 @@ public class DuplicateFileRemovalSchedule {
 		// Check if the parent file is present in file_common
 
 		for (FileThumb iteratingThumb : fileThumbs) {
-			var optionalFileCommon = fileService.findSiteFileById(iteratingThumb.getParentId());
+			var optionalSiteFile = fileService.findSiteFileById(iteratingThumb.getParentId());
 
-			if (optionalFileCommon.isEmpty()) {
+			if (optionalSiteFile.isEmpty()) {
 				log.info("Removing thumb file {} because it does not refer to valid common file", iteratingThumb);
 				fileService.deleteFileThumb(iteratingThumb);
 			} else {
 				if (counter > 0) {
-					log.info("Found a duplicate image {} with valid common: {}", iteratingThumb, optionalFileCommon);
+					log.info("Found a duplicate image {} with valid common: {}", iteratingThumb, optionalSiteFile);
 				}
 
 				counter++;

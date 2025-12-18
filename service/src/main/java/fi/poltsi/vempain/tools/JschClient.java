@@ -49,12 +49,12 @@ public class JschClient {
 
 	public void connect(String siteAddress, int sitePort, String siteUser, String adminSshHomeDir, String adminSshPrivateKey) throws JSchException {
 		var knownHostFile = adminSshHomeDir + File.separator + ".ssh" + File.separator + "known_hosts";
-		log.info("Adding known host file from: {}", knownHostFile);
+		log.debug("Adding known host file from: {}", knownHostFile);
 		jsch.setKnownHosts(knownHostFile);
 		jschSession = jsch.getSession(siteUser, siteAddress, sitePort);
 		// Disable this for the moment as Jsch does not handle ssh-ed25519
 		jschSession.setConfig("StrictHostKeyChecking", "no");
-		log.info("Adding identity from private key file: {}", adminSshPrivateKey);
+		log.debug("Adding identity from private key file: {}", adminSshPrivateKey);
 
 		try {
 			jsch.addIdentity(adminSshPrivateKey);
@@ -106,27 +106,27 @@ public class JschClient {
 			var absolutePathThumbFile = siteFileDirectory + File.separator + fileThumb.getFilepath() + File.separator + fileThumb.getFilename();
 			var targetDir = siteWwwRoot + File.separator + fileThumb.getParentType().shortName + File.separator + fileThumb.getSiteFile()
 																														   .getFilePath() + File.separator + thumbSubDir;
-			log.info("Transferring thumb {} to {}", absolutePathThumbFile, targetDir);
+			log.debug("Transferring thumb {} to {}", absolutePathThumbFile, targetDir);
 			channelSftp.put(absolutePathThumbFile, targetDir);
 		}
 	}
 
 	private void createRecursivelySiteDirectory(String mainDir, List<String> subDirList) throws SftpException {
-		log.info("Called with main directory {} and list of directory elements {}", mainDir, subDirList);
+		log.debug("Called with main directory {} and list of directory elements {}", mainDir, subDirList);
 
 		if (subDirList.isEmpty()) {
-			log.info("No more directory elements to create");
+			log.debug("No more directory elements to create");
 			return;
 		}
 
 		String testDir = mainDir + File.separator + subDirList.getFirst();
 
 		if (!siteDirectoryExists(testDir)) {
-			log.info("Element dir {} did not exist as {}, creating it", subDirList.getFirst(), testDir);
+			log.debug("Element dir {} did not exist as {}, creating it", subDirList.getFirst(), testDir);
 			channelSftp.mkdir(testDir);
 		}
 
-		log.info("Popping first element from subdir list");
+		log.debug("Popping first element from subdir list");
 		subDirList.removeFirst();
 		createRecursivelySiteDirectory(testDir, subDirList);
 	}

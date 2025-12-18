@@ -34,7 +34,7 @@ public class SubjectFileConsistencySchedule {
 		fileSubjectIdSet.removeAll(siteFileIdSet);
 
 		if (fileSubjectIdSet.isEmpty()) {
-			log.info("No orphaned file_subject entries found");
+			log.debug("No orphaned file_subject entries found");
 		} else {
 			log.info("Found {} file_subject entries that do not have a site file and needs to be purged", fileSubjectIdSet.size());
 			// We need to purge the file_subject-table

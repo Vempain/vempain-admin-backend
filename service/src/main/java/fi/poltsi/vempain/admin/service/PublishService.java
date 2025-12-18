@@ -214,7 +214,7 @@ public class PublishService {
 
 		// Transfer the files to the site-server
 		try {
-			log.info("Connecting to site-server {}", siteSshAddress);
+			log.debug("Connecting to site-server {}", siteSshAddress);
 			log.debug("Connecting to site-server with user {}", siteSshUser);
 			log.debug("Using SSH home dir {}", adminSshHomeDir);
 			log.debug("Using SSH private key {}", adminSshPrivateKey);

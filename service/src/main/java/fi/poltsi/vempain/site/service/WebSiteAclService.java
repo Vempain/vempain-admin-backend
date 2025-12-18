@@ -163,7 +163,7 @@ public class WebSiteAclService {
 								   .build();
 
 		var saved = webSiteAclRepository.save(acl);
-		log.info("Created new site ACL entry ID: {} linking ACL ID {} to user ID {} by admin user: {}",
+		log.debug("Created new site ACL entry ID: {} linking ACL ID {} to user ID {} by admin user: {}",
 				 saved.getId(), request.getAclId(), request.getUserId(), adminUserId);
 		return saved.toResponse();
 	}
@@ -183,7 +183,7 @@ public class WebSiteAclService {
 		}
 
 		webSiteAclRepository.deleteById(id);
-		log.info("Deleted site ACL entry ID: {} by admin user: {}", id, adminUserId);
+		log.debug("Deleted site ACL entry ID: {} by admin user: {}", id, adminUserId);
 	}
 
 	/**
