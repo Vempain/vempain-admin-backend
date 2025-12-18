@@ -50,7 +50,7 @@ public class MetadataTools {
 			var exitVal = runCommand(builder, output);
 
 			if (exitVal == 0) {
-				log.info("Metadata extracted successfully from file: {}", file);
+				log.debug("Metadata extracted successfully from file: {}", file);
 			} else {
 				log.error("Failed to extract metadata from file: {}", file);
 			}

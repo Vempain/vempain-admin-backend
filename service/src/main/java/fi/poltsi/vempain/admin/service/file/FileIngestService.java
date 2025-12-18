@@ -55,7 +55,7 @@ public class FileIngestService {
 	@PostConstruct
 	public void setupEnv() {
 		var currentPath = System.getProperty("user.dir");
-		log.info("Current directory: {}", currentPath);
+		log.debug("Current directory: {}", currentPath);
 		var exceptionMessage = "Unable to initiate the main storage directory";
 		var siteFilePath = Path.of(siteFileDirectory);
 
@@ -113,7 +113,7 @@ public class FileIngestService {
 			// Determine main class directory by mimetype (fallback to "other" if configured)
 			final var fileTypeByMimetype = FileTypeEnum.getFileTypeByMimetype(fileIngestRequest.getMimeType());
 			final String baseDir = resolveBaseDir(fileTypeByMimetype);
-			log.info("Resolved base directory for file type {}: {}", fileTypeByMimetype, baseDir);
+			log.debug("Resolved base directory for file type {}: {}", fileTypeByMimetype, baseDir);
 
 			// Sanitize and resolve target paths
 			final String cleanFileName = sanitizeFileName(fileIngestRequest.getFileName());
@@ -126,7 +126,7 @@ public class FileIngestService {
 										   .normalize();
 
 			ensureWithinBase(targetDir, basePath);
-			log.info("Creating target directory: {}", targetDir);
+			log.debug("Creating target directory: {}", targetDir);
 			Files.createDirectories(targetDir);
 
 			final Path targetFile = targetDir.resolve(cleanFileName)
@@ -266,9 +266,9 @@ public class FileIngestService {
 
 	private String resolveBaseDir(FileTypeEnum fileTypeEnum) {
 		var fileType = fileTypeEnum.shortName;
-		log.info("Resolving base directory for file class: {}", fileType);
+		log.debug("Resolving base directory for file class: {}", fileType);
 		var storageLocations = storageDirectoryConfiguration.storageLocations();
-		log.info("Checking if {} contains {}", storageLocations, fileType);
+		log.debug("Checking if {} contains {}", storageLocations, fileType);
 
 		if (storageLocations.containsKey(fileType)) {
 			return storageLocations.get(fileType);
@@ -324,7 +324,7 @@ public class FileIngestService {
 
 		if (optionalGallery.isPresent()) {
 			var gallery = optionalGallery.get();
-			log.info("Found existing gallery for ingest request: {}", gallery);
+			log.debug("Found existing gallery for ingest request: {}", gallery);
 			boolean changed = false;
 
 			if (fileIngestRequest.getGalleryName() != null && !Objects.equals(gallery.getShortname(), fileIngestRequest.getGalleryName())) {

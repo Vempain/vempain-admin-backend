@@ -112,14 +112,14 @@ public class AclConsistencySchedule {
 				log.warn("There's something strange going on, we got duplicate ACLs for a ID ({}) of 1", aclId);
 				continue;
 			}
-			log.info("Removing duplicate ACLs for ACL ID {}", aclId);
+			log.debug("Removing duplicate ACLs for ACL ID {}", aclId);
 			for (int i = 0; i < aclList.size(); i++) {
 				for (int j = 0; j < aclList.size(); j++) {
 					if (i != j) {
 						var aclA = aclList.get(i);
 						var aclB = aclList.get(j);
 						if (aclA.equals(aclB)) {
-							log.info("Removing duplicate ACL: {}", aclB);
+							log.debug("Removing duplicate ACL: {}", aclB);
 							aclService.deleteById(aclB.getId());
 						}
 					}
@@ -131,7 +131,7 @@ public class AclConsistencySchedule {
 	private void removeOrphanAcls() {
 		for (Iterator<Long> itr = orphanAcls.iterator(); itr.hasNext(); ) {
 			Long aclId = itr.next();
-			log.info("Removing orphan ACL ID: {}", aclId);
+			log.debug("Removing orphan ACL ID: {}", aclId);
 			try {
 				aclService.deleteByAclId(aclId);
 				itr.remove();

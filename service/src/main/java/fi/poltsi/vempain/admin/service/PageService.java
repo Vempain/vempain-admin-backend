@@ -124,7 +124,7 @@ public class PageService {
 		}
 		// Delete also the Acl
 		try {
-			log.info("Layout ACL ID: {}", page.getAclId());
+			log.debug("Layout ACL ID: {}", page.getAclId());
 			aclService.deleteByAclId(page.getAclId());
 		} catch (Exception e) {
 			log.error("Failed to remove acl: {}", page.getAclId(), e);
@@ -132,7 +132,7 @@ public class PageService {
 		}
 
 		try {
-			log.info("Layout ID: {}", pageId);
+			log.debug("Layout ID: {}", pageId);
 			pageRepository.delete(page);
 		} catch (Exception e) {
 			log.error("Failed to remove page: {}", page, e);
@@ -160,7 +160,7 @@ public class PageService {
 					.trim()
 					.equals(page.getPath()
 								.trim())) {
-			log.info("User is updating the path of page ID {} from {} to {}", request.getId(), page.getPath(), request.getPath());
+			log.debug("User is updating the path of page ID {} from {} to {}", request.getId(), page.getPath(), request.getPath());
 
 			try {
 				var pathPage = findByPath(request.getPath()
@@ -226,7 +226,7 @@ public class PageService {
 		}
 
 		try {
-			log.info("component ACL ID: {}", page.getAclId());
+			log.debug("component ACL ID: {}", page.getAclId());
 			aclService.deleteByAclId(page.getAclId());
 		} catch (VempainEntityNotFoundException e) {
 			log.warn("The layout referred to non-existing ACL ID: {}", page.getAclId());

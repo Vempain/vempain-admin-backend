@@ -29,7 +29,7 @@ public class FileIngestController implements FileIngestAPI {
 
 		try {
 			fileIngestRequest = objectMapper.readValue(fileIngestRequestJSON, FileIngestRequest.class);
-			log.info("Received file ingest request: {}", toJson(fileIngestRequest));
+			log.debug("Received file ingest request: {}", toJson(fileIngestRequest));
 		} catch (IllegalArgumentException | JsonProcessingException e) {
 			log.warn("Invalid file ingest request JSON: {}", e.getMessage());
 			return ResponseEntity.badRequest()

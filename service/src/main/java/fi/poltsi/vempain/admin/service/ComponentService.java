@@ -194,7 +194,7 @@ public class ComponentService {
 		}
 
 		try {
-			log.info("component ACL ID: {}", component.getAclId());
+			log.debug("component ACL ID: {}", component.getAclId());
 			aclService.deleteByAclId(component.getAclId());
 		} catch (VempainEntityNotFoundException e) {
 			log.warn("The layout referred to non-existing ACL ID: {}", component.getAclId());

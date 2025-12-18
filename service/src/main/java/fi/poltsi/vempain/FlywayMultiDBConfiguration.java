@@ -31,7 +31,7 @@ public class FlywayMultiDBConfiguration {
 						.baselineOnMigrate(true)
 		);
 
-		log.info("Flyway admin username is: {} and cleanDisabled is: {}", flyway.getConfiguration()
+		log.debug("Flyway admin username is: {} and cleanDisabled is: {}", flyway.getConfiguration()
 																				.getUser(), flyway.getConfiguration()
 																								  .isCleanDisabled());
 		return flyway;
@@ -48,7 +48,7 @@ public class FlywayMultiDBConfiguration {
 						.baselineOnMigrate(true)
 		);
 
-		log.info("Flyway site username is: {} and cleanDisabled is: {}", flyway.getConfiguration()
+		log.debug("Flyway site username is: {} and cleanDisabled is: {}", flyway.getConfiguration()
 																			   .getUser(), flyway.getConfiguration()
 																								 .isCleanDisabled());
 		return flyway;

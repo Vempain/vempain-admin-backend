@@ -65,7 +65,7 @@ public class MissingThumbGeneratorSchedule {
 							log.info("Deleting the current thumb file entry in DB as it is missing in filesystem: {}", thumbFile);
 							fileThumbService.delete(fileThumb.getId());
 							log.info("Generating missing thumb file for: {}", fileThumb.getId());
-							log.info("Generating thumb image for fileCommon: {}", siteFile.getId());
+							log.info("Generating thumb image for site file: {}", siteFile.getId());
 							fileThumbService.generateThumbFile(siteFile.getId());
 						}
 					} else {

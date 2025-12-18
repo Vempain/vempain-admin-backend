@@ -124,21 +124,21 @@ public class FormService {
 
 		// Delete also the Acl
 		try {
-			log.info("Form ACL ID: {}", form.getAclId());
+			log.debug("Form ACL ID: {}", form.getAclId());
 			aclService.deleteByAclId(form.getAclId());
 		} catch (Exception e) {
 			log.error("Failed to remove acl: {}", form.getAclId(), e);
 		}
 
 		var formComponents = formComponentService.findFormComponentByFormId(formId);
-		log.info("Deleting formComponents: {}", formComponents);
+		log.debug("Deleting formComponents: {}", formComponents);
 
 		for (FormComponent formComponent : formComponents) {
 			formComponentService.deleteFormComponent(formComponent.getFormId(), formComponent.getComponentId(), formComponent.getSortOrder());
 		}
 
 		try {
-			log.info("Deleting form ID: {}", formId);
+			log.debug("Deleting form ID: {}", formId);
 			formRepository.deleteById(formId);
 		} catch (Exception e) {
 			log.error("Failed to delete form: {}", form, e);
