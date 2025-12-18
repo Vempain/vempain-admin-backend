@@ -54,14 +54,17 @@ public class SubjectService {
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void saveTagsAsSubjects(List<TagRequest> tagRequests, long siteFileId) {
 		entityManager.flush();
+		log.debug("Removing all subjects for file id {}", siteFileId);
 		removeAllSubjectsFromFile(siteFileId);
 
 		for (TagRequest tagRequest : tagRequests) {
 			var tagName = tagRequest.getTagName();
+			log.debug("Adding/updating subject for tag: {}", tagName);
 			var subject = subjectRepository.findSubjectBySubjectName(tagName)
 										   .orElse(null);
 
 			if (subject == null) {
+				log.debug("Subject {} not found, creating new", tagName);
 				Long subjectId = upsertSubjectReturnId(tagRequest);
 				subject = subjectRepository.findById(subjectId)
 										   .orElse(null);
@@ -71,9 +74,11 @@ public class SubjectService {
 				}
 				subject = updateExistingSubject(tagRequest, subject);
 			} else {
+				log.debug("Subject {} found with id {}, updating if necessary", tagName, subject.getId());
 				subject = updateExistingSubject(tagRequest, subject);
 			}
 
+			log.debug("Linking subject id {} to file id {}", subject.getId(), siteFileId);
 			addSubjectToFile(siteFileId, subject.getId());
 		}
 	}

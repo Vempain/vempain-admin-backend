@@ -17,8 +17,8 @@ import fi.poltsi.vempain.site.repository.WebGpsLocationRepository;
 import fi.poltsi.vempain.site.repository.WebSiteFileRepository;
 import fi.poltsi.vempain.site.repository.WebSiteGalleryRepository;
 import fi.poltsi.vempain.site.repository.WebSitePageRepository;
-import fi.poltsi.vempain.site.service.SiteSubjectService;
 import fi.poltsi.vempain.site.service.WebSiteResourceService;
+import fi.poltsi.vempain.site.service.WebSiteSubjectService;
 import fi.poltsi.vempain.tools.JschClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +54,7 @@ public class PublishService {
 	private final UserService           userService;
 	private final SubjectService        subjectService;
 	private final GalleryFileService    galleryFileService;
-	private final SiteSubjectService    siteSubjectService;
+	private final WebSiteSubjectService webSiteSubjectService;
 	private final PageGalleryService    pageGalleryService;
 	private final JschClient            jschClient;
 	private final WebSiteResourceService webSiteResourceService;
@@ -288,11 +288,11 @@ public class PublishService {
 			// Add new gallery file relation
 			webSiteGalleryRepository.saveGalleryFile(siteGalleryId, newWebSiteFile.getId(), galleryFile.getSortOrder());
 			// Save subject on site-side
-			var subjects = subjectService.getSubjectsByFileId(webSiteFile.getId());
+			var subjects = subjectService.getSubjectsByFileId(siteFile.getId());
 			log.debug("Publishing subjects for site file {}: {}", newWebSiteFile.getId(), toJson(subjects));
-			var siteSubjects = siteSubjectService.saveAllFromAdminSubject(subjects);
+			var siteSubjects = webSiteSubjectService.saveAllFromAdminSubject(subjects);
 			// Save subject - file relation on site-side
-			siteSubjectService.saveSiteFileSubject(newWebSiteFile.getId(), siteSubjects);
+			webSiteSubjectService.saveSiteFileSubject(newWebSiteFile.getId(), siteSubjects);
 		}
 	}
 

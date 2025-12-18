@@ -214,7 +214,7 @@ public class FileIngestService {
 			log.debug("Storing new SiteFile: {}", siteFile);
 			siteFile = fileService.saveSiteFile(siteFile);
 
-			log.debug("Save the tags: {}", fileIngestRequest.getTags());
+			log.debug("Save the tags: {}", toJson(fileIngestRequest.getTags()));
 			subjectService.saveTagsAsSubjects(fileIngestRequest.getTags(), siteFile.getId());
 
 			// Upsert Gallery per requirements
@@ -324,7 +324,7 @@ public class FileIngestService {
 
 		if (optionalGallery.isPresent()) {
 			var gallery = optionalGallery.get();
-			log.debug("Found existing gallery for ingest request: {}", gallery);
+			log.debug("Found existing gallery for ingest request: {}", toJson(gallery));
 			boolean changed = false;
 
 			if (fileIngestRequest.getGalleryName() != null && !Objects.equals(gallery.getShortname(), fileIngestRequest.getGalleryName())) {
