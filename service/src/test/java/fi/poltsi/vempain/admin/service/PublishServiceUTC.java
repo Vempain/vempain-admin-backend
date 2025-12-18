@@ -11,8 +11,8 @@ import fi.poltsi.vempain.site.repository.WebGpsLocationRepository;
 import fi.poltsi.vempain.site.repository.WebSiteFileRepository;
 import fi.poltsi.vempain.site.repository.WebSiteGalleryRepository;
 import fi.poltsi.vempain.site.repository.WebSitePageRepository;
-import fi.poltsi.vempain.site.service.SiteSubjectService;
 import fi.poltsi.vempain.site.service.WebSiteResourceService;
+import fi.poltsi.vempain.site.service.WebSiteSubjectService;
 import fi.poltsi.vempain.tools.JschClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,11 +57,11 @@ class PublishServiceUTC {
 	@Mock
 	private SubjectService           subjectService;
 	@Mock
-	private GalleryFileService       galleryFileService;
+	private GalleryFileService    galleryFileService;
 	@Mock
-	private SiteSubjectService       siteSubjectService;
+	private WebSiteSubjectService webSiteSubjectService;
 	@Mock
-	private PageGalleryService       pageGalleryService;
+	private PageGalleryService    pageGalleryService;
 	@Mock
 	private JschClient               jschClient;
 	@Mock

@@ -14,7 +14,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class SiteSubjectService {
+public class WebSiteSubjectService {
 	private final SiteSubjectRepository siteSubjectRepository;
 
 	public List<WebSiteSubject> saveAllFromAdminSubject(List<Subject> subjects) {
