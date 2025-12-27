@@ -1,5 +1,6 @@
 package fi.poltsi.vempain.site.entity;
 
+import fi.poltsi.vempain.admin.api.site.response.WebSiteResourceResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteUserResponse;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,6 +14,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.List;
 
 @Data
 @Entity
@@ -52,6 +54,19 @@ public class WebSiteUser {
 								  .created(this.created)
 								  .modifier(this.modifier)
 								  .modified(this.modified)
+								  .resources(null)
+								  .build();
+	}
+
+	public WebSiteUserResponse toResponse(List<WebSiteResourceResponse> resources) {
+		return WebSiteUserResponse.builder()
+								  .id(this.id)
+								  .username(this.username)
+								  .creator(this.creator)
+								  .created(this.created)
+								  .modifier(this.modifier)
+								  .modified(this.modified)
+								  .resources(resources)
 								  .build();
 	}
 }

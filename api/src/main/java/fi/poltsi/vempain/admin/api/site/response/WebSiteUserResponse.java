@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Value;
 
 import java.time.Instant;
+import java.util.List;
 
 @Value
 @Builder
@@ -30,5 +31,8 @@ public class WebSiteUserResponse {
 
 	@Schema(description = "Modification timestamp", example = "2025-11-04T16:30:00Z")
 	Instant modified;
+
+	@Schema(description = "List of web sources assigned to this user")
+	List<WebSiteResourceResponse> resources;
 }
 

@@ -21,9 +21,10 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class WebSiteUserService {
-	private final WebSiteUserRepository webSiteUserRepository;
 	private final PasswordEncoder       passwordEncoder;
 	private final AccessService         accessService;
+	private final WebSiteAclService     webSiteAclService;
+	private final WebSiteUserRepository webSiteUserRepository;
 
 	/**
 	 * Find all site web users
@@ -31,9 +32,10 @@ public class WebSiteUserService {
 	 * @return List of user responses
 	 */
 	public List<WebSiteUserResponse> findAll() {
-		List<WebSiteUserResponse> responses = new ArrayList<>();
+		var responses = new ArrayList<WebSiteUserResponse>();
+
 		webSiteUserRepository.findAll()
-							 .forEach(user -> responses.add(user.toResponse()));
+							 .forEach(user -> responses.add(webSiteAclService.findResourcesByUserId(user.getId())));
 		return responses;
 	}
 
@@ -45,7 +47,7 @@ public class WebSiteUserService {
 	 */
 	public WebSiteUserResponse findById(Long userId) {
 		return webSiteUserRepository.findById(userId)
-									.map(WebSiteUser::toResponse)
+									.map(user -> webSiteAclService.findResourcesByUserId(user.getId()))
 									.orElseThrow(() -> {
 										log.error("Site web user not found with ID: {}", userId);
 										return new ResponseStatusException(HttpStatus.NOT_FOUND, "Site web user not found");

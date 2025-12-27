@@ -246,7 +246,7 @@ public class PublishService {
 			var siteFile = siteFileRepository.findById(galleryFile.getSiteFileId())
 											 .orElseThrow(VempainEntityNotFoundException::new);
 			// Remove the web site file if it exists
-			log.debug("Deleting web site file by file ID: {}", siteFile.getId());
+			log.debug("Deleting potential web site file by file ID: {}", siteFile.getId());
 			webSiteFileRepository.deleteByFileId(siteFile.getId());
 
 			// Map / upsert GPS location into site DB (separate persistence unit)
