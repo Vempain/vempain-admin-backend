@@ -9,7 +9,6 @@ import fi.poltsi.vempain.admin.api.site.response.WebSiteAclResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteAclUsersResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteConfigurationResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteResourcePageResponse;
-import fi.poltsi.vempain.admin.api.site.response.WebSiteUserResourcesResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteUserResponse;
 import fi.poltsi.vempain.file.api.FileTypeEnum;
 import io.swagger.v3.oas.annotations.Operation;
@@ -112,14 +111,14 @@ public interface WebSiteManagementAPI {
 	@Parameter(name = "userId", description = "Site web user ID", required = true, example = "7")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Successfully retrieved resources",
-						 content = @Content(schema = @Schema(implementation = WebSiteUserResourcesResponse.class),
+						 content = @Content(schema = @Schema(implementation = WebSiteUserResponse.class),
 											mediaType = MediaType.APPLICATION_JSON_VALUE)),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "404", description = "User not found", content = @Content),
 			@ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
 	})
 	@GetMapping(value = USER_ADMIN_PATH + "/{userId}/resources", produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<WebSiteUserResourcesResponse> getResourcesByUserId(@PathVariable("userId") Long userId);
+	ResponseEntity<WebSiteUserResponse> getResourcesByUserId(@PathVariable("userId") Long userId);
 
 	// ////////////////////////////// Site ACL APIs //////////////////////////////
 	@Operation(summary = "List all site ACL entries", description = "Returns all ACL assignments")

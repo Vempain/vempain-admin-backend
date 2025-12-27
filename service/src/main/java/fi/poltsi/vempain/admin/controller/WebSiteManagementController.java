@@ -8,7 +8,6 @@ import fi.poltsi.vempain.admin.api.site.response.WebSiteAclResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteAclUsersResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteConfigurationResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteResourcePageResponse;
-import fi.poltsi.vempain.admin.api.site.response.WebSiteUserResourcesResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteUserResponse;
 import fi.poltsi.vempain.admin.rest.WebSiteManagementAPI;
 import fi.poltsi.vempain.admin.service.AccessService;
@@ -90,7 +89,7 @@ public class WebSiteManagementController implements WebSiteManagementAPI {
 	}
 
 	@Override
-	public ResponseEntity<WebSiteUserResourcesResponse> getResourcesByUserId(Long userId) {
+	public ResponseEntity<WebSiteUserResponse> getResourcesByUserId(Long userId) {
 		accessService.checkAuthentication();
 		log.debug("Fetching resources for user ID: {}", userId);
 		return ResponseEntity.ok(webSiteAclService.findResourcesByUserId(userId));
