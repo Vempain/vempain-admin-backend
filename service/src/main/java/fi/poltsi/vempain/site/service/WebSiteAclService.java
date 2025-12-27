@@ -150,11 +150,7 @@ public class WebSiteAclService {
 			}
 		}
 
-		return WebSiteUserResponse.builder()
-								  .id(user.getId())
-								  .username(user.getUsername())
-								  .resources(resources)
-								  .build();
+		return user.toResponse(resources);
 	}
 
 	/**

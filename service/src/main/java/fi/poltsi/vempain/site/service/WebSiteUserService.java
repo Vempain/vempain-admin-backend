@@ -3,6 +3,7 @@ package fi.poltsi.vempain.site.service;
 import fi.poltsi.vempain.admin.api.site.request.WebSiteUserRequest;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteUserResponse;
 import fi.poltsi.vempain.admin.service.AccessService;
+import fi.poltsi.vempain.auth.tools.AuthTools;
 import fi.poltsi.vempain.site.entity.WebSiteUser;
 import fi.poltsi.vempain.site.repository.WebSiteUserRepository;
 import lombok.RequiredArgsConstructor;
@@ -92,7 +93,7 @@ public class WebSiteUserService {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already exists");
 		}
 
-		String passwordHash = passwordEncoder.encode(request.getPassword());
+		String passwordHash = AuthTools.passwordHash(request.getPassword());
 
 		WebSiteUser user = WebSiteUser.builder()
 									  .username(request.getUsername())
@@ -136,7 +137,7 @@ public class WebSiteUserService {
 		// Update password if provided
 		if (request.getPassword() != null && !request.getPassword()
 													 .isBlank()) {
-			String passwordHash = passwordEncoder.encode(request.getPassword());
+			String passwordHash = AuthTools.passwordHash(request.getPassword());
 			user.setPasswordHash(passwordHash);
 		}
 
@@ -189,7 +190,7 @@ public class WebSiteUserService {
 													return new ResponseStatusException(HttpStatus.NOT_FOUND, "Site web user not found");
 												});
 
-		String passwordHash = passwordEncoder.encode(newPassword);
+		String passwordHash = AuthTools.passwordHash(newPassword);
 		user.setPasswordHash(passwordHash);
 		user.setModifier(adminUserId);
 		user.setModified(Instant.now());
