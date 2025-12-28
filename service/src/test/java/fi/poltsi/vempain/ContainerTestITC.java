@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 public class ContainerTestITC {
 	@Container
-	public static PostgreSQLContainer<?> postgresqlContainer = new PostgreSQLContainer<>("postgres:latest")
+	public static PostgreSQLContainer<?> postgresqlContainer = new PostgreSQLContainer<>("postgres:18-alpine")
 			.withDatabaseName("vempain_admin")
 			.withUsername("test")
 			.withPassword("test");
