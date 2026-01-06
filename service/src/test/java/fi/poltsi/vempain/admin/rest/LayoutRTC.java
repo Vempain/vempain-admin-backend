@@ -1,17 +1,17 @@
 package fi.poltsi.vempain.admin.rest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.poltsi.vempain.admin.api.response.LayoutResponse;
 import fi.poltsi.vempain.auth.api.response.AclResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 

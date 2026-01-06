@@ -7,12 +7,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -22,12 +22,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 public class ContainerTestITC {
 	@Container
-	public static PostgreSQLContainer<?> postgresqlContainer = new PostgreSQLContainer<>("postgres:18-alpine")
+	public static PostgreSQLContainer postgresqlContainer = new PostgreSQLContainer("postgres:18-alpine")
 			.withDatabaseName("vempain_admin")
 			.withUsername("test")
 			.withPassword("test");
 	@Autowired
-	protected     AclService             aclService;
+	protected     AclService          aclService;
 	@Autowired
 	@Qualifier("adminFlyway")
 	private Flyway adminFlyway;

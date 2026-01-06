@@ -1,7 +1,5 @@
 package fi.poltsi.vempain.admin.controller.file;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.poltsi.vempain.admin.api.request.file.FileIngestRequest;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestResponse;
 import fi.poltsi.vempain.admin.rest.file.FileIngestAPI;
@@ -12,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import tools.jackson.databind.ObjectMapper;
 
 import static fi.poltsi.vempain.auth.tools.JsonTools.toJson;
 
@@ -30,7 +29,7 @@ public class FileIngestController implements FileIngestAPI {
 		try {
 			fileIngestRequest = objectMapper.readValue(fileIngestRequestJSON, FileIngestRequest.class);
 			log.debug("Received file ingest request: {}", toJson(fileIngestRequest));
-		} catch (IllegalArgumentException | JsonProcessingException e) {
+		} catch (IllegalArgumentException e) {
 			log.warn("Invalid file ingest request JSON: {}", e.getMessage());
 			return ResponseEntity.badRequest()
 								 .build();

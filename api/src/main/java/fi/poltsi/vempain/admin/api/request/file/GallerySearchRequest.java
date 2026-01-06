@@ -2,12 +2,10 @@ package fi.poltsi.vempain.admin.api.request.file;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
-import lombok.Value;
-import lombok.extern.jackson.Jacksonized;
+import lombok.Data;
 
-@Value
+@Data
 @Builder
-@Jacksonized
 @Schema(description = "Parameters for searching galleries")
 public class GallerySearchRequest {
 	@Schema(description = "Zero-based page number", example = "0")

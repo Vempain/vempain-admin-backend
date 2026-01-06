@@ -2,8 +2,6 @@ package fi.poltsi.vempain.admin.api.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import fi.poltsi.vempain.admin.api.request.LayoutRequest;
 import fi.poltsi.vempain.auth.api.request.AclRequest;
 import fi.poltsi.vempain.auth.api.response.AbstractResponse;
@@ -15,6 +13,8 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.annotation.JsonNaming;
 
 import java.util.ArrayList;
 import java.util.List;

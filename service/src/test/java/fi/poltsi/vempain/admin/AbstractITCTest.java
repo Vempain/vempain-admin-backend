@@ -32,13 +32,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.nio.file.Path;
 import java.util.stream.StreamSupport;
@@ -56,13 +56,13 @@ import static fi.poltsi.vempain.tools.LocalFileTools.removeDirectory;
 public abstract class AbstractITCTest {
 
 	@Container
-	public static PostgreSQLContainer<?> vempainAdminContainer = new PostgreSQLContainer<>("postgres:18-alpine")
+	public static PostgreSQLContainer vempainAdminContainer = new PostgreSQLContainer("postgres:18-alpine")
 			.withDatabaseName("vempain_admin")
 			.withUsername("test")
 			.withPassword("test");
 
 	@Container
-	public static PostgreSQLContainer<?> vempainSiteContainer = new PostgreSQLContainer<>("postgres:18-alpine")
+	public static PostgreSQLContainer vempainSiteContainer = new PostgreSQLContainer("postgres:18-alpine")
 			.withDatabaseName("vempain_site")
 			.withUsername("test")
 			.withPassword("test");
