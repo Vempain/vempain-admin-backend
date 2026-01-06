@@ -1,14 +1,14 @@
 package fi.poltsi.vempain.admin.api.site.response;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.annotation.JsonNaming;
 
 import java.time.Instant;
 
-@Value
+@Data
 @Builder
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Schema(description = "Represents a site ACL assignment between a site ACL ID and a site web user")

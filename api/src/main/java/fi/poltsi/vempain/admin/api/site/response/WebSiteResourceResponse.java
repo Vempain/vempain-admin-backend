@@ -1,18 +1,20 @@
 package fi.poltsi.vempain.admin.api.site.response;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import fi.poltsi.vempain.admin.api.site.WebSiteResourceEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Value;
-import lombok.extern.jackson.Jacksonized;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.annotation.JsonNaming;
 
-@Value
+@Data
 @Builder
-@Jacksonized
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Schema(description = "Representation of a site resource that can be ACL protected")
+@NoArgsConstructor
+@AllArgsConstructor
 public class WebSiteResourceResponse {
 	@Schema(description = "Type of resource", example = "SITE_FILE")
 	WebSiteResourceEnum resourceType;

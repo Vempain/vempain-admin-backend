@@ -1,17 +1,17 @@
 package fi.poltsi.vempain.admin.api.site.response;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import fi.poltsi.vempain.admin.api.site.WebSiteConfigurationTypeEnum;
 import fi.poltsi.vempain.admin.api.site.request.WebSiteConfigurationRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
-import lombok.extern.jackson.Jacksonized;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.annotation.JsonNaming;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 @SuperBuilder
-@Jacksonized
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Schema(description = "Web site configuration response")
 public class WebSiteConfigurationResponse extends WebSiteConfigurationRequest {

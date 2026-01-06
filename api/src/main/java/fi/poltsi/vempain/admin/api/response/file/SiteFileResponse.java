@@ -1,13 +1,13 @@
 package fi.poltsi.vempain.admin.api.response.file;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import fi.poltsi.vempain.file.api.FileTypeEnum;
 import fi.poltsi.vempain.file.api.response.LocationResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.annotation.JsonNaming;
 
 import java.time.Duration;
 import java.time.Instant;

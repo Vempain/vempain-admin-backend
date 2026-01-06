@@ -1,7 +1,7 @@
 package fi.poltsi.vempain.site.rest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
+import tools.jackson.databind.ObjectMapper;
 
 public final class TestJson {
 	private static final ObjectMapper MAPPER = new ObjectMapper();

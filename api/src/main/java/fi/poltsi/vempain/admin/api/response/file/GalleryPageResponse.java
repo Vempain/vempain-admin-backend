@@ -1,18 +1,16 @@
 package fi.poltsi.vempain.admin.api.response.file;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
-import lombok.Value;
-import lombok.extern.jackson.Jacksonized;
+import lombok.Data;
+import tools.jackson.databind.PropertyNamingStrategies;
+import tools.jackson.databind.annotation.JsonNaming;
 
 import java.util.List;
 
-@Value
+@Data
 @Builder
-@Jacksonized
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Schema(description = "Paginated gallery listing response")
 public class GalleryPageResponse {

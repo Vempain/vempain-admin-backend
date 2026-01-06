@@ -1,7 +1,5 @@
 package fi.poltsi.vempain.site.rest;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.poltsi.vempain.admin.api.site.WebSiteResourceEnum;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteResourcePageResponse;
 import fi.poltsi.vempain.file.api.FileTypeEnum;
@@ -11,17 +9,20 @@ import fi.poltsi.vempain.site.entity.WebSitePage;
 import fi.poltsi.vempain.site.repository.WebSiteFileRepository;
 import fi.poltsi.vempain.site.repository.WebSiteGalleryRepository;
 import fi.poltsi.vempain.site.repository.WebSitePageRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.Instant;
 
@@ -29,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Slf4j
 @SpringBootTest
 @AutoConfigureMockMvc
 @TestPropertySource(properties = {"vempain.test=false"})
@@ -98,10 +100,12 @@ class WebSiteManagementRTC {
 		var result = mockMvc.perform(get("/admin-management/site/resources").accept(MediaType.APPLICATION_JSON))
 							.andExpect(status().isOk())
 							.andReturn();
-		var resp = objectMapper.readValue(result.getResponse()
-												.getContentAsByteArray(), new TypeReference<WebSiteResourcePageResponse>() {
-		});
-		assertThat(resp.getItems()).hasSizeGreaterThanOrEqualTo(2);
+		log.info("MVC Result: {}", result.getResponse()
+										 .getContentAsString());
+		var response = objectMapper.readValue(result.getResponse()
+													.getContentAsString(), WebSiteResourcePageResponse.class);
+		log.info("Response: {}", response);
+		assertThat(response.getItems()).hasSizeGreaterThanOrEqualTo(2);
 	}
 
 	@Test
@@ -146,9 +150,10 @@ class WebSiteManagementRTC {
 												   .accept(MediaType.APPLICATION_JSON))
 								  .andExpect(status().isOk())
 								  .andReturn();
-		var resp = objectMapper.readValue(result.getResponse()
+		var response = objectMapper.readValue(result.getResponse()
 												.getContentAsByteArray(), new TypeReference<WebSiteResourcePageResponse>() {
 		});
-		assertThat(resp.getItems()).hasSize(1);
+		log.info("Response: {}", response);
+		assertThat(response.getItems()).hasSize(1);
 	}
 }
