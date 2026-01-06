@@ -254,3 +254,4 @@ docker compose up -d
 
 The site database should ideally be accessed through a VPN or a private network such as Wireguard. If this is not possible, the database should be secured
 with a strong password and the database should be regularly backed up.
+
