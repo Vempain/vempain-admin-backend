@@ -28,8 +28,8 @@ public class Page extends AbstractVempainEntity {
 	private Long    parentId;
 	@Column(name = "form_id", nullable = false)
 	private long    formId;
-	@Column(name = "path", nullable = false)
-	private String  path;
+	@Column(name = "page_path", nullable = false)
+	private String pagePath;
 	@Column(name = "secure", nullable = false)
 	private boolean secure;
 	@Column(name = "indexlist", nullable = false)
@@ -40,6 +40,8 @@ public class Page extends AbstractVempainEntity {
 	private String  header;
 	@Column(name = "body", nullable = false, length = 524288)
 	private String  body;
+	@Column(name = "page_style", length = 524288)
+	private String pageStyle;
 	@Column(name = "published")
 	private Instant published;
 
@@ -49,12 +51,13 @@ public class Page extends AbstractVempainEntity {
 						   .id(this.id)
 						   .parentId(this.parentId)
 						   .formId(this.formId)
-						   .path(this.path)
+						   .pagePath(this.pagePath)
 						   .secure(this.secure)
 						   .indexList(this.indexList)
 						   .title(this.title)
 						   .header(this.header)
 						   .body(this.body)
+						   .pageStyle(this.pageStyle)
 						   .acls(null)
 						   .creator(this.creator)
 						   .created(this.created)

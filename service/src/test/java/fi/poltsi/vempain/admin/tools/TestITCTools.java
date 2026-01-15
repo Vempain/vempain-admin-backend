@@ -430,7 +430,7 @@ public class TestITCTools {
 					   .formId(formId)
 					   .header("Test page header " + userId)
 					   .title("Test page title " + userId)
-					   .path("/test/testuser_" + userId)
+					   .pagePath("/test/testuser_" + userId)
 					   .body("Test page body")
 					   .indexList(false)
 					   .locked(false)

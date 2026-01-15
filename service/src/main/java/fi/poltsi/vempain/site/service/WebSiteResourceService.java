@@ -145,8 +145,8 @@ public class WebSiteResourceService {
 		for (String term : terms) {
 			accumulatePage(results, aclId != null ? webSitePageRepository.findByAclIdAndTitleContainingIgnoreCase(aclId, term, pageable)
 												  : webSitePageRepository.findByTitleContainingIgnoreCase(term, pageable));
-			accumulatePage(results, aclId != null ? webSitePageRepository.findByAclIdAndPathContainingIgnoreCase(aclId, term, pageable)
-												  : webSitePageRepository.findByPathContainingIgnoreCase(term, pageable));
+			accumulatePage(results, aclId != null ? webSitePageRepository.findByAclIdAndFilePathContainingIgnoreCase(aclId, term, pageable)
+												  : webSitePageRepository.findByFilePathContainingIgnoreCase(term, pageable));
 			accumulatePage(results, aclId != null ? webSitePageRepository.findByAclIdAndBodyContainingIgnoreCase(aclId, term, pageable)
 												  : webSitePageRepository.findByBodyContainingIgnoreCase(term, pageable));
 			accumulatePage(results, aclId != null ? webSitePageRepository.findByAclIdAndHeaderContainingIgnoreCase(aclId, term, pageable)
@@ -252,7 +252,7 @@ public class WebSiteResourceService {
 																						  .resourceType(WebSiteResourceEnum.PAGE)
 																						  .resourceId(sitePage.getId())
 																						  .name(sitePage.getTitle())
-																						  .path(sitePage.getPath())
+																.path(sitePage.getFilePath())
 																						  .aclId(sitePage.getAclId())
 																						  .build())
 												  .getContent();
@@ -369,7 +369,7 @@ public class WebSiteResourceService {
 															   .resourceType(WebSiteResourceEnum.PAGE)
 															   .resourceId(sitePage.getId())
 															   .name(sitePage.getTitle())
-															   .path(sitePage.getPath())
+															   .path(sitePage.getFilePath())
 															   .aclId(sitePage.getAclId())
 															   .build())
 					   .getContent();

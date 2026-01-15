@@ -24,7 +24,7 @@ public class PageResponse extends AbstractResponse {
 	@Schema(description = "Form ID", example = "1")
 	private Long    formId;
 	@Schema(description = "URL path", example = "1")
-	private String  path;
+	private String pagePath;
 	@Schema(description = "Does the page require HTTPS", example = "true")
 	private boolean secure;
 	@Schema(description = "Should this page contain an index of the URL path", example = "true")
@@ -35,6 +35,8 @@ public class PageResponse extends AbstractResponse {
 	private String  header;
 	@Schema(description = "The body text of the page", example = "<H1>Hello world!</H1>")
 	private String  body;
+	@Schema(description = "Optional styling of the page", example = "body { background-color: #FFFFFF; }")
+	private String pageStyle;
 	@Schema(description = "Date when the page was last published, null if never", example = "2022-05-13T16:03:44Z")
 	@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
 	private Instant published;

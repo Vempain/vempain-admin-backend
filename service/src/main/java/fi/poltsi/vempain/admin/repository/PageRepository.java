@@ -10,7 +10,7 @@ import java.util.List;
 @Repository
 public interface PageRepository extends ListPagingAndSortingRepository<Page, Long>, CrudRepository<Page, Long> {
 	// TODO Filter all results through ACL check so that we only return rows to which the user has permissions
-	Page findByPath(String path);
+	Page findByPagePath(String path);
 
 	Page findById(long id);
 

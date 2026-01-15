@@ -143,7 +143,7 @@ public class WebSiteAclService {
 													 .resourceType(PAGE)
 													 .resourceId(page.getId())
 													 .name(page.getTitle())
-													 .path(page.getPath())
+													 .path(page.getFilePath())
 													 .aclId(page.getAclId())
 													 .fileType("Page")
 													 .build());

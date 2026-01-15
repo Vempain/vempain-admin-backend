@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS gps_location
 CREATE TABLE site_file
 (
 	id                BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	file_id BIGINT NOT NULL UNIQUE,
 	acl_id            BIGINT        NOT NULL UNIQUE,
 	file_name         VARCHAR(255)  NOT NULL,
 	file_path         VARCHAR(2048) NOT NULL,
@@ -182,23 +183,24 @@ CREATE TABLE language
 
 CREATE TABLE page
 (
-	id        BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	acl_id    BIGINT       NOT NULL UNIQUE,
-	body      TEXT         NOT NULL,
-	form_id   BIGINT       NOT NULL,
-	header    VARCHAR(512) NOT NULL,
-	indexlist BOOLEAN      NOT NULL DEFAULT false,
-	parent_id BIGINT,
-	path      VARCHAR(255) NOT NULL UNIQUE,
-	secure    BOOLEAN      NOT NULL DEFAULT true,
-	title     VARCHAR(512) NOT NULL,
-	cache     TEXT,
-	locked    BOOLEAN      NOT NULL DEFAULT false,
-	creator   BIGINT       NOT NULL,
-	created   TIMESTAMP    NOT NULL,
-	modifier  BIGINT,
-	modified  TIMESTAMP,
-	published TIMESTAMP             DEFAULT NULL,
+	id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	acl_id     BIGINT        NOT NULL UNIQUE,
+	body       TEXT          NOT NULL,
+	page_style TEXT                   DEFAULT NULL,
+	form_id    BIGINT        NOT NULL,
+	header     VARCHAR(512)  NOT NULL,
+	indexlist  BOOLEAN       NOT NULL DEFAULT false,
+	parent_id  BIGINT,
+	page_path  VARCHAR(1024) NOT NULL UNIQUE,
+	secure     BOOLEAN       NOT NULL DEFAULT true,
+	title      VARCHAR(512)  NOT NULL,
+	cache      TEXT,
+	locked     BOOLEAN       NOT NULL DEFAULT false,
+	creator    BIGINT        NOT NULL,
+	created    TIMESTAMP     NOT NULL,
+	modifier   BIGINT,
+	modified   TIMESTAMP,
+	published  TIMESTAMP              DEFAULT NULL,
 	FOREIGN KEY (creator) REFERENCES user_account (id),
 	FOREIGN KEY (modifier) REFERENCES user_account (id),
 	FOREIGN KEY (form_id) REFERENCES form (id),
@@ -260,15 +262,23 @@ INSERT INTO acl (id, acl_id, create_privilege, delete_privilege, modify_privileg
 VALUES (1, 1, true, true, true, true, NULL, 1),
 	   (2, 2, true, true, true, true, NULL, 1),
 	   (3, 3, true, true, true, true, NULL, 1),
-	   (4, 4, true, true, true, true, NULL, 1);
+	   (4, 4, true, true, true, true, NULL, 1),
+	   (5, 1000, true, true, true, true, NULL, 1);
 
-SELECT setval('acl_id_seq', (SELECT MAX(id) + 1 FROM acl));
+SELECT setval('acl_id_seq', 2000);
 
 INSERT INTO unit (id, acl_id, created, creator, locked, modified, modifier, description, name)
 	OVERRIDING SYSTEM VALUE
 VALUES (1, 2, NOW(), 1, false, null, null, 'Admin group', 'Admin'),
 	   (2, 3, NOW(), 1, false, null, null, 'Poweruser group', 'Poweruser'),
 	   (3, 4, NOW(), 1, false, null, null, 'Editor group', 'Editor');
+
+INSERT INTO site_file (id, file_id, acl_id, file_name, file_path, mime_type, size, file_type, sha256sum, comment, metadata, width, height, length, pages,
+					   original_datetime, rights_holder, rights_terms, rights_url, creator_name, creator_email, creator_country, creator_url, locked,
+					   creator, created, modifier, modified)
+	OVERRIDING SYSTEM VALUE
+VALUES (1, 1, 1000, 'default-style.json', 'document/site', 'text/css', 0, 'DOCUMENT', 'd41d8cd98f00b204e9800998ecf8427e',
+		'Default site style file', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, 1, NOW(), NULL, NULL);
 
 SELECT setval('unit_id_seq', (SELECT MAX(id) + 1 FROM unit));
 

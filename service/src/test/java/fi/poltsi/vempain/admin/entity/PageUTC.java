@@ -44,7 +44,7 @@ class PageUTC {
 
 	@Test
 	void getPathOk() {
-		assertEquals("/index", page.getPath());
+		assertEquals("/index", page.getPagePath());
 	}
 
 	@Test
@@ -86,8 +86,8 @@ class PageUTC {
 
 	@Test
 	void setPathOk() {
-		page.setPath("/index2");
-		assertEquals("/index2", page.getPath());
+		page.setPagePath("/index2");
+		assertEquals("/index2", page.getPagePath());
 	}
 
 	@Test

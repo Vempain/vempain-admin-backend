@@ -1,22 +1,23 @@
 CREATE TABLE web_site_page
 (
-	id        BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	page_id   BIGINT                      NOT NULL,
-	acl_id    BIGINT                      DEFAULT NULL,
-	body      TEXT,
-	header    VARCHAR(512)                NOT NULL,
-	indexlist BOOLEAN                     NOT NULL,
-	parent_id BIGINT                      DEFAULT NULL,
-	path      VARCHAR(255)                NOT NULL,
-	secure    BOOLEAN                     NOT NULL,
-	title     VARCHAR(512)                NOT NULL,
-	creator   VARCHAR(512)                NOT NULL,
-	created   TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-	modifier  VARCHAR(512)                DEFAULT NULL,
-	modified  TIMESTAMP WITHOUT TIME ZONE DEFAULT NULL,
-	published TIMESTAMP WITHOUT TIME ZONE DEFAULT NULL,
-	cache  TEXT DEFAULT NULL,
-	embeds TEXT DEFAULT NULL
+	id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	page_id    BIGINT                      NOT NULL,
+	acl_id     BIGINT                      DEFAULT NULL,
+	body       TEXT,
+	page_style TEXT                        DEFAULT NULL,
+	header     VARCHAR(512)                NOT NULL,
+	indexlist  BOOLEAN                     NOT NULL,
+	parent_id  BIGINT                      DEFAULT NULL,
+	file_path  VARCHAR(255)                NOT NULL,
+	secure     BOOLEAN                     NOT NULL,
+	title      VARCHAR(512)                NOT NULL,
+	creator    VARCHAR(512)                NOT NULL,
+	created    TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+	modifier   VARCHAR(512)                DEFAULT NULL,
+	modified   TIMESTAMP WITHOUT TIME ZONE DEFAULT NULL,
+	published  TIMESTAMP WITHOUT TIME ZONE DEFAULT NULL,
+	cache      TEXT                        DEFAULT NULL,
+	embeds     TEXT                        DEFAULT NULL
 );
 
 
