@@ -21,6 +21,9 @@ public class SiteFileResponse {
 	@Schema(description = "Unique identifier of the file", example = "1")
 	private Long id;
 
+	@Schema(description = "Original identifier of the file in File service", example = "1")
+	private Long fileId;
+
 	@Schema(description = "Name of the file", example = "example.jpg")
 	private String fileName;
 

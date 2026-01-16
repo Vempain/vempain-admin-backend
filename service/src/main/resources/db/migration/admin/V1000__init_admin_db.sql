@@ -280,6 +280,8 @@ INSERT INTO site_file (id, file_id, acl_id, file_name, file_path, mime_type, siz
 VALUES (1, 1, 1000, 'default-style.json', 'document/site', 'text/css', 0, 'DOCUMENT', 'd41d8cd98f00b204e9800998ecf8427e',
 		'Default site style file', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, 1, NOW(), NULL, NULL);
 
+SELECT setval('site_file_id_seq', (SELECT MAX(id) + 1 FROM site_file));
+
 SELECT setval('unit_id_seq', (SELECT MAX(id) + 1 FROM unit));
 
 SELECT setval('acl_acl_id_seq', (SELECT MAX(acl_id) + 1 FROM acl));

@@ -142,7 +142,25 @@ class PageUTC {
 
 	@Test
 	void allArgsConstructorOk() {
-		Page newPage = new Page(0L, 1L, "/index", true, true, "Test title", "Test header", "Test body", null);
+		Page newPage = Page.builder()
+						   .id(0L)
+						   .parentId(1L)
+						   .formId(1L)
+						   .pagePath("/index")
+						   .secure(true)
+						   .indexList(true)
+						   .title("Test title")
+						   .header("Test header")
+						   .body("Test body")
+						   .pageStyle(null)
+						   .published(null)
+						   .creator(null)
+						   .created(null)
+						   .modifier(null)
+						   .modified(null)
+						   .aclId(0L)
+						   .build();
+
 		assertNull(newPage.getCreator());
 	}
 }

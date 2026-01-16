@@ -4,7 +4,9 @@ import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.entity.Subject;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.service.SubjectService;
+import fi.poltsi.vempain.admin.service.file.SiteFileService;
 import fi.poltsi.vempain.file.api.FileTypeEnum;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -13,11 +15,12 @@ import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@Slf4j
 class SiteFileRepositoryITC extends AbstractITCTest {
 	@Autowired
-	private SubjectRepository subjectRepository;
-	@Autowired
 	private SubjectService    subjectService;
+	@Autowired
+	private SiteFileService siteFileService;
 
 	@Test
 	void getSubjectsByFileId() {
@@ -29,10 +32,14 @@ class SiteFileRepositoryITC extends AbstractITCTest {
 							 .subjectNameEn("en")
 							 .subjectNameFi("fi")
 							 .subjectNameSe("se")
+							 .subjectNameEs("es")
 							 .build();
-		subject = subjectRepository.save(subject);
-
+		subject = subjectService.save(subject);
+		log.info("Created subject with id {}", subject.getId());
+		var nextFileId = siteFileRepository.findMaxFileId();
+		nextFileId++;
 		var siteFile = SiteFile.builder()
+							   .fileId(nextFileId)
 							   .filePath("filePath")
 							   .fileName("fileName")
 							   .mimeType("image/jpeg")
@@ -44,9 +51,9 @@ class SiteFileRepositoryITC extends AbstractITCTest {
 							   .modified(Instant.now())
 							   .build();
 
-		siteFile = siteFileRepository.save(siteFile);
-
-		subjectService.addSubjectToFile(subject.getId(), siteFile.getId());
+		siteFile = siteFileService.save(siteFile);
+		log.info("Created site file with id {}", siteFile.getId());
+		subjectService.addSubjectToFile(siteFile.getId(), subject.getId());
 
 		var subjects = subjectService.getSubjectsByFileId(siteFile.getId());
 
@@ -58,7 +65,10 @@ class SiteFileRepositoryITC extends AbstractITCTest {
 		var userId = testITCTools.generateUser();
 
 		var aclId1 = testITCTools.generateAcl(userId, null, true, true, true, true);
+		var nextFileId = siteFileRepository.findMaxFileId();
+		nextFileId++;
 		var siteFile1 = SiteFile.builder()
+								.fileId(nextFileId)
 								.aclId(aclId1)
 								.filePath("path1")
 								.fileName("file1")
@@ -73,7 +83,9 @@ class SiteFileRepositoryITC extends AbstractITCTest {
 		siteFileRepository.save(siteFile1);
 
 		var aclId2 = testITCTools.generateAcl(userId, null, true, true, true, true);
+		nextFileId++;
 		var siteFile2 = SiteFile.builder()
+								.fileId(nextFileId)
 								.aclId(aclId2)
 								.filePath("path2")
 								.fileName("file2")

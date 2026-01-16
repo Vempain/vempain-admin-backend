@@ -70,4 +70,7 @@ public interface SiteFileRepository extends ListPagingAndSortingRepository<SiteF
 			return siteFile;
 		});
 	}
+
+	@Query("SELECT MAX(s.fileId) FROM SiteFile s")
+	Long findMaxFileId();
 }
