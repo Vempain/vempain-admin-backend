@@ -104,7 +104,7 @@ class PageServiceUTC {
 	@Test
 	void findByPathOk() {
 		Page page = TestUTCTools.generatePage(1L);
-		when(pageRepository.findByPath("/index")).thenReturn(page);
+		when(pageRepository.findByPagePath("/index")).thenReturn(page);
 
 		try {
 			Page response = pageService.findByPath("/index");
@@ -116,7 +116,7 @@ class PageServiceUTC {
 
 	@Test
 	void findByPathNoResultFail() {
-		when(pageRepository.findByPath("/index")).thenReturn(null);
+		when(pageRepository.findByPagePath("/index")).thenReturn(null);
 
 		try {
 			pageService.findByPath("/index");
@@ -145,7 +145,7 @@ class PageServiceUTC {
 		Page page = TestUTCTools.generatePage(1L);
 		PageRequest request = TestUTCTools.generatePageRequestFromPage(page);
 		when(accessService.getValidUserId()).thenReturn(1L);
-		when(pageRepository.findByPath(request.getPath())).thenReturn(null);
+		when(pageRepository.findByPagePath(request.getPath())).thenReturn(null);
 		when(aclService.saveNewAclForObject(request.getAcls())).thenReturn(1L);
 		when(pageRepository.save(any())).thenReturn(page);
 
@@ -183,7 +183,7 @@ class PageServiceUTC {
 		Page page = TestUTCTools.generatePage(1L);
 		PageRequest request = TestUTCTools.generatePageRequestFromPage(page);
 		when(accessService.getValidUserId()).thenReturn(1L);
-		when(pageRepository.findByPath(request.getPath())).thenReturn(page);
+		when(pageRepository.findByPagePath(request.getPath())).thenReturn(page);
 
 		try {
 			pageService.saveFromPageRequest(request);
@@ -282,8 +282,8 @@ class PageServiceUTC {
 		when(accessService.hasModifyPermission(page.getAclId())).thenReturn(true);
 		request.setPath("/new-path");
 		Page page2 = TestUTCTools.generatePage(2L);
-		page2.setPath("/new-path");
-		when(pageRepository.findByPath(request.getPath())).thenReturn(page2);
+		page2.setPagePath("/new-path");
+		when(pageRepository.findByPagePath(request.getPath())).thenReturn(page2);
 
 		try {
 			pageService.updateFromRequest(request);
@@ -304,7 +304,7 @@ class PageServiceUTC {
 		when(pageRepository.findById(request.getId())).thenReturn(page);
 		when(accessService.hasModifyPermission(page.getAclId())).thenReturn(true);
 		request.setPath("/new-path");
-		when(pageRepository.findByPath(request.getPath())).thenReturn(page);
+		when(pageRepository.findByPagePath(request.getPath())).thenReturn(page);
 		when(accessService.hasModifyPermission(page.getAclId())).thenReturn(true);
 		doNothing().when(aclService)
 				   .updateFromRequestList(request.getAcls());
@@ -316,7 +316,7 @@ class PageServiceUTC {
 			assertEquals(request.getHeader(), response.getHeader());
 			assertEquals(request.getTitle(), response.getTitle());
 			assertEquals(request.getBody(), response.getBody());
-			assertEquals(request.getPath(), response.getPath());
+			assertEquals(request.getPath(), response.getPagePath());
 		} catch (Exception e) {
 			fail("Should not have received an exception: " + e);
 		}
@@ -330,7 +330,7 @@ class PageServiceUTC {
 		when(pageRepository.findById(request.getId())).thenReturn(page);
 		when(accessService.hasModifyPermission(page.getAclId())).thenReturn(true);
 		request.setPath("/new-path");
-		when(pageRepository.findByPath(request.getPath())).thenReturn(null);
+		when(pageRepository.findByPagePath(request.getPath())).thenReturn(null);
 		when(accessService.hasModifyPermission(page.getAclId())).thenReturn(true);
 		doNothing().when(aclService)
 				   .updateFromRequestList(request.getAcls());
@@ -342,7 +342,7 @@ class PageServiceUTC {
 			assertEquals(request.getHeader(), response.getHeader());
 			assertEquals(request.getTitle(), response.getTitle());
 			assertEquals(request.getBody(), response.getBody());
-			assertEquals(request.getPath(), response.getPath());
+			assertEquals(request.getPath(), response.getPagePath());
 		} catch (Exception e) {
 			fail("Should not have received an exception: " + e);
 		}

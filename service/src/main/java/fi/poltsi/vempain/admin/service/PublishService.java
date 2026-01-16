@@ -138,12 +138,13 @@ public class PublishService {
 
 		webSitePage.setPageId(page.getId());
 		webSitePage.setParentId(page.getParentId());
-		webSitePage.setPath(page.getPath());
+		webSitePage.setFilePath(page.getPagePath());
 		webSitePage.setSecure(page.isSecure());
 		webSitePage.setIndexList(page.isIndexList());
 		webSitePage.setTitle(page.getTitle());
 		webSitePage.setHeader(page.getHeader());
 		webSitePage.setBody(pageBody);
+		webSitePage.setPageStyle(page.getPageStyle());
 		webSitePage.setCreator(creator);
 		webSitePage.setCreated(page.getCreated());
 		webSitePage.setModifier(modifier);

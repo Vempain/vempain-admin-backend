@@ -123,7 +123,7 @@ public class SubjectService {
 		return subject;
 	}
 
-	@Transactional(propagation = Propagation.REQUIRED)
+	@Transactional
 	public void addSubjectToFile(Long siteFileId, Long subjectId) {
 		entityManager.createNativeQuery(
 							 "INSERT INTO file_subject (site_file_id, subject_id) VALUES (:siteFileId, :subjectId)")
@@ -141,5 +141,10 @@ public class SubjectService {
 
 	public List<Subject> getSubjectsByFileId(long fileCommonId) {
 		return subjectRepository.getSubjectsByFileId(fileCommonId);
+	}
+
+	@Transactional
+	public Subject save(Subject subject) {
+		return subjectRepository.save(subject);
 	}
 }

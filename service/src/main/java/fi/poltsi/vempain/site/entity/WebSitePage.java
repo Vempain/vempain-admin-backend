@@ -34,8 +34,8 @@ public class WebSitePage {
 	@Column(name = "parent_id")
 	private   Long    parentId;
 
-	@Column(name = "path", nullable = false)
-	private   String  path;
+	@Column(name = "file_path", nullable = false)
+	private String filePath;
 
 	@Column(name = "secure", nullable = false)
 	private   boolean secure;
@@ -51,6 +51,9 @@ public class WebSitePage {
 
 	@Column(name = "body", nullable = false, length = 524288)
 	private   String  body;
+
+	@Column(name = "page_style", length = 524288)
+	private String pageStyle;
 
 	@Column(name = "creator", nullable = false, length = 512)
 	private   String  creator;

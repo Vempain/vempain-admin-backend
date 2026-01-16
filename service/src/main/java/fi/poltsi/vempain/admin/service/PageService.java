@@ -55,7 +55,7 @@ public class PageService {
 	}
 
 	public Page findByPath(String path) throws VempainEntityNotFoundException {
-		var page = pageRepository.findByPath(path);
+		var page = pageRepository.findByPagePath(path);
 
 		if (page == null) {
 			log.error("Could not find a page with path: {}", path);
@@ -93,7 +93,7 @@ public class PageService {
 									  .trim())
 					   .title(request.getTitle()
 									 .trim())
-					   .path(request.getPath())
+					   .pagePath(request.getPath())
 					   .body(request.getBody()
 									.trim())
 					   .indexList(request.isIndexList())
@@ -158,9 +158,9 @@ public class PageService {
 		// If the path is updated, then make sure it is not already used by some other page
 		if (!request.getPath()
 					.trim()
-					.equals(page.getPath()
+					.equals(page.getPagePath()
 								.trim())) {
-			log.debug("User is updating the path of page ID {} from {} to {}", request.getId(), page.getPath(), request.getPath());
+			log.debug("User is updating the path of page ID {} from {} to {}", request.getId(), page.getPagePath(), request.getPath());
 
 			try {
 				var pathPage = findByPath(request.getPath()
@@ -173,7 +173,7 @@ public class PageService {
 					throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST);
 				}
 			} catch (VempainEntityNotFoundException e) {
-				log.info("Page path can be updated from {} to {}", page.getPath(), request.getPath());
+				log.info("Page path can be updated from {} to {}", page.getPagePath(), request.getPath());
 			}
 		}
 
@@ -189,8 +189,8 @@ public class PageService {
 		try {
 			page.setBody(request.getBody()
 								.trim());
-			page.setPath(request.getPath()
-								.trim());
+			page.setPagePath(request.getPath()
+									.trim());
 			page.setTitle(request.getTitle()
 								 .trim());
 			page.setHeader(request.getHeader()
@@ -221,7 +221,7 @@ public class PageService {
 
 		if (!accessService.hasDeletePermission(page.getAclId())) {
 			log.error("User {} tried to delete page {} ({}) with insufficient permissions", userId, page.getId(),
-					  page.getPath());
+					  page.getPagePath());
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, VempainMessages.UNAUTHORIZED_ACCESS);
 		}
 

@@ -39,6 +39,9 @@ import java.time.Instant;
 @Table(name = "site_file", indexes = {@Index(name = "ux_site_file_path_name", columnList = "file_path, file_name", unique = true)})
 public class SiteFile extends AbstractVempainEntity implements Serializable {
 
+	@Column(name = "file_id", nullable = false)
+	private long fileId;
+
 	@Column(name = "file_name", nullable = false)
 	private String fileName;
 
@@ -107,6 +110,7 @@ public class SiteFile extends AbstractVempainEntity implements Serializable {
 	public SiteFileResponse toResponse() {
 		return SiteFileResponse.builder()
 							   .id(this.id)
+							   .fileId(this.fileId)
 							   .fileName(this.fileName)
 							   .filePath(this.filePath)
 							   .fileType(this.fileType)

@@ -76,7 +76,7 @@ class WebSiteResourceServiceUTC {
 							  .id(30L)
 							  .aclId(7L)
 							  .title("Page title")
-							  .path("/page")
+							  .filePath("/page")
 							  .build();
 
 		when(fileRepo.findAll(any(PageRequest.class))).thenAnswer(inv -> new PageImpl<>(List.of(file), inv.getArgument(0), 1));
@@ -138,9 +138,9 @@ class WebSiteResourceServiceUTC {
 									.id(7L)
 									.aclId(11L)
 									.title("Title X")
-									.path("/x/path")
+									.filePath("/x/path")
 									.build();
-		when(pageRepo.findByAclIdAndPathContainingIgnoreCase(anyLong(), anyString(), any()))
+		when(pageRepo.findByAclIdAndFilePathContainingIgnoreCase(anyLong(), anyString(), any()))
 				.thenAnswer(inv -> new PageImpl<>(List.of(pageEntity), inv.getArgument(2), 1));
 
 		WebSiteResourcePageResponse resp = service.listResources(WebSiteResourceEnum.PAGE, null, "search", 11L, "title", "asc", 0, 10);

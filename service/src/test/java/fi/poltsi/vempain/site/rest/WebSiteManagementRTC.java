@@ -81,7 +81,7 @@ class WebSiteManagementRTC {
 
 		pageRepository.save(WebSitePage.builder()
 									   .title("Home Page")
-									   .path("/home")
+									   .filePath("/home")
 									   .secure(false)
 									   .indexList(false)
 									   .aclId(300L)

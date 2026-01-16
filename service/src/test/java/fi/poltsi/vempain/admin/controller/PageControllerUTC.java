@@ -118,7 +118,7 @@ class PageControllerUTC {
 			PageResponse pageResponse = responseEntity.getBody();
 			assertNotNull(pageResponse);
 
-			assertEquals(page.getPath(), pageResponse.getPath());
+			assertEquals(page.getPagePath(), pageResponse.getPagePath());
 			assertEquals(page.getBody(), pageResponse.getBody());
 			assertEquals(page.getTitle(), pageResponse.getTitle());
 			assertEquals(page.getHeader(), pageResponse.getHeader());

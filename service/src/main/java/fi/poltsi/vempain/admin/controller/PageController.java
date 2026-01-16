@@ -49,7 +49,7 @@ public class PageController implements PageAPI {
 			for (Page page : pageList) {
 				responses.add(PageResponse.builder()
 										  .id(page.getId())
-										  .path(page.getPath())
+										  .pagePath(page.getPagePath())
 										  .build());
 			}
 		} else if (queryDetailEnum == QueryDetailEnum.UNPOPULATED) {
