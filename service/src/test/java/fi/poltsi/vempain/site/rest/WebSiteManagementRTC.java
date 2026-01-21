@@ -54,7 +54,7 @@ class WebSiteManagementRTC {
 		// rely on Flyway-seeded admin user
 
 		fileRepository.save(WebSiteFile.builder()
-									   .path("images/alpha.jpg")
+									   .filePath("images/alpha.jpg")
 									   .mimetype("image/jpeg")
 									   .fileType(FileTypeEnum.IMAGE)
 									   .aclId(100L)
@@ -62,7 +62,7 @@ class WebSiteManagementRTC {
 									   .metadata("{}")
 									   .build());
 		fileRepository.save(WebSiteFile.builder()
-									   .path("images/beta.jpg")
+									   .filePath("images/beta.jpg")
 									   .mimetype("image/jpeg")
 									   .fileType(FileTypeEnum.IMAGE)
 									   .aclId(101L)

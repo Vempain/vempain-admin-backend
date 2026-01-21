@@ -63,7 +63,7 @@ class WebSiteResourceServiceUTC {
 		var file = WebSiteFile.builder()
 							  .id(10L)
 							  .aclId(5L)
-							  .path("a/b/c.jpg")
+							  .filePath("a/b/c.jpg")
 							  .fileType(FileTypeEnum.IMAGE)
 							  .build();
 		var gallery = WebSiteGallery.builder()
@@ -96,7 +96,7 @@ class WebSiteResourceServiceUTC {
 		var file = WebSiteFile.builder()
 							  .id(2L)
 							  .aclId(5L)
-							  .path("x/y/z.png")
+							  .filePath("x/y/z.png")
 							  .fileType(FileTypeEnum.IMAGE)
 							  .build();
 		when(fileRepo.findAll(any(PageRequest.class))).thenAnswer(inv -> {
@@ -115,10 +115,10 @@ class WebSiteResourceServiceUTC {
 		var file = WebSiteFile.builder()
 							  .id(3L)
 							  .aclId(99L)
-							  .path("filtered/file.png")
+							  .filePath("filtered/file.png")
 							  .fileType(FileTypeEnum.IMAGE)
 							  .build();
-		when(fileRepo.findByAclIdAndFileTypeAndPathContainingIgnoreCase(eq(99L), eq(FileTypeEnum.IMAGE), eq("filtered"), any()))
+		when(fileRepo.findByAclIdAndFileTypeAndFilePathContainingIgnoreCase(eq(99L), eq(FileTypeEnum.IMAGE), eq("filtered"), any()))
 				.thenAnswer(inv -> new PageImpl<>(List.of(file), inv.getArgument(3), 1));
 
 		WebSiteResourcePageResponse resp = service.listResources(WebSiteResourceEnum.SITE_FILE, FileTypeEnum.IMAGE, "filtered", 99L, "id", "desc", 0, 25);

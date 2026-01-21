@@ -45,8 +45,8 @@ public class WebSiteFile {
 	@Column(name = "comment")
 	private String comment;
 
-	@Column(name = "path", nullable = false)
-	private String path;
+	@Column(name = "file_path", nullable = false)
+	private String filePath;
 
 	@Column(name = "mimetype", nullable = false)
 	private String mimetype;

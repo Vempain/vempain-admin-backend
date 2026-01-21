@@ -113,21 +113,21 @@ public class WebSiteResourceService {
 		// ACL filter precedence
 		if (aclId != null) {
 			if (fileType != null && query != null && !query.isBlank()) {
-				return siteFileRepository.findByAclIdAndFileTypeAndPathContainingIgnoreCase(aclId, fileType, query, pageable);
+				return siteFileRepository.findByAclIdAndFileTypeAndFilePathContainingIgnoreCase(aclId, fileType, query, pageable);
 			} else if (fileType != null) {
 				return siteFileRepository.findByAclIdAndFileType(aclId, fileType, pageable);
 			} else if (query != null && !query.isBlank()) {
-				return siteFileRepository.findByAclIdAndPathContainingIgnoreCase(aclId, query, pageable);
+				return siteFileRepository.findByAclIdAndFilePathContainingIgnoreCase(aclId, query, pageable);
 			}
 			return siteFileRepository.findByAclId(aclId, pageable);
 		}
 
 		if (fileType != null && query != null && !query.isBlank()) {
-			return siteFileRepository.findByFileTypeAndPathContainingIgnoreCase(fileType, query, pageable);
+			return siteFileRepository.findByFileTypeAndFilePathContainingIgnoreCase(fileType, query, pageable);
 		} else if (fileType != null) {
 			return siteFileRepository.findByFileType(fileType, pageable);
 		} else if (query != null && !query.isBlank()) {
-			return siteFileRepository.findByPathContainingIgnoreCase(query, pageable);
+			return siteFileRepository.findByFilePathContainingIgnoreCase(query, pageable);
 		}
 
 		return siteFileRepository.findAll(pageable);
@@ -226,8 +226,8 @@ public class WebSiteResourceService {
 		var items = page.map(file -> WebSiteResourceResponse.builder()
 																					  .resourceType(WebSiteResourceEnum.SITE_FILE)
 																					  .resourceId(file.getId())
-																					  .name(file.getPath())
-																					  .path(file.getPath())
+															.name(file.getFilePath())
+															.path(file.getFilePath())
 																					  .aclId(file.getAclId())
 																					  .fileType(file.getFileType() != null ? file.getFileType().shortName : null)
 																					  .build())
@@ -345,8 +345,8 @@ public class WebSiteResourceService {
 		return filePage.map(file -> WebSiteResourceResponse.builder()
 														   .resourceType(WebSiteResourceEnum.SITE_FILE)
 														   .resourceId(file.getId())
-														   .name(file.getPath())
-														   .path(file.getPath())
+														   .name(file.getFilePath())
+														   .path(file.getFilePath())
 														   .aclId(file.getAclId())
 														   .fileType(file.getFileType() != null ? file.getFileType().shortName : null)
 														   .build())
