@@ -277,7 +277,7 @@ public class PublishService {
 			// When creating
 			var webSiteFile = siteFile.toWebSiteFile();
 			webSiteFile.setAclId(webSiteResourceService.getNextWebSiteAcl());
-			webSiteFile.setPath(siteFile.getFileType().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName());
+			webSiteFile.setFilePath(siteFile.getFileType().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName());
 			webSiteFile.setLocation(webLocation);
 
 			log.debug("Saving web site file: {} with metadata length {} from siteFile metadata length {}", toJson(webSiteFile),

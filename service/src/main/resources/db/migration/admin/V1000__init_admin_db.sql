@@ -284,5 +284,5 @@ SELECT setval('site_file_id_seq', (SELECT MAX(id) + 1 FROM site_file));
 
 SELECT setval('unit_id_seq', (SELECT MAX(id) + 1 FROM unit));
 
-SELECT setval('acl_acl_id_seq', (SELECT MAX(acl_id) + 1 FROM acl));
+SELECT setval('acl_acl_id_seq', 2000);
 

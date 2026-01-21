@@ -144,7 +144,7 @@ public class SiteFile extends AbstractVempainEntity implements Serializable {
 						  .fileId(this.id)
 						  .aclId(this.aclId)
 						  .comment(this.comment)
-						  .path(this.filePath + File.pathSeparator + this.fileName)
+						  .filePath(this.filePath + File.pathSeparator + this.fileName)
 						  .mimetype(this.mimeType)
 						  .fileType(this.fileType)
 						  .originalDateTime(this.originalDateTime)

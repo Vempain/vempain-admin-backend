@@ -20,7 +20,6 @@ CREATE TABLE web_site_page
 	embeds     TEXT                        DEFAULT NULL
 );
 
-
 CREATE TABLE IF NOT EXISTS web_gps_location
 (
 	id              BIGINT PRIMARY KEY,
@@ -44,7 +43,7 @@ CREATE TABLE web_site_file
 	file_id           BIGINT       NOT NULL,
 	acl_id            BIGINT       NOT NULL,
 	comment           TEXT   DEFAULT NULL,
-	path              VARCHAR(512) NOT NULL,
+	file_path VARCHAR(512) NOT NULL,
 	mimetype          VARCHAR(255) NOT NULL,
 	file_type         VARCHAR(100) NOT NULL,
 	original_datetime TIMESTAMPTZ  NULL,
@@ -165,5 +164,11 @@ CREATE TABLE web_site_configuration
 
 INSERT INTO web_site_configuration (config_key, config_type, config_default, config_value)
 VALUES ('site.name', 'STRING', 'My Web Site', 'My Web Site'),
-	   ('site.description', 'STRING', 'A description of my web site.', 'A description of my web site.')
-;
+	   ('site.description', 'STRING', 'A description of my web site.', 'A description of my web site.');
+
+INSERT INTO web_site_file (id, file_id, acl_id, file_path, mimetype, file_type, creator_name, creator_email, creator_country, creator_url)
+	OVERRIDING SYSTEM VALUE
+VALUES (1, 1, 1, 'document/site/default-style.json', 'application/json', 'DOCUMENT', 'Admin', '', '', '');
+
+SELECT setval('web_site_file_id_seq', 1000);
+SELECT setval('web_site_acl_id_seq', 2000);
