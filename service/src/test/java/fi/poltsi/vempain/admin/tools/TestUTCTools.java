@@ -306,7 +306,7 @@ public class TestUTCTools {
 						  .id(page.getId())
 						  .parentId(page.getParentId())
 						  .formId(page.getFormId())
-						  .path(page.getPagePath())
+						  .pagePath(page.getPagePath())
 						  .secure(page.isSecure())
 						  .indexList(page.isIndexList())
 						  .title(page.getTitle())

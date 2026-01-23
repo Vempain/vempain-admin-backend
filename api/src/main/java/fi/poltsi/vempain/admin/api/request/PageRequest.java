@@ -20,8 +20,8 @@ public class PageRequest extends BaseRequest {
 	private Long    parentId;
 	@Schema(description = "Form ID", example = "1")
 	private Long    formId;
-	@Schema(description = "URL path", example = "1")
-	private String  path;
+	@Schema(description = "URL path", example = "Some/path/to/page")
+	private String pagePath;
 	@Schema(description = "Does the page require HTTPS", example = "true")
 	private boolean secure;
 	@Schema(description = "Should this page contain an index of the URL path", example = "true")
