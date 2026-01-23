@@ -143,7 +143,7 @@ class PageControllerUTC {
 
 		for (String invalidPath : invalidPaths) {
 			PageRequest pageRequest = TestUTCTools.generatePageRequest(1L);
-			pageRequest.setPath(invalidPath);
+			pageRequest.setPagePath(invalidPath);
 			malformedPageRequest(pageRequest);
 		}
 	}

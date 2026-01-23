@@ -76,12 +76,12 @@ public class PageService {
 		var userId = accessService.getValidUserId();
 
 		try {
-			log.debug("Checking if path of the new page already exists: {}", request.getPath());
-			var otherPage = findByPath(request.getPath());
-			log.error("Page already exists with path {}. ID {}", request.getPath(), otherPage.getId());
+			log.debug("Checking if path of the new page already exists: {}", request.getPagePath());
+			var otherPage = findByPath(request.getPagePath());
+			log.error("Page already exists with path {}. ID {}", request.getPagePath(), otherPage.getId());
 			throw new ResponseStatusException(HttpStatus.CONFLICT, VempainMessages.OBJECT_NAME_ALREADY_EXISTS);
 		} catch (VempainEntityNotFoundException e) {
-			log.info("No page with path {} found, can save it", request.getPath());
+			log.info("No page with path {} found, can save it", request.getPagePath());
 		}
 
 		long aclId = aclService.saveNewAclForObject(request.getAcls());
@@ -93,7 +93,7 @@ public class PageService {
 									  .trim())
 					   .title(request.getTitle()
 									 .trim())
-					   .pagePath(request.getPath())
+					   .pagePath(request.getPagePath())
 					   .body(request.getBody()
 									.trim())
 					   .indexList(request.isIndexList())
@@ -156,24 +156,24 @@ public class PageService {
 		}
 
 		// If the path is updated, then make sure it is not already used by some other page
-		if (!request.getPath()
+		if (!request.getPagePath()
 					.trim()
 					.equals(page.getPagePath()
 								.trim())) {
-			log.debug("User is updating the path of page ID {} from {} to {}", request.getId(), page.getPagePath(), request.getPath());
+			log.debug("User is updating the path of page ID {} from {} to {}", request.getId(), page.getPagePath(), request.getPagePath());
 
 			try {
-				var pathPage = findByPath(request.getPath()
+				var pathPage = findByPath(request.getPagePath()
 												 .trim());
 
 				if (!pathPage.getId()
 							 .equals(page.getId())) {
-					log.error("Failed to update page as the path {} already exists and belongs to page ID {}", request.getPath()
+					log.error("Failed to update page as the path {} already exists and belongs to page ID {}", request.getPagePath()
 																													  .trim(), pathPage.getId());
 					throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST);
 				}
 			} catch (VempainEntityNotFoundException e) {
-				log.info("Page path can be updated from {} to {}", page.getPagePath(), request.getPath());
+				log.info("Page path can be updated from {} to {}", page.getPagePath(), request.getPagePath());
 			}
 		}
 
@@ -189,7 +189,7 @@ public class PageService {
 		try {
 			page.setBody(request.getBody()
 								.trim());
-			page.setPagePath(request.getPath()
+			page.setPagePath(request.getPagePath()
 									.trim());
 			page.setTitle(request.getTitle()
 								 .trim());

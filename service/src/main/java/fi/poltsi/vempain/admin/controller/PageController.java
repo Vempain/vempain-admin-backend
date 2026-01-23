@@ -252,8 +252,8 @@ public class PageController implements PageAPI {
 
 	private void verifyPageRequest(PageRequest pageRequest) {
 		if (pageRequest == null
-			|| (pageRequest.getPath() == null || pageRequest.getPath()
-															.isBlank())
+			|| (pageRequest.getPagePath() == null || pageRequest.getPagePath()
+																.isBlank())
 			|| (pageRequest.getTitle() == null || pageRequest.getTitle()
 															 .isBlank())
 			|| (pageRequest.getHeader() == null || pageRequest.getHeader()
