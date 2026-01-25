@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -270,21 +269,11 @@ public class WebSiteResourceService {
 	}
 
 	public long getNextWebSiteAcl() {
-		accessService.checkAuthentication();
-
-		Long maxFileAcl = siteEntityManager.createQuery("SELECT MAX(f.aclId) FROM WebSiteFile f", Long.class)
-										   .getSingleResult();
-		Long maxGalleryAcl = siteEntityManager.createQuery("SELECT MAX(g.aclId) FROM WebSiteGallery g", Long.class)
-											  .getSingleResult();
-		Long maxPageAcl = siteEntityManager.createQuery("SELECT MAX(p.aclId) FROM WebSitePage p", Long.class)
-										   .getSingleResult();
-		log.debug("Max ACLs - File: {}, Gallery: {}, Page: {}", maxFileAcl, maxGalleryAcl, maxPageAcl);
-
-		var maxAcl = Stream.of(maxFileAcl, maxGalleryAcl, maxPageAcl)
-							.filter(java.util.Objects::nonNull)
-							.max(Long::compareTo)
-							.orElse(0L);
-		return maxAcl == 0L ? 1L : maxAcl + 1;
+		long nextAcl = siteEntityManager.createQuery("SELECT nextval('web_site_acl_id_seq')", Long.class)
+										.getSingleResult();
+		;
+		log.debug("Next web site ACL ID: {}", nextAcl);
+		return nextAcl;
 	}
 
 	private WebSiteResourcePageResponse listAllResourceTypes(String query, Long aclId, Sort sortSpec, int safePage, int safeSize) {

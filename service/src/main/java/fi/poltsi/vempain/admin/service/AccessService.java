@@ -88,7 +88,7 @@ public class AccessService {
 
 	/**
 	 * Returns the user ID of the currently authenticated user.
-	 * If the user is not authenticated, an frontend compatible exception is thrown.
+	 * If the user is not authenticated, a frontend compatible exception is thrown.
 	 *
 	 * @return the user ID of the authenticated user
 	 * @throws ResponseStatusException if the user session is invalid
