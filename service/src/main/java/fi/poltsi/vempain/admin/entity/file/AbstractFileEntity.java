@@ -29,7 +29,7 @@ public class AbstractFileEntity {
 	@Column(name = "id")
 	protected Long id;
 	@Basic
-	@Column(name = "parent_id")
+	@Column(name = "parent_id", nullable = false)
 	private   long parentId;
 
 	@Transient

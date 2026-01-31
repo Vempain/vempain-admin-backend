@@ -27,5 +27,7 @@ public class WebSiteUserRequest {
 	@Schema(description = "Plaintext password; required when creating a user or when explicitly changing it", example = "s3cr3t")
 	@Size(max = 255, message = "Password can be at most 255 characters")
 	private String password;
-}
 
+	@Schema(description = "Whether the user has global permission", example = "false")
+	private Boolean globalPermission;
+}

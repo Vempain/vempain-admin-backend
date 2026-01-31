@@ -38,7 +38,7 @@ public class WebSiteConfiguration {
 	@Column(name = "config_default", nullable = false, length = 4000)
 	private String configDefault;
 
-	@Column(name = "config_value", length = 4000)
+	@Column(name = "config_value", length = 4000, nullable = false)
 	private String configValue;
 
 	public WebSiteConfigurationResponse toResponse() {
