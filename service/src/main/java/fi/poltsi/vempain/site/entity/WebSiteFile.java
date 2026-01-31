@@ -36,10 +36,10 @@ public class WebSiteFile {
 	@Column(name = "id")
 	protected long id;
 
-	@Column(name = "file_id")
+	@Column(name = "file_id", nullable = false)
 	protected long fileId;
 
-	@Column(name = "acl_id")
+	@Column(name = "acl_id", nullable = false)
 	protected long aclId;
 
 	@Column(name = "comment")

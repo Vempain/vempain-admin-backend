@@ -26,10 +26,10 @@ public class WebSiteGallery {
 	@Column(name = "id")
 	private   long    id;
 
-	@Column(name = "acl_id")
+	@Column(name = "acl_id", nullable = false)
 	protected long aclId;
 
-	@Column(name = "gallery_id")
+	@Column(name = "gallery_id", nullable = false)
 	private long galleryId;
 
 	@Size(min = 2, max = 2000, message = "Description should be between 2 and 2000 characters")

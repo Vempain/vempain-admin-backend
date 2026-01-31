@@ -32,7 +32,9 @@ public class WebSiteUserResponse {
 	@Schema(description = "Modification timestamp", example = "2025-11-04T16:30:00Z")
 	Instant modified;
 
+	@Schema(description = "Whether the user has global permission", example = "false")
+	boolean globalPermission;
+
 	@Schema(description = "List of web sources assigned to this user")
 	List<WebSiteResourceResponse> resources;
 }
-

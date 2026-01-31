@@ -1,0 +1,1 @@
+ALTER TABLE web_site_users ADD COLUMN global_permission BOOLEAN DEFAULT FALSE NOT NULL;

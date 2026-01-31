@@ -46,6 +46,9 @@ public class WebSiteUser {
 	@Column(name = "modified")
 	private Instant modified;
 
+	@Column(name = "global_permission", nullable = false)
+	private boolean globalPermission;
+
 	public WebSiteUserResponse toResponse() {
 		return WebSiteUserResponse.builder()
 								  .id(this.id)
@@ -54,6 +57,7 @@ public class WebSiteUser {
 								  .created(this.created)
 								  .modifier(this.modifier)
 								  .modified(this.modified)
+								  .globalPermission(this.globalPermission)
 								  .resources(null)
 								  .build();
 	}
@@ -66,6 +70,7 @@ public class WebSiteUser {
 								  .created(this.created)
 								  .modifier(this.modifier)
 								  .modified(this.modified)
+								  .globalPermission(this.globalPermission)
 								  .resources(resources)
 								  .build();
 	}

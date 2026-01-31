@@ -38,7 +38,7 @@ public class Gallery extends AbstractVempainEntity implements Serializable {
 	private String description;
 	@Basic
 	@Size(min = 2, max = 256, message = "Description should be between 2 and 256 characters")
-	@Column(name = "shortname")
+	@Column(name = "shortname", nullable = false)
 	private String shortname;
 
 	@Transient

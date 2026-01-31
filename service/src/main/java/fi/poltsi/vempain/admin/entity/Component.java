@@ -26,10 +26,10 @@ import java.io.Serializable;
 @Table(name = "component")
 public class Component extends AbstractVempainEntity implements Serializable {
 	@Basic
-	@Column(name = "comp_name")
+	@Column(name = "comp_name", nullable = false)
 	private String compName;
 	@Basic
-	@Column(name = "comp_data", length = 524288)
+	@Column(name = "comp_data", length = 524288, nullable = false)
 	private String compData;
 
 	@JsonIgnore // We do a deep copy of Component by Jackson, so we need this annotation here

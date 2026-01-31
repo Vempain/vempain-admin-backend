@@ -21,7 +21,7 @@ import lombok.experimental.SuperBuilder;
 @ToString(callSuper = true)
 @Table(name = "layout")
 public class Layout extends AbstractVempainEntity {
-	@Column(name = "layout_name")
+	@Column(name = "layout_name", nullable = false)
 	private String layoutName;
 	@Column(name = "structure", length = 524288)
 	private String structure;

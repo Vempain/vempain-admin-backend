@@ -25,10 +25,10 @@ public class WebSitePage {
 	@Column(name = "id")
 	protected long    id;
 
-	@Column(name = "acl_id")
+	@Column(name = "acl_id", nullable = false)
 	protected long aclId;
 
-	@Column(name = "page_id")
+	@Column(name = "page_id", nullable = false)
 	protected long    pageId;
 
 	@Column(name = "parent_id")

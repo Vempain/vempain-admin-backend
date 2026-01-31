@@ -26,9 +26,9 @@ public class Language {
 	@Column(name = "id")
 	private int    id;
 	@Basic
-	@Column(name = "description")
+	@Column(name = "description", nullable = false)
 	private String description;
 	@Basic
-	@Column(name = "shortname", length = 2)
+	@Column(name = "shortname", length = 2, nullable = false)
 	private String shortname;
 }

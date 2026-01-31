@@ -98,6 +98,7 @@ public class WebSiteUserService {
 		WebSiteUser user = WebSiteUser.builder()
 									  .username(request.getUsername())
 									  .passwordHash(passwordHash)
+									  .globalPermission(request.getGlobalPermission())
 									  .creator(adminUserId)
 									  .created(Instant.now())
 									  .build();
@@ -141,6 +142,7 @@ public class WebSiteUserService {
 			user.setPasswordHash(passwordHash);
 		}
 
+		user.setGlobalPermission(request.getGlobalPermission());
 		user.setModifier(adminUserId);
 		user.setModified(Instant.now());
 
