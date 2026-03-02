@@ -176,7 +176,7 @@ public class FileService {
 		Page<SiteFile> siteFiles;
 		Pageable pageable = sanitizePageable(pageRequest);
 
-		var normalizedFilterColumn = (filterColumn == null) ? "" : filterColumn.trim().toLowerCase(Locale.ROOT).replaceAll("_", "");
+		var normalizedFilterColumn = (filterColumn == null) ? "" : filterColumn.trim().toLowerCase(Locale.ROOT).replace("_", "");
 
 		if (filter == null || filter.isBlank()
 			|| filterColumn == null || filterColumn.isBlank()) {
