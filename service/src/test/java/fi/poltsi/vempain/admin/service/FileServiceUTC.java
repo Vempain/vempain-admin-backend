@@ -4,6 +4,7 @@ import fi.poltsi.vempain.admin.entity.file.Gallery;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.repository.file.FileThumbPageableRepository;
 import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
+import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.repository.file.SubjectRepository;
 import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.admin.service.file.FileThumbService;
@@ -16,6 +17,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
 import java.time.Instant;
@@ -28,7 +31,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,6 +58,8 @@ class FileServiceUTC {
 	private PageService                 pageService;
 	@Mock
 	private PageGalleryService          pageGalleryService;
+	@Mock
+	private SiteFileRepository          siteFileRepository;
 
 	@InjectMocks
 	private FileService fileService;
@@ -162,5 +169,77 @@ class FileServiceUTC {
 		} catch (Exception e) {
 			fail("Should not have received an exception", e);
 		}
+	}
+
+	@Test
+	void findAllSiteFilesAsPageableResponseFiltered_nullFilterColumn_fallsBackToFindByFileType() {
+		var pageRequest = PageRequest.of(0, 10);
+		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
+		when(siteFileRepository.findByFileType(eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
+
+		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum.IMAGE, pageRequest, "test", null);
+
+		assertNotNull(result);
+		verify(siteFileRepository).findByFileType(eq(FileTypeEnum.IMAGE), any());
+	}
+
+	@Test
+	void findAllSiteFilesAsPageableResponseFiltered_blankFilter_fallsBackToFindByFileType() {
+		var pageRequest = PageRequest.of(0, 10);
+		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
+		when(siteFileRepository.findByFileType(eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
+
+		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum.IMAGE, pageRequest, "  ", "filename");
+
+		assertNotNull(result);
+		verify(siteFileRepository).findByFileType(eq(FileTypeEnum.IMAGE), any());
+	}
+
+	@Test
+	void findAllSiteFilesAsPageableResponseFiltered_exactFilenameColumn_invokesFilenameRepository() {
+		var pageRequest = PageRequest.of(0, 10);
+		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
+		when(siteFileRepository.findByFileNameContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
+
+		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum.IMAGE, pageRequest, "test", "filename");
+
+		assertNotNull(result);
+		verify(siteFileRepository).findByFileNameContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any());
+	}
+
+	@Test
+	void findAllSiteFilesAsPageableResponseFiltered_underscoreFilenameColumn_normalizedAndInvokesFilenameRepository() {
+		var pageRequest = PageRequest.of(0, 10);
+		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
+		when(siteFileRepository.findByFileNameContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
+
+		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum.IMAGE, pageRequest, "test", "file_name");
+
+		assertNotNull(result);
+		verify(siteFileRepository).findByFileNameContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any());
+	}
+
+	@Test
+	void findAllSiteFilesAsPageableResponseFiltered_mixedCaseFilenameColumn_normalizedAndInvokesFilenameRepository() {
+		var pageRequest = PageRequest.of(0, 10);
+		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
+		when(siteFileRepository.findByFileNameContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
+
+		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum.IMAGE, pageRequest, "test", "FileName");
+
+		assertNotNull(result);
+		verify(siteFileRepository).findByFileNameContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any());
+	}
+
+	@Test
+	void findAllSiteFilesAsPageableResponseFiltered_unknownColumn_fallsBackToFindByFileType() {
+		var pageRequest = PageRequest.of(0, 10);
+		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
+		when(siteFileRepository.findByFileType(eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
+
+		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum.IMAGE, pageRequest, "test", "unknownColumn");
+
+		assertNotNull(result);
+		verify(siteFileRepository).findByFileType(eq(FileTypeEnum.IMAGE), any());
 	}
 }

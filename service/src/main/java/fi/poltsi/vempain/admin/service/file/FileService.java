@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
@@ -170,14 +171,18 @@ public class FileService {
 	// FileAudio
 	@Transactional(readOnly = true)
 	public PagedResponse<SiteFileResponse> findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum FileTypeEnum, PageRequest pageRequest, String filter, String filterColumn) {
+		log.debug("Fetching pageable site files with filter '{}' on column '{}' for file type {}", filter, filterColumn, FileTypeEnum);
+		log.debug("Page request: {}", pageRequest);
 		Page<SiteFile> siteFiles;
 		Pageable pageable = sanitizePageable(pageRequest);
+
+		var normalizedFilterColumn = (filterColumn == null) ? "" : filterColumn.trim().toLowerCase(Locale.ROOT).replace("_", "");
 
 		if (filter == null || filter.isBlank()
 			|| filterColumn == null || filterColumn.isBlank()) {
 			siteFiles = siteFileRepository.findByFileType(FileTypeEnum, pageable);
 		} else {
-			siteFiles = switch (filterColumn) {
+			siteFiles = switch (normalizedFilterColumn) {
 				case "filename" -> siteFileRepository.findByFileNameContainingIgnoreCaseAndFileType(filter, FileTypeEnum, pageable);
 				case "filepath" -> siteFileRepository.findByFilePathContainingIgnoreCaseAndFileType(filter, FileTypeEnum, pageable);
 				case "mimetype" -> siteFileRepository.findByMimeTypeContainingIgnoreCaseAndFileType(filter, FileTypeEnum, pageable);
