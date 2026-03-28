@@ -37,7 +37,6 @@ tasks.withType(Javadoc).configureEach {
 dependencies {
 	api "org.springframework.boot:spring-boot-jackson:${springBootVersion}"
 	api "org.springframework.boot:spring-boot-starter-webmvc:${springBootVersion}"
-	api "org.springframework.data:spring-data-jpa:${springBootVersion}"
 	// This needs to be built first in vempain-auth
 	api "fi.poltsi.vempain:vempain-auth-api:${vempainAuthVersion}"
 	api "fi.poltsi.vempain:vempain-file-backend-api:${vempainFileVersion}"
