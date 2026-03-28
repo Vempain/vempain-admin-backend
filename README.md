@@ -255,3 +255,4 @@ docker compose up -d
 The site database should ideally be accessed through a VPN or a private network such as Wireguard. If this is not possible, the database should be secured
 with a strong password and the database should be regularly backed up.
 
+[AGENTS.md](docs/AGENTS.md) has more detailed orientation and workflow guidance for agents working in this codebase.
