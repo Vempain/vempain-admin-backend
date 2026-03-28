@@ -59,13 +59,13 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-text
 	implementation "org.apache.commons:commons-text:1.15.0"
 	// https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui
-	implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1"
+	implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2"
 	runtimeOnly "org.postgresql:postgresql:${postgresqlVersion}"
 	implementation "org.json:json:${jsonVersion}"
 	// https://mvnrepository.com/artifact/net.coobird/thumbnailator
 	implementation "net.coobird:thumbnailator:0.4.21"
 	// https://mvnrepository.com/artifact/com.github.mwiede/jsch
-	implementation "com.github.mwiede:jsch:2.27.7"
+	implementation "com.github.mwiede:jsch:2.27.9"
 	// https://mvnrepository.com/artifact/jakarta.xml.bind/jakarta.xml.bind-api
 	implementation "jakarta.xml.bind:jakarta.xml.bind-api:4.0.5"
 	// https://mvnrepository.com/artifact/jakarta.annotation/jakarta.annotation-api
@@ -85,8 +85,6 @@ dependencies {
 	testImplementation "org.testcontainers:testcontainers-junit-jupiter:${testContainersVersion}"
 	testImplementation "org.testcontainers:testcontainers-postgresql:${testContainersVersion}"
 	testImplementation "org.mockito:mockito-junit-jupiter:${mockitoVersion}"
-	// https://mvnrepository.com/artifact/org.springframework.security/spring-security-test
-	testImplementation "org.springframework.security:spring-security-test:7.0.2"
 }
 
 application {
