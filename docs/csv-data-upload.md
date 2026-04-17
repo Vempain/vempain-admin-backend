@@ -1,5 +1,16 @@
 # CSV Data Upload & Publication Feature
 
+## Security Considerations
+
+> **Warning**: The `create_sql`, `fetch_all_sql`, and `fetch_subset_sql` fields allow administrators to provide arbitrary SQL that will be executed against the site database during publication. This feature is therefore **only suitable for trusted administrators**. The following safeguards are in place:
+>
+> - **Identifier validation**: The `identifier` is validated against `^[a-z][a-z0-9_]*$` and the resulting table name is double-quoted during DROP/creation, preventing any SQL injection through the identifier.
+> - **Create SQL validation**: The `create_sql` must start with `CREATE TABLE` (case-insensitive); other DDL/DML statements are rejected.
+> - **Column name validation**: CSV header column names are validated against `^[a-zA-Z_][a-zA-Z0-9_]*$` and double-quoted in INSERT statements.
+> - **Parameterized inserts**: CSV data rows are inserted using JDBC parameterized queries (`?` placeholders), preventing injection through data values.
+>
+> Access to these endpoints should be restricted to administrator roles at the application security level.
+
 ## Overview
 
 The CSV Data Upload & Publication feature allows administrators to upload structured data in CSV format

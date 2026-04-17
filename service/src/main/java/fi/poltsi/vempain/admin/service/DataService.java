@@ -125,17 +125,22 @@ public class DataService {
 		}
 
 		var entity = optional.get();
-		var tableName = TABLE_PREFIX + entity.getIdentifier();
+		validateCreateSql(entity.getCreateSql());
+
+		// The identifier has already been validated at creation/update time using IDENTIFIER_PATTERN,
+		// so it only contains [a-z][a-z0-9_]* characters. The table name is double-quoted for safety.
+		var safeIdentifier = entity.getIdentifier();
+		var quotedTableName = "\"" + TABLE_PREFIX + safeIdentifier + "\"";
 
 		try {
-			siteJdbcTemplate.execute("DROP TABLE IF EXISTS " + tableName);
-			log.info("Dropped table '{}' if it existed", tableName);
+			siteJdbcTemplate.execute("DROP TABLE IF EXISTS " + quotedTableName);
+			log.info("Dropped table '{}' if it existed", quotedTableName);
 
 			siteJdbcTemplate.execute(entity.getCreateSql());
-			log.info("Created table '{}' in site database", tableName);
+			log.info("Created table '{}' in site database", quotedTableName);
 
-			importCsvData(tableName, entity.getCsvData());
-			log.info("Imported CSV data into table '{}'", tableName);
+			importCsvData(quotedTableName, entity.getCsvData());
+			log.info("Imported CSV data into table '{}'", quotedTableName);
 		} catch (ResponseStatusException e) {
 			throw e;
 		} catch (Exception e) {
@@ -144,6 +149,19 @@ public class DataService {
 		}
 
 		return entity.toDataResponse();
+	}
+
+	private void validateCreateSql(String createSql) {
+		if (createSql == null) {
+			return;
+		}
+
+		var trimmed = createSql.trim().toUpperCase();
+
+		if (!trimmed.startsWith("CREATE TABLE")) {
+			log.error("create_sql does not start with CREATE TABLE: {}", createSql);
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "create_sql must be a CREATE TABLE statement");
+		}
 	}
 
 	private void importCsvData(String tableName, String csvData) {
@@ -168,7 +186,7 @@ public class DataService {
 			}
 		}
 
-		var columnList = String.join(", ", headers);
+		var columnList = String.join(", ", headers.stream().map(h -> "\"" + h + "\"").toList());
 		var placeholders = "?, ".repeat(headers.size());
 		placeholders = placeholders.substring(0, placeholders.length() - 2);
 		var insertSql = "INSERT INTO " + tableName + " (" + columnList + ") VALUES (" + placeholders + ")";

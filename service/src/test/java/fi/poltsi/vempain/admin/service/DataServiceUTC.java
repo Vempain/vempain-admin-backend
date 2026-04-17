@@ -269,8 +269,22 @@ class DataServiceUTC {
 
 		assertNotNull(response);
 		assertEquals(TEST_IDENTIFIER, response.getIdentifier());
-		verify(mockJdbcTemplate).execute("DROP TABLE IF EXISTS website_data__test_data");
+		verify(mockJdbcTemplate).execute("DROP TABLE IF EXISTS \"website_data__test_data\"");
 		verify(mockJdbcTemplate).execute(entity.getCreateSql());
+	}
+
+	@Test
+	void publishInvalidCreateSqlFail() {
+		var entity = buildEntity(1L);
+		entity.setCreateSql("DROP TABLE some_table");
+		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+
+		try {
+			dataService.publish(TEST_IDENTIFIER);
+			fail("Should have thrown ResponseStatusException for invalid create SQL");
+		} catch (ResponseStatusException e) {
+			assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
+		}
 	}
 
 	@Test
