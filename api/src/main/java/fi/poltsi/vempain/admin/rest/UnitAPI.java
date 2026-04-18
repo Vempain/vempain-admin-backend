@@ -3,7 +3,6 @@ package fi.poltsi.vempain.admin.rest;
 import fi.poltsi.vempain.admin.api.Constants;
 import fi.poltsi.vempain.auth.api.request.UnitRequest;
 import fi.poltsi.vempain.auth.api.response.UnitResponse;
-import fi.poltsi.vempain.auth.api.response.UserResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -59,12 +58,12 @@ public interface UnitAPI {
 	ResponseEntity<UnitResponse> findById(@PathVariable("unit_id") Long unitId);
 
 
-	@Operation(summary = "Add a new unit", description = "Add a new unit to the system", tags = "User")
+	@Operation(summary = "Add a new unit", description = "Add a new unit to the system", tags = "UnitAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "New unit details, the name can not be empty nor null",
 														  required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Unit created",
-										content = {@Content(schema = @Schema(implementation = UserResponse.class),
+										content = {@Content(schema = @Schema(implementation = UnitResponse.class),
 															mediaType = MediaType.APPLICATION_JSON_VALUE)}),
 						   @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
 						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
@@ -73,12 +72,12 @@ public interface UnitAPI {
 	@PostMapping(value = MAIN_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<UnitResponse> addUnit(@Valid @RequestBody UnitRequest unitRequest);
 
-	@Operation(summary = "Update a specific unit", description = "Update the details of a specific unit", tags = "User")
+	@Operation(summary = "Update a specific unit", description = "Update the details of a specific unit", tags = "UnitAPI")
 	@Parameter(name = "unit_id", example = "12", description = "Unit ID to be updated", required = true)
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Updated unit, the name can not be empty nor null", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Unit details updated",
-										content = {@Content(schema = @Schema(implementation = UserResponse.class),
+										content = {@Content(schema = @Schema(implementation = UnitResponse.class),
 															mediaType = MediaType.APPLICATION_JSON_VALUE)}),
 						   @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
 						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),

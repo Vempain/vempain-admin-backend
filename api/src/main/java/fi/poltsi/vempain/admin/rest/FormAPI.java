@@ -48,10 +48,10 @@ public interface FormAPI {
 	@GetMapping(value = MAIN_PATH)
 	ResponseEntity<List<FormResponse>> getForms(@RequestParam(name = "details") @NotNull QueryDetailEnum requestForm);
 
-	@Operation(summary = "Get all forms using a component", description = "Returns a list of form which uses a certain component", tags =
-			"Form")
-	@Parameter(name = "component_id", example = "123", description = "ID of the component for which the forms are retrieved", required =
-			true)
+	@Operation(summary = "Get all forms using a component", description = "Returns a list of form which uses a certain component",
+			   tags = "FormAPI")
+	@Parameter(name = "component_id", example = "123", description = "ID of the component for which the forms are retrieved",
+			   required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Got a list of forms",
 										content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -64,10 +64,10 @@ public interface FormAPI {
 	@GetMapping(value = MAIN_PATH + "/used-by-components/{component_id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<FormResponse>> getFormsByComponentId(@PathVariable(name = "component_id") long formId);
 
-	@Operation(summary = "Get all forms using a layout", description = "Returns a list of form which uses a certain layout", tags =
-			"Form")
-	@Parameter(name = "layout_id", example = "123", description = "ID of the layout for which the forms are retrieved", required =
-			true)
+	@Operation(summary = "Get all forms using a layout", description = "Returns a list of form which uses a certain layout",
+			   tags = "FormAPI")
+	@Parameter(name = "layout_id", example = "123", description = "ID of the layout for which the forms are retrieved",
+			   required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Got a list of forms",
 										content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
