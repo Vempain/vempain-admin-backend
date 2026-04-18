@@ -20,11 +20,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import java.util.List;
 
 @CrossOrigin(origins = "*", maxAge = 3600) // TODO Remove before going to production
-@Tag(name = "Acl", description = "Acl API for Vempain Acl objects")
+@Tag(name = "AclAPI", description = "Acl API for Vempain Acl objects")
 public interface AclAPI {
 	String MAIN_PATH = Constants.REST_CONTENT_PREFIX + "/acls";
 
-	@Operation(summary = "Fetch list of all ACL items", description = "Returns a list of all Acl", tags = "Acl")
+	@Operation(summary = "Fetch list of all ACL items", description = "Returns a list of all Acl", tags = "AclAPI")
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Got list of ACLs",
 										content = {@Content(array = @ArraySchema(schema = @Schema(implementation = AclResponse.class)),
@@ -37,7 +37,7 @@ public interface AclAPI {
 	@GetMapping(value = MAIN_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<AclResponse>> getAllAcl();
 
-	@Operation(summary = "Fetch list of ACL", description = "Returns a list of Acl with the user and unit data completed", tags = "Acl")
+	@Operation(summary = "Fetch list of ACL", description = "Returns a list of Acl with the user and unit data completed", tags = "AclAPI")
 	@Parameter(name = "acl_id", example = "123", description = "ID of the list of ACLs to return", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Got list of ACLs",

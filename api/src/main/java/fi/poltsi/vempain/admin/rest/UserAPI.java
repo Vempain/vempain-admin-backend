@@ -25,11 +25,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.util.List;
 
 @CrossOrigin(origins = "*", maxAge = 3600) // TODO Remove before going to production
-@Tag(name = "User", description = "User API for Vempain page objects")
+@Tag(name = "UserAPI", description = "User API for Vempain page objects")
 public interface UserAPI {
 	String MAIN_PATH = Constants.REST_CONTENT_PREFIX + "/users";
 
-	@Operation(summary = "Fetch list of all users", description = "Returns a list of all vempain users", tags = "User")
+	@Operation(summary = "Fetch list of all users", description = "Returns a list of all vempain users", tags = "UserAPI")
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Returned a list of users",
 										content = {@Content(array = @ArraySchema(schema = @Schema(implementation = UserResponse.class)),
@@ -42,7 +42,7 @@ public interface UserAPI {
 	@GetMapping(value = MAIN_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<UserResponse>> getUsers();
 
-	@Operation(summary = "Fetch a specific user by user ID", description = "Returns details of a specific user", tags = "User")
+	@Operation(summary = "Fetch a specific user by user ID", description = "Returns details of a specific user", tags = "UserAPI")
 	@Parameter(name = "user_id", example = "12", description = "User ID to be fetched", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Got the details of a user",
@@ -56,7 +56,7 @@ public interface UserAPI {
 	@GetMapping(value = MAIN_PATH + "/{user_id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<UserResponse> findById(@PathVariable("user_id") Long userId);
 
-	@Operation(summary = "Add a new user", description = "Add a new user to the system", tags = "User")
+	@Operation(summary = "Add a new user", description = "Add a new user to the system", tags = "UserAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "New user details, the login and email can not be empty nor null",
 														  required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
@@ -70,7 +70,7 @@ public interface UserAPI {
 	@PostMapping(value = MAIN_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<UserResponse> addUser(@Valid @RequestBody UserRequest userRequest);
 
-	@Operation(summary = "Update a specific user", description = "Update the details of a specific user", tags = "User")
+	@Operation(summary = "Update a specific user", description = "Update the details of a specific user", tags = "UserAPI")
 	@Parameter(name = "user_id", example = "12", description = "User ID to be updated", required = true)
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Updated user, the name can not be empty nor null", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",

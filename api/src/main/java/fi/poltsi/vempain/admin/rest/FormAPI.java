@@ -30,11 +30,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.List;
 
 @CrossOrigin(origins = "*", maxAge = 3600) // TODO Remove before going to production
-@Tag(name = "Form", description = "Form API for Vempain form objects")
+@Tag(name = "FormAPI", description = "Form API for Vempain form objects")
 public interface FormAPI {
 	String MAIN_PATH = Constants.REST_CONTENT_PREFIX + "/forms";
 
-	@Operation(summary = "Fetch list of all forms", description = "Returns a list of all forms the user has read access to", tags = "Form")
+	@Operation(summary = "Fetch list of all forms", description = "Returns a list of all forms the user has read access to", tags = "FormAPI")
 	@Parameter(name = "details", description = "How much details should be included", example = "FULL", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Got list of forms",
 										content = {@Content(array = @ArraySchema(schema = @Schema(implementation = FormResponse.class)),
@@ -80,7 +80,7 @@ public interface FormAPI {
 	@GetMapping(value = MAIN_PATH + "/used-by-layout/{layout_id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<FormResponse>> getFormsByLayoutId(@PathVariable(name = "layout_id") long layoutId);
 
-	@Operation(summary = "Get a form defined by id", description = "Returns a single form based on id", tags = "Form")
+	@Operation(summary = "Get a form defined by id", description = "Returns a single form based on id", tags = "FormAPI")
 	@Parameter(name = "form_id", example = "123", description = "ID of the form to be retrieved", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Got the specific form",
@@ -94,7 +94,7 @@ public interface FormAPI {
 	@GetMapping(value = MAIN_PATH + "/{form_id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<FormResponse> getFormById(@PathVariable(name = "form_id") Long formId);
 
-	@Operation(summary = "Add a new form", description = "Inserts a new form", tags = "Form")
+	@Operation(summary = "Add a new form", description = "Inserts a new form", tags = "FormAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Form to be added, the name can not be empty nor null", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Form created",
@@ -107,7 +107,7 @@ public interface FormAPI {
 	@PostMapping(value = MAIN_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<FormResponse> addForm(@Valid @RequestBody FormRequest formRequest);
 
-	@Operation(summary = "Update an existing form", description = "Updates a form", tags = "Form")
+	@Operation(summary = "Update an existing form", description = "Updates a form", tags = "FormAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Updated form, the name can not be empty nor null", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Form updated",
@@ -121,7 +121,7 @@ public interface FormAPI {
 	@PutMapping(value = MAIN_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<FormResponse> updateForm(@Valid @RequestBody FormRequest formRequest);
 
-	@Operation(summary = "Remove a form", description = "Remove the form given by the ID", tags = "Form")
+	@Operation(summary = "Remove a form", description = "Remove the form given by the ID", tags = "FormAPI")
 	@Parameter(name = "form_id", example = "123", description = "Id of the form to be deleted", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Form removed",

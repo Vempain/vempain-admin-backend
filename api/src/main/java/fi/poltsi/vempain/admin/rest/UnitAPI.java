@@ -26,11 +26,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.util.List;
 
 @CrossOrigin(origins = "*", maxAge = 3600) // TODO Remove before going to production
-@Tag(name = "Unit", description = "Unit API for Vempain page objects")
+@Tag(name = "UnitAPI", description = "Unit API for Vempain page objects")
 public interface UnitAPI {
 	String MAIN_PATH = Constants.REST_CONTENT_PREFIX + "/units";
 
-	@Operation(summary = "Fetch list of all units", description = "Returns a list of all vempain units", tags = "Unit")
+	@Operation(summary = "Fetch list of all units", description = "Returns a list of all vempain units", tags = "UnitAPI")
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Got list of units",
 										content = {@Content(array = @ArraySchema(schema = @Schema(implementation = UnitResponse.class)),
@@ -43,7 +43,7 @@ public interface UnitAPI {
 	@GetMapping(value = MAIN_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<UnitResponse>> getUnits();
 
-	@Operation(summary = "Fetch a specific unit by unit ID", description = "Returns details of a specific unit", tags = "Unit")
+	@Operation(summary = "Fetch a specific unit by unit ID", description = "Returns details of a specific unit", tags = "UnitAPI")
 	@Parameter(name = "unit_id", example = "12", description = "Unit ID to be fetched", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Got the details of a unit",

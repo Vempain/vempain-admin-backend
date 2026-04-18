@@ -35,11 +35,11 @@ import java.util.List;
 
 // TODO add validation annotation here
 @CrossOrigin(origins = "*", maxAge = 3600) // TODO Remove before going to production
-@Tag(name = "Page", description = "Page API for Vempain page objects")
+@Tag(name = "PageAPI", description = "Page API for Vempain page objects")
 public interface PageAPI {
 	String MAIN_PATH = Constants.REST_CONTENT_PREFIX + "/pages";
 
-	@Operation(summary = "Fetch list of all pages", description = "Returns a list of pages", tags = "Page")
+	@Operation(summary = "Fetch list of all pages", description = "Returns a list of pages", tags = "PageAPI")
 	@Parameter(name = "details", description = "How much details should be included", example = "FULL", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Got list of pages",
@@ -54,7 +54,7 @@ public interface PageAPI {
 	ResponseEntity<List<PageResponse>> getPages(@RequestParam(name = "details") @NotNull QueryDetailEnum requestForm);
 
 
-	@Operation(summary = "Fetch list of all pages using a particular form", description = "Returns a list of pages", tags = "Page")
+	@Operation(summary = "Fetch list of all pages using a particular form", description = "Returns a list of pages", tags = "PageAPI")
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Got list of pages",
 										content = {@Content(array = @ArraySchema(schema = @Schema(implementation = PageResponse.class)),
@@ -67,7 +67,7 @@ public interface PageAPI {
 	@GetMapping(value = MAIN_PATH + "/by-form/{form_id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<PageResponse>> getPagesByFormId(@PathVariable(name = "form_id") long formId);
 
-	@Operation(summary = "Fetch a specific page", description = "Return the requested page", tags = "Page")
+	@Operation(summary = "Fetch a specific page", description = "Return the requested page", tags = "PageAPI")
 	@Parameter(name = "page_id", example = "123", description = "ID of the page to be retrieved", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Page found and returned",
@@ -81,7 +81,7 @@ public interface PageAPI {
 	@GetMapping(value = MAIN_PATH + "/{page_id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<PageResponse> getPageById(@PathVariable(name = "page_id") long pageId);
 
-	@Operation(summary = "Add a new page", description = "Inserts a new page", tags = "Page")
+	@Operation(summary = "Add a new page", description = "Inserts a new page", tags = "PageAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Page to be added, the title or header can not be empty nor null",
 														  required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
@@ -96,7 +96,7 @@ public interface PageAPI {
 	ResponseEntity<PageResponse> addPage(@Valid @RequestBody PageRequest pageRequest);
 
 	@Operation(summary = "Update an existing page", description = "Update an existing page except if the page path, title or header is " +
-																  "empty or null", tags = "Page")
+																  "empty or null", tags = "PageAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Page to be updated, can not have an empty path, title or header",
 														  required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Page updated",
@@ -110,7 +110,7 @@ public interface PageAPI {
 	@PutMapping(value = MAIN_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<PageResponse> updatePage(@Valid @RequestBody PageRequest pageRequest);
 
-	@Operation(summary = "Remove a page by ID", description = "Remove the page given by the ID", tags = "Page")
+	@Operation(summary = "Remove a page by ID", description = "Remove the page given by the ID", tags = "PageAPI")
 	@Parameter(name = "page_id", example = "123", description = "ID of the page to be deleted, can not be empty", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Page removed",
@@ -125,7 +125,7 @@ public interface PageAPI {
 	ResponseEntity<DeleteResponse> deletePage(@PathVariable(name = "page_id") long pageId);
 
 	// /////////////////////////// Publishing actions
-	@Operation(summary = "Publish all pages", description = "Publish a new version of all pages", tags = "Page")
+	@Operation(summary = "Publish all pages", description = "Publish a new version of all pages", tags = "PageAPI")
 	@Parameter(name = "publish_date", description = "Date when the all the pages should be published, in YYYY-MM-DDTHH:mm:ss format",
 			   example = "2027-12-31T23:59:59")
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
@@ -140,7 +140,7 @@ public interface PageAPI {
 	@GetMapping(value = MAIN_PATH + "/publish", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<PublishResponse> publishAll(@RequestParam(name = "publish_date", required = false) Instant publishDate);
 
-	@Operation(summary = "Publish page", description = "Publish a new version of a page", tags = "Page")
+	@Operation(summary = "Publish page", description = "Publish a new version of a page", tags = "PageAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Publish request with page ID and optional delay in seconds", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Page published, or will be published",
@@ -154,7 +154,7 @@ public interface PageAPI {
 	@PatchMapping(value = MAIN_PATH + "/publish", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<PublishResponse> publishPage(@Valid @RequestBody PublishRequest publishRequest);
 
-	@Operation(summary = "Delete", description = "Delete the page from site", tags = "Page")
+	@Operation(summary = "Delete", description = "Delete the page from site", tags = "PageAPI")
 	@Parameter(name = "page_id", description = "Page ID", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Page deleted",

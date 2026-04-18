@@ -17,13 +17,13 @@ import java.util.List;
 
 import static fi.poltsi.vempain.admin.api.Constants.REST_FILE_PREFIX;
 
-@Tag(name = "FileSystem", description = "REST API for Vempain image filesystem operations")
+@Tag(name = "FileSystemAPI", description = "REST API for Vempain image filesystem operations")
 public interface FileSystemAPI {
 	String MAIN_PATH = REST_FILE_PREFIX;
 
 	@Operation(summary = "Return the site file directory tree",
 			   description = "Return a tree structure of the site file directory sub directories",
-			   tags = "FileSystem")
+			   tags = "FileSystemAPI")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "The tree structure of the site file directory returned",
 						 content = {@Content(array = @ArraySchema(schema = @Schema(implementation = DirectoryNodeResponse.class)),
@@ -34,5 +34,4 @@ public interface FileSystemAPI {
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(path = MAIN_PATH + "/site-file-directory", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<DirectoryNodeResponse>> getConvertedDirectoryStructure();
-
 }

@@ -25,11 +25,11 @@ import java.util.List;
 
 import static fi.poltsi.vempain.admin.api.Constants.REST_DATA_PREFIX;
 
-@Tag(name = "Data", description = "REST API for Vempain CSV data upload and publication")
+@Tag(name = "DataAPI", description = "REST API for Vempain CSV data upload and publication")
 public interface DataAPI {
 	String MAIN_PATH = REST_DATA_PREFIX;
 
-	@Operation(summary = "List all data sets", description = "Returns a list of all stored data sets with metadata but without the CSV data", tags = "Data")
+	@Operation(summary = "List all data sets", description = "Returns a list of all stored data sets with metadata but without the CSV data", tags = "DataAPI")
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Got list of data sets",
 										content = {@Content(array = @ArraySchema(schema = @Schema(implementation = DataSummaryResponse.class)),
@@ -40,7 +40,7 @@ public interface DataAPI {
 	@GetMapping(value = MAIN_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<DataSummaryResponse>> getAllDataSets();
 
-	@Operation(summary = "Get a data set by identifier", description = "Returns the metadata and CSV data for the requested data set", tags = "Data")
+	@Operation(summary = "Get a data set by identifier", description = "Returns the metadata and CSV data for the requested data set", tags = "DataAPI")
 	@Parameter(name = "identifier", example = "cd_collection", description = "Unique identifier of the data set", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Data set found and returned",
@@ -54,7 +54,7 @@ public interface DataAPI {
 	@GetMapping(value = MAIN_PATH + "/{identifier}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<DataResponse> getDataSetByIdentifier(@PathVariable(name = "identifier") String identifier);
 
-	@Operation(summary = "Create a new data set", description = "Stores the provided metadata and CSV data as a new data set", tags = "Data")
+	@Operation(summary = "Create a new data set", description = "Stores the provided metadata and CSV data as a new data set", tags = "DataAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Data set metadata and CSV content", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Data set created",
@@ -68,7 +68,7 @@ public interface DataAPI {
 	@PostMapping(value = MAIN_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<DataResponse> createDataSet(@Valid @RequestBody DataRequest dataRequest);
 
-	@Operation(summary = "Update an existing data set", description = "Replaces the metadata and CSV data of an existing data set", tags = "Data")
+	@Operation(summary = "Update an existing data set", description = "Replaces the metadata and CSV data of an existing data set", tags = "DataAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Updated data set metadata and CSV content", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Data set updated",
@@ -83,7 +83,7 @@ public interface DataAPI {
 	ResponseEntity<DataResponse> updateDataSet(@Valid @RequestBody DataRequest dataRequest);
 
 	@Operation(summary = "Publish a data set to the site database",
-			   description = "Creates or replaces the table in the site database and imports the CSV data", tags = "Data")
+			   description = "Creates or replaces the table in the site database and imports the CSV data", tags = "DataAPI")
 	@Parameter(name = "identifier", example = "cd_collection", description = "Unique identifier of the data set to publish", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Data set published successfully",

@@ -27,11 +27,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.util.List;
 
 @CrossOrigin(origins = "*", maxAge = 3600) // TODO Remove before going to production
-@Tag(name = "Layout", description = "Layout API for Vempain layout objects")
+@Tag(name = "LayoutAPI", description = "Layout API for Vempain layout objects")
 public interface LayoutAPI {
 	String MAIN_PATH = Constants.REST_CONTENT_PREFIX + "/layouts";
 
-	@Operation(summary = "Fetch list of all layouts", description = "Returns a list of layouts", tags = "Layout")
+	@Operation(summary = "Fetch list of all layouts", description = "Returns a list of layouts", tags = "LayoutAPI")
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Got list of layouts",
 										content = {@Content(array = @ArraySchema(schema = @Schema(implementation = LayoutResponse.class)),
@@ -44,7 +44,7 @@ public interface LayoutAPI {
 	@GetMapping(value = MAIN_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<LayoutResponse>> getLayouts();
 
-	@Operation(summary = "Get a layout defined by id", description = "Returns a single layout based on id", tags = "Layout")
+	@Operation(summary = "Get a layout defined by id", description = "Returns a single layout based on id", tags = "LayoutAPI")
 	@Parameter(name = "layout_id", example = "123", description = "ID of the layout to be retrieved", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Got the specific layout",
@@ -58,7 +58,7 @@ public interface LayoutAPI {
 	@GetMapping(value = MAIN_PATH + "/{layout_id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<LayoutResponse> getLayoutById(@PathVariable(name = "layout_id") Long layoutId);
 
-	@Operation(summary = "Get a layout defined by name", description = "Returns a single layout based on name", tags = "Layout")
+	@Operation(summary = "Get a layout defined by name", description = "Returns a single layout based on name", tags = "LayoutAPI")
 	@Parameter(name = "layout_name", example = "My layout", description = "Name of the layout to be retrieved", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Got the specific layout",
@@ -72,7 +72,7 @@ public interface LayoutAPI {
 	@GetMapping(value = MAIN_PATH + "/name/{layout_name}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<LayoutResponse> getLayoutByName(@PathVariable(name = "layout_name") String layoutName);
 
-	@Operation(summary = "Add a new layout", description = "Inserts a new layout", tags = "Layout")
+	@Operation(summary = "Add a new layout", description = "Inserts a new layout", tags = "LayoutAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Layout to be added, the name can not be empty nor null",
 														  required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
@@ -87,7 +87,7 @@ public interface LayoutAPI {
 	ResponseEntity<LayoutResponse> saveLayout(@Valid @RequestBody LayoutRequest layoutRequest);
 
 	@Operation(summary = "Update an existing layout", description = "Update an existing layout except if the layout name is empty or null",
-			   tags = "Layout")
+			   tags = "LayoutAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Layout to be updated, the name can not be empty nor null",
 														  required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
@@ -103,7 +103,7 @@ public interface LayoutAPI {
 				consumes = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<LayoutResponse> updateLayout(@Valid @RequestBody LayoutRequest layoutRequest);
 
-	@Operation(summary = "Remove a layout", description = "Remove the layout given by the ID", tags = "Layout")
+	@Operation(summary = "Remove a layout", description = "Remove the layout given by the ID", tags = "LayoutAPI")
 	@Parameter(name = "layout_id", example = "12", description = "Id of the layout to be deleted", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Layout removed",

@@ -12,7 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import static fi.poltsi.vempain.admin.api.Constants.REST_FILE_PREFIX;
 
-@Tag(name = "FileIngestApi", description = "Test API for multiple file uploads and JSON payloads")
+@Tag(name = "FileIngestAPI", description = "Test API for multiple file uploads and JSON payloads")
 public interface FileIngestAPI {
 	String MAIN_PATH = REST_FILE_PREFIX;
 

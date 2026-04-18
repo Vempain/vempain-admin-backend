@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import static fi.poltsi.vempain.admin.api.Constants.REST_FILE_PREFIX;
 
-@Tag(name = "File", description = "REST API for Vempain image file objects")
+@Tag(name = "FileAPI", description = "REST API for Vempain image file objects")
 public interface FileAPI {
 	String MAIN_PATH = REST_FILE_PREFIX;
 
