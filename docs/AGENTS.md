@@ -40,7 +40,6 @@
   - `PublishService` orchestrates site-side publishing.
   - `JschClient` pushes converted files + thumbs over SFTP to the remote site root.
   - `exiftool` must exist; startup will fail fast in `SetupVerification` if required paths/files are missing.
-- `typescript-dtos/SiteWebAccessTypes.ts` mirrors part of the site-access API for frontend consumers; update it when changing those payloads.
 
 ## Workflows agents should actually use
 - Local DB bootstrap for dev: `docker_db.sh` starts **two** Postgres containers on ports **5433** and **5434** matching `start.sh`.
