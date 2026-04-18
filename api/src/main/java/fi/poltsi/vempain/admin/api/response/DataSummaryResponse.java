@@ -43,7 +43,7 @@ public class DataSummaryResponse {
 	private String fetchSubsetSql;
 
 	@Schema(description = "Timestamp indicating when the data was generated", example = "2024-01-15T10:30:00Z")
-	private Instant dataTimestamp;
+	private Instant generated;
 
 	@Schema(description = "Timestamp when this record was created in the admin database")
 	private Instant createdAt;

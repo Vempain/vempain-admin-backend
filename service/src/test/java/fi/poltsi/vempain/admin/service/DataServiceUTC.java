@@ -1,6 +1,5 @@
 package fi.poltsi.vempain.admin.service;
 
-import fi.poltsi.vempain.admin.VempainMessages;
 import fi.poltsi.vempain.admin.api.request.DataRequest;
 import fi.poltsi.vempain.admin.api.response.DataResponse;
 import fi.poltsi.vempain.admin.api.response.DataSummaryResponse;
@@ -333,7 +332,7 @@ class DataServiceUTC {
 						  .createSql("CREATE TABLE website_data__test_data (id BIGSERIAL PRIMARY KEY, title VARCHAR(255))")
 						  .fetchAllSql("SELECT * FROM website_data__test_data")
 						  .fetchSubsetSql("SELECT * FROM website_data__test_data WHERE title = :title")
-						  .dataTimestamp(Instant.now())
+						  .generated(Instant.now())
 						  .csvData("title\nTest Album")
 						  .build();
 	}
@@ -349,7 +348,7 @@ class DataServiceUTC {
 						 .createSql("CREATE TABLE website_data__test_data (id BIGSERIAL PRIMARY KEY, title VARCHAR(255))")
 						 .fetchAllSql("SELECT * FROM website_data__test_data")
 						 .fetchSubsetSql("SELECT * FROM website_data__test_data WHERE title = :title")
-						 .dataTimestamp(now)
+						 .generated(now)
 						 .csvData("title\nTest Album")
 						 .createdAt(now)
 						 .updatedAt(now)
@@ -369,7 +368,7 @@ class DataServiceUTC {
 								   .createSql("CREATE TABLE website_data__data_set_" + i + " (id BIGSERIAL PRIMARY KEY, value TEXT)")
 								   .fetchAllSql("SELECT * FROM website_data__data_set_" + i)
 								   .fetchSubsetSql("SELECT * FROM website_data__data_set_" + i + " WHERE value = :value")
-								   .dataTimestamp(now)
+								   .generated(now)
 								   .csvData("value\ntest")
 								   .createdAt(now)
 								   .updatedAt(now)

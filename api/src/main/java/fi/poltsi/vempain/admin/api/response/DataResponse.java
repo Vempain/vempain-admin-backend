@@ -43,7 +43,7 @@ public class DataResponse {
 	private String fetchSubsetSql;
 
 	@Schema(description = "Timestamp indicating when the data was generated", example = "2024-01-15T10:30:00Z")
-	private Instant dataTimestamp;
+	private Instant generated;
 
 	@Schema(description = "Raw CSV data including a header row")
 	private String csvData;

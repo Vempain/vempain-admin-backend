@@ -22,7 +22,6 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -230,7 +229,7 @@ class DataControllerUTC {
 						  .createSql("CREATE TABLE website_data__test_data (id BIGSERIAL PRIMARY KEY, title VARCHAR(255), year INTEGER)")
 						  .fetchAllSql("SELECT * FROM website_data__test_data")
 						  .fetchSubsetSql("SELECT * FROM website_data__test_data WHERE year = :year")
-						  .dataTimestamp(Instant.now())
+						  .generated(Instant.now())
 						  .csvData("title,year\nTest Album,2024")
 						  .build();
 	}
@@ -245,7 +244,7 @@ class DataControllerUTC {
 						   .createSql("CREATE TABLE website_data__test_data (id BIGSERIAL PRIMARY KEY, title VARCHAR(255), year INTEGER)")
 						   .fetchAllSql("SELECT * FROM website_data__test_data")
 						   .fetchSubsetSql("SELECT * FROM website_data__test_data WHERE year = :year")
-						   .dataTimestamp(Instant.now())
+						   .generated(Instant.now())
 						   .csvData("title,year\nTest Album,2024")
 						   .createdAt(Instant.now())
 						   .updatedAt(Instant.now())
@@ -262,7 +261,7 @@ class DataControllerUTC {
 								  .createSql("CREATE TABLE website_data__test_data (id BIGSERIAL PRIMARY KEY, title VARCHAR(255), year INTEGER)")
 								  .fetchAllSql("SELECT * FROM website_data__test_data")
 								  .fetchSubsetSql("SELECT * FROM website_data__test_data WHERE year = :year")
-								  .dataTimestamp(Instant.now())
+								  .generated(Instant.now())
 								  .createdAt(Instant.now())
 								  .updatedAt(Instant.now())
 								  .build();

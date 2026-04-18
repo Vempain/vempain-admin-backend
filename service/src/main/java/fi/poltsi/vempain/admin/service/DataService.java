@@ -6,7 +6,6 @@ import fi.poltsi.vempain.admin.api.response.DataResponse;
 import fi.poltsi.vempain.admin.api.response.DataSummaryResponse;
 import fi.poltsi.vempain.admin.entity.DataEntity;
 import fi.poltsi.vempain.admin.repository.DataRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -18,7 +17,6 @@ import org.springframework.web.server.ResponseStatusException;
 import javax.sql.DataSource;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -77,7 +75,7 @@ public class DataService {
 							   .createSql(request.getCreateSql())
 							   .fetchAllSql(request.getFetchAllSql())
 							   .fetchSubsetSql(request.getFetchSubsetSql())
-							   .dataTimestamp(request.getDataTimestamp() != null ? request.getDataTimestamp() : now)
+							   .generated(request.getGenerated() != null ? request.getGenerated() : now)
 							   .csvData(request.getCsvData())
 							   .createdAt(now)
 							   .updatedAt(now)
@@ -106,7 +104,7 @@ public class DataService {
 		entity.setCreateSql(request.getCreateSql());
 		entity.setFetchAllSql(request.getFetchAllSql());
 		entity.setFetchSubsetSql(request.getFetchSubsetSql());
-		entity.setDataTimestamp(request.getDataTimestamp() != null ? request.getDataTimestamp() : entity.getDataTimestamp());
+		entity.setGenerated(request.getGenerated() != null ? request.getGenerated() : entity.getGenerated());
 		entity.setCsvData(request.getCsvData());
 		entity.setUpdatedAt(Instant.now());
 

@@ -46,7 +46,7 @@ public class DataRequest {
 	private String fetchSubsetSql;
 
 	@Schema(description = "Timestamp indicating when the data was generated", example = "2024-01-15T10:30:00Z")
-	private Instant dataTimestamp;
+	private Instant generated;
 
 	@Schema(description = "Raw CSV data including a header row", example = "title,year\nAbbey Road,1969\nOk Computer,1997")
 	private String csvData;

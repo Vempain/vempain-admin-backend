@@ -8,7 +8,7 @@ CREATE TABLE data_store
 	create_sql         TEXT         NOT NULL,
 	fetch_all_sql      TEXT         NOT NULL,
 	fetch_subset_sql   TEXT         NOT NULL,
-	data_timestamp     TIMESTAMP    NOT NULL,
+	generated          TIMESTAMP    NOT NULL,
 	csv_data           TEXT         NOT NULL,
 	created_at         TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	updated_at         TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP

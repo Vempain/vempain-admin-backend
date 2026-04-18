@@ -57,8 +57,8 @@ public class DataEntity {
 	private String fetchSubsetSql;
 
 	@Basic
-	@Column(name = "data_timestamp", nullable = false)
-	private Instant dataTimestamp;
+	@Column(name = "generated", nullable = false)
+	private Instant generated;
 
 	@Basic
 	@Column(name = "csv_data", nullable = false, columnDefinition = "TEXT")
@@ -82,7 +82,7 @@ public class DataEntity {
 						   .createSql(this.createSql)
 						   .fetchAllSql(this.fetchAllSql)
 						   .fetchSubsetSql(this.fetchSubsetSql)
-						   .dataTimestamp(this.dataTimestamp)
+						   .generated(this.generated)
 						   .csvData(this.csvData)
 						   .createdAt(this.createdAt)
 						   .updatedAt(this.updatedAt)
@@ -99,7 +99,7 @@ public class DataEntity {
 								  .createSql(this.createSql)
 								  .fetchAllSql(this.fetchAllSql)
 								  .fetchSubsetSql(this.fetchSubsetSql)
-								  .dataTimestamp(this.dataTimestamp)
+								  .generated(this.generated)
 								  .createdAt(this.createdAt)
 								  .updatedAt(this.updatedAt)
 								  .build();

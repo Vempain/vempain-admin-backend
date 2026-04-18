@@ -111,7 +111,7 @@ class DataRepositoryITC extends AbstractITCTest {
 						 .createSql("CREATE TABLE website_data__" + identifier + " (id BIGSERIAL PRIMARY KEY, title VARCHAR(255), year INTEGER)")
 						 .fetchAllSql("SELECT * FROM website_data__" + identifier + " ORDER BY id")
 						 .fetchSubsetSql("SELECT * FROM website_data__" + identifier + " WHERE year = :year")
-						 .dataTimestamp(now)
+						 .generated(now)
 						 .csvData("title,year\nTest Album,2024")
 						 .createdAt(now)
 						 .updatedAt(now)

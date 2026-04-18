@@ -45,14 +45,14 @@ public interface SiteFileRepository extends ListPagingAndSortingRepository<SiteF
 			value = """
 					SELECT s.* FROM site_file s
 						JOIN file_subject sf ON s.id = sf.site_file_id
-					JOIN subject su ON su.id = sf.subject_id
+					JOIN subjects su ON su.id = sf.subject_id
 					WHERE LOWER(su.name) LIKE LOWER(CONCAT('%', :subjectName, '%'))
 					  AND s.file_type = :fileType
 					""",
 			countQuery = """
 					SELECT COUNT(*) FROM site_file s
 						JOIN file_subject sf ON s.id = sf.site_file_id
-					JOIN subject su ON su.id = sf.subject_id
+					JOIN subjects su ON su.id = sf.subject_id
 					WHERE LOWER(su.name) LIKE LOWER(CONCAT('%', :subjectName, '%'))
 					  AND s.file_type = :fileType
 					""",
