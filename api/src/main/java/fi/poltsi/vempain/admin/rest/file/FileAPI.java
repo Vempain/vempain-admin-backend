@@ -23,11 +23,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import static fi.poltsi.vempain.admin.api.Constants.REST_FILE_PREFIX;
 
-@Tag(name = "File", description = "REST API for Vempain image file objects")
+@Tag(name = "FileAPI", description = "REST API for Vempain image file objects")
 public interface FileAPI {
 	String MAIN_PATH = REST_FILE_PREFIX;
 
-	@Operation(summary = "Get site files as a pageable", description = "Fetch all site files in pageable format", tags = "File")
+	@Operation(summary = "Get site files as a pageable", description = "Fetch all site files in pageable format", tags = "FileAPI")
 	@Parameter(name = "page_number", description = "Page number", allowEmptyValue = true, example = "1")
 	@Parameter(name = "page_size", description = "Page number", allowEmptyValue = true, example = "10")
 	@Parameter(name = "sort_by", description = "What field the page should be sorted by", example = "filename")
@@ -53,7 +53,7 @@ public interface FileAPI {
 	);
 
 	@Operation(summary = "Refresh the file information of a gallery", description = "Reload all the file data of the files belonging to a gallery",
-			   tags = "File")
+			   tags = "FileAPI")
 	@Parameter(name = "gallery_id", example = "123", description = "ID of the gallery to be refreshed", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Gallery files refreshed",
@@ -68,7 +68,7 @@ public interface FileAPI {
 
 
 	@Operation(summary = "Refresh the file information of all galleries", description = "Reload all the file data of the files belonging any gallery",
-			   tags = "File")
+			   tags = "FileAPI")
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "All gallery files refreshed",
 										content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,

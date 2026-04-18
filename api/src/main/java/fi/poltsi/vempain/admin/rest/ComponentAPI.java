@@ -27,12 +27,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.util.List;
 
 @CrossOrigin(origins = "*", maxAge = 3600) // TODO Remove before going to production
-@Tag(name = "Component", description = "Component API for Vempain component objects")
+@Tag(name = "ComponentAPI", description = "Component API for Vempain component objects")
 public interface ComponentAPI {
 	String MAIN_PATH = Constants.REST_CONTENT_PREFIX + "/components";
 
 	@Operation(summary = "Fetch list of all components", description = "Returns a list of all components the user has read access to",
-			   tags = "Component")
+			   tags = "ComponentAPI")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Got list of components",
 						 content = {@Content(array = @ArraySchema(schema = @Schema(implementation = ComponentResponse.class)),
@@ -46,7 +46,7 @@ public interface ComponentAPI {
 	@GetMapping(value = MAIN_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<ComponentResponse>> getComponents();
 
-	@Operation(summary = "Get a component defined by id", description = "Returns a single component based on id", tags = "Component")
+	@Operation(summary = "Get a component defined by id", description = "Returns a single component based on id", tags = "ComponentAPI")
 	@Parameter(name = "component_id", example = "123", description = "ID of the component to be retrieved", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Got the specific component",
@@ -60,7 +60,7 @@ public interface ComponentAPI {
 	@GetMapping(value = MAIN_PATH + "/{component_id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<ComponentResponse> getComponentById(@PathVariable(name = "component_id") Long componentId);
 
-	@Operation(summary = "Add a new component", description = "Inserts a new component", tags = "Component")
+	@Operation(summary = "Add a new component", description = "Inserts a new component", tags = "ComponentAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Component to be added, the name can not be empty nor null",
 														  required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
@@ -74,7 +74,7 @@ public interface ComponentAPI {
 	@PostMapping(value = MAIN_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<ComponentResponse> addComponent(@Valid @RequestBody ComponentRequest componentRequest);
 
-	@Operation(summary = "Update a component defined by id", description = "Returns the update component", tags = "Component")
+	@Operation(summary = "Update a component defined by id", description = "Returns the update component", tags = "ComponentAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Component to be updated, can not have an empty component name",
 														  required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
@@ -90,7 +90,7 @@ public interface ComponentAPI {
 				consumes = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<ComponentResponse> updateComponent(@Valid @RequestBody ComponentRequest componentRequest);
 
-	@Operation(summary = "Remove a component", description = "Remove the component given by the ID", tags = "Component")
+	@Operation(summary = "Remove a component", description = "Remove the component given by the ID", tags = "ComponentAPI")
 	@Parameter(name = "component_id", example = "123", description = "Id of the component to be deleted", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Component removed",

@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
-@Tag(name = "SiteWebAccess", description = "Manage site web users and their access control")
+@Tag(name = "WebSiteManagementAPI", description = "Manage site web users and their access control")
 @SecurityRequirement(name = "Bearer Authentication")
 public interface WebSiteManagementAPI {
 	String MAIN_PATH         = Constants.REST_ADMIN_PREFIX + "/site";
@@ -42,7 +42,7 @@ public interface WebSiteManagementAPI {
 	String CONFIG_ADMIN_PATH = MAIN_PATH + "/config";
 
 	// ////////////////////////////// Site Web Users APIs //////////////////////////////
-	@Operation(summary = "List all site web users", description = "Returns a list of all site web users")
+	@Operation(summary = "List all site web users", description = "Returns a list of all site web users", tags = "WebSiteManagementAPI")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Successfully retrieved list",
 						 content = @Content(array = @ArraySchema(schema = @Schema(implementation = WebSiteUserResponse.class)),
@@ -53,7 +53,7 @@ public interface WebSiteManagementAPI {
 	@GetMapping(value = USER_ADMIN_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<WebSiteUserResponse>> getAllUsers();
 
-	@Operation(summary = "Get a site web user by ID", description = "Returns details of a specific site web user")
+	@Operation(summary = "Get a site web user by ID", description = "Returns details of a specific site web user", tags = "WebSiteManagementAPI")
 	@Parameter(name = "userId", description = "Site web user ID", required = true, example = "7")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Successfully retrieved user",
@@ -66,7 +66,7 @@ public interface WebSiteManagementAPI {
 	@GetMapping(value = USER_ADMIN_PATH + "/{userId}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<WebSiteUserResponse> getUserById(@PathVariable("userId") Long userId);
 
-	@Operation(summary = "Create a new site web user", description = "Creates a new site web user with username and password")
+	@Operation(summary = "Create a new site web user", description = "Creates a new site web user with username and password", tags = "WebSiteManagementAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "User details including username and password", required = true)
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "User created successfully",
@@ -80,7 +80,7 @@ public interface WebSiteManagementAPI {
 	@PostMapping(value = USER_ADMIN_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<WebSiteUserResponse> createUser(@Valid @RequestBody WebSiteUserRequest request);
 
-	@Operation(summary = "Update a site web user", description = "Updates username and/or password of an existing site web user")
+	@Operation(summary = "Update a site web user", description = "Updates username and/or password of an existing site web user", tags = "WebSiteManagementAPI")
 	@Parameter(name = "userId", description = "Site web user ID to update", required = true, example = "7")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Updated user details", required = true)
 	@ApiResponses(value = {
@@ -96,7 +96,7 @@ public interface WebSiteManagementAPI {
 	@PutMapping(value = USER_ADMIN_PATH + "/{userId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<WebSiteUserResponse> updateUser(@PathVariable("userId") Long userId, @Valid @RequestBody WebSiteUserRequest request);
 
-	@Operation(summary = "Delete a site web user", description = "Deletes a site web user and all associated ACL entries")
+	@Operation(summary = "Delete a site web user", description = "Deletes a site web user and all associated ACL entries", tags = "WebSiteManagementAPI")
 	@Parameter(name = "userId", description = "Site web user ID to delete", required = true, example = "7")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "204", description = "User deleted successfully"),
@@ -107,7 +107,7 @@ public interface WebSiteManagementAPI {
 	@DeleteMapping(value = USER_ADMIN_PATH + "/{userId}")
 	ResponseEntity<Void> deleteUser(@PathVariable("userId") Long userId);
 
-	@Operation(summary = "Get resources for a user", description = "Returns all resources accessible to a specific user")
+	@Operation(summary = "Get resources for a user", description = "Returns all resources accessible to a specific user", tags = "WebSiteManagementAPI")
 	@Parameter(name = "userId", description = "Site web user ID", required = true, example = "7")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Successfully retrieved resources",
@@ -121,7 +121,7 @@ public interface WebSiteManagementAPI {
 	ResponseEntity<WebSiteUserResponse> getResourcesByUserId(@PathVariable("userId") Long userId);
 
 	// ////////////////////////////// Site ACL APIs //////////////////////////////
-	@Operation(summary = "List all site ACL entries", description = "Returns all ACL assignments")
+	@Operation(summary = "List all site ACL entries", description = "Returns all ACL assignments", tags = "WebSiteManagementAPI")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Successfully retrieved list",
 						 content = @Content(array = @ArraySchema(schema = @Schema(implementation = WebSiteAclResponse.class)),
@@ -132,7 +132,7 @@ public interface WebSiteManagementAPI {
 	@GetMapping(value = ACL_ADMIN_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<WebSiteAclResponse>> getAllAcls();
 
-	@Operation(summary = "Get users for an ACL ID", description = "Returns all users who have access via a specific ACL ID")
+	@Operation(summary = "Get users for an ACL ID", description = "Returns all users who have access via a specific ACL ID", tags = "WebSiteManagementAPI")
 	@Parameter(name = "aclId", description = "Site ACL ID", required = true, example = "42")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Successfully retrieved users",
@@ -144,7 +144,7 @@ public interface WebSiteManagementAPI {
 	@GetMapping(value = ACL_ADMIN_PATH + "/{aclId}/users", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<WebSiteAclUsersResponse> getUsersByAclId(@PathVariable("aclId") Long aclId);
 
-	@Operation(summary = "Create a site ACL entry", description = "Links a site web user to an ACL ID")
+	@Operation(summary = "Create a site ACL entry", description = "Links a site web user to an ACL ID", tags = "WebSiteManagementAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "ACL assignment details", required = true)
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "ACL entry created successfully",
@@ -159,7 +159,7 @@ public interface WebSiteManagementAPI {
 	@PostMapping(value = ACL_ADMIN_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<WebSiteAclResponse> createAcl(@Valid @RequestBody WebSiteAclRequest request);
 
-	@Operation(summary = "Delete a site ACL entry", description = "Removes a specific ACL assignment")
+	@Operation(summary = "Delete a site ACL entry", description = "Removes a specific ACL assignment", tags = "WebSiteManagementAPI")
 	@Parameter(name = "id", description = "Site ACL entry ID to delete", required = true, example = "12")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "204", description = "ACL entry deleted successfully"),
@@ -171,7 +171,7 @@ public interface WebSiteManagementAPI {
 	ResponseEntity<Void> deleteAcl(@PathVariable("id") Long id);
 
 	// ////////////////////////////// Site Resource APIs //////////////////////////////
-	@Operation(summary = "List available site resources", description = "Returns paginated list of site resources that can be linked to ACLs")
+	@Operation(summary = "List available site resources", description = "Returns paginated list of site resources that can be linked to ACLs", tags = "WebSiteManagementAPI")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Successfully retrieved resources",
 						 content = @Content(schema = @Schema(implementation = WebSiteResourcePageResponse.class),
@@ -191,7 +191,7 @@ public interface WebSiteManagementAPI {
 															 @RequestParam(value = "size", defaultValue = "25") int size);
 
 	// ////////////////////////////// Site Configuration APIs //////////////////////////////
-	@Operation(summary = "List all site configuration entries", description = "Returns all configuration assignments")
+	@Operation(summary = "List all site configuration entries", description = "Returns all configuration assignments", tags = "WebSiteManagementAPI")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Successfully retrieved list",
 						 content = @Content(array = @ArraySchema(schema = @Schema(implementation = WebSiteAclResponse.class)),
@@ -202,7 +202,7 @@ public interface WebSiteManagementAPI {
 	@GetMapping(value = CONFIG_ADMIN_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<WebSiteConfigurationResponse>> getAllSiteConfigurations();
 
-	@Operation(summary = "Fetch existing site configuration by id", description = "Returns configuration entry for a specific key")
+	@Operation(summary = "Fetch existing site configuration by id", description = "Returns configuration entry for a specific key", tags = "WebSiteManagementAPI")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "404", description = "Configuration entry not found", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
@@ -211,7 +211,7 @@ public interface WebSiteManagementAPI {
 	@GetMapping(value = CONFIG_ADMIN_PATH + "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<WebSiteConfigurationResponse> getSiteConfigurationById(@PathVariable("id") Long id);
 
-	@Operation(summary = "Update existing site configuration entry", description = "Updates value of an existing configuration entry")
+	@Operation(summary = "Update existing site configuration entry", description = "Updates value of an existing configuration entry", tags = "WebSiteManagementAPI")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Configuration entry updated successfully",
 						 content = @Content(schema = @Schema(implementation = WebSiteConfigurationResponse.class),

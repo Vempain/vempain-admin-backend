@@ -37,11 +37,11 @@ import java.util.List;
 
 import static fi.poltsi.vempain.admin.api.Constants.REST_CONTENT_PREFIX;
 
-@Tag(name = "Gallery", description = "REST API for Vempain gallery objects")
+@Tag(name = "GalleryAPI", description = "REST API for Vempain gallery objects")
 public interface GalleryAPI {
 	String MAIN_PATH = REST_CONTENT_PREFIX + "/galleries";
 
-	@Operation(summary = "Get galleries", description = "Fetch all galleries", tags = "Gallery")
+	@Operation(summary = "Get galleries", description = "Fetch all galleries", tags = "GalleryAPI")
 	@Parameter(name = "details", description = "How much details should be included", example = "FULL", required = true)
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Got a list of galleries",
@@ -55,7 +55,7 @@ public interface GalleryAPI {
 	@GetMapping(value = MAIN_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<GalleryResponse>> getGalleries(@RequestParam(name = "details") @NotNull QueryDetailEnum queryDetailEnum);
 
-	@Operation(summary = "Get galleries linked to a page", description = "Fetch all galleries linked to a given page", tags = "Gallery")
+	@Operation(summary = "Get galleries linked to a page", description = "Fetch all galleries linked to a given page", tags = "GalleryAPI")
 	@Parameter(name = "details", description = "How much details should be included", example = "FULL", required = true)
 	@Parameter(name = "pageId", description = "Page ID", example = "1", required = true)
 	@ApiResponses(value = {
@@ -71,7 +71,7 @@ public interface GalleryAPI {
 	ResponseEntity<List<GalleryResponse>> getGalleriesByPage(@PathVariable(name = "pageId") long pageId,
 															 @RequestParam(name = "details") @NotNull QueryDetailEnum queryDetailEnum);
 
-	@Operation(summary = "Fetch a specific gallery", description = "Return the requested gallery", tags = "Gallery")
+	@Operation(summary = "Fetch a specific gallery", description = "Return the requested gallery", tags = "GalleryAPI")
 	@Parameter(name = "gallery_id", example = "123", description = "ID of the gallery to be retrieved", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Gallery found and returned",
@@ -85,7 +85,7 @@ public interface GalleryAPI {
 	@GetMapping(value = MAIN_PATH + "/{gallery_id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<GalleryResponse> getGalleryById(@PathVariable(name = "gallery_id") long galleryId);
 
-	@Operation(summary = "Create a new gallery", description = "Create a new gallery", tags = "Gallery")
+	@Operation(summary = "Create a new gallery", description = "Create a new gallery", tags = "GalleryAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Gallery to be created", required = true,
 														  content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 																			 schema = @Schema(implementation = GalleryRequest.class)))
@@ -100,7 +100,7 @@ public interface GalleryAPI {
 	@PostMapping(value = MAIN_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<GalleryResponse> createGallery(@RequestBody @NotNull GalleryRequest galleryRequest);
 
-	@Operation(summary = "Delete a gallery", description = "Delete a gallery", tags = "Gallery")
+	@Operation(summary = "Delete a gallery", description = "Delete a gallery", tags = "GalleryAPI")
 	@Parameter(name = "gallery_id", example = "123", description = "ID of the gallery to be deleted", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Gallery deleted",
@@ -113,7 +113,7 @@ public interface GalleryAPI {
 	@DeleteMapping(value = MAIN_PATH + "/{gallery_id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<DeleteResponse> deleteGallery(@PathVariable(name = "gallery_id") long galleryId);
 
-	@Operation(summary = "Update gallery", description = "Update an existing gallery", tags = "Gallery")
+	@Operation(summary = "Update gallery", description = "Update an existing gallery", tags = "GalleryAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Gallery to be updated",
 														  required = true,
 														  content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -130,7 +130,7 @@ public interface GalleryAPI {
 	@PutMapping(value = MAIN_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<GalleryResponse> updateGallery(@Valid @RequestBody GalleryRequest galleryRequest);
 
-	@Operation(summary = "Set galleries to page", description = "Set the list of galleries belonging to a page", tags = "Gallery")
+	@Operation(summary = "Set galleries to page", description = "Set the list of galleries belonging to a page", tags = "GalleryAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "List of gallery ID",
 														  required = true,
 														  content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -150,7 +150,7 @@ public interface GalleryAPI {
 
 	// /////////////////////////// Publishing actions
 
-	@Operation(summary = "Publish all galleries", description = "Publish a new version of all galleries", tags = "Publish")
+	@Operation(summary = "Publish all galleries", description = "Publish a new version of all galleries", tags = "GalleryAPI")
 	@Parameter(name = "publish_date", description = "Date when the all the galleries should be published, in YYYY-MM-DDTHH:mm:ss format",
 			   example = "2027-12-31T23:59:59")
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
@@ -165,7 +165,7 @@ public interface GalleryAPI {
 	@GetMapping(value = MAIN_PATH + "/publish", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<PublishResponse> publishAll(@RequestParam(name = "publish_date", required = false) Instant publishDate);
 
-	@Operation(summary = "Publish gallery", description = "Publish a new version of a gallery", tags = "Publish")
+	@Operation(summary = "Publish gallery", description = "Publish a new version of a gallery", tags = "GalleryAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Publish request with page ID and optional delay in seconds", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
 										description = "Gallery published",
@@ -181,7 +181,7 @@ public interface GalleryAPI {
 
 	@Operation(summary = "Search and page galleries",
 			   description = "Filter galleries by search term (applied to short name, description, site file name/path) and paginate the results.",
-			   tags = "Gallery")
+			   tags = "GalleryAPI")
 	@Parameters(value = {
 			@Parameter(name = "page", description = "Zero-based page number", example = "0"),
 			@Parameter(name = "size", description = "Page size", example = "25"),
@@ -209,7 +209,7 @@ public interface GalleryAPI {
 			@RequestParam(name = "search", required = false) String search,
 			@RequestParam(name = "case_sensitive", defaultValue = "false") boolean caseSensitive);
 
-	@Operation(summary = "Publish selected galleries", description = "Publishes a list of galleries", tags = "Publish")
+	@Operation(summary = "Publish selected galleries", description = "Publishes a list of galleries", tags = "GalleryAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "List of gallery IDs to publish", required = true,
 														  content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 																			 schema = @Schema(implementation = GalleryPublishRequest.class)))
