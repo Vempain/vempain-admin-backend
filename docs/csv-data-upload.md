@@ -21,17 +21,17 @@ to the site database as a dynamically created table.
 
 Each data set requires the following metadata:
 
-| Field | Description | Constraints |
-|---|---|---|
-| `identifier` | Unique identifier for the data set | Must start with a lowercase letter; only lowercase letters, numbers, and underscores allowed (`^[a-z][a-z0-9_]*$`) |
-| `type` | Type of the data (e.g. `time_series`, `tabulated`) | Required |
-| `description` | Human-readable description of the data set | Optional |
-| `column_definitions` | JSON array describing column names and types | Required |
-| `create_sql` | SQL used to create the table in the site database | Required |
-| `fetch_all_sql` | SQL used to fetch all rows from the site database table | Required |
-| `fetch_subset_sql` | SQL used to fetch a filtered subset of rows | Required |
-| `data_timestamp` | Timestamp indicating when the data was generated | Optional; defaults to the time of upload |
-| `csv_data` | Raw CSV content with a header row | Required |
+| Field                | Description                                             | Constraints                                                                                                        |
+|----------------------|---------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| `identifier`         | Unique identifier for the data set                      | Must start with a lowercase letter; only lowercase letters, numbers, and underscores allowed (`^[a-z][a-z0-9_]*$`) |
+| `type`               | Type of the data (e.g. `time_series`, `tabulated`)      | Required                                                                                                           |
+| `description`        | Human-readable description of the data set              | Optional                                                                                                           |
+| `column_definitions` | JSON array describing column names and types            | Required                                                                                                           |
+| `create_sql`         | SQL used to create the table in the site database       | Required                                                                                                           |
+| `fetch_all_sql`      | SQL used to fetch all rows from the site database table | Required                                                                                                           |
+| `fetch_subset_sql`   | SQL used to fetch a filtered subset of rows             | Required                                                                                                           |
+| `data_timestamp`     | Timestamp indicating when the data was generated        | Optional; defaults to the time of upload                                                                           |
+| `csv_data`           | Raw CSV content with a header row                       | Required                                                                                                           |
 
 ## Admin Database Storage
 
