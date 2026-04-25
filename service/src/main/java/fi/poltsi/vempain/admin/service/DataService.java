@@ -15,9 +15,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.sql.DataSource;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 @Slf4j
@@ -129,16 +133,17 @@ public class DataService {
 		// so it only contains [a-z][a-z0-9_]* characters. The table name is double-quoted for safety.
 		var safeIdentifier = entity.getIdentifier();
 		var quotedTableName = "\"" + TABLE_PREFIX + safeIdentifier + "\"";
+		var createSql = buildCreateSqlForTable(entity.getCreateSql(), quotedTableName);
 
 		try {
 			siteJdbcTemplate.execute("DROP TABLE IF EXISTS " + quotedTableName);
 			log.info("Dropped table '{}' if it existed", quotedTableName);
 
-			siteJdbcTemplate.execute(entity.getCreateSql());
+			siteJdbcTemplate.execute(createSql);
 			log.info("Created table '{}' in site database", quotedTableName);
 
-			importCsvData(quotedTableName, entity.getCsvData());
-			log.info("Imported CSV data into table '{}'", quotedTableName);
+			var importedRows = importCsvData(quotedTableName, entity.getCsvData());
+			log.info("Imported {} CSV rows into table '{}'", importedRows, quotedTableName);
 		} catch (ResponseStatusException e) {
 			throw e;
 		} catch (Exception e) {
@@ -147,6 +152,19 @@ public class DataService {
 		}
 
 		return entity.toDataResponse();
+	}
+
+	private String buildCreateSqlForTable(String createSql, String quotedTableName) {
+		validateCreateSql(createSql);
+
+		var openParenthesisIndex = createSql.indexOf('(');
+		if (openParenthesisIndex < 0) {
+			log.error("create_sql does not contain table definition parenthesis: {}", createSql);
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "create_sql must define table columns");
+		}
+
+		var columnDefinitionSql = createSql.substring(openParenthesisIndex).trim();
+		return "CREATE TABLE " + quotedTableName + " " + columnDefinitionSql;
 	}
 
 	private void validateCreateSql(String createSql) {
@@ -162,20 +180,24 @@ public class DataService {
 		}
 	}
 
-	private void importCsvData(String tableName, String csvData) {
+	private int importCsvData(String tableName, String csvData) {
 		if (csvData == null || csvData.isBlank()) {
 			log.warn("CSV data is empty for table '{}', nothing to import", tableName);
-			return;
+			return 0;
 		}
 
-		var lines = csvData.split("\n");
+		var lines = csvData.split("\\R");
 
 		if (lines.length < 2) {
 			log.warn("CSV data has no data rows for table '{}', only headers or empty", tableName);
-			return;
+			return 0;
 		}
 
 		var headers = parseCsvRow(lines[0]);
+		if (headers.isEmpty()) {
+			log.error("CSV header row is empty for table '{}'", tableName);
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "CSV header row is missing");
+		}
 
 		for (String header : headers) {
 			if (!header.matches(COLUMN_NAME_REGEX)) {
@@ -188,6 +210,8 @@ public class DataService {
 		var placeholders = "?, ".repeat(headers.size());
 		placeholders = placeholders.substring(0, placeholders.length() - 2);
 		var insertSql = "INSERT INTO " + tableName + " (" + columnList + ") VALUES (" + placeholders + ")";
+		var columnSqlTypes = resolveColumnSqlTypes(tableName, headers);
+		var importedRows = 0;
 
 		for (int i = 1; i < lines.length; i++) {
 			var line = lines[i];
@@ -199,12 +223,99 @@ public class DataService {
 			var values = parseCsvRow(line);
 
 			if (values.size() != headers.size()) {
-				log.warn("CSV row {} has {} columns but expected {}; skipping", i, values.size(), headers.size());
-				continue;
+				log.error("CSV row {} has {} columns but expected {}", i, values.size(), headers.size());
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+						"CSV row " + i + " has " + values.size() + " columns but expected " + headers.size());
 			}
 
-			siteJdbcTemplate.update(insertSql, values.toArray());
+			var rowNumber = i;
+			siteJdbcTemplate.update(insertSql, ps -> {
+				for (int columnIndex = 0; columnIndex < values.size(); columnIndex++) {
+					var sqlType = columnSqlTypes.get(columnIndex);
+					var typedValue = coerceCsvValue(values.get(columnIndex), sqlType, headers.get(columnIndex), rowNumber);
+
+					if (typedValue == null) {
+						ps.setNull(columnIndex + 1, sqlType);
+					} else if (typedValue instanceof String) {
+						// Keep textual values untyped to avoid over-constraining DB casts for text/date-like columns.
+						ps.setObject(columnIndex + 1, typedValue);
+					} else {
+						ps.setObject(columnIndex + 1, typedValue, sqlType);
+					}
+				}
+			});
+			importedRows++;
 		}
+
+		return importedRows;
+	}
+
+	private List<Integer> resolveColumnSqlTypes(String tableName, List<String> headers) {
+		Map<String, Integer> columnTypeByName = siteJdbcTemplate.query("SELECT * FROM " + tableName + " WHERE 1 = 0", rs -> {
+			var metadata = rs.getMetaData();
+			var types = new HashMap<String, Integer>();
+
+			for (int i = 1; i <= metadata.getColumnCount(); i++) {
+				types.put(metadata.getColumnName(i).toLowerCase(Locale.ROOT), metadata.getColumnType(i));
+			}
+
+			return types;
+		});
+
+		if (columnTypeByName == null || columnTypeByName.isEmpty()) {
+			log.warn("Could not resolve SQL column types for table '{}', defaulting CSV binding to VARCHAR", tableName);
+			columnTypeByName = Map.of();
+		}
+
+		var sqlTypes = new ArrayList<Integer>(headers.size());
+		for (String header : headers) {
+			sqlTypes.add(columnTypeByName.getOrDefault(header.toLowerCase(Locale.ROOT), java.sql.Types.VARCHAR));
+		}
+
+		return sqlTypes;
+	}
+
+	private Object coerceCsvValue(String rawValue, int sqlType, String columnName, int rowNumber) {
+		if (rawValue == null || rawValue.isBlank()) {
+			return null;
+		}
+
+		var value = rawValue.trim();
+
+		try {
+			return switch (sqlType) {
+				case java.sql.Types.TINYINT, java.sql.Types.SMALLINT -> Short.valueOf(value);
+				case java.sql.Types.INTEGER -> Integer.valueOf(value);
+				case java.sql.Types.BIGINT -> Long.valueOf(value);
+				case java.sql.Types.REAL -> Float.valueOf(value);
+				case java.sql.Types.FLOAT, java.sql.Types.DOUBLE -> Double.valueOf(value);
+				case java.sql.Types.NUMERIC, java.sql.Types.DECIMAL -> new BigDecimal(value);
+				case java.sql.Types.BOOLEAN, java.sql.Types.BIT -> parseBoolean(value, columnName, rowNumber);
+				default -> value;
+			};
+		} catch (NumberFormatException e) {
+			log.error("Invalid numeric value '{}' for column '{}' at CSV row {}", rawValue, columnName, rowNumber);
+			throw new ResponseStatusException(
+					HttpStatus.BAD_REQUEST,
+					"Invalid value '" + rawValue + "' for column '" + columnName + "' at CSV row " + rowNumber);
+		}
+	}
+
+	private Boolean parseBoolean(String value, String columnName, int rowNumber) {
+		var normalized = value.toLowerCase(Locale.ROOT);
+
+		if (normalized.equals("true") || normalized.equals("1") || normalized.equals("yes") || normalized.equals("y")) {
+			return true;
+		}
+
+		if (normalized.equals("false") || normalized.equals("0") || normalized.equals("no") || normalized.equals("n")) {
+			return false;
+		}
+
+		log.error("Invalid boolean value '{}' for column '{}' at CSV row {}", value, columnName, rowNumber);
+		throw new ResponseStatusException(
+				HttpStatus.BAD_REQUEST,
+				"Invalid boolean value '" + value + "' for column '" + columnName + "' at CSV row " + rowNumber);
 	}
 
 	private List<String> parseCsvRow(String row) {

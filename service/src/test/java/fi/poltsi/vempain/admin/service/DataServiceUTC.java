@@ -269,7 +269,19 @@ class DataServiceUTC {
 		assertNotNull(response);
 		assertEquals(TEST_IDENTIFIER, response.getIdentifier());
 		verify(mockJdbcTemplate).execute("DROP TABLE IF EXISTS \"website_data__test_data\"");
-		verify(mockJdbcTemplate).execute(entity.getCreateSql());
+		verify(mockJdbcTemplate).execute("CREATE TABLE \"website_data__test_data\" (id BIGSERIAL PRIMARY KEY, title VARCHAR(255))");
+	}
+
+	@Test
+	void publishRewritesCreateSqlTableNameOk() {
+		var entity = buildEntity(1L);
+		entity.setCreateSql("CREATE TABLE wrong_table_name (id BIGSERIAL PRIMARY KEY, title VARCHAR(255))");
+		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+
+		DataResponse response = dataService.publish(TEST_IDENTIFIER);
+
+		assertNotNull(response);
+		verify(mockJdbcTemplate).execute("CREATE TABLE \"website_data__test_data\" (id BIGSERIAL PRIMARY KEY, title VARCHAR(255))");
 	}
 
 	@Test
@@ -295,6 +307,20 @@ class DataServiceUTC {
 			fail("Should have thrown ResponseStatusException");
 		} catch (ResponseStatusException e) {
 			assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
+		}
+	}
+
+	@Test
+	void publishCsvColumnCountMismatchFail() {
+		var entity = buildEntity(1L);
+		entity.setCsvData("title,year\nOnlyTitle");
+		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+
+		try {
+			dataService.publish(TEST_IDENTIFIER);
+			fail("Should have thrown ResponseStatusException for invalid CSV row width");
+		} catch (ResponseStatusException e) {
+			assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
 		}
 	}
 

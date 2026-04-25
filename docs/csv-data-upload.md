@@ -6,6 +6,7 @@
 >
 > - **Identifier validation**: The `identifier` is validated against `^[a-z][a-z0-9_]*$` and the resulting table name is double-quoted during DROP/creation, preventing any SQL injection through the identifier.
 > - **Create SQL validation**: The `create_sql` must start with `CREATE TABLE` (case-insensitive); other DDL/DML statements are rejected.
+> - **Target table enforcement**: During publication the backend always creates `website_data__<identifier>` regardless of the table name typed in `create_sql`; this prevents accidental/malicious publication to unintended table names.
 > - **Column name validation**: CSV header column names are validated against `^[a-zA-Z_][a-zA-Z0-9_]*$` and double-quoted in INSERT statements.
 > - **Parameterized inserts**: CSV data rows are inserted using JDBC parameterized queries (`?` placeholders), preventing injection through data values.
 >
@@ -62,7 +63,7 @@ When a data set is published, the following steps are performed:
 1. The site database table name is generated as `website_data__<identifier>`.
    For example, an identifier of `cd_collection` produces the table name `website_data__cd_collection`.
 2. If the table already exists in the site database, it is dropped (`DROP TABLE IF EXISTS`).
-3. The table is created using the `create_sql` from the metadata.
+3. The table is created using the column definition from `create_sql`, but the table name is always forced to `website_data__<identifier>`.
 4. The CSV data is parsed and each row is inserted into the newly created table.
 
 ## API Endpoints
@@ -231,4 +232,4 @@ Invalid examples: `1data`, `MyData`, `data-set`, `data set`
 - Column names must contain only **letters, digits, and underscores**, and must start with a **letter or underscore**.
 - Values **may be quoted** with double-quotes (`"`); embedded quotes are escaped by doubling them (`""`).
 - Empty lines are ignored during import.
-- If a data row has a different number of columns than the header, the row is skipped.
+- If a data row has a different number of columns than the header, publication fails with `400 Bad Request`.
