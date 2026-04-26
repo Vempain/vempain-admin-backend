@@ -40,14 +40,50 @@ public class DataService {
 		this.siteJdbcTemplate = new JdbcTemplate(siteDataSource);
 	}
 
-	public List<DataSummaryResponse> findAll() {
+	public List<DataSummaryResponse> findAll(String type, String identifierPrefix, String search) {
 		List<DataSummaryResponse> summaries = new ArrayList<>();
+		var normalizedType = normalizeFilter(type);
+		var normalizedIdentifierPrefix = normalizeFilter(identifierPrefix);
+		var normalizedSearch = normalizeFilter(search);
 
 		for (DataEntity entity : dataRepository.findAll()) {
+			if (!matchesFilters(entity, normalizedType, normalizedIdentifierPrefix, normalizedSearch)) {
+				continue;
+			}
 			summaries.add(entity.toDataSummaryResponse());
 		}
 
 		return summaries;
+	}
+
+	private boolean matchesFilters(DataEntity entity, String normalizedType, String normalizedIdentifierPrefix, String normalizedSearch) {
+		if (normalizedType != null && !normalizeFilter(entity.getType()).equals(normalizedType)) {
+			return false;
+		}
+
+		if (normalizedIdentifierPrefix != null && !normalizeFilter(entity.getIdentifier()).startsWith(normalizedIdentifierPrefix)) {
+			return false;
+		}
+
+		if (normalizedSearch == null) {
+			return true;
+		}
+
+		var haystack = String.join(" ",
+				normalizeFilter(entity.getIdentifier()),
+				normalizeFilter(entity.getType()),
+				normalizeFilter(entity.getDescription()) == null ? "" : normalizeFilter(entity.getDescription())
+		);
+		return haystack.contains(normalizedSearch);
+	}
+
+	private String normalizeFilter(String value) {
+		if (value == null) {
+			return null;
+		}
+
+		var normalized = value.trim().toLowerCase();
+		return normalized.isEmpty() ? null : normalized;
 	}
 
 	public DataResponse findByIdentifier(String identifier) {

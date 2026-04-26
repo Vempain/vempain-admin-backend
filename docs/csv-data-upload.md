@@ -78,6 +78,14 @@ GET /api/content-management/data
 
 Returns a list of all data sets with their metadata but **without** the raw CSV data.
 
+Optional query parameters can be used to narrow the result set for editor integrations:
+
+| Query parameter | Description |
+|-----------------|-------------|
+| `type` | Filter by dataset type such as `tabulated` or `time_series`. |
+| `identifier_prefix` | Return only identifiers that start with the given prefix, for example `gps_timeseries_`. |
+| `search` | Case-insensitive search across identifier, type, and description. |
+
 **Response:** `200 OK` – Array of `DataSummaryResponse` objects.
 
 ---
@@ -223,6 +231,25 @@ It must conform to the following rules:
 - Regex: `^[a-z][a-z0-9_]*$`
 
 Valid examples: `cd_collection`, `temperature2024`, `sales_q1`
+
+## Website embed usage
+
+Published data sets can be embedded into page bodies through the Vempain Admin rich text editor.
+
+- Music data embed tag example:
+
+  ```html
+  <!--vps:embed:music:music_library-->
+  ```
+
+- GPS time-series embed tag example:
+
+  ```html
+  <!--vps:embed:gps_timeseries:gps_timeseries_holidays_2024-->
+  ```
+
+The website frontend uses those identifiers to fetch data from the published `website_data__<identifier>` tables.
+For end-user editor instructions and verification steps, see `vempain-website/docs/DATA_EMBEDS.md`.
 
 Invalid examples: `1data`, `MyData`, `data-set`, `data set`
 

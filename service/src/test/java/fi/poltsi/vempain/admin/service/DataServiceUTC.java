@@ -63,7 +63,7 @@ class DataServiceUTC {
 		var entities = buildEntityList(3);
 		when(dataRepository.findAll()).thenReturn(entities);
 
-		List<DataSummaryResponse> result = dataService.findAll();
+		List<DataSummaryResponse> result = dataService.findAll(null, null, null);
 
 		assertNotNull(result);
 		assertEquals(3, result.size());
@@ -73,10 +73,44 @@ class DataServiceUTC {
 	void findAllEmptyOk() {
 		when(dataRepository.findAll()).thenReturn(new ArrayList<>());
 
-		List<DataSummaryResponse> result = dataService.findAll();
+		List<DataSummaryResponse> result = dataService.findAll(null, null, null);
 
 		assertNotNull(result);
 		assertEquals(0, result.size());
+	}
+
+	@Test
+	void findAllFiltersByTypeAndIdentifierPrefixOk() {
+		var music = buildEntity(1L);
+		music.setIdentifier("music_library");
+		music.setDescription("Music library");
+		var gps = buildEntity(2L);
+		gps.setIdentifier("gps_timeseries_holidays");
+		gps.setType("time_series");
+		gps.setDescription("GPS trip track");
+		when(dataRepository.findAll()).thenReturn(List.of(music, gps));
+
+		List<DataSummaryResponse> result = dataService.findAll("time_series", "gps_timeseries_", null);
+
+		assertEquals(1, result.size());
+		assertEquals("gps_timeseries_holidays", result.get(0).getIdentifier());
+	}
+
+	@Test
+	void findAllFiltersBySearchOk() {
+		var music = buildEntity(1L);
+		music.setIdentifier("music_library");
+		music.setDescription("Complete music library");
+		var gps = buildEntity(2L);
+		gps.setIdentifier("gps_timeseries_holidays");
+		gps.setType("time_series");
+		gps.setDescription("GPS trip track");
+		when(dataRepository.findAll()).thenReturn(List.of(music, gps));
+
+		List<DataSummaryResponse> result = dataService.findAll(null, null, "trip");
+
+		assertEquals(1, result.size());
+		assertEquals("gps_timeseries_holidays", result.get(0).getIdentifier());
 	}
 
 	// findByIdentifier

@@ -49,9 +49,9 @@ class DataControllerUTC {
 
 	@Test
 	void getAllDataSetsOk() {
-		when(dataService.findAll()).thenReturn(List.of(summaryResponse));
+		when(dataService.findAll(null, null, null)).thenReturn(List.of(summaryResponse));
 
-		ResponseEntity<List<DataSummaryResponse>> response = dataController.getAllDataSets();
+		ResponseEntity<List<DataSummaryResponse>> response = dataController.getAllDataSets(null, null, null);
 
 		assertNotNull(response);
 		assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -61,14 +61,25 @@ class DataControllerUTC {
 
 	@Test
 	void getAllDataSetsEmptyOk() {
-		when(dataService.findAll()).thenReturn(new ArrayList<>());
+		when(dataService.findAll(null, null, null)).thenReturn(new ArrayList<>());
 
-		ResponseEntity<List<DataSummaryResponse>> response = dataController.getAllDataSets();
+		ResponseEntity<List<DataSummaryResponse>> response = dataController.getAllDataSets(null, null, null);
 
 		assertNotNull(response);
 		assertEquals(HttpStatus.OK, response.getStatusCode());
 		assertNotNull(response.getBody());
 		assertEquals(0, response.getBody().size());
+	}
+
+	@Test
+	void getAllDataSetsFilteredOk() {
+		when(dataService.findAll("time_series", "gps_timeseries_", "trip")).thenReturn(List.of(summaryResponse));
+
+		ResponseEntity<List<DataSummaryResponse>> response = dataController.getAllDataSets("time_series", "gps_timeseries_", "trip");
+
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertNotNull(response.getBody());
+		assertEquals(1, response.getBody().size());
 	}
 
 	// GET by identifier
