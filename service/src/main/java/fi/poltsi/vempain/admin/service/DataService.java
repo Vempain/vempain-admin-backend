@@ -16,7 +16,15 @@ import org.springframework.web.server.ResponseStatusException;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -327,6 +335,9 @@ public class DataService {
 				case java.sql.Types.FLOAT, java.sql.Types.DOUBLE -> Double.valueOf(value);
 				case java.sql.Types.NUMERIC, java.sql.Types.DECIMAL -> new BigDecimal(value);
 				case java.sql.Types.BOOLEAN, java.sql.Types.BIT -> parseBoolean(value, columnName, rowNumber);
+				case java.sql.Types.DATE -> parseDate(value, columnName, rowNumber);
+				case java.sql.Types.TIME, java.sql.Types.TIME_WITH_TIMEZONE -> parseTime(value, columnName, rowNumber);
+				case java.sql.Types.TIMESTAMP, java.sql.Types.TIMESTAMP_WITH_TIMEZONE -> parseTimestamp(value, columnName, rowNumber);
 				default -> value;
 			};
 		} catch (NumberFormatException e) {
@@ -334,6 +345,52 @@ public class DataService {
 			throw new ResponseStatusException(
 					HttpStatus.BAD_REQUEST,
 					"Invalid value '" + rawValue + "' for column '" + columnName + "' at CSV row " + rowNumber);
+		}
+	}
+
+	private Date parseDate(String value, String columnName, int rowNumber) {
+		try {
+			return Date.valueOf(LocalDate.parse(value));
+		} catch (DateTimeParseException e) {
+			log.error("Invalid date value '{}' for column '{}' at CSV row {}", value, columnName, rowNumber);
+			throw new ResponseStatusException(
+					HttpStatus.BAD_REQUEST,
+					"Invalid date value '" + value + "' for column '" + columnName + "' at CSV row " + rowNumber);
+		}
+	}
+
+	private Time parseTime(String value, String columnName, int rowNumber) {
+		try {
+			return Time.valueOf(LocalTime.parse(value));
+		} catch (DateTimeParseException e) {
+			log.error("Invalid time value '{}' for column '{}' at CSV row {}", value, columnName, rowNumber);
+			throw new ResponseStatusException(
+					HttpStatus.BAD_REQUEST,
+					"Invalid time value '" + value + "' for column '" + columnName + "' at CSV row " + rowNumber);
+		}
+	}
+
+	private Timestamp parseTimestamp(String value, String columnName, int rowNumber) {
+		try {
+			// Accept full ISO-8601 values with zone information (e.g. 2016-03-18T11:25:55Z).
+			return Timestamp.from(Instant.parse(value));
+		} catch (DateTimeParseException ignored) {
+			// Fall through to support local date-time format without timezone.
+		}
+
+		try {
+			return Timestamp.from(OffsetDateTime.parse(value).toInstant());
+		} catch (DateTimeParseException ignored) {
+			// Fall through to local timestamp parsing.
+		}
+
+		try {
+			return Timestamp.valueOf(LocalDateTime.parse(value));
+		} catch (DateTimeParseException e) {
+			log.error("Invalid timestamp value '{}' for column '{}' at CSV row {}", value, columnName, rowNumber);
+			throw new ResponseStatusException(
+					HttpStatus.BAD_REQUEST,
+					"Invalid timestamp value '" + value + "' for column '" + columnName + "' at CSV row " + rowNumber);
 		}
 	}
 

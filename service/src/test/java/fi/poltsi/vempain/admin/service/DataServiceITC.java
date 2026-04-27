@@ -11,6 +11,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.sql.DataSource;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -146,6 +147,92 @@ class DataServiceITC extends AbstractITCTest {
 
 		var exception = assertThrows(ResponseStatusException.class, () -> dataService.publish("broken_numeric_data"));
 		assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+	}
+
+	@Test
+	void publishCsvTimestampColumnImportsIsoUtcValuesOk() {
+		var request = DataRequest.builder()
+								 .identifier("gps_points")
+								 .type("time_series")
+								 .description("GPS points")
+								 .columnDefinitions("[{\"name\":\"timestamp\",\"type\":\"string\"},{\"name\":\"latitude\",\"type\":\"decimal\"}]")
+								 .createSql("CREATE TABLE any_name (timestamp TIMESTAMP, latitude DECIMAL(15,5))")
+								 .fetchAllSql("SELECT timestamp, latitude FROM website_data__gps_points")
+								 .fetchSubsetSql("SELECT timestamp, latitude FROM website_data__gps_points WHERE timestamp >= :from")
+								 .csvData("timestamp,latitude\n2016-03-18T11:25:55Z,60.31724\n2016-03-18T11:42:19Z,60.35231")
+								 .build();
+
+		dataService.create(request);
+		dataService.publish("gps_points");
+
+		var rows = siteJdbcTemplate.queryForObject("SELECT COUNT(*) FROM \"website_data__gps_points\"", Integer.class);
+		assertEquals(2, rows);
+
+		var firstLatitude = siteJdbcTemplate.queryForObject(
+				"SELECT latitude FROM \"website_data__gps_points\" ORDER BY timestamp ASC LIMIT 1",
+				Double.class);
+		assertEquals(60.31724, firstLatitude, 0.00001);
+	}
+
+	@Test
+	void publishCsvInvalidTimestampValueReturnsBadRequest() {
+		var request = DataRequest.builder()
+								 .identifier("broken_timestamp_data")
+								 .type("time_series")
+								 .description("Invalid timestamp CSV")
+								 .columnDefinitions("[{\"name\":\"timestamp\",\"type\":\"string\"},{\"name\":\"latitude\",\"type\":\"decimal\"}]")
+								 .createSql("CREATE TABLE any_name (timestamp TIMESTAMP, latitude DECIMAL(15,5))")
+								 .fetchAllSql("SELECT timestamp, latitude FROM website_data__broken_timestamp_data")
+								 .fetchSubsetSql("SELECT timestamp, latitude FROM website_data__broken_timestamp_data WHERE timestamp >= :from")
+								 .csvData("timestamp,latitude\nnot_a_timestamp,60.31724")
+								 .build();
+
+		dataService.create(request);
+
+		var exception = assertThrows(ResponseStatusException.class, () -> dataService.publish("broken_timestamp_data"));
+		assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+	}
+
+	@Test
+	void findAllGpsTimeSeriesBySearchReturnsLegacyAndPrefixedIdentifiersOk() {
+		dataService.create(DataRequest.builder()
+								  .identifier("matkailu_etiopia_2016")
+								  .type("time_series")
+								  .description("GPS time-series for Ethiopia")
+								  .columnDefinitions("[{\"name\":\"timestamp\",\"type\":\"string\"}]")
+								  .createSql("CREATE TABLE tmp_legacy (timestamp TIMESTAMP)")
+								  .fetchAllSql("SELECT timestamp FROM website_data__matkailu_etiopia_2016")
+								  .fetchSubsetSql("SELECT timestamp FROM website_data__matkailu_etiopia_2016 WHERE timestamp >= :from")
+								  .csvData("timestamp\n2016-03-18T11:25:55Z")
+								  .build());
+
+		dataService.create(DataRequest.builder()
+								  .identifier("gps_timeseries_legacy_track")
+								  .type("time_series")
+								  .description("GPS legacy route")
+								  .columnDefinitions("[{\"name\":\"timestamp\",\"type\":\"string\"}]")
+								  .createSql("CREATE TABLE tmp_prefixed (timestamp TIMESTAMP)")
+								  .fetchAllSql("SELECT timestamp FROM website_data__gps_timeseries_legacy_track")
+								  .fetchSubsetSql("SELECT timestamp FROM website_data__gps_timeseries_legacy_track WHERE timestamp >= :from")
+								  .csvData("timestamp\n2016-03-18T11:42:19Z")
+								  .build());
+
+		dataService.create(DataRequest.builder()
+								  .identifier("weather_series")
+								  .type("time_series")
+								  .description("Weather observations")
+								  .columnDefinitions("[{\"name\":\"timestamp\",\"type\":\"string\"}]")
+								  .createSql("CREATE TABLE tmp_weather (timestamp TIMESTAMP)")
+								  .fetchAllSql("SELECT timestamp FROM website_data__weather_series")
+								  .fetchSubsetSql("SELECT timestamp FROM website_data__weather_series WHERE timestamp >= :from")
+								  .csvData("timestamp\n2016-03-18T11:55:00Z")
+								  .build());
+
+		var results = dataService.findAll("time_series", null, "gps");
+
+		assertEquals(2, results.size());
+		assertEquals(List.of("gps_timeseries_legacy_track", "matkailu_etiopia_2016"),
+					 results.stream().map(result -> result.getIdentifier()).sorted().toList());
 	}
 }
 

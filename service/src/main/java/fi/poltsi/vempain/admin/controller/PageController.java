@@ -80,7 +80,7 @@ public class PageController implements PageAPI {
 	@Override
 	public ResponseEntity<PageResponse> getPageById(long pageId) {
 		var page = pageService.findById(pageId);
-		log.debug("Found page with ID {}: {}", pageId, page);
+		log.debug("Found page with ID {}: {}", pageId, page.getPagePath());
 
 		if (page == null) {
 			log.error("Could not retrieve page with ID {}", pageId);
