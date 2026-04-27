@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -38,7 +39,9 @@ public interface DataAPI {
 						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = MAIN_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<List<DataSummaryResponse>> getAllDataSets();
+	ResponseEntity<List<DataSummaryResponse>> getAllDataSets(@RequestParam(name = "type", required = false) String type,
+													@RequestParam(name = "identifier_prefix", required = false) String identifierPrefix,
+													@RequestParam(name = "search", required = false) String search);
 
 	@Operation(summary = "Get a data set by identifier", description = "Returns the metadata and CSV data for the requested data set", tags = "DataAPI")
 	@Parameter(name = "identifier", example = "cd_collection", description = "Unique identifier of the data set", required = true)

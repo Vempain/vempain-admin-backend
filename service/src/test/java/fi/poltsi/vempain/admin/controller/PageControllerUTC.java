@@ -133,6 +133,20 @@ class PageControllerUTC {
 	}
 
 	@Test
+	void getPageByIdNotFoundReturns404() {
+		when(pageService.findById(999999L)).thenReturn(null);
+
+		try {
+			var response = pageController.getPageById(999999L);
+			assertNotNull(response);
+			assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+			assertEquals(null, response.getBody());
+		} catch (Exception e) {
+			fail("Should not have received an exception: " + e);
+		}
+	}
+
+	@Test
 	void addPageNullRequestFail() {
 		malformedPageRequest(null);
 	}

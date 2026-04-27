@@ -63,7 +63,7 @@ class DataServiceUTC {
 		var entities = buildEntityList(3);
 		when(dataRepository.findAll()).thenReturn(entities);
 
-		List<DataSummaryResponse> result = dataService.findAll();
+		List<DataSummaryResponse> result = dataService.findAll(null, null, null);
 
 		assertNotNull(result);
 		assertEquals(3, result.size());
@@ -73,10 +73,44 @@ class DataServiceUTC {
 	void findAllEmptyOk() {
 		when(dataRepository.findAll()).thenReturn(new ArrayList<>());
 
-		List<DataSummaryResponse> result = dataService.findAll();
+		List<DataSummaryResponse> result = dataService.findAll(null, null, null);
 
 		assertNotNull(result);
 		assertEquals(0, result.size());
+	}
+
+	@Test
+	void findAllFiltersByTypeAndIdentifierPrefixOk() {
+		var music = buildEntity(1L);
+		music.setIdentifier("music_library");
+		music.setDescription("Music library");
+		var gps = buildEntity(2L);
+		gps.setIdentifier("gps_timeseries_holidays");
+		gps.setType("time_series");
+		gps.setDescription("GPS trip track");
+		when(dataRepository.findAll()).thenReturn(List.of(music, gps));
+
+		List<DataSummaryResponse> result = dataService.findAll("time_series", "gps_timeseries_", null);
+
+		assertEquals(1, result.size());
+		assertEquals("gps_timeseries_holidays", result.get(0).getIdentifier());
+	}
+
+	@Test
+	void findAllFiltersBySearchOk() {
+		var music = buildEntity(1L);
+		music.setIdentifier("music_library");
+		music.setDescription("Complete music library");
+		var gps = buildEntity(2L);
+		gps.setIdentifier("gps_timeseries_holidays");
+		gps.setType("time_series");
+		gps.setDescription("GPS trip track");
+		when(dataRepository.findAll()).thenReturn(List.of(music, gps));
+
+		List<DataSummaryResponse> result = dataService.findAll(null, null, "trip");
+
+		assertEquals(1, result.size());
+		assertEquals("gps_timeseries_holidays", result.get(0).getIdentifier());
 	}
 
 	// findByIdentifier
@@ -269,7 +303,19 @@ class DataServiceUTC {
 		assertNotNull(response);
 		assertEquals(TEST_IDENTIFIER, response.getIdentifier());
 		verify(mockJdbcTemplate).execute("DROP TABLE IF EXISTS \"website_data__test_data\"");
-		verify(mockJdbcTemplate).execute(entity.getCreateSql());
+		verify(mockJdbcTemplate).execute("CREATE TABLE \"website_data__test_data\" (id BIGSERIAL PRIMARY KEY, title VARCHAR(255))");
+	}
+
+	@Test
+	void publishRewritesCreateSqlTableNameOk() {
+		var entity = buildEntity(1L);
+		entity.setCreateSql("CREATE TABLE wrong_table_name (id BIGSERIAL PRIMARY KEY, title VARCHAR(255))");
+		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+
+		DataResponse response = dataService.publish(TEST_IDENTIFIER);
+
+		assertNotNull(response);
+		verify(mockJdbcTemplate).execute("CREATE TABLE \"website_data__test_data\" (id BIGSERIAL PRIMARY KEY, title VARCHAR(255))");
 	}
 
 	@Test
@@ -295,6 +341,20 @@ class DataServiceUTC {
 			fail("Should have thrown ResponseStatusException");
 		} catch (ResponseStatusException e) {
 			assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
+		}
+	}
+
+	@Test
+	void publishCsvColumnCountMismatchFail() {
+		var entity = buildEntity(1L);
+		entity.setCsvData("title,year\nOnlyTitle");
+		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+
+		try {
+			dataService.publish(TEST_IDENTIFIER);
+			fail("Should have thrown ResponseStatusException for invalid CSV row width");
+		} catch (ResponseStatusException e) {
+			assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
 		}
 	}
 

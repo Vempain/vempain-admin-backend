@@ -26,6 +26,8 @@
   - Site migrations: `service/src/main/resources/db/migration/site`
   - Auth migrations are also loaded on the admin Flyway (`db/migration/auth`).
 - When you add a persisted field, expect to update **migration + entity + request/response DTO + service mapping + tests**. Example of a recent site-field addition: `global_permission` in `V1002__add_global_permission_on_user.sql` and `WebSiteUser`.
+- `fi.poltsi.vempain.admin.service.DataService` is the bridge between Admin-managed dataset metadata and the site datasource tables. GPS embed discovery depends on `findAll(type, identifierPrefix, search)` returning `time_series` rows found by `search=gps`, including legacy unprefixed identifiers.
+- When Admin publishes CSV into the site datasource, column coercion is schema-driven. Timestamp/date/time columns now accept ISO text inputs and fail with `400 BAD_REQUEST` when parsing is invalid; preserve that behavior when changing publish/import logic.
 
 ## Project-specific conventions
 - JSON DTOs commonly use **snake_case** via Jackson naming annotations even when Java fields are camelCase. Example: `WebSiteUserRequest` / `WebSiteUserResponse`.
@@ -57,4 +59,5 @@
   - `*RTC` = REST/controller-level tests
 - `AbstractITCTest` is the integration-test backbone: it starts two Postgres containers, runs **Flyway clean+migrate before each test**, and recreates filesystem directories under `/var/tmp`.
 - If you change schema, repository behavior, or filesystem/publish logic, add/update both a focused `UTC` and the relevant `ITC` when feasible.
+- GPS data-set listing behavior is integration-tested in `service/src/test/java/fi/poltsi/vempain/admin/service/DataServiceITC.java`; keep selector-query changes covered there.
 

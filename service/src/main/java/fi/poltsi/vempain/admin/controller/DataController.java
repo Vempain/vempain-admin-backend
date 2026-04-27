@@ -19,9 +19,9 @@ public class DataController implements DataAPI {
 	private final DataService dataService;
 
 	@Override
-	public ResponseEntity<List<DataSummaryResponse>> getAllDataSets() {
-		log.debug("Received request to list all data sets");
-		var summaries = dataService.findAll();
+	public ResponseEntity<List<DataSummaryResponse>> getAllDataSets(String type, String identifierPrefix, String search) {
+		log.debug("Received request to list all data sets with filters type='{}', identifierPrefix='{}', search='{}'", type, identifierPrefix, search);
+		var summaries = dataService.findAll(type, identifierPrefix, search);
 		return ResponseEntity.ok(summaries);
 	}
 
