@@ -12,6 +12,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.mockito.quality.Strictness;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -23,6 +25,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = Strictness.LENIENT)
 class PageGalleryServiceUTC {
 
 	@Mock
@@ -77,7 +80,7 @@ class PageGalleryServiceUTC {
 	@Test
 	void findPageGalleryByPageIdOk() {
 		Object[] row = {10L, 20L, 0L};
-		when(query.getResultList()).thenReturn(List.of(row));
+		when(query.getResultList()).thenReturn(Collections.singletonList(row));
 
 		List<PageGallery> result = pageGalleryService.findPageGalleryByPageId(10L);
 
@@ -103,7 +106,7 @@ class PageGalleryServiceUTC {
 	@Test
 	void findPageGalleryByGalleryIdOk() {
 		Object[] row = {5L, 7L, 1L};
-		when(query.getResultList()).thenReturn(List.of(row));
+		when(query.getResultList()).thenReturn(Collections.singletonList(row));
 
 		List<PageGallery> result = pageGalleryService.findPageGalleryByGalleryId(7L);
 

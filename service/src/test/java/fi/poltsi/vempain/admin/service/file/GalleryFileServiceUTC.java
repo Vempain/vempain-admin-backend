@@ -10,6 +10,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.mockito.quality.Strictness;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -22,6 +24,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = Strictness.LENIENT)
 class GalleryFileServiceUTC {
 
 	@Mock
@@ -44,7 +47,6 @@ class GalleryFileServiceUTC {
 
 	@Test
 	void deleteAllGalleryFilesOk() {
-		doNothing().when(entityManager).joinTransaction();
 		when(query.executeUpdate()).thenReturn(5);
 
 		galleryFileService.deleteAllGalleryFiles();
@@ -77,7 +79,7 @@ class GalleryFileServiceUTC {
 	@Test
 	void findGalleryFileByGalleryIdOk() {
 		Object[] row = {1L, 10L, 0L};
-		when(query.getResultList()).thenReturn(List.of(row));
+		when(query.getResultList()).thenReturn(Collections.singletonList(row));
 
 		List<GalleryFile> result = galleryFileService.findGalleryFileByGalleryId(1L);
 

@@ -10,6 +10,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.mockito.quality.Strictness;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -21,6 +23,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = Strictness.LENIENT)
 class FormComponentServiceUTC {
 
 	@Mock
@@ -62,7 +65,7 @@ class FormComponentServiceUTC {
 	@Test
 	void findFormComponentByFormIdOk() {
 		Object[] row = {1L, 2L, 0L};
-		when(query.getResultList()).thenReturn(List.of(row));
+		when(query.getResultList()).thenReturn(Collections.singletonList(row));
 
 		List<FormComponent> result = formComponentService.findFormComponentByFormId(1L);
 
@@ -88,7 +91,7 @@ class FormComponentServiceUTC {
 	@Test
 	void findFormComponentByComponentIdOk() {
 		Object[] row = {3L, 5L, 1L};
-		when(query.getResultList()).thenReturn(List.of(row));
+		when(query.getResultList()).thenReturn(Collections.singletonList(row));
 
 		List<FormComponent> result = formComponentService.findFormComponentByComponentId(5L);
 

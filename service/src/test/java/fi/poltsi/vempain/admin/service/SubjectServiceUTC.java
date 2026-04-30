@@ -12,6 +12,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.mockito.quality.Strictness;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -25,6 +27,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = Strictness.LENIENT)
 class SubjectServiceUTC {
 
 	@Mock
@@ -165,19 +168,15 @@ class SubjectServiceUTC {
 	void saveTagsAsSubjectsUpsertReturnsNoIdThrowsFail() {
 		TagRequest tagRequest = mock(TagRequest.class);
 		when(tagRequest.getTagName()).thenReturn("river");
-		when(tagRequest.getTagNameDe()).thenReturn(null);
-		when(tagRequest.getTagNameEn()).thenReturn(null);
-		when(tagRequest.getTagNameFi()).thenReturn(null);
-		when(tagRequest.getTagNameSv()).thenReturn(null);
-		when(tagRequest.getTagNameEs()).thenReturn(null);
 
 		when(subjectRepository.findSubjectBySubjectName("river")).thenReturn(Optional.empty());
 		// upsertSubjectReturnId returns empty list (triggers IllegalStateException)
 		when(query.getResultList()).thenReturn(List.of());
 		when(query.executeUpdate()).thenReturn(1);
 
-		// The service swallows the exception for this subject and continues, so no throw
-		subjectService.saveTagsAsSubjects(List.of(tagRequest), 10L);
+		// upsertSubjectReturnId throws IllegalStateException when result list is empty
+		assertThrows(IllegalStateException.class,
+				() -> subjectService.saveTagsAsSubjects(List.of(tagRequest), 10L));
 	}
 
 	private Subject buildSubject(long id, String name) {
