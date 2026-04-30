@@ -15,6 +15,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -41,7 +42,7 @@ class ScheduleServiceITC extends AbstractITCTest {
 		List<FileImportScheduleResponse> schedules = scheduleService.getUpcomingFileImportSchedules();
 		assertNotNull(schedules);
 		boolean found = schedules.stream().anyMatch(s -> "/source/dir".equals(s.getSourceDirectory()));
-		assertEquals(true, found);
+		assertTrue(found);
 	}
 
 	// ---- getUpcomingFileImportSchedules ----

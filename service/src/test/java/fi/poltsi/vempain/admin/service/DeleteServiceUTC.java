@@ -120,7 +120,7 @@ class DeleteServiceUTC {
 	}
 
 	@Test
-	void deleteComponentByIdWithFormsFail() throws VempainEntityNotFoundException {
+	void deleteComponentByIdWithFormsOk() throws VempainEntityNotFoundException {
 		Component component = TestUTCTools.generateComponent(1L, 1L);
 		FormComponent fc = TestUTCTools.generateFormComponent(5L, 1L);
 		Form form = TestUTCTools.generateForm(5L, 5L);
