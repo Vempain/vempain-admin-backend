@@ -81,4 +81,16 @@ class FileThumbServiceUTC {
 		verify(imageTools, times(1)).getImageDimensions(any(Path.class));
 	}
 
+	@Test
+	void deleteOk() {
+		fileThumbService.delete(1L);
+		verify(fileThumbPageableRepository, times(1)).deleteById(1L);
+	}
+
+	@Test
+	void deleteByParentIdOk() {
+		fileThumbService.deleteByParentId(5L);
+		verify(fileThumbPageableRepository, times(1)).deleteByParentId(5L);
+	}
+
 }
