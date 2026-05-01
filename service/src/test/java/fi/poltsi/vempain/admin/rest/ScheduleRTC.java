@@ -1,5 +1,6 @@
 package fi.poltsi.vempain.admin.rest;
 
+import fi.poltsi.vempain.auth.security.jwt.JwtUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -7,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -18,6 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Slf4j
 @SpringBootTest
 @AutoConfigureMockMvc
+@TestPropertySource(properties = {"vempain.test=false"})
 class ScheduleRTC {
 
 	private static final String SCHEDULE_PREFIX = "/schedule-management";
@@ -25,9 +28,13 @@ class ScheduleRTC {
 	@Autowired
 	private MockMvc mockMvc;
 
+	@Autowired
+	private JwtUtils jwtUtils;
+
 	@Test
 	void getPublishingSchedulesOk() throws Exception {
 		MvcResult result = mockMvc.perform(get(SCHEDULE_PREFIX + "/publishing")
+												   .header("Authorization", adminBearerToken())
 												   .contentType(MediaType.APPLICATION_JSON))
 								  .andExpect(status().isOk())
 								  .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -39,6 +46,7 @@ class ScheduleRTC {
 	@Test
 	void getPublishingScheduleByIdOk() throws Exception {
 		MvcResult result = mockMvc.perform(get(SCHEDULE_PREFIX + "/publishing/1")
+												   .header("Authorization", adminBearerToken())
 												   .contentType(MediaType.APPLICATION_JSON))
 								  .andReturn();
 		assertNotNull(result);
@@ -47,6 +55,7 @@ class ScheduleRTC {
 	@Test
 	void getFileImportSchedulesOk() throws Exception {
 		MvcResult result = mockMvc.perform(get(SCHEDULE_PREFIX + "/file-imports")
+												   .header("Authorization", adminBearerToken())
 												   .contentType(MediaType.APPLICATION_JSON))
 								  .andExpect(status().isOk())
 								  .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -59,6 +68,7 @@ class ScheduleRTC {
 	@Test
 	void getFileImportScheduleByIdOk() throws Exception {
 		MvcResult result = mockMvc.perform(get(SCHEDULE_PREFIX + "/file-imports/1")
+												   .header("Authorization", adminBearerToken())
 												   .contentType(MediaType.APPLICATION_JSON))
 								  .andReturn();
 		assertNotNull(result);
@@ -67,11 +77,17 @@ class ScheduleRTC {
 	@Test
 	void getSystemSchedulesOk() throws Exception {
 		MvcResult result = mockMvc.perform(get(SCHEDULE_PREFIX + "/system-schedules")
+												   .header("Authorization", adminBearerToken())
 												   .contentType(MediaType.APPLICATION_JSON))
 								  .andExpect(status().isOk())
 								  .andExpect(content().contentType(MediaType.APPLICATION_JSON))
 								  .andReturn();
 		assertNotNull(result);
 		assertNotNull(result.getResponse());
+	}
+
+	private String adminBearerToken() {
+		return "Bearer " + jwtUtils.generateJwtTokenForUser("Vempain Administrator", "admin", "admin@nohost.nodomain")
+		                           .getTokenString();
 	}
 }

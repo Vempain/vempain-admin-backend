@@ -15,9 +15,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
 class ScheduleServiceITC extends AbstractITCTest {
@@ -29,11 +29,13 @@ class ScheduleServiceITC extends AbstractITCTest {
 
 	@Test
 	void scheduleFileProcessRequestOk() {
+		long formId = testITCTools.generateForm();
 		var request = FileProcessRequest.builder()
 										.sourceDirectory("/source/dir")
 										.destinationDirectory("/dest/dir")
 										.generateGallery(false)
 										.generatePage(false)
+										.pageFormId(formId)
 										.build();
 		long userId = testITCTools.generateUser();
 
@@ -57,11 +59,13 @@ class ScheduleServiceITC extends AbstractITCTest {
 
 	@Test
 	void getFileImportScheduleByIdOk() {
+		long formId = testITCTools.generateForm();
 		var request = FileProcessRequest.builder()
 										.sourceDirectory("/src/path")
 										.destinationDirectory("/dst/path")
 										.generateGallery(false)
 										.generatePage(false)
+										.pageFormId(formId)
 										.build();
 		long userId = testITCTools.generateUser();
 		scheduleService.scheduleFileProcessRequest(request, userId);
