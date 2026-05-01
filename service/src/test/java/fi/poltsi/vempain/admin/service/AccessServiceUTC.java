@@ -282,6 +282,64 @@ class AccessServiceUTC {
 	}
 
 	@Test
+	void getUserIdTestModeWithUsersOk() {
+		when(environment.getProperty("vempain.test")).thenReturn("true");
+		UserAccount userAccount = TestUTCTools.generateUser(1L);
+		when(userService.findAll()).thenReturn(List.of(userAccount));
+
+		try {
+			Long id = accessService.getUserId();
+			assertEquals(1L, id);
+		} catch (Exception e) {
+			fail("Should not have received an exception: " + e.getMessage());
+		}
+	}
+
+	@Test
+	void getUserIdTestModeNoUsersFail() {
+		when(environment.getProperty("vempain.test")).thenReturn("true");
+		when(userService.findAll()).thenReturn(Collections.emptyList());
+
+		try {
+			accessService.getUserId();
+			fail("Should have received SessionAuthenticationException");
+		} catch (SessionAuthenticationException e) {
+			assertEquals(VempainMessages.INVALID_USER_SESSION, e.getMessage());
+		} catch (Exception e) {
+			fail("Should only have received SessionAuthenticationException: " + e.getMessage());
+		}
+	}
+
+	@Test
+	void getValidUserIdOk() {
+		when(environment.getProperty("vempain.test")).thenReturn("true");
+		UserAccount userAccount = TestUTCTools.generateUser(1L);
+		when(userService.findAll()).thenReturn(List.of(userAccount));
+
+		try {
+			long id = accessService.getValidUserId();
+			assertEquals(1L, id);
+		} catch (Exception e) {
+			fail("Should not have received an exception: " + e.getMessage());
+		}
+	}
+
+	@Test
+	void getValidUserIdNoSessionFail() {
+		when(environment.getProperty("vempain.test")).thenReturn("true");
+		when(userService.findAll()).thenReturn(Collections.emptyList());
+
+		try {
+			accessService.getValidUserId();
+			fail("Should have received ResponseStatusException");
+		} catch (ResponseStatusException e) {
+			assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
+		} catch (Exception e) {
+			fail("Should only have received ResponseStatusException: " + e.getMessage());
+		}
+	}
+
+	@Test
 	void aclListContainsPermissionOk() {
 		List<Boolean> permissionList = Arrays.asList(true, false, false, false);
 		UserAccount userAccount = TestUTCTools.generateUser(1L);
