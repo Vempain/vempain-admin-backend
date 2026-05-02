@@ -3,8 +3,8 @@ import org.apache.tools.ant.filters.ReplaceTokens
 plugins {
 	id 'application'
 	id 'org.springframework.boot' version "${springBootVersion}"
-	// https://mvnrepository.com/artifact/io.freefair.lombok/io.freefair.lombok.gradle.plugin
 	id "io.freefair.lombok" version "${ioFreeFairLombok}"
+	id 'io.spring.dependency-management' version "${gradleSpringPluginVersion}"
 	id "jacoco"
 }
 
@@ -56,26 +56,17 @@ dependencies {
 	implementation "org.springframework.boot:spring-boot-starter-data-jpa:${springBootVersion}"
 	implementation "org.springframework.boot:spring-boot-starter-flyway:${springBootVersion}"
 	implementation "io.jsonwebtoken:jjwt-api:${jjwtVersion}"
-	// https://mvnrepository.com/artifact/org.apache.commons/commons-text
-	implementation "org.apache.commons:commons-text:1.15.0"
-	// https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui
-	implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3"
+	implementation "org.apache.commons:commons-text:${commonsTextVersion}"
+	implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
 	runtimeOnly "org.postgresql:postgresql:${postgresqlVersion}"
 	implementation "org.json:json:${jsonVersion}"
-	// https://mvnrepository.com/artifact/net.coobird/thumbnailator
-	implementation "net.coobird:thumbnailator:0.4.21"
-	// https://mvnrepository.com/artifact/com.github.mwiede/jsch
-	implementation "com.github.mwiede:jsch:2.28.0"
-	// https://mvnrepository.com/artifact/jakarta.xml.bind/jakarta.xml.bind-api
-	implementation "jakarta.xml.bind:jakarta.xml.bind-api:4.0.5"
-	// https://mvnrepository.com/artifact/jakarta.annotation/jakarta.annotation-api
-	implementation "jakarta.annotation:jakarta.annotation-api:3.0.0"
-	// https://mvnrepository.com/artifact/com.github.spotbugs/spotbugs-annotations
-	implementation "com.github.spotbugs:spotbugs-annotations:4.9.8"
-	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
-	implementation "org.apache.commons:commons-lang3:3.20.0"
-	// https://mvnrepository.com/artifact/commons-codec/commons-codec
-	implementation "commons-codec:commons-codec:1.21.0"
+	implementation "net.coobird:thumbnailator:${thumbnailatorVersion}"
+	implementation "com.github.mwiede:jsch:${jschVersion}"
+	implementation "jakarta.xml.bind:jakarta.xml.bind-api:${jakartaBindApiVersion}"
+	implementation "jakarta.annotation:jakarta.annotation-api:${jakartaAnnotationApiVersion}"
+	implementation "com.github.spotbugs:spotbugs-annotations:${spotbugsAnnotationsVersion}"
+	implementation "org.apache.commons:commons-lang3:${commonsLang3Version}"
+	implementation "commons-codec:commons-codec:${commonsCodecVersion}"
 	runtimeOnly "io.jsonwebtoken:jjwt-impl:${jjwtVersion}"
 	runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jjwtVersion}"
 	testImplementation "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
@@ -95,7 +86,7 @@ application {
 compileJava.inputs.files(processResources)
 
 jacoco {
-	toolVersion = "0.8.13"
+	toolVersion = "${jacocoVersion}"
 }
 
 tasks.named('test') {

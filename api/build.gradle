@@ -41,8 +41,7 @@ dependencies {
 	api "fi.poltsi.vempain:vempain-auth-api:${vempainAuthVersion}"
 	api "fi.poltsi.vempain:vempain-file-backend-api:${vempainFileVersion}"
 	implementation "io.swagger.core.v3:swagger-annotations:${swaggerVersion}"
-	// https://mvnrepository.com/artifact/jakarta.validation/jakarta.validation-api
-	implementation "jakarta.validation:jakarta.validation-api:3.1.1"
+	implementation "jakarta.validation:jakarta.validation-api:${jakartaValidationApiVersion}"
 	testImplementation "org.mockito:mockito-junit-jupiter:${mockitoVersion}"
 	testImplementation "org.junit.jupiter:junit-jupiter:${junitVersion}"
 	testImplementation "org.junit.platform:junit-platform-launcher:${junitVersion}"
@@ -86,7 +85,7 @@ publishing {
 }
 
 jacoco {
-	toolVersion = "0.8.13"
+	toolVersion = "${jacocoVersion}"
 }
 
 tasks.named('test') {
