@@ -31,6 +31,9 @@
 
 ## Project-specific conventions
 - JSON DTOs commonly use **snake_case** via Jackson naming annotations even when Java fields are camelCase. Example: `WebSiteUserRequest` / `WebSiteUserResponse`.
+- JSON API fields are mandatory snake_case across this repo; do not introduce camelCase JSON keys in DTO annotations, request/response payloads, or API docs.
+- Prefer Jackson v3 `tools.jackson.databind.*` naming/mapper APIs for DTO JSON behavior; keep non-`tools.jackson` annotations only when there is no
+  `tools.jackson` equivalent available in current dependencies.
 - Entities often provide `toResponse()` helpers; keep response mapping close to the entity when the repo already follows that pattern (see `WebSiteUser`).
 - Preserve request parameter normalization already present in services instead of moving it into controllers. Example: `FileService.findAllSiteFilesAsPageableResponseFiltered()` normalizes filter columns and remaps sort properties in `sanitizePageable()`.
 - Security is mostly delegated to the external `vempain-auth` packages, but local controllers still explicitly call `accessService.checkAuthentication()` and write paths use `accessService.getValidUserId()` for audit fields.
