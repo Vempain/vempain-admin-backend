@@ -98,4 +98,7 @@ public class WebSiteFile {
 
 	@Column(name = "metadata", nullable = false)
 	private String metadata;
+
+	@Column(name = "thumbnail_path")
+	private String thumbnailPath;
 }

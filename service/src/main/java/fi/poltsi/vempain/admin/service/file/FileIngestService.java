@@ -325,21 +325,19 @@ public class FileIngestService {
 		if (optionalGallery.isPresent()) {
 			var gallery = optionalGallery.get();
 			log.debug("Found existing gallery for ingest request: {}", toJson(gallery));
-			boolean changed = false;
 
 			if (fileIngestRequest.getGalleryName() != null && !Objects.equals(gallery.getShortname(), fileIngestRequest.getGalleryName())) {
 				gallery.setShortname(fileIngestRequest.getGalleryName());
-				changed = true;
 			}
 
 			if (fileIngestRequest.getGalleryDescription() != null && !Objects.equals(gallery.getDescription(), fileIngestRequest.getGalleryDescription())) {
 				gallery.setDescription(fileIngestRequest.getGalleryDescription());
-				changed = true;
 			}
 
-			if (changed) {
-				gallery = galleryRepository.save(gallery);
-			}
+			gallery.setModified(Instant.now());
+			gallery.setModifier(userId);
+
+			gallery = galleryRepository.save(gallery);
 
 			return gallery;
 		}

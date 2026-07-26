@@ -11,6 +11,7 @@ import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.admin.service.file.GalleryFileService;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.UserService;
+import fi.poltsi.vempain.file.api.FileTypeEnum;
 import fi.poltsi.vempain.site.entity.WebGpsLocation;
 import fi.poltsi.vempain.site.entity.WebSitePage;
 import fi.poltsi.vempain.site.repository.WebGpsLocationRepository;
@@ -70,6 +71,9 @@ public class PublishService {
 	private String adminSshHomeDir;
 	@Value("${vempain.admin.ssh.private-key}")
 	private String adminSshPrivateKey;
+
+	@Value("${vempain.site.thumb-directory}")
+	private String thumbSubDir;
 
 	/// ///////// Pages
 
@@ -279,6 +283,11 @@ public class PublishService {
 			webSiteFile.setAclId(webSiteResourceService.getNextWebSiteAcl());
 			webSiteFile.setFilePath(siteFile.getFileType().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName());
 			webSiteFile.setLocation(webLocation);
+
+			// Set thumbnail path for image files
+			if (siteFile.getFileType() == FileTypeEnum.IMAGE) {
+				webSiteFile.setThumbnailPath(siteFile.getFileType().shortName + File.separator + siteFile.getFilePath() + File.separator + thumbSubDir + File.separator + siteFile.getFileName());
+			}
 
 			log.debug("Saving web site file: {} with metadata length {} from siteFile metadata length {}", toJson(webSiteFile),
 					  (webSiteFile.getMetadata() != null ? webSiteFile.getMetadata()
