@@ -1,7 +1,6 @@
 package fi.poltsi.vempain.admin.service.file;
 
 import fi.poltsi.vempain.admin.api.request.file.FileIngestRequest;
-import fi.poltsi.vempain.admin.api.response.file.FileIngestResponse;
 import fi.poltsi.vempain.admin.configuration.StorageDirectoryConfiguration;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
 import fi.poltsi.vempain.admin.entity.file.GalleryFile;
@@ -12,7 +11,6 @@ import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.SubjectService;
 import fi.poltsi.vempain.auth.service.AclService;
-import fi.poltsi.vempain.file.api.FileTypeEnum;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,7 +23,6 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -134,6 +131,9 @@ class FileIngestServiceUTC {
 		var gallery = Gallery.builder().id(100L).shortname("Summer").build();
 		when(galleryRepository.findById(100L)).thenReturn(Optional.of(gallery));
 
+		when(galleryRepository.save(any(Gallery.class)))
+				.thenReturn(gallery);
+
 		var request = FileIngestRequest.builder()
 									   .fileName("test.jpg")
 									   .mimeType("image/jpeg")
@@ -169,6 +169,9 @@ class FileIngestServiceUTC {
 
 		var gallery = Gallery.builder().id(100L).shortname("Summer").build();
 		when(galleryRepository.findById(100L)).thenReturn(Optional.of(gallery));
+
+		when(galleryRepository.save(any(Gallery.class)))
+				.thenReturn(gallery);
 
 		var alreadyLinked = GalleryFile.builder().galleryId(100L).siteFileId(7L).build();
 		when(galleryFileService.findGalleryFileByGalleryId(100L)).thenReturn(List.of(alreadyLinked));
@@ -281,11 +284,14 @@ class FileIngestServiceUTC {
 	@Test
 	void upsertGallery_galleryIdFound_returnsExistingGallery() {
 		var gallery = Gallery.builder().id(1L).shortname("Old").description("Desc").build();
-		when(galleryRepository.findById(1L)).thenReturn(Optional.of(gallery));
-
+		when(galleryRepository.findById(1L))
+				.thenReturn(Optional.of(gallery));
+		when(galleryRepository.save(any(Gallery.class)))
+				.thenReturn(gallery);
 		var request = FileIngestRequest.builder()
 									   .galleryId(1L)
 									   .build();
+
 
 		var result = fileIngestService.upsertGallery(request, 1L);
 		assertNotNull(result);
