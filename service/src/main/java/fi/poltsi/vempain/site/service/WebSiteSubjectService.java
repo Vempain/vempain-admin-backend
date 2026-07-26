@@ -43,13 +43,13 @@ public class WebSiteSubjectService {
 			return siteSubjectRepository.save(siteSubject);
 		} else {
 			var newSiteSubject = WebSiteSubject.builder()
-											   .subjectName(subject.getSubjectName())
-											   .subjectNameDe(subject.getSubjectNameDe())
-											   .subjectNameEn(subject.getSubjectNameEn())
-											   .subjectNameEs(subject.getSubjectNameEs())
-											   .subjectNameFi(subject.getSubjectNameFi())
-											   .subjectNameSe(subject.getSubjectNameSe())
-											   .build();
+			                                   .subjectName(subject.getSubjectName())
+			                                   .subjectNameDe(subject.getSubjectNameDe())
+			                                   .subjectNameEn(subject.getSubjectNameEn())
+			                                   .subjectNameEs(subject.getSubjectNameEs())
+			                                   .subjectNameFi(subject.getSubjectNameFi())
+			                                   .subjectNameSe(subject.getSubjectNameSe())
+			                                   .build();
 			var newSiteSubjectSaved = siteSubjectRepository.save(newSiteSubject);
 			log.debug("Created new site subject for subject {} with ID {}: {}", subject.getSubjectName(), subject.getId(), newSiteSubjectSaved.getId());
 			return newSiteSubjectSaved;

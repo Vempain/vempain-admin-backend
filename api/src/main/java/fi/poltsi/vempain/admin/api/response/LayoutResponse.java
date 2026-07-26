@@ -43,10 +43,10 @@ public class LayoutResponse extends AbstractResponse {
 		}
 
 		return LayoutRequest.builder()
-							.id(this.getId())
-							.layoutName(this.layoutName)
-							.structure(this.structure)
-							.acls(aclRequests)
-							.build();
+		                    .id(this.getId())
+		                    .layoutName(this.layoutName)
+		                    .structure(this.structure)
+		                    .acls(aclRequests)
+		                    .build();
 	}
 }

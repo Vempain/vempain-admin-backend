@@ -20,9 +20,9 @@ public class FormComponentService {
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void deleteFormComponent(Long formId, Long componentId, Long sortOrder) {
 		var query = entityManager.createNativeQuery("DELETE FROM form_component " +
-													"WHERE form_id = :formId " +
-													"  AND component_id = :componentId " +
-													"  AND sort_order = :sortOrder");
+		                                            "WHERE form_id = :formId " +
+		                                            "  AND component_id = :componentId " +
+		                                            "  AND sort_order = :sortOrder");
 		query.setParameter("formId", formId);
 		query.setParameter("componentId", componentId);
 		query.setParameter("sortOrder", sortOrder);
@@ -31,9 +31,9 @@ public class FormComponentService {
 
 	public List<FormComponent> findFormComponentByFormId(Long formId) {
 		var query = entityManager.createNativeQuery("SELECT fc.form_id, fc.component_id, fc.sort_order " +
-													"FROM form_component fc " +
-													"WHERE fc.form_id = :formId " +
-													"ORDER BY fc.sort_order");
+		                                            "FROM form_component fc " +
+		                                            "WHERE fc.form_id = :formId " +
+		                                            "ORDER BY fc.sort_order");
 		query.setParameter("formId", formId);
 		List<Object[]> fcObjects = query.getResultList();
 		return mapComponentFormResults(fcObjects);
@@ -42,8 +42,8 @@ public class FormComponentService {
 	public List<FormComponent> findFormComponentByComponentId(long componentId) {
 
 		var query = entityManager.createNativeQuery("SELECT fc.form_id, fc.component_id, fc.sort_order " +
-													"FROM form_component fc " +
-													"WHERE fc.component_id = :componentId");
+		                                            "FROM form_component fc " +
+		                                            "WHERE fc.component_id = :componentId");
 		query.setParameter("componentId", componentId);
 		List<Object[]> fcObjects = query.getResultList();
 
@@ -53,7 +53,7 @@ public class FormComponentService {
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void addFormComponent(Long formId, Long componentId, Long sortOrder) {
 		var query = entityManager.createNativeQuery("INSERT INTO form_component (form_id, component_id, sort_order) " +
-													"VALUES (:formId, :componentId, :sortOrder)");
+		                                            "VALUES (:formId, :componentId, :sortOrder)");
 		query.setParameter("formId", formId);
 		query.setParameter("componentId", componentId);
 		query.setParameter("sortOrder", sortOrder);
@@ -69,10 +69,10 @@ public class FormComponentService {
 				var componentId = (Long) o[1];
 				var sortOrder = (Long) o[2];
 				formComponents.add(FormComponent.builder()
-												.formId(formId)
-												.componentId(componentId)
-												.sortOrder(sortOrder)
-												.build());
+				                                .formId(formId)
+				                                .componentId(componentId)
+				                                .sortOrder(sortOrder)
+				                                .build());
 			}
 		}
 

@@ -74,34 +74,34 @@ public class DataEntity {
 
 	public DataResponse toDataResponse() {
 		return DataResponse.builder()
-						   .id(this.id)
-						   .identifier(this.identifier)
-						   .type(this.type)
-						   .description(this.description)
-						   .columnDefinitions(this.columnDefinitions)
-						   .createSql(this.createSql)
-						   .fetchAllSql(this.fetchAllSql)
-						   .fetchSubsetSql(this.fetchSubsetSql)
-						   .generated(this.generated)
-						   .csvData(this.csvData)
-						   .createdAt(this.createdAt)
-						   .updatedAt(this.updatedAt)
-						   .build();
+		                   .id(this.id)
+		                   .identifier(this.identifier)
+		                   .type(this.type)
+		                   .description(this.description)
+		                   .columnDefinitions(this.columnDefinitions)
+		                   .createSql(this.createSql)
+		                   .fetchAllSql(this.fetchAllSql)
+		                   .fetchSubsetSql(this.fetchSubsetSql)
+		                   .generated(this.generated)
+		                   .csvData(this.csvData)
+		                   .createdAt(this.createdAt)
+		                   .updatedAt(this.updatedAt)
+		                   .build();
 	}
 
 	public DataSummaryResponse toDataSummaryResponse() {
 		return DataSummaryResponse.builder()
-								  .id(this.id)
-								  .identifier(this.identifier)
-								  .type(this.type)
-								  .description(this.description)
-								  .columnDefinitions(this.columnDefinitions)
-								  .createSql(this.createSql)
-								  .fetchAllSql(this.fetchAllSql)
-								  .fetchSubsetSql(this.fetchSubsetSql)
-								  .generated(this.generated)
-								  .createdAt(this.createdAt)
-								  .updatedAt(this.updatedAt)
-								  .build();
+		                          .id(this.id)
+		                          .identifier(this.identifier)
+		                          .type(this.type)
+		                          .description(this.description)
+		                          .columnDefinitions(this.columnDefinitions)
+		                          .createSql(this.createSql)
+		                          .fetchAllSql(this.fetchAllSql)
+		                          .fetchSubsetSql(this.fetchSubsetSql)
+		                          .generated(this.generated)
+		                          .createdAt(this.createdAt)
+		                          .updatedAt(this.updatedAt)
+		                          .build();
 	}
 }

@@ -32,27 +32,27 @@ public interface DataAPI {
 
 	@Operation(summary = "List all data sets", description = "Returns a list of all stored data sets with metadata but without the CSV data", tags = "DataAPI")
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
-										description = "Got list of data sets",
-										content = {@Content(array = @ArraySchema(schema = @Schema(implementation = DataSummaryResponse.class)),
-															mediaType = MediaType.APPLICATION_JSON_VALUE)}),
-						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
-						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
+	                                    description = "Got list of data sets",
+	                                    content = {@Content(array = @ArraySchema(schema = @Schema(implementation = DataSummaryResponse.class)),
+	                                                        mediaType = MediaType.APPLICATION_JSON_VALUE)}),
+	                       @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+	                       @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = MAIN_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<DataSummaryResponse>> getAllDataSets(@RequestParam(name = "type", required = false) String type,
-													@RequestParam(name = "identifier_prefix", required = false) String identifierPrefix,
-													@RequestParam(name = "search", required = false) String search);
+	                                                         @RequestParam(name = "identifier_prefix", required = false) String identifierPrefix,
+	                                                         @RequestParam(name = "search", required = false) String search);
 
 	@Operation(summary = "Get a data set by identifier", description = "Returns the metadata and CSV data for the requested data set", tags = "DataAPI")
 	@Parameter(name = "identifier", example = "cd_collection", description = "Unique identifier of the data set", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
-										description = "Data set found and returned",
-										content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-															schema = @Schema(implementation = DataResponse.class))}),
-						   @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
-						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
-						   @ApiResponse(responseCode = "404", description = "No data set found for the given identifier", content = @Content),
-						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
+	                                    description = "Data set found and returned",
+	                                    content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+	                                                        schema = @Schema(implementation = DataResponse.class))}),
+	                       @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
+	                       @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+	                       @ApiResponse(responseCode = "404", description = "No data set found for the given identifier", content = @Content),
+	                       @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = MAIN_PATH + "/{identifier}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<DataResponse> getDataSetByIdentifier(@PathVariable(name = "identifier") String identifier);
@@ -60,13 +60,13 @@ public interface DataAPI {
 	@Operation(summary = "Create a new data set", description = "Stores the provided metadata and CSV data as a new data set", tags = "DataAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Data set metadata and CSV content", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
-										description = "Data set created",
-										content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-															schema = @Schema(implementation = DataResponse.class))}),
-						   @ApiResponse(responseCode = "400", description = "Invalid or malformed request", content = @Content),
-						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
-						   @ApiResponse(responseCode = "409", description = "Data set with same identifier already exists", content = @Content),
-						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
+	                                    description = "Data set created",
+	                                    content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+	                                                        schema = @Schema(implementation = DataResponse.class))}),
+	                       @ApiResponse(responseCode = "400", description = "Invalid or malformed request", content = @Content),
+	                       @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+	                       @ApiResponse(responseCode = "409", description = "Data set with same identifier already exists", content = @Content),
+	                       @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@PostMapping(value = MAIN_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<DataResponse> createDataSet(@Valid @RequestBody DataRequest dataRequest);
@@ -74,28 +74,28 @@ public interface DataAPI {
 	@Operation(summary = "Update an existing data set", description = "Replaces the metadata and CSV data of an existing data set", tags = "DataAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Updated data set metadata and CSV content", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
-										description = "Data set updated",
-										content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-															schema = @Schema(implementation = DataResponse.class))}),
-						   @ApiResponse(responseCode = "400", description = "Invalid or malformed request", content = @Content),
-						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
-						   @ApiResponse(responseCode = "404", description = "Data set not found", content = @Content),
-						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
+	                                    description = "Data set updated",
+	                                    content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+	                                                        schema = @Schema(implementation = DataResponse.class))}),
+	                       @ApiResponse(responseCode = "400", description = "Invalid or malformed request", content = @Content),
+	                       @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+	                       @ApiResponse(responseCode = "404", description = "Data set not found", content = @Content),
+	                       @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@PutMapping(value = MAIN_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<DataResponse> updateDataSet(@Valid @RequestBody DataRequest dataRequest);
 
 	@Operation(summary = "Publish a data set to the site database",
-			   description = "Creates or replaces the table in the site database and imports the CSV data", tags = "DataAPI")
+	           description = "Creates or replaces the table in the site database and imports the CSV data", tags = "DataAPI")
 	@Parameter(name = "identifier", example = "cd_collection", description = "Unique identifier of the data set to publish", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
-										description = "Data set published successfully",
-										content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-															schema = @Schema(implementation = DataResponse.class))}),
-						   @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
-						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
-						   @ApiResponse(responseCode = "404", description = "Data set not found", content = @Content),
-						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
+	                                    description = "Data set published successfully",
+	                                    content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+	                                                        schema = @Schema(implementation = DataResponse.class))}),
+	                       @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
+	                       @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+	                       @ApiResponse(responseCode = "404", description = "Data set not found", content = @Content),
+	                       @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@PostMapping(value = MAIN_PATH + "/{identifier}/publish", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<DataResponse> publishDataSet(@PathVariable(name = "identifier") String identifier);

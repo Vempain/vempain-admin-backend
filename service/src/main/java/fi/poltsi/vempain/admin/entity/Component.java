@@ -35,15 +35,15 @@ public class Component extends AbstractVempainEntity implements Serializable {
 	@JsonIgnore // We do a deep copy of Component by Jackson, so we need this annotation here
 	public ComponentResponse getComponentResponse() {
 		return ComponentResponse.builder()
-								.id(this.id)
-								.compName(this.compName)
-								.compData(this.compData)
-								.acls(null)
-								.locked(this.locked)
-								.creator(this.creator)
-								.created(this.created)
-								.modifier(this.modifier)
-								.modified(this.modified)
-								.build();
+		                        .id(this.id)
+		                        .compName(this.compName)
+		                        .compData(this.compData)
+		                        .acls(null)
+		                        .locked(this.locked)
+		                        .creator(this.creator)
+		                        .created(this.created)
+		                        .modifier(this.modifier)
+		                        .modified(this.modified)
+		                        .build();
 	}
 }

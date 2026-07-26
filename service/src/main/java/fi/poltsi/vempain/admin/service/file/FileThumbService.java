@@ -60,7 +60,7 @@ public class FileThumbService {
 		var siteFile = optionalSiteFile.get();
 		var sourcePath =
 				Path.of((siteFileDirectory != null ? siteFileDirectory : "") +
-						File.separator + siteFile.getFileType().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName());
+				        File.separator + siteFile.getFileType().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName());
 
 		generateThumbFile(siteFile.getId(), sourcePath, Path.of(siteFile.getFilePath()), siteFile.getFileType());
 	}
@@ -68,13 +68,13 @@ public class FileThumbService {
 	@Transactional(propagation = Propagation.REQUIRED)
 	protected void generateThumbFile(long commonId, Path sourceFile, Path destination, FileTypeEnum FileTypeEnum) {
 		// We add the thumb class to the beginning of the relative path
-		var relativeDestinationPath = Path.of(FileTypeEnum.THUMB.shortName + File.separator + FileTypeEnum.shortName + File.separator + destination);
+		var relativeDestinationPath = Path.of(fi.poltsi.vempain.file.api.FileTypeEnum.THUMB.shortName + File.separator + FileTypeEnum.shortName + File.separator + destination);
 		var absoluteDestinationPath = Path.of(siteFileDirectory + File.separator + relativeDestinationPath);
 		log.debug("Relative thumb path: {}", relativeDestinationPath);
 		log.debug("Absolute thumb path: {}", absoluteDestinationPath);
 		// Set the correct file extension
 		var thumbFilename = setExtension(sourceFile.getFileName()
-												   .toString(), (imageFormat != null ? imageFormat : "jpeg"));
+		                                           .toString(), (imageFormat != null ? imageFormat : "jpeg"));
 
 		var destinationFile = Path.of(absoluteDestinationPath + File.separator + thumbFilename);
 
@@ -91,7 +91,7 @@ public class FileThumbService {
 		}
 
 		// Generate thumb, for now we only handle images
-		if (FileTypeEnum.equals(FileTypeEnum.IMAGE)) {
+		if (FileTypeEnum.equals(fi.poltsi.vempain.file.api.FileTypeEnum.IMAGE)) {
 			imageTools.resizeImage(sourceFile, destinationFile, (thumbnailSize != 0 ? thumbnailSize : 250), 0.5F);
 		} else {
 			log.info("Unsupported file class {}", FileTypeEnum.shortName);
@@ -103,7 +103,7 @@ public class FileThumbService {
 
 		// We store the full path name from the converted directory
 		var thumbDestinationFilename = sourceFile.getFileName()
-												 .toString();
+		                                         .toString();
 		var sourceFileExtention = thumbDestinationFilename.substring(thumbDestinationFilename.lastIndexOf("."));
 		thumbDestinationFilename = thumbDestinationFilename.replace(sourceFileExtention, "." + imageFormat);
 
@@ -122,15 +122,15 @@ public class FileThumbService {
 			fileThumb.setSha1sum(sha1sum);
 		} else {
 			fileThumb = FileThumb.builder()
-								 .filepath(relativeDestinationPath.toString())
-								 .filename(thumbDestinationFilename)
-								 .filesize(filesize)
-								 .parentId(commonId)
-								 .parentType(FileTypeEnum)
-								 .height(dimensions.height)
-								 .width(dimensions.width)
-								 .sha1sum(sha1sum)
-								 .build();
+			                     .filepath(relativeDestinationPath.toString())
+			                     .filename(thumbDestinationFilename)
+			                     .filesize(filesize)
+			                     .parentId(commonId)
+			                     .parentType(FileTypeEnum)
+			                     .height(dimensions.height)
+			                     .width(dimensions.width)
+			                     .sha1sum(sha1sum)
+			                     .build();
 		}
 
 		fileThumbPageableRepository.save(fileThumb);

@@ -22,14 +22,14 @@ import java.util.Collections;
 )
 @Configuration
 public class OpenApiConfig {
-	final Environment environment;
-	private final String devName;
-	private final String devUrl;
-	private final String devEmail;
-	private final String devLicense;
-	private final String devLicenseUrl;
-	private final String devVersion;
-	private final String serverDescription;
+	final         Environment environment;
+	private final String      devName;
+	private final String      devUrl;
+	private final String      devEmail;
+	private final String      devLicense;
+	private final String      devLicenseUrl;
+	private final String      devVersion;
+	private final String      serverDescription;
 
 	public OpenApiConfig(Environment environment) {
 		this.environment = environment;

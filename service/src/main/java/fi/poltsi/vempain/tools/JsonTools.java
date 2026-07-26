@@ -155,9 +155,9 @@ public class JsonTools {
 		for (Map.Entry<String, List<String>> location : locations.entrySet()) {
 			for (String key : location.getValue()) {
 				if (jsonObject.has(location.getKey()) && jsonObject.getJSONObject(location.getKey())
-																   .has(key)) {
+				                                                   .has(key)) {
 					return jsonObject.getJSONObject(location.getKey())
-									 .getString(key);
+					                 .getString(key);
 				}
 			}
 		}
@@ -169,17 +169,17 @@ public class JsonTools {
 		for (Map.Entry<String, List<String>> location : locations.entrySet()) {
 			for (String key : location.getValue()) {
 				if (jsonObject.has(location.getKey()) && jsonObject.getJSONObject(location.getKey())
-																   .has(key)) {
+				                                                   .has(key)) {
 
 					Number number;
 					try {
 						number = jsonObject.getJSONObject(location.getKey())
-										   .getNumber(key);
+						                   .getNumber(key);
 						return number;
 					} catch (JSONException e) {
 						log.warn("Failed to retrieve JSON number from location {}, trying to get it as String instead", key);
 						var stringValue = jsonObject.getJSONObject(location.getKey())
-													.getString(key);
+						                            .getString(key);
 
 						try {
 							return Integer.parseInt(stringValue);
@@ -198,14 +198,14 @@ public class JsonTools {
 		for (Map.Entry<String, List<String>> location : locations.entrySet()) {
 			for (String key : location.getValue()) {
 				if (jsonObject.has(location.getKey()) && jsonObject.getJSONObject(location.getKey())
-																   .has(key)) {
+				                                                   .has(key)) {
 					try {
 						var objectList = jsonObject.getJSONObject(location.getKey())
-												   .getJSONArray(key)
-												   .toList();
+						                           .getJSONArray(key)
+						                           .toList();
 						return objectList.stream()
-										 .map(o -> Objects.toString(o, null))
-										 .toList();
+						                 .map(o -> Objects.toString(o, null))
+						                 .toList();
 					} catch (JSONException e) {
 						log.error("Failed to retrieve JSON array from location {}, value is: {}", key, jsonObject.getJSONObject(location.getKey()));
 					}

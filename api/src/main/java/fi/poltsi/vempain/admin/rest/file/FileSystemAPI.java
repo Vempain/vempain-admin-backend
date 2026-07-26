@@ -22,12 +22,12 @@ public interface FileSystemAPI {
 	String MAIN_PATH = REST_FILE_PREFIX;
 
 	@Operation(summary = "Return the site file directory tree",
-			   description = "Return a tree structure of the site file directory sub directories",
-			   tags = "FileSystemAPI")
+	           description = "Return a tree structure of the site file directory sub directories",
+	           tags = "FileSystemAPI")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "The tree structure of the site file directory returned",
-						 content = {@Content(array = @ArraySchema(schema = @Schema(implementation = DirectoryNodeResponse.class)),
-											 mediaType = MediaType.APPLICATION_JSON_VALUE)}),
+			             content = {@Content(array = @ArraySchema(schema = @Schema(implementation = DirectoryNodeResponse.class)),
+			                                 mediaType = MediaType.APPLICATION_JSON_VALUE)}),
 			@ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
 			@ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
 	})

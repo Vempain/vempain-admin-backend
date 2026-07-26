@@ -59,7 +59,7 @@ public interface SiteFileRepository extends ListPagingAndSortingRepository<SiteF
 			nativeQuery = true
 	)
 	Page<SiteFile> findBySubjectNameContainingIgnoreCaseAndFileType(@Param("subjectName") String subjectName, @Param("fileType") FileTypeEnum fileType,
-																	Pageable pageable);
+	                                                                Pageable pageable);
 
 	// Size filter + class
 	Page<SiteFile> findBySizeGreaterThanEqualAndFileType(Long size, FileTypeEnum fileType, Pageable pageable);

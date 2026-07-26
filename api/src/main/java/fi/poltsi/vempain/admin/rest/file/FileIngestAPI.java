@@ -19,7 +19,7 @@ public interface FileIngestAPI {
 	@Operation(
 			summary = "Ingest a file to the site storage",
 			description = "Service-to-service endpoint. Auth via Bearer token. Accepts metadata JSON and a multipart file. " +
-						  "Places the file under vempain.admin.file.site-file-directory/<class>/<filePath>/<fileName> where class is derived from mimetype.",
+			              "Places the file under vempain.admin.file.site-file-directory/<class>/<filePath>/<fileName> where class is derived from mimetype.",
 			tags = "FileIngestApi"
 	)
 	@SecurityRequirement(name = "Bearer Authentication")

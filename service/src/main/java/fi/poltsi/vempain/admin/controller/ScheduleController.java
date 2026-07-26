@@ -36,11 +36,11 @@ public class ScheduleController implements ScheduleAPI {
 
 		for (ScheduledTask scheduledTask : scheduledTaskSet) {
 			scheduleTriggerResponses.add(ScheduleTriggerResponse.builder()
-																.id(idCounter)
-																.scheduleName(scheduledTask.getTask()
-																						   .toString())
-																.status("ACTIVE")
-																.build());
+			                                                    .id(idCounter)
+			                                                    .scheduleName(scheduledTask.getTask()
+			                                                                               .toString())
+			                                                    .status("ACTIVE")
+			                                                    .build());
 			idCounter++;
 		}
 
@@ -53,19 +53,19 @@ public class ScheduleController implements ScheduleAPI {
 
 		for (ScheduledTask scheduledTask : scheduledTaskSet) {
 			if (scheduledTask.getTask()
-							 .toString()
-							 .equals(systemScheduleName)) {
+			                 .toString()
+			                 .equals(systemScheduleName)) {
 				return ResponseEntity.ok(ScheduleTriggerResponse.builder()
-																.id(1L)
-																.scheduleName(scheduledTask.getTask()
-																						   .toString())
-																.status("ACTIVE")
-																.build());
+				                                                .id(1L)
+				                                                .scheduleName(scheduledTask.getTask()
+				                                                                           .toString())
+				                                                .status("ACTIVE")
+				                                                .build());
 			}
 		}
 
 		return ResponseEntity.notFound()
-							 .build();
+		                     .build();
 	}
 
 	@Override
@@ -75,25 +75,25 @@ public class ScheduleController implements ScheduleAPI {
 
 		for (ScheduledTask scheduledTask : scheduledTaskSet) {
 			if (scheduledTask.getTask()
-							 .toString()
-							 .equals(schedule.getScheduleName())) {
+			                 .toString()
+			                 .equals(schedule.getScheduleName())) {
 				taskScheduler.schedule(scheduledTask.getTask()
-													.getRunnable(), Instant.now()
-																		   .plusSeconds(schedule.getDelay()));
+				                                    .getRunnable(), Instant.now()
+				                                                           .plusSeconds(schedule.getDelay()));
 
 				return ResponseEntity.ok(ScheduleTriggerResponse.builder()
-																.id(1L)
-																.scheduleName(scheduledTask.getTask()
-																						   .toString())
-																.status("ACTIVE")
-																.build());
+				                                                .id(1L)
+				                                                .scheduleName(scheduledTask.getTask()
+				                                                                           .toString())
+				                                                .status("ACTIVE")
+				                                                .build());
 			}
 		}
 
 		log.error("Failed to trigger system schedule with name: {}", schedule.getScheduleName());
 
 		return ResponseEntity.notFound()
-							 .build();
+		                     .build();
 	}
 
 	@Override
@@ -110,7 +110,7 @@ public class ScheduleController implements ScheduleAPI {
 
 		if (publishScheduleResponse == null) {
 			return ResponseEntity.notFound()
-								 .build();
+			                     .build();
 		}
 
 		return ResponseEntity.ok(publishScheduleResponse);
@@ -124,7 +124,7 @@ public class ScheduleController implements ScheduleAPI {
 
 		if (publishScheduleResponse == null) {
 			return ResponseEntity.notFound()
-								 .build();
+			                     .build();
 		}
 
 		return ResponseEntity.ok(publishScheduleResponse);
@@ -144,7 +144,7 @@ public class ScheduleController implements ScheduleAPI {
 
 		if (fileImportSchedule == null) {
 			return ResponseEntity.notFound()
-								 .build();
+			                     .build();
 		}
 
 		return ResponseEntity.ok(fileImportSchedule);

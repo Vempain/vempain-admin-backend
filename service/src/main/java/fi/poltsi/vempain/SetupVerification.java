@@ -57,7 +57,7 @@ class SetupVerification implements ApplicationContextAware {
 	@EventListener
 	public void checkEssentialConfigurations(ContextRefreshedEvent event) {
 		final Environment env = event.getApplicationContext()
-									 .getEnvironment();
+		                             .getEnvironment();
 
 		for (String[] keyPair : requiredKeys) {
 			var value = env.getProperty(keyPair[0]);
@@ -114,18 +114,18 @@ class SetupVerification implements ApplicationContextAware {
 	@EventListener
 	public void printAllConfiguration(ContextRefreshedEvent event) {
 		final Environment env = event.getApplicationContext()
-									 .getEnvironment();
+		                             .getEnvironment();
 		log.debug("====== Environment and configuration ======");
 		log.debug("Active profiles: {}", Arrays.toString(env.getActiveProfiles()));
 		final MutablePropertySources sources = ((AbstractEnvironment) env).getPropertySources();
 		StreamSupport.stream(sources.spliterator(), false)
-					 .filter(ps -> ps instanceof EnumerablePropertySource)
-					 .map(ps -> ((EnumerablePropertySource<?>) ps).getPropertyNames())
-					 .flatMap(Arrays::stream)
-					 .distinct()
-					 .filter(prop -> !(prop.contains("credentials") || prop.contains("password")))
-					 .sorted()
-					 .forEach(prop -> printProperty(env, prop));
+		             .filter(ps -> ps instanceof EnumerablePropertySource)
+		             .map(ps -> ((EnumerablePropertySource<?>) ps).getPropertyNames())
+		             .flatMap(Arrays::stream)
+		             .distinct()
+		             .filter(prop -> !(prop.contains("credentials") || prop.contains("password")))
+		             .sorted()
+		             .forEach(prop -> printProperty(env, prop));
 		log.debug("===========================================");
 	}
 

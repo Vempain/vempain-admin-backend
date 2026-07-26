@@ -26,9 +26,9 @@ public class GalleryFileService {
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void deleteGalleryFile(Long galleryId, Long fileId, Long sortOrder) {
 		var query = entityManager.createNativeQuery("DELETE FROM gallery_file " +
-													"WHERE gallery_id = :galleryId " +
-													"  AND site_file_id = :fileId " +
-													"  AND sort_order = :sortOrder");
+		                                            "WHERE gallery_id = :galleryId " +
+		                                            "  AND site_file_id = :fileId " +
+		                                            "  AND sort_order = :sortOrder");
 		query.setParameter("galleryId", galleryId);
 		query.setParameter("fileId", fileId);
 		query.setParameter("sortOrder", sortOrder);
@@ -37,9 +37,9 @@ public class GalleryFileService {
 
 	public List<GalleryFile> findGalleryFileByGalleryId(Long galleryId) {
 		var query = entityManager.createNativeQuery("SELECT gf.gallery_id, gf.site_file_id, gf.sort_order " +
-													"FROM gallery_file gf " +
-													"WHERE gf.gallery_id = :galleryId " +
-													"ORDER BY gf.sort_order");
+		                                            "FROM gallery_file gf " +
+		                                            "WHERE gf.gallery_id = :galleryId " +
+		                                            "ORDER BY gf.sort_order");
 		query.setParameter("galleryId", galleryId);
 		List<Object[]> gfObjects = query.getResultList();
 		List<GalleryFile> galleryFiles = new ArrayList<>();
@@ -53,10 +53,10 @@ public class GalleryFileService {
 			var intCompId = (Long) o[1];
 			var intSortOrder = (Long) o[2];
 			galleryFiles.add(GalleryFile.builder()
-										.galleryId(intFormId)
-										.siteFileId(intCompId)
-										.sortOrder(intSortOrder)
-										.build());
+			                            .galleryId(intFormId)
+			                            .siteFileId(intCompId)
+			                            .sortOrder(intSortOrder)
+			                            .build());
 		}
 
 		return galleryFiles;
@@ -65,7 +65,7 @@ public class GalleryFileService {
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void addGalleryFile(Long galleryId, Long siteFileId, Long sortOrder) {
 		var query = entityManager.createNativeQuery("INSERT INTO gallery_file (gallery_id, site_file_id, sort_order) " +
-													"VALUES (:galleryId, :siteFileId, :sortOrder)");
+		                                            "VALUES (:galleryId, :siteFileId, :sortOrder)");
 		query.setParameter("galleryId", galleryId);
 		query.setParameter("siteFileId", siteFileId);
 		query.setParameter("sortOrder", sortOrder);
@@ -88,7 +88,7 @@ public class GalleryFileService {
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void deleteGalleryFilesByGalleryId(Long galleryId) {
 		var query = entityManager.createNativeQuery("DELETE FROM gallery_file " +
-													"WHERE gallery_id = :galleryId");
+		                                            "WHERE gallery_id = :galleryId");
 		query.setParameter("galleryId", galleryId);
 		query.executeUpdate();
 	}

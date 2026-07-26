@@ -114,14 +114,14 @@ public class FileService {
 		}
 
 		Gallery gallery = Gallery.builder()
-								 .shortname(shortName)
-								 .description(description)
-								 .siteFiles(new ArrayList<>())
-								 .creator(userId)
-								 .created(Instant.now())
-								 .aclId(aclId)
-								 .locked(false)
-								 .build();
+		                         .shortname(shortName)
+		                         .description(description)
+		                         .siteFiles(new ArrayList<>())
+		                         .creator(userId)
+		                         .created(Instant.now())
+		                         .aclId(aclId)
+		                         .locked(false)
+		                         .build();
 		var newGallery = galleryRepository.save(gallery);
 
 		long sortOrder = 0;
@@ -176,10 +176,12 @@ public class FileService {
 		Page<SiteFile> siteFiles;
 		Pageable pageable = sanitizePageable(pageRequest);
 
-		var normalizedFilterColumn = (filterColumn == null) ? "" : filterColumn.trim().toLowerCase(Locale.ROOT).replace("_", "");
+		var normalizedFilterColumn = (filterColumn == null) ? "" : filterColumn.trim()
+		                                                                       .toLowerCase(Locale.ROOT)
+		                                                                       .replace("_", "");
 
 		if (filter == null || filter.isBlank()
-			|| filterColumn == null || filterColumn.isBlank()) {
+		    || filterColumn == null || filterColumn.isBlank()) {
 			siteFiles = siteFileRepository.findByFileType(FileTypeEnum, pageable);
 		} else {
 			siteFiles = switch (normalizedFilterColumn) {
@@ -205,9 +207,9 @@ public class FileService {
 
 		return PagedResponse.of(
 				siteFiles.getContent()
-						 .stream()
-						 .map(SiteFile::toResponse)
-						 .toList(),
+				         .stream()
+				         .map(SiteFile::toResponse)
+				         .toList(),
 				siteFiles.getNumber(),
 				siteFiles.getSize(),
 				siteFiles.getTotalElements(),
@@ -219,8 +221,8 @@ public class FileService {
 
 	private Pageable sanitizePageable(PageRequest pageRequest) {
 		var remappedOrders = pageRequest.getSort()
-										.stream()
-										.map(order -> {
+		                                .stream()
+		                                .map(order -> {
 											var property = switch (order.getProperty()) {
 												case "createdAt" -> "created";
 												case "modifiedAt" -> "modified";
@@ -228,7 +230,7 @@ public class FileService {
 											};
 											return order.withProperty(property);
 										})
-										.toList();
+		                                .toList();
 		var sort = remappedOrders.isEmpty() ? Sort.unsorted() : Sort.by(remappedOrders);
 		return PageRequest.of(pageRequest.getPageNumber(), pageRequest.getPageSize(), sort);
 	}
@@ -286,7 +288,7 @@ public class FileService {
 
 				if (fileThumb.getSiteFile() != null) {
 					fileThumb.getSiteFile()
-							 .getLocation(); // Force loading the lazy relation
+					         .getLocation(); // Force loading the lazy relation
 				}
 
 				thumbList.add(fileThumb);
@@ -304,8 +306,8 @@ public class FileService {
 	@Transactional(propagation = Propagation.REQUIRED)
 	public RefreshResponse refreshAllGalleryFiles() {
 		var refreshResponse = RefreshResponse.builder()
-											 .details(new ArrayList<>())
-											 .build();
+		                                     .details(new ArrayList<>())
+		                                     .build();
 		var successCount = 0L;
 		var failedCount = 0L;
 		// First get all the gallery IDs
@@ -317,7 +319,7 @@ public class FileService {
 			successCount = successCount + galleryResponse.getRefreshedItems();
 			failedCount = failedCount + galleryResponse.getFailedItems();
 			refreshResponse.getDetails()
-						   .addAll(galleryResponse.getDetails());
+			               .addAll(galleryResponse.getDetails());
 		}
 
 		refreshResponse.setRefreshedItems(successCount);
@@ -346,10 +348,10 @@ public class FileService {
 		}
 */
 		return RefreshResponse.builder()
-							  .refreshedItems(successCount)
-							  .failedItems(failedCount)
-							  .result(failedCount == 0 ? PublishResultEnum.OK : PublishResultEnum.FAIL)
-							  .details(refreshDetails)
-							  .build();
+		                      .refreshedItems(successCount)
+		                      .failedItems(failedCount)
+		                      .result(failedCount == 0 ? PublishResultEnum.OK : PublishResultEnum.FAIL)
+		                      .details(refreshDetails)
+		                      .build();
 	}
 }

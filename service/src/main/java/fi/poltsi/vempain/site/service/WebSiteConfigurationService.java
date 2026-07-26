@@ -20,15 +20,15 @@ public class WebSiteConfigurationService {
 
 	public List<WebSiteConfigurationResponse> getAllConfigurations() {
 		return webSiteConfigurationRepository.findAll()
-											 .stream()
-											 .map(WebSiteConfiguration::toResponse)
-											 .toList();
+		                                     .stream()
+		                                     .map(WebSiteConfiguration::toResponse)
+		                                     .toList();
 	}
 
 	public WebSiteConfigurationResponse getConfigurationById(long id) {
 		return webSiteConfigurationRepository.findById(id)
-											 .map(WebSiteConfiguration::toResponse)
-											 .orElse(null);
+		                                     .map(WebSiteConfiguration::toResponse)
+		                                     .orElse(null);
 	}
 
 	@Transactional

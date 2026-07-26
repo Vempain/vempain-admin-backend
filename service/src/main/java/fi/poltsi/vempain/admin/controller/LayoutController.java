@@ -111,10 +111,10 @@ public class LayoutController implements LayoutAPI {
 			deleteService.deleteLayoutById(layoutId);
 
 			DeleteResponse deleteResponse = DeleteResponse.builder()
-														  .count(1L)
-														  .name("layout")
-														  .id(layoutId)
-														  .build();
+			                                              .count(1L)
+			                                              .name("layout")
+			                                              .id(layoutId)
+			                                              .build();
 
 			return ResponseEntity.ok(deleteResponse);
 		} catch (VempainEntityNotFoundException e) {
@@ -126,9 +126,9 @@ public class LayoutController implements LayoutAPI {
 	private boolean validateLayoutRequest(LayoutRequest layoutRequest) {
 		log.debug("Validating layout request: {}", layoutRequest);
 		return layoutRequest != null && layoutRequest.getLayoutName() != null &&
-			   !layoutRequest.getLayoutName()
-							 .isBlank() &&
-			   layoutRequest.getAcls() != null && !layoutRequest.getAcls()
-																.isEmpty();
+		       !layoutRequest.getLayoutName()
+		                     .isBlank() &&
+		       layoutRequest.getAcls() != null && !layoutRequest.getAcls()
+		                                                        .isEmpty();
 	}
 }

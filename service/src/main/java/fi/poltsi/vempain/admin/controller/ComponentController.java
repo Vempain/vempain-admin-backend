@@ -94,12 +94,12 @@ public class ComponentController implements ComponentAPI {
 		try {
 			deleteService.deleteComponentById(componentId);
 			return ResponseEntity.ok(DeleteResponse.builder()
-												   .count(1)
-												   .id(componentId)
-												   .name("Component")
-												   .timestamp(Instant.now())
-												   .httpStatus(HttpStatus.OK)
-												   .build());
+			                                       .count(1)
+			                                       .id(componentId)
+			                                       .name("Component")
+			                                       .timestamp(Instant.now())
+			                                       .httpStatus(HttpStatus.OK)
+			                                       .build());
 		} catch (VempainEntityNotFoundException e) {
 			log.error("Failed to delete a component:\n{}", e.getMessage());
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, VempainMessages.INTERNAL_ERROR);
@@ -108,15 +108,15 @@ public class ComponentController implements ComponentAPI {
 
 	private void verifyComponentRequest(ComponentRequest componentRequest) {
 		if (componentRequest == null ||
-			componentRequest.getCompName() == null ||
-			componentRequest.getCompName()
-							.isBlank() ||
-			componentRequest.getCompData() == null ||
-			componentRequest.getCompData()
-							.isBlank() ||
-			componentRequest.getAcls() == null ||
-			componentRequest.getAcls()
-							.isEmpty()) {
+		    componentRequest.getCompName() == null ||
+		    componentRequest.getCompName()
+		                    .isBlank() ||
+		    componentRequest.getCompData() == null ||
+		    componentRequest.getCompData()
+		                    .isBlank() ||
+		    componentRequest.getAcls() == null ||
+		    componentRequest.getAcls()
+		                    .isEmpty()) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST);
 		}
 	}

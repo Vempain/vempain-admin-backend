@@ -69,7 +69,7 @@ public class WebSiteManagementController implements WebSiteManagementAPI {
 		log.debug("Deleting site web user ID: {}", userId);
 		webSiteUserService.delete(userId);
 		return ResponseEntity.noContent()
-							 .build();
+		                     .build();
 	}
 
 	// ========== Site ACL Endpoints ==========
@@ -108,14 +108,14 @@ public class WebSiteManagementController implements WebSiteManagementAPI {
 		log.debug("Deleting site ACL entry ID: {}", id);
 		webSiteAclService.delete(id);
 		return ResponseEntity.noContent()
-							 .build();
+		                     .build();
 	}
 
 	// ========== Site Resource Endpoints ==========
 
 	@Override
 	public ResponseEntity<WebSiteResourcePageResponse> getResources(WebSiteResourceEnum resourceType, FileTypeEnum fileType, String query, Long aclId,
-																	String sort, String direction, int page, int size) {
+	                                                                String sort, String direction, int page, int size) {
 		accessService.checkAuthentication();
 		return ResponseEntity.ok(webSiteResourceService.listResources(resourceType, fileType, query, aclId, sort, direction, page, size));
 	}
@@ -136,7 +136,7 @@ public class WebSiteManagementController implements WebSiteManagementAPI {
 		}
 
 		return ResponseEntity.notFound()
-							 .build();
+		                     .build();
 	}
 
 	@Override
@@ -145,7 +145,7 @@ public class WebSiteManagementController implements WebSiteManagementAPI {
 
 		if (updatedConfiguration == null) {
 			return ResponseEntity.notFound()
-								 .build();
+			                     .build();
 		}
 
 		return ResponseEntity.ok(updatedConfiguration);

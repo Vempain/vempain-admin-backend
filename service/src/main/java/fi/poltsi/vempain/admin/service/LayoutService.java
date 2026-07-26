@@ -120,9 +120,9 @@ public class LayoutService {
 		try {
 			// Check if the layout name already exists
 			var otherLayout = findByLayoutName(layoutRequest.getLayoutName()
-															.trim());
+			                                                .trim());
 			log.error("Could not save a new layout when the layout name {} already exists in the database ({})",
-					  layoutRequest.getLayoutName(), otherLayout.getId());
+			          layoutRequest.getLayoutName(), otherLayout.getId());
 			throw new ResponseStatusException(HttpStatus.CONFLICT, VempainMessages.OBJECT_NAME_ALREADY_EXISTS);
 		} catch (VempainLayoutException vempainLayoutException) {
 			try {
@@ -131,17 +131,17 @@ public class LayoutService {
 				aclService.saveAclRequests(nextAclId, layoutRequest.getAcls());
 
 				var layout = Layout.builder()
-								   .aclId(nextAclId)
-								   .layoutName(layoutRequest.getLayoutName()
-															.trim())
-								   .structure(layoutRequest.getStructure()
-														   .trim())
-								   .locked(false)
-								   .creator(userId)
-								   .created(Instant.now())
-								   .modifier(userId)
-								   .modified(Instant.now())
-								   .build();
+				                   .aclId(nextAclId)
+				                   .layoutName(layoutRequest.getLayoutName()
+				                                            .trim())
+				                   .structure(layoutRequest.getStructure()
+				                                           .trim())
+				                   .locked(false)
+				                   .creator(userId)
+				                   .created(Instant.now())
+				                   .modifier(userId)
+				                   .modified(Instant.now())
+				                   .build();
 				var newLayout = save(layout);
 				log.debug("Layout ID: {}", newLayout.getId());
 				log.debug("Adding layout:\n{}", newLayout);
@@ -172,7 +172,7 @@ public class LayoutService {
 
 		if (!accessService.hasModifyPermission(layout.getAclId())) {
 			log.error("User {} tried to update layout {} ({}) with insufficient permissions", userId, layout.getId(),
-					  layout.getLayoutName());
+			          layout.getLayoutName());
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, VempainMessages.UNAUTHORIZED_ACCESS);
 		}
 
@@ -245,7 +245,7 @@ public class LayoutService {
 			}
 		} else {
 			log.error("User {} tried to delete layout {} ({}) with insufficient permissions", userId, layout.getId(),
-					  layout.getLayoutName());
+			          layout.getLayoutName());
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, VempainMessages.UNAUTHORIZED_ACCESS);
 		}
 	}
@@ -256,14 +256,14 @@ public class LayoutService {
 		}
 
 		if (layout.getLayoutName() == null ||
-			layout.getLayoutName()
-				  .isBlank()) {
+		    layout.getLayoutName()
+		          .isBlank()) {
 			throw new VempainLayoutException("Layout name is null or blank");
 		}
 
 		if (layout.getStructure() == null ||
-			layout.getStructure()
-				  .isBlank()) {
+		    layout.getStructure()
+		          .isBlank()) {
 			throw new VempainLayoutException("Layout structure is null or blank");
 		}
 

@@ -31,13 +31,13 @@ public interface UserAPI {
 
 	@Operation(summary = "Fetch list of all users", description = "Returns a list of all vempain users", tags = "UserAPI")
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
-										description = "Returned a list of users",
-										content = {@Content(array = @ArraySchema(schema = @Schema(implementation = UserResponse.class)),
-															mediaType = MediaType.APPLICATION_JSON_VALUE)}),
-						   @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
-						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
-						   @ApiResponse(responseCode = "404", description = "No users found", content = @Content),
-						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
+	                                    description = "Returned a list of users",
+	                                    content = {@Content(array = @ArraySchema(schema = @Schema(implementation = UserResponse.class)),
+	                                                        mediaType = MediaType.APPLICATION_JSON_VALUE)}),
+	                       @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
+	                       @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+	                       @ApiResponse(responseCode = "404", description = "No users found", content = @Content),
+	                       @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = MAIN_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<UserResponse>> getUsers();
@@ -45,27 +45,27 @@ public interface UserAPI {
 	@Operation(summary = "Fetch a specific user by user ID", description = "Returns details of a specific user", tags = "UserAPI")
 	@Parameter(name = "user_id", example = "12", description = "User ID to be fetched", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
-										description = "Got the details of a user",
-										content = {@Content(schema = @Schema(implementation = UserResponse.class),
-															mediaType = MediaType.APPLICATION_JSON_VALUE)}),
-						   @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
-						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
-						   @ApiResponse(responseCode = "404", description = "User not found", content = @Content),
-						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
+	                                    description = "Got the details of a user",
+	                                    content = {@Content(schema = @Schema(implementation = UserResponse.class),
+	                                                        mediaType = MediaType.APPLICATION_JSON_VALUE)}),
+	                       @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
+	                       @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+	                       @ApiResponse(responseCode = "404", description = "User not found", content = @Content),
+	                       @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = MAIN_PATH + "/{user_id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<UserResponse> findById(@PathVariable("user_id") Long userId);
 
 	@Operation(summary = "Add a new user", description = "Add a new user to the system", tags = "UserAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "New user details, the login and email can not be empty nor null",
-														  required = true)
+	                                                      required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
-										description = "User account created",
-										content = {@Content(schema = @Schema(implementation = UserResponse.class),
-															mediaType = MediaType.APPLICATION_JSON_VALUE)}),
-						   @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
-						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
-						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
+	                                    description = "User account created",
+	                                    content = {@Content(schema = @Schema(implementation = UserResponse.class),
+	                                                        mediaType = MediaType.APPLICATION_JSON_VALUE)}),
+	                       @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
+	                       @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+	                       @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@PostMapping(value = MAIN_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<UserResponse> addUser(@Valid @RequestBody UserRequest userRequest);
@@ -74,13 +74,13 @@ public interface UserAPI {
 	@Parameter(name = "user_id", example = "12", description = "User ID to be updated", required = true)
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Updated user, the name can not be empty nor null", required = true)
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
-										description = "User details updated",
-										content = {@Content(schema = @Schema(implementation = UserResponse.class),
-															mediaType = MediaType.APPLICATION_JSON_VALUE)}),
-						   @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
-						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
-						   @ApiResponse(responseCode = "404", description = "Form not found", content = @Content),
-						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
+	                                    description = "User details updated",
+	                                    content = {@Content(schema = @Schema(implementation = UserResponse.class),
+	                                                        mediaType = MediaType.APPLICATION_JSON_VALUE)}),
+	                       @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
+	                       @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+	                       @ApiResponse(responseCode = "404", description = "Form not found", content = @Content),
+	                       @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@PutMapping(value = MAIN_PATH + "/{user_id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<UserResponse> updateUser(@PathVariable("user_id") Long userId, @Valid @RequestBody UserRequest userRequest);

@@ -23,9 +23,9 @@ public class PageGalleryService {
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void deletePageGallery(Long pageId, Long galleryId, Long sortOrder) {
 		var query = entityManager.createNativeQuery("DELETE FROM page_gallery " +
-													"WHERE page_id = :pageId " +
-													"  AND gallery_id = :galleryId " +
-													"  AND sort_order = :sortOrder");
+		                                            "WHERE page_id = :pageId " +
+		                                            "  AND gallery_id = :galleryId " +
+		                                            "  AND sort_order = :sortOrder");
 		query.setParameter("pageId", pageId);
 		query.setParameter("galleryId", galleryId);
 		query.setParameter("sortOrder", sortOrder);
@@ -35,16 +35,16 @@ public class PageGalleryService {
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void deletePageGalleryByPage(Long pageId) {
 		var query = entityManager.createNativeQuery("DELETE FROM page_gallery " +
-													"WHERE page_id = :pageId");
+		                                            "WHERE page_id = :pageId");
 		query.setParameter("pageId", pageId);
 		query.executeUpdate();
 	}
 
 	public List<PageGallery> findPageGalleryByPageId(Long pageId) {
 		var query = entityManager.createNativeQuery("SELECT pg.page_id, pg.gallery_id, pg.sort_order " +
-													"FROM page_gallery pg " +
-													"WHERE pg.page_id = :pageId " +
-													"ORDER BY pg.sort_order");
+		                                            "FROM page_gallery pg " +
+		                                            "WHERE pg.page_id = :pageId " +
+		                                            "ORDER BY pg.sort_order");
 		query.setParameter("pageId", pageId);
 		List<Object[]> pgObjects = query.getResultList();
 		return mapPageGalleryResults(pgObjects);
@@ -52,8 +52,8 @@ public class PageGalleryService {
 
 	public List<PageGallery> findPageGalleryByGalleryId(Long galleryId) {
 		var query = entityManager.createNativeQuery("SELECT pg.page_id, pg.gallery_id, pg.sort_order " +
-													"FROM page_gallery pg " +
-													"WHERE pg.gallery_id = :galleryId");
+		                                            "FROM page_gallery pg " +
+		                                            "WHERE pg.gallery_id = :galleryId");
 		query.setParameter("galleryId", galleryId);
 		List<Object[]> pgObjects = query.getResultList();
 		return mapPageGalleryResults(pgObjects);
@@ -79,7 +79,7 @@ public class PageGalleryService {
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void addPageGallery(Long pageId, Long galleryId, int sortOrder) {
 		var query = entityManager.createNativeQuery("INSERT INTO page_gallery (page_id, gallery_id, sort_order) " +
-													"VALUES (:pageId, :galleryId, :sortOrder)");
+		                                            "VALUES (:pageId, :galleryId, :sortOrder)");
 		query.setParameter("pageId", pageId);
 		query.setParameter("galleryId", galleryId);
 		query.setParameter("sortOrder", sortOrder);
@@ -95,10 +95,10 @@ public class PageGalleryService {
 				var galleryId = (Long) o[1];
 				var sortOrder = (Long) o[2];
 				formComponents.add(PageGallery.builder()
-											  .pageId(pageId)
-											  .galleryId(galleryId)
-											  .sortOrder(sortOrder)
-											  .build());
+				                              .pageId(pageId)
+				                              .galleryId(galleryId)
+				                              .sortOrder(sortOrder)
+				                              .build());
 			}
 		}
 

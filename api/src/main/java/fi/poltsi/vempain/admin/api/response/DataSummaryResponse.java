@@ -30,7 +30,7 @@ public class DataSummaryResponse {
 	private String description;
 
 	@Schema(description = "JSON array describing each column name and its data type",
-			example = "[{\"name\":\"title\",\"type\":\"string\"},{\"name\":\"year\",\"type\":\"integer\"}]")
+	        example = "[{\"name\":\"title\",\"type\":\"string\"},{\"name\":\"year\",\"type\":\"integer\"}]")
 	private String columnDefinitions;
 
 	@Schema(description = "SQL statement used to create the table in the site database")

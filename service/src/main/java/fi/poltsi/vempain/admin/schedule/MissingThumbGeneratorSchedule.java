@@ -38,7 +38,7 @@ public class MissingThumbGeneratorSchedule {
 		var thumbs = fileService.findAllFileThumbs();
 
 		if (thumbs != null && thumbs.iterator()
-									.hasNext()) {
+		                            .hasNext()) {
 			for (FileThumb fileThumb : thumbs) {
 				var optionalSiteFile = fileService.findSiteFileById(fileThumb.getParentId());
 
@@ -56,10 +56,10 @@ public class MissingThumbGeneratorSchedule {
 
 					// The thumb is created from the converted file, so it can't be empty
 					if (siteFile.getFileName() != null && !siteFile.getFileName()
-																   .isEmpty()) {
+					                                               .isEmpty()) {
 						var thumbFile = Paths.get(siteFileDirectory + File.separator +
-												  fileThumb.getFilepath() + File.separator +
-												  fileThumb.getFilename());
+						                          fileThumb.getFilepath() + File.separator +
+						                          fileThumb.getFilename());
 
 						if (!Files.exists(thumbFile)) {
 							log.info("Deleting the current thumb file entry in DB as it is missing in filesystem: {}", thumbFile);

@@ -10,7 +10,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 @EnableScheduling
 public class VempainAdminApplication {
-	public static void main(String[] args) {
+	static void main(String[] args) {
 		SpringApplication.run(VempainAdminApplication.class, args);
 	}
 }

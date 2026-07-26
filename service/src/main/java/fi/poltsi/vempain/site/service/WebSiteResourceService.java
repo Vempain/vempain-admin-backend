@@ -31,15 +31,13 @@ import java.util.regex.Pattern;
 @Service
 @RequiredArgsConstructor
 public class WebSiteResourceService {
-	private final WebSiteFileRepository siteFileRepository;
+	private static final List<String>          ALLOWED_SORT_FIELDS = List.of("id", "path", "title", "shortname", "description", "aclId", "fileType", "created");
+	private final        WebSiteFileRepository siteFileRepository;
 	private final WebSitePageRepository    webSitePageRepository;
 	private final WebSiteGalleryRepository webSiteGalleryRepository;
 	private final AccessService            accessService;
-
 	@PersistenceContext(unitName = "site")
 	private EntityManager siteEntityManager;
-
-	private static final List<String> ALLOWED_SORT_FIELDS = List.of("id", "path", "title", "shortname", "description", "aclId", "fileType", "created");
 
 	/**
 	 * List resources based on the type, file type, and query parameters.
@@ -52,7 +50,7 @@ public class WebSiteResourceService {
 	 * @return a paginated response containing the requested resources
 	 */
 	public WebSiteResourcePageResponse listResources(WebSiteResourceEnum type, FileTypeEnum fileType,
-													 String query, Long aclId, String sort, String direction, int page, int size) {
+	                                                 String query, Long aclId, String sort, String direction, int page, int size) {
 		accessService.checkAuthentication();
 
 		// Defensive normalization for paging
@@ -143,13 +141,13 @@ public class WebSiteResourceService {
 
 		for (String term : terms) {
 			accumulatePage(results, aclId != null ? webSitePageRepository.findByAclIdAndTitleContainingIgnoreCase(aclId, term, pageable)
-												  : webSitePageRepository.findByTitleContainingIgnoreCase(term, pageable));
+			                                      : webSitePageRepository.findByTitleContainingIgnoreCase(term, pageable));
 			accumulatePage(results, aclId != null ? webSitePageRepository.findByAclIdAndFilePathContainingIgnoreCase(aclId, term, pageable)
-												  : webSitePageRepository.findByFilePathContainingIgnoreCase(term, pageable));
+			                                      : webSitePageRepository.findByFilePathContainingIgnoreCase(term, pageable));
 			accumulatePage(results, aclId != null ? webSitePageRepository.findByAclIdAndBodyContainingIgnoreCase(aclId, term, pageable)
-												  : webSitePageRepository.findByBodyContainingIgnoreCase(term, pageable));
+			                                      : webSitePageRepository.findByBodyContainingIgnoreCase(term, pageable));
 			accumulatePage(results, aclId != null ? webSitePageRepository.findByAclIdAndHeaderContainingIgnoreCase(aclId, term, pageable)
-												  : webSitePageRepository.findByHeaderContainingIgnoreCase(term, pageable));
+			                                      : webSitePageRepository.findByHeaderContainingIgnoreCase(term, pageable));
 		}
 
 		return sliceResults(results, pageable);
@@ -166,9 +164,9 @@ public class WebSiteResourceService {
 
 		for (var term : terms) {
 			accumulateGallery(results, aclId != null ? webSiteGalleryRepository.findByAclIdAndShortnameContainingIgnoreCase(aclId, term, pageable)
-													 : webSiteGalleryRepository.findByShortnameContainingIgnoreCase(term, pageable));
+			                                         : webSiteGalleryRepository.findByShortnameContainingIgnoreCase(term, pageable));
 			accumulateGallery(results, aclId != null ? webSiteGalleryRepository.findByAclIdAndDescriptionContainingIgnoreCase(aclId, term, pageable)
-													 : webSiteGalleryRepository.findByDescriptionContainingIgnoreCase(term, pageable));
+			                                         : webSiteGalleryRepository.findByDescriptionContainingIgnoreCase(term, pageable));
 		}
 		return sliceResults(results, pageable);
 	}
@@ -216,62 +214,61 @@ public class WebSiteResourceService {
 		List<T> list = new ArrayList<>(ordered.values());
 		var total = list.size();
 		var start = (int) Math.min(pageable.getOffset(), total);
-		var end = (int) Math.min(start + pageable.getPageSize(), total);
+		var end = Math.min(start + pageable.getPageSize(), total);
 		List<T> content = list.subList(start, end);
 		return new PageImpl<>(content, pageable, total);
 	}
 
 	private WebSiteResourcePageResponse mapFilePage(Page<WebSiteFile> page) {
 		var items = page.map(file -> WebSiteResourceResponse.builder()
-																					  .resourceType(WebSiteResourceEnum.SITE_FILE)
-																					  .resourceId(file.getId())
-															.name(file.getFilePath())
-															.path(file.getFilePath())
-																					  .aclId(file.getAclId())
-																					  .fileType(file.getFileType() != null ? file.getFileType().shortName : null)
-																					  .build())
-												  .getContent();
+		                                                    .resourceType(WebSiteResourceEnum.SITE_FILE)
+		                                                    .resourceId(file.getId())
+		                                                    .name(file.getFilePath())
+		                                                    .path(file.getFilePath())
+		                                                    .aclId(file.getAclId())
+		                                                    .fileType(file.getFileType() != null ? file.getFileType().shortName : null)
+		                                                    .build())
+		                .getContent();
 		return toPageResponse(page, items);
 	}
 
 	private WebSiteResourcePageResponse mapGalleryPage(Page<WebSiteGallery> page) {
 		var items = page.map(gallery -> WebSiteResourceResponse.builder()
-																						 .resourceType(WebSiteResourceEnum.GALLERY)
-																						 .resourceId(gallery.getId())
-																						 .name(gallery.getShortname())
-																						 .path(gallery.getDescription())
-																						 .aclId(gallery.getAclId())
-																						 .build())
-												  .getContent();
+		                                                       .resourceType(WebSiteResourceEnum.GALLERY)
+		                                                       .resourceId(gallery.getId())
+		                                                       .name(gallery.getShortname())
+		                                                       .path(gallery.getDescription())
+		                                                       .aclId(gallery.getAclId())
+		                                                       .build())
+		                .getContent();
 		return toPageResponse(page, items);
 	}
 
 	private WebSiteResourcePageResponse mapPagePage(Page<WebSitePage> page) {
 		var items = page.map(sitePage -> WebSiteResourceResponse.builder()
-																						  .resourceType(WebSiteResourceEnum.PAGE)
-																						  .resourceId(sitePage.getId())
-																						  .name(sitePage.getTitle())
-																.path(sitePage.getFilePath())
-																						  .aclId(sitePage.getAclId())
-																						  .build())
-												  .getContent();
+		                                                        .resourceType(WebSiteResourceEnum.PAGE)
+		                                                        .resourceId(sitePage.getId())
+		                                                        .name(sitePage.getTitle())
+		                                                        .path(sitePage.getFilePath())
+		                                                        .aclId(sitePage.getAclId())
+		                                                        .build())
+		                .getContent();
 		return toPageResponse(page, items);
 	}
 
 	private WebSiteResourcePageResponse toPageResponse(Page<?> page, List<WebSiteResourceResponse> items) {
 		return WebSiteResourcePageResponse.builder()
-										  .pageNumber(page.getNumber())
-										  .pageSize(page.getSize())
-										  .totalElements(page.getTotalElements())
-										  .totalPages(page.getTotalPages())
-										  .items(items)
-										  .build();
+		                                  .pageNumber(page.getNumber())
+		                                  .pageSize(page.getSize())
+		                                  .totalElements(page.getTotalElements())
+		                                  .totalPages(page.getTotalPages())
+		                                  .items(items)
+		                                  .build();
 	}
 
 	public long getNextWebSiteAcl() {
 		long nextAcl = siteEntityManager.createQuery("SELECT nextval('web_site_acl_id_seq')", Long.class)
-										.getSingleResult();
-		;
+		                                .getSingleResult();
 		log.debug("Next web site ACL ID: {}", nextAcl);
 		return nextAcl;
 	}
@@ -294,12 +291,12 @@ public class WebSiteResourceService {
 
 		if (totalElements == 0) {
 			return WebSiteResourcePageResponse.builder()
-											  .pageNumber(safePage)
-											  .pageSize(safeSize)
-											  .totalElements(0)
-											  .totalPages(0)
-											  .items(List.of())
-											  .build();
+			                                  .pageNumber(safePage)
+			                                  .pageSize(safeSize)
+			                                  .totalElements(0)
+			                                  .totalPages(0)
+			                                  .items(List.of())
+			                                  .build();
 		}
 
 		var combined = new ArrayList<WebSiteResourceResponse>();
@@ -311,56 +308,56 @@ public class WebSiteResourceService {
 
 		if (start >= totalElements || start >= combined.size()) {
 			return WebSiteResourcePageResponse.builder()
-											  .pageNumber(safePage)
-											  .pageSize(safeSize)
-											  .totalElements(totalElements)
-											  .totalPages((int) Math.ceil((double) totalElements / safeSize))
-											  .items(List.of())
-											  .build();
+			                                  .pageNumber(safePage)
+			                                  .pageSize(safeSize)
+			                                  .totalElements(totalElements)
+			                                  .totalPages((int) Math.ceil((double) totalElements / safeSize))
+			                                  .items(List.of())
+			                                  .build();
 		}
 
 		var end = (int) Math.min(start + safeSize, Math.min(totalElements, combined.size()));
 		var pageItems = combined.subList((int) start, end);
 		return WebSiteResourcePageResponse.builder()
-										  .pageNumber(safePage)
-										  .pageSize(safeSize)
-										  .totalElements(totalElements)
-										  .totalPages((int) Math.ceil((double) totalElements / safeSize))
-										  .items(pageItems)
-										  .build();
+		                                  .pageNumber(safePage)
+		                                  .pageSize(safeSize)
+		                                  .totalElements(totalElements)
+		                                  .totalPages((int) Math.ceil((double) totalElements / safeSize))
+		                                  .items(pageItems)
+		                                  .build();
 	}
 
 	private List<WebSiteResourceResponse> toFileResponses(Page<WebSiteFile> filePage) {
 		return filePage.map(file -> WebSiteResourceResponse.builder()
-														   .resourceType(WebSiteResourceEnum.SITE_FILE)
-														   .resourceId(file.getId())
-														   .name(file.getFilePath())
-														   .path(file.getFilePath())
-														   .aclId(file.getAclId())
-														   .fileType(file.getFileType() != null ? file.getFileType().shortName : null)
-														   .build())
-					   .getContent();
+		                                                   .resourceType(WebSiteResourceEnum.SITE_FILE)
+		                                                   .resourceId(file.getId())
+		                                                   .name(file.getFilePath())
+		                                                   .path(file.getFilePath())
+		                                                   .aclId(file.getAclId())
+		                                                   .fileType(file.getFileType() != null ? file.getFileType().shortName : null)
+		                                                   .build())
+		               .getContent();
 	}
 
 	private List<WebSiteResourceResponse> toGalleryResponses(Page<WebSiteGallery> galleryPage) {
 		return galleryPage.map(gallery -> WebSiteResourceResponse.builder()
-																 .resourceType(WebSiteResourceEnum.GALLERY)
-																 .resourceId(gallery.getId())
-																 .name(gallery.getShortname())
-																 .path(gallery.getDescription())
-																 .aclId(gallery.getAclId())
-																 .build())
-						  .getContent();
+		                                                         .resourceType(WebSiteResourceEnum.GALLERY)
+		                                                         .resourceId(gallery.getId())
+		                                                         .name(gallery.getShortname())
+		                                                         .path(gallery.getDescription())
+		                                                         .aclId(gallery.getAclId())
+		                                                         .build())
+		                  .getContent();
 	}
 
 	private List<WebSiteResourceResponse> toPageResponses(Page<WebSitePage> pagePage) {
 		return pagePage.map(sitePage -> WebSiteResourceResponse.builder()
-															   .resourceType(WebSiteResourceEnum.PAGE)
-															   .resourceId(sitePage.getId())
-															   .name(sitePage.getTitle())
-															   .path(sitePage.getFilePath())
-															   .aclId(sitePage.getAclId())
-															   .build())
-					   .getContent();
+		                                                       .resourceType(WebSiteResourceEnum.PAGE)
+		                                                       .resourceId(sitePage.getId())
+		                                                       .name(sitePage.getTitle())
+		                                                       .path(sitePage.getFilePath())
+		                                                       .aclId(sitePage.getAclId())
+		                                                       .build())
+		               .getContent();
 	}
 }

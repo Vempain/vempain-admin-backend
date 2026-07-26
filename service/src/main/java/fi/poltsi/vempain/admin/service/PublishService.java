@@ -11,6 +11,7 @@ import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.admin.service.file.GalleryFileService;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.UserService;
+import fi.poltsi.vempain.file.api.FileTypeEnum;
 import fi.poltsi.vempain.site.entity.WebGpsLocation;
 import fi.poltsi.vempain.site.entity.WebSitePage;
 import fi.poltsi.vempain.site.repository.WebGpsLocationRepository;
@@ -40,7 +41,7 @@ import static fi.poltsi.vempain.auth.tools.JsonTools.toJson;
 @RequiredArgsConstructor
 @Service
 public class PublishService {
-	private final SiteFileRepository    siteFileRepository;
+	private final SiteFileRepository siteFileRepository;
 	private final WebSitePageRepository    webSitePageRepository;
 	private final WebSiteGalleryRepository webSiteGalleryRepository;
 	private final WebSiteFileRepository    webSiteFileRepository;
@@ -70,6 +71,9 @@ public class PublishService {
 	private String adminSshHomeDir;
 	@Value("${vempain.admin.ssh.private-key}")
 	private String adminSshPrivateKey;
+
+	@Value("${vempain.site.thumb-directory}")
+	private String thumbSubDir;
 
 	/// ///////// Pages
 
@@ -119,12 +123,12 @@ public class PublishService {
 
 		var optionalSitePage = webSitePageRepository.findByPageId(pageId);
 		var creator = userService.findUserResponseById(page.getCreator())
-								 .getNick();
+		                         .getNick();
 		var modifier = "";
 
 		if (page.getModifier() != null) {
 			modifier = userService.findUserResponseById(page.getModifier())
-								  .getNick();
+			                      .getNick();
 		} else {
 			modifier = null;
 		}
@@ -207,10 +211,10 @@ public class PublishService {
 
 		for (var fileThumb : fileThumbList) {
 			fileThumb.setSiteFile(gallery.getSiteFiles()
-										 .stream()
-										 .filter(fileCommon -> fileCommon.getId() == fileThumb.getParentId())
-										 .findFirst()
-										 .orElseThrow(VempainEntityNotFoundException::new));
+			                             .stream()
+			                             .filter(fileCommon -> fileCommon.getId() == fileThumb.getParentId())
+			                             .findFirst()
+			                             .orElseThrow(VempainEntityNotFoundException::new));
 		}
 
 		// Transfer the files to the site-server
@@ -245,7 +249,7 @@ public class PublishService {
 		// File data
 		for (var galleryFile : galleryFileList) {
 			var siteFile = siteFileRepository.findById(galleryFile.getSiteFileId())
-											 .orElseThrow(VempainEntityNotFoundException::new);
+			                                 .orElseThrow(VempainEntityNotFoundException::new);
 			// Remove the web site file if it exists
 			log.debug("Deleting potential web site file by file ID: {}", siteFile.getId());
 			webSiteFileRepository.deleteByFileId(siteFile.getId());
@@ -256,9 +260,9 @@ public class PublishService {
 			if (siteFile.getLocation() != null) {
 				var adminLoc = siteFile.getLocation();
 				webLocation = webGpsLocationRepository.findById(adminLoc.getId())
-													  .orElseGet(() -> WebGpsLocation.builder()
-																					 .id(adminLoc.getId())
-																					 .build());
+				                                      .orElseGet(() -> WebGpsLocation.builder()
+				                                                                     .id(adminLoc.getId())
+				                                                                     .build());
 				webLocation.setLatitude(adminLoc.getLatitude());
 				webLocation.setLatitudeRef(adminLoc.getLatitudeRef());
 				webLocation.setLongitude(adminLoc.getLongitude());
@@ -280,11 +284,16 @@ public class PublishService {
 			webSiteFile.setFilePath(siteFile.getFileType().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName());
 			webSiteFile.setLocation(webLocation);
 
+			// Set thumbnail path for image files
+			if (siteFile.getFileType() == FileTypeEnum.IMAGE) {
+				webSiteFile.setThumbnailPath(siteFile.getFileType().shortName + File.separator + siteFile.getFilePath() + File.separator + thumbSubDir + File.separator + siteFile.getFileName());
+			}
+
 			log.debug("Saving web site file: {} with metadata length {} from siteFile metadata length {}", toJson(webSiteFile),
-					  (webSiteFile.getMetadata() != null ? webSiteFile.getMetadata()
-																	  .length() : 0),
-					  (webSiteFile.getMetadata() != null ? siteFile.getMetadata()
-																   .length() : 0));
+			          (webSiteFile.getMetadata() != null ? webSiteFile.getMetadata()
+			                                                          .length() : 0),
+			          (webSiteFile.getMetadata() != null ? siteFile.getMetadata()
+			                                                       .length() : 0));
 			var newWebSiteFile = webSiteFileRepository.save(webSiteFile);
 			// Add new gallery file relation
 			webSiteGalleryRepository.saveGalleryFile(siteGalleryId, newWebSiteFile.getId(), galleryFile.getSortOrder());
@@ -347,9 +356,9 @@ public class PublishService {
 		var result = publishedCount > 0 ? PublishResultEnum.OK : PublishResultEnum.FAIL;
 		var message = "Published " + publishedCount + " galleries, skipped " + skipped;
 		return PublishResponse.builder()
-							  .result(result)
-							  .message(message)
-							  .timestamp(Instant.now())
-							  .build();
+		                      .result(result)
+		                      .message(message)
+		                      .timestamp(Instant.now())
+		                      .build();
 	}
 }

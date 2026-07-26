@@ -32,7 +32,7 @@ public class FileIngestController implements FileIngestAPI {
 		} catch (IllegalArgumentException e) {
 			log.warn("Invalid file ingest request JSON: {}", e.getMessage());
 			return ResponseEntity.badRequest()
-								 .build();
+			                     .build();
 		}
 
 		try {
@@ -41,15 +41,15 @@ public class FileIngestController implements FileIngestAPI {
 		} catch (IllegalArgumentException e) {
 			log.warn("Bad request in file ingest: {}", e.getMessage());
 			return ResponseEntity.badRequest()
-								 .build();
+			                     .build();
 		} catch (AccessDeniedException e) {
 			log.warn("Unauthorized S2S call: {}", e.getMessage());
 			return ResponseEntity.status(401)
-								 .build();
+			                     .build();
 		} catch (Exception e) {
 			log.error("File ingest failed", e);
 			return ResponseEntity.internalServerError()
-								 .build();
+			                     .build();
 		}
 	}
 }

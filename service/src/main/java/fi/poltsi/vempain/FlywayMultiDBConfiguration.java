@@ -32,8 +32,8 @@ public class FlywayMultiDBConfiguration {
 		);
 
 		log.debug("Flyway admin username is: {} and cleanDisabled is: {}", flyway.getConfiguration()
-																				.getUser(), flyway.getConfiguration()
-																								  .isCleanDisabled());
+		                                                                         .getUser(), flyway.getConfiguration()
+		                                                                                           .isCleanDisabled());
 		return flyway;
 	}
 
@@ -49,8 +49,8 @@ public class FlywayMultiDBConfiguration {
 		);
 
 		log.debug("Flyway site username is: {} and cleanDisabled is: {}", flyway.getConfiguration()
-																			   .getUser(), flyway.getConfiguration()
-																								 .isCleanDisabled());
+		                                                                        .getUser(), flyway.getConfiguration()
+		                                                                                          .isCleanDisabled());
 		return flyway;
 	}
 }

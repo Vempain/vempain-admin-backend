@@ -22,7 +22,7 @@ public class FileController implements FileAPI {
 
 	@Override
 	public ResponseEntity<PagedResponse<SiteFileResponse>> getPageableSiteFiles(@NotNull FileTypeEnum FileTypeEnum, int pageNumber, int pageSize, String sortBy,
-																				Sort.Direction direction, String filter, String filterColumn) {
+	                                                                            Sort.Direction direction, String filter, String filterColumn) {
 		var pageRequest = getPageRequest(pageNumber, pageSize, sortBy, direction);
 		var pageResponse = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum, pageRequest, filter, filterColumn);
 		return ResponseEntity.ok(pageResponse);

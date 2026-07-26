@@ -62,27 +62,27 @@ public class Gallery extends AbstractVempainEntity implements Serializable {
 			}
 		}
 		return GalleryResponse.builder()
-							  .acls(aclResponses)
-							  .id(this.id)
-							  .shortName(this.shortname)
-							  .description(this.description)
-							  .siteFiles(siteFileResponses)
-							  .creator(this.creator)
-							  .created(this.created)
-							  .modifier(this.modifier)
-							  .modified(this.modified)
-							  .build();
+		                      .acls(aclResponses)
+		                      .id(this.id)
+		                      .shortName(this.shortname)
+		                      .description(this.description)
+		                      .siteFiles(siteFileResponses)
+		                      .creator(this.creator)
+		                      .created(this.created)
+		                      .modifier(this.modifier)
+		                      .modified(this.modified)
+		                      .build();
 	}
 
 	public WebSiteGallery getSiteGallery() {
 		return WebSiteGallery.builder()
-							 .galleryId(this.id)
-							 .description(this.description)
-							 .shortname(this.shortname)
-							 .creator(this.creator)
-							 .created(this.created)
-							 .modifier(this.modifier)
-							 .modified(this.modified)
-							 .build();
+		                     .galleryId(this.id)
+		                     .description(this.description)
+		                     .shortname(this.shortname)
+		                     .creator(this.creator)
+		                     .created(this.created)
+		                     .modifier(this.modifier)
+		                     .modified(this.modified)
+		                     .build();
 	}
 }

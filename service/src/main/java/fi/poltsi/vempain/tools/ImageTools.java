@@ -19,17 +19,17 @@ import java.util.Iterator;
 @Component
 @RequiredArgsConstructor
 public class ImageTools {
-	private static final String RESPONSE_STATUS_EXCEPTION_MESSAGE = "Unknown error";
+	private static final String        RESPONSE_STATUS_EXCEPTION_MESSAGE = "Unknown error";
 	@Autowired
-	private MetadataTools metadataTools;
+	private              MetadataTools metadataTools;
 
 	public Dimension resizeImage(Path sourceFile, Path destinationFile, int imageMinimumSize, float quality) {
 		// Get the original dimensions of the source file in order to see whether it should be resized
 		var origDimensions = getImageDimensions(sourceFile);
 		var targetDimensions = new Dimension();
 		var imageFormat = destinationFile.toString()
-										 .substring(destinationFile.toString()
-																   .lastIndexOf(".") + 1);
+		                                 .substring(destinationFile.toString()
+		                                                           .lastIndexOf(".") + 1);
 
 		// If the original image is smaller than the minimum size, just copy it
 		if (origDimensions.height < imageMinimumSize || origDimensions.width < imageMinimumSize) {
@@ -64,7 +64,7 @@ public class ImageTools {
 
 	public Dimension getImageDimensions(Path imageFile) {
 		if (!imageFile.toFile()
-					  .exists()) {
+		              .exists()) {
 			log.error("File does not exist: {}", imageFile);
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, RESPONSE_STATUS_EXCEPTION_MESSAGE);
 		}

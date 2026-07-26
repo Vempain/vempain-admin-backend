@@ -23,5 +23,5 @@ public class FileThumbResponse extends AbstractFileResponse {
 	@Schema(description = "Width of the image, in pixels", example = "250", requiredMode = Schema.RequiredMode.REQUIRED)
 	private long         width;
 	@Schema(description = "Height of the image, in pixels", example = "250", requiredMode = Schema.RequiredMode.REQUIRED)
-	private long          height;
+	private long height;
 }

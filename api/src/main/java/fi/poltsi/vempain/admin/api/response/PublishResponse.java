@@ -23,8 +23,8 @@ public class PublishResponse {
 	@Schema(name = "message", description = "Message of the publishing", example = "Publishing successful", requiredMode = Schema.RequiredMode.REQUIRED)
 	private final String            message;
 	@Schema(name = "timestamp",
-			description = "Date time when publishing was done",
-			example = "2021-06-11T14:26:07.983Z",
-			requiredMode = Schema.RequiredMode.REQUIRED)
+	        description = "Date time when publishing was done",
+	        example = "2021-06-11T14:26:07.983Z",
+	        requiredMode = Schema.RequiredMode.REQUIRED)
 	private final Instant timestamp;
 }

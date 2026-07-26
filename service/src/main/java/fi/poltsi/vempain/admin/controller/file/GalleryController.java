@@ -70,7 +70,7 @@ public class GalleryController implements GalleryAPI {
 		} catch (VempainAclException e) {
 			log.error("Could not create gallery: {}", e.getMessage());
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-								 .build();
+			                     .build();
 		}
 
 		return ResponseEntity.ok(galleryResponse);
@@ -83,7 +83,7 @@ public class GalleryController implements GalleryAPI {
 		if (gallery == null) {
 			log.error("Could not find gallery with ID {} for deletion", galleryId);
 			return ResponseEntity.status(HttpStatus.NOT_FOUND)
-								 .build();
+			                     .build();
 		}
 
 		try {
@@ -91,16 +91,16 @@ public class GalleryController implements GalleryAPI {
 		} catch (Exception e) {
 			log.error("Could not delete gallery with ID {}: {}", galleryId, e.getMessage());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-								 .build();
+			                     .build();
 		}
 
 		return ResponseEntity.ok(DeleteResponse.builder()
-											   .id(galleryId)
-											   .count(1L)
-											   .name(gallery.getShortName())
-											   .httpStatus(HttpStatus.OK)
-											   .timestamp(Instant.now())
-											   .build());
+		                                       .id(galleryId)
+		                                       .count(1L)
+		                                       .name(gallery.getShortName())
+		                                       .httpStatus(HttpStatus.OK)
+		                                       .timestamp(Instant.now())
+		                                       .build());
 	}
 
 	@Override
@@ -110,7 +110,7 @@ public class GalleryController implements GalleryAPI {
 		if (galleryRequest.getId() == 0) {
 			log.error("Gallery ID is missing in the request");
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-								 .build();
+			                     .build();
 		}
 
 		GalleryResponse galleryResponse;
@@ -120,7 +120,7 @@ public class GalleryController implements GalleryAPI {
 		} catch (VempainAclException e) {
 			log.error("Could not update gallery: {}", e.getMessage());
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-								 .build();
+			                     .build();
 		}
 
 		return ResponseEntity.ok(galleryResponse);
@@ -148,26 +148,26 @@ public class GalleryController implements GalleryAPI {
 			}
 
 			response = PublishResponse.builder()
-									  .result(PublishResultEnum.OK)
-									  .message("Successfully scheduled to publish all galleries")
-									  .timestamp(Instant.now())
-									  .build();
+			                          .result(PublishResultEnum.OK)
+			                          .message("Successfully scheduled to publish all galleries")
+			                          .timestamp(Instant.now())
+			                          .build();
 		} else {
 			try {
 				publishService.publishAllGalleries();
 				response = PublishResponse.builder()
-										  .result(PublishResultEnum.OK)
-										  .message("Successfully published all galleries")
-										  .timestamp(Instant.now())
-										  .build();
+				                          .result(PublishResultEnum.OK)
+				                          .message("Successfully published all galleries")
+				                          .timestamp(Instant.now())
+				                          .build();
 			} catch (VempainEntityNotFoundException e) {
 				response = PublishResponse.builder()
-										  .result(PublishResultEnum.FAIL)
-										  .message("Could not find any galleries")
-										  .timestamp(Instant.now())
-										  .build();
+				                          .result(PublishResultEnum.FAIL)
+				                          .message("Could not find any galleries")
+				                          .timestamp(Instant.now())
+				                          .build();
 				return ResponseEntity.status(HttpStatus.NOT_FOUND)
-									 .body(response);
+				                     .body(response);
 			}
 		}
 
@@ -190,18 +190,18 @@ public class GalleryController implements GalleryAPI {
 		try {
 			publishService.publishGallery(publishRequest.getId());
 			response = PublishResponse.builder()
-									  .result(PublishResultEnum.OK)
-									  .message("Successfully published gallery")
-									  .timestamp(Instant.now())
-									  .build();
+			                          .result(PublishResultEnum.OK)
+			                          .message("Successfully published gallery")
+			                          .timestamp(Instant.now())
+			                          .build();
 		} catch (VempainEntityNotFoundException e) {
 			response = PublishResponse.builder()
-									  .result(PublishResultEnum.FAIL)
-									  .message("Could not find gallery")
-									  .timestamp(Instant.now())
-									  .build();
+			                          .result(PublishResultEnum.FAIL)
+			                          .message("Could not find gallery")
+			                          .timestamp(Instant.now())
+			                          .build();
 			return ResponseEntity.status(HttpStatus.NOT_FOUND)
-								 .body(response);
+			                     .body(response);
 		}
 
 		return ResponseEntity.ok(response);
@@ -224,19 +224,19 @@ public class GalleryController implements GalleryAPI {
 
 		if (publishResponse == null) {
 			response = PublishResponse.builder()
-									  .result(PublishResultEnum.FAIL)
-									  .message("Failed to schedule gallery for publishing")
-									  .timestamp(Instant.now())
-									  .build();
+			                          .result(PublishResultEnum.FAIL)
+			                          .message("Failed to schedule gallery for publishing")
+			                          .timestamp(Instant.now())
+			                          .build();
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-								 .body(response);
+			                     .body(response);
 		}
 
 		response = PublishResponse.builder()
-								  .result(PublishResultEnum.OK)
-								  .message("Successfully scheduled gallery for publishing")
-								  .timestamp(Instant.now())
-								  .build();
+		                          .result(PublishResultEnum.OK)
+		                          .message("Successfully scheduled gallery for publishing")
+		                          .timestamp(Instant.now())
+		                          .build();
 		return ResponseEntity.ok(response);
 	}
 }
