@@ -23,56 +23,56 @@ public class WebSitePage {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
-	protected long    id;
+	protected long id;
 
 	@Column(name = "acl_id", nullable = false)
 	protected long aclId;
 
 	@Column(name = "page_id", nullable = false)
-	protected long    pageId;
+	protected long pageId;
 
 	@Column(name = "parent_id")
-	private   Long    parentId;
+	private Long parentId;
 
 	@Column(name = "file_path", nullable = false)
 	private String filePath;
 
 	@Column(name = "secure", nullable = false)
-	private   boolean secure;
+	private boolean secure;
 
 	@Column(name = "indexlist", nullable = false)
-	private   boolean indexList;
+	private boolean indexList;
 
 	@Column(name = "title", nullable = false, length = 512)
-	private   String  title;
+	private String title;
 
 	@Column(name = "header", nullable = false, length = 512)
-	private   String  header;
+	private String header;
 
 	@Column(name = "body", nullable = false, length = 524288)
-	private   String  body;
+	private String body;
 
 	@Column(name = "page_style", length = 524288)
 	private String pageStyle;
 
 	@Column(name = "creator", nullable = false, length = 512)
-	private   String  creator;
+	private String creator;
 
 	@Column(name = "created", nullable = false)
-	private   Instant created;
+	private Instant created;
 
 	@Column(name = "modifier", length = 512)
-	private   String  modifier;
+	private String modifier;
 
 	@Column(name = "modified")
-	private   Instant modified;
+	private Instant modified;
 
 	@Column(name = "cache", length = 524288)
-	private   String  cache;
+	private String cache;
 
 	@Column(name = "embeds")
 	private String embeds;
 
 	@Column(name = "published")
-	private   Instant published;
+	private Instant published;
 }

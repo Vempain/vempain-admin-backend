@@ -20,8 +20,8 @@ import javax.sql.DataSource;
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories(entityManagerFactoryRef = "adminEntityManagerFactory",
-					   transactionManagerRef = "adminTransactionManager",
-					   basePackages = {"fi.poltsi.vempain.admin.repository", "fi.poltsi.vempain.auth.repository"})
+                       transactionManagerRef = "adminTransactionManager",
+                       basePackages = {"fi.poltsi.vempain.admin.repository", "fi.poltsi.vempain.auth.repository"})
 public class AdminDatabaseConfiguration {
 	@Primary
 	@Bean
@@ -35,14 +35,14 @@ public class AdminDatabaseConfiguration {
 	@ConfigurationProperties(prefix = "spring.admin-datasource.configuration")
 	public DataSource adminDataSource() {
 		return adminDataSourceProperties().initializeDataSourceBuilder()
-										  .type(HikariDataSource.class)
-										  .build();
+		                                  .type(HikariDataSource.class)
+		                                  .build();
 	}
 
 	@Primary
 	@Bean(name = "adminEntityManagerFactory")
 	public LocalContainerEntityManagerFactoryBean adminEntityManagerFactory(EntityManagerFactoryBuilder builder,
-																			@Qualifier("adminDataSource") DataSource dataSource) {
+	                                                                        @Qualifier("adminDataSource") DataSource dataSource) {
 		return builder
 				.dataSource(dataSource)
 				.packages("fi.poltsi.vempain.admin.entity", "fi.poltsi.vempain.auth.entity")

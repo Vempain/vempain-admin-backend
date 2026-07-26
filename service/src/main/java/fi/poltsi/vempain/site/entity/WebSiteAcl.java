@@ -46,13 +46,13 @@ public class WebSiteAcl {
 
 	public WebSiteAclResponse toResponse() {
 		return WebSiteAclResponse.builder()
-								 .id(this.id)
-								 .aclId(this.aclId)
-								 .userId(this.userId)
-								 .creator(this.creator)
-								 .created(this.created)
-								 .modifier(this.modifier)
-								 .modified(this.modified)
-								 .build();
+		                         .id(this.id)
+		                         .aclId(this.aclId)
+		                         .userId(this.userId)
+		                         .creator(this.creator)
+		                         .created(this.created)
+		                         .modifier(this.modifier)
+		                         .modified(this.modified)
+		                         .build();
 	}
 }

@@ -17,13 +17,13 @@ public class FileImportScheduleResponse {
 	private long id;
 
 	@Schema(description = "Source directory path on admin server side, relative to configured root",
-			example = "/path/to/images",
-			requiredMode = Schema.RequiredMode.REQUIRED)
+	        example = "/path/to/images",
+	        requiredMode = Schema.RequiredMode.REQUIRED)
 	private String sourceDirectory;
 
 	@Schema(description = "Destination directory path on site server side, relative to configured root",
-			example = "/path/to/images",
-			requiredMode = Schema.RequiredMode.REQUIRED)
+	        example = "/path/to/images",
+	        requiredMode = Schema.RequiredMode.REQUIRED)
 	private String destinationDirectory;
 
 	@Schema(description = "Toggle whether a gallery should also be created", example = "true", requiredMode = Schema.RequiredMode.REQUIRED)

@@ -55,11 +55,7 @@ public class GalleryService {
 		var responses = new ArrayList<GalleryResponse>();
 
 		for (Gallery gallery : galleries) {
-			if (queryDetailEnum == QueryDetailEnum.FULL) {
-				populateGalleryWithSiteFiles(gallery, true);
-			} else {
-				populateGalleryWithSiteFiles(gallery, false);
-			}
+			populateGalleryWithSiteFiles(gallery, queryDetailEnum == QueryDetailEnum.FULL);
 
 			var response = gallery.getResponse();
 			responses.add(response);
@@ -71,7 +67,7 @@ public class GalleryService {
 	@Transactional(readOnly = true)
 	public GalleryResponse findById(long galleryId) {
 		var gallery = galleryRepository.findById(galleryId)
-									   .orElse(null);
+		                               .orElse(null);
 
 		if (gallery == null) {
 			return null;
@@ -89,15 +85,15 @@ public class GalleryService {
 	public GalleryResponse createGallery(GalleryRequest galleryRequest) throws VempainAclException {
 		var aclId = aclService.getNextAclId();
 		var gallery = Gallery.builder()
-							 .shortname(galleryRequest.getShortName())
-							 .description(galleryRequest.getDescription())
-							 .aclId(aclId)
-							 .creator(accessService.getUserId())
-							 .created(Instant.now())
-							 .modifier(null)
-							 .modified(null)
-							 .locked(false)
-							 .build();
+		                     .shortname(galleryRequest.getShortName())
+		                     .description(galleryRequest.getDescription())
+		                     .aclId(aclId)
+		                     .creator(accessService.getUserId())
+		                     .created(Instant.now())
+		                     .modifier(null)
+		                     .modified(null)
+		                     .locked(false)
+		                     .build();
 		var newGallery = galleryRepository.save(gallery);
 		galleryFileService.addGalleryFiles(newGallery.getId(), galleryRequest.getSiteFilesId());
 
@@ -116,7 +112,7 @@ public class GalleryService {
 	public GalleryResponse updateGallery(GalleryRequest galleryRequest) throws VempainAclException {
 		log.debug("Received gallery request: {}", galleryRequest);
 		var currentGallery = galleryRepository.findById(galleryRequest.getId())
-											  .orElse(null);
+		                                      .orElse(null);
 
 		if (currentGallery == null) {
 			log.warn("Could not find gallery with ID: {}", galleryRequest.getId());
@@ -158,10 +154,10 @@ public class GalleryService {
 		for (var galleryFile : galleryFiles) {
 			if (withMetadata) {
 				siteFileRepository.findById(galleryFile.getSiteFileId())
-								  .ifPresent(fileCommons::add);
+				                  .ifPresent(fileCommons::add);
 			} else {
 				siteFileRepository.findByIdWithoutMetadata(galleryFile.getSiteFileId())
-								  .ifPresent(fileCommons::add);
+				                  .ifPresent(fileCommons::add);
 			}
 		}
 
@@ -192,12 +188,12 @@ public class GalleryService {
 		}
 
 		return GalleryPageResponse.builder()
-								  .pageNumber(pageResult.getNumber())
-								  .pageSize(pageResult.getSize())
-								  .totalPages(pageResult.getTotalPages())
-								  .totalElements(pageResult.getTotalElements())
-								  .items(items)
-								  .build();
+		                          .pageNumber(pageResult.getNumber())
+		                          .pageSize(pageResult.getSize())
+		                          .totalPages(pageResult.getTotalPages())
+		                          .totalElements(pageResult.getTotalElements())
+		                          .items(items)
+		                          .build();
 	}
 
 	private Sort buildSort(String sort, String direction) {

@@ -35,7 +35,7 @@ public class GalleryRepositoryImpl implements GalleryRepositoryCustom {
 		String orderClause = buildOrderClause(pageable);
 
 		String selectSql = "SELECT DISTINCT g.* " + base + whereClause + orderClause +
-						   " OFFSET :offset LIMIT :limit";
+		                   " OFFSET :offset LIMIT :limit";
 		log.debug("Gallery search SQL: {}", selectSql);
 		Query dataQuery = entityManager.createNativeQuery(selectSql, Gallery.class);
 		bindParameters(dataQuery, tokens, caseSensitive);
@@ -55,7 +55,7 @@ public class GalleryRepositoryImpl implements GalleryRepositoryCustom {
 	private void bindParameters(Query query, List<String> tokens, boolean caseSensitive) {
 		for (int i = 0; i < tokens.size(); i++) {
 			String value = caseSensitive ? tokens.get(i) : tokens.get(i)
-																 .toLowerCase();
+			                                                     .toLowerCase();
 			query.setParameter("term" + i, "%" + value + "%");
 		}
 	}
@@ -88,7 +88,7 @@ public class GalleryRepositoryImpl implements GalleryRepositoryCustom {
 
 	private String buildOrderClause(Pageable pageable) {
 		if (!pageable.getSort()
-					 .isSorted()) {
+		             .isSorted()) {
 			return " ORDER BY g.id ASC";
 		}
 		StringBuilder sb = new StringBuilder(" ORDER BY ");
@@ -100,7 +100,7 @@ public class GalleryRepositoryImpl implements GalleryRepositoryCustom {
 			sb.append(mapSort(order.getProperty()))
 			  .append(' ')
 			  .append(order.getDirection()
-						   .name());
+			               .name());
 			first = false;
 		}
 		return sb.toString();

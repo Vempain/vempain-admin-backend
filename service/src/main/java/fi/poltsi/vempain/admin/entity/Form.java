@@ -46,15 +46,15 @@ public class Form extends AbstractVempainEntity implements Serializable {
 	@JsonIgnore // We do a deep copy of Form by Jackson, so we need this annotation here
 	public FormResponse getFormResponse() {
 		return FormResponse.builder()
-						   .id(this.id)
-						   .layoutId(this.layoutId)
-						   .name(this.formName)
-						   .locked(this.locked)
-						   .acls(null)
-						   .creator(this.creator)
-						   .created(this.created)
-						   .modifier(this.modifier)
-						   .modified(this.modified)
-						   .build();
+		                   .id(this.id)
+		                   .layoutId(this.layoutId)
+		                   .name(this.formName)
+		                   .locked(this.locked)
+		                   .acls(null)
+		                   .creator(this.creator)
+		                   .created(this.created)
+		                   .modifier(this.modifier)
+		                   .modified(this.modified)
+		                   .build();
 	}
 }

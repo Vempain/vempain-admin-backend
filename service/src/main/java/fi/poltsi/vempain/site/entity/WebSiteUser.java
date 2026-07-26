@@ -51,27 +51,27 @@ public class WebSiteUser {
 
 	public WebSiteUserResponse toResponse() {
 		return WebSiteUserResponse.builder()
-								  .id(this.id)
-								  .username(this.username)
-								  .creator(this.creator)
-								  .created(this.created)
-								  .modifier(this.modifier)
-								  .modified(this.modified)
-								  .globalPermission(this.globalPermission)
-								  .resources(null)
-								  .build();
+		                          .id(this.id)
+		                          .username(this.username)
+		                          .creator(this.creator)
+		                          .created(this.created)
+		                          .modifier(this.modifier)
+		                          .modified(this.modified)
+		                          .globalPermission(this.globalPermission)
+		                          .resources(null)
+		                          .build();
 	}
 
 	public WebSiteUserResponse toResponse(List<WebSiteResourceResponse> resources) {
 		return WebSiteUserResponse.builder()
-								  .id(this.id)
-								  .username(this.username)
-								  .creator(this.creator)
-								  .created(this.created)
-								  .modifier(this.modifier)
-								  .modified(this.modified)
-								  .globalPermission(this.globalPermission)
-								  .resources(resources)
-								  .build();
+		                          .id(this.id)
+		                          .username(this.username)
+		                          .creator(this.creator)
+		                          .created(this.created)
+		                          .modifier(this.modifier)
+		                          .modified(this.modified)
+		                          .globalPermission(this.globalPermission)
+		                          .resources(resources)
+		                          .build();
 	}
 }

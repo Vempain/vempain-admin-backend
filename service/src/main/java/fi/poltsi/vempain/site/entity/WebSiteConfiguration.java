@@ -43,11 +43,11 @@ public class WebSiteConfiguration {
 
 	public WebSiteConfigurationResponse toResponse() {
 		return WebSiteConfigurationResponse.builder()
-										   .id(this.id)
-										   .configKey(this.configKey)
-										   .configType(this.configType)
-										   .configDefault(this.configDefault)
-										   .configValue(this.configValue)
-										   .build();
+		                                   .id(this.id)
+		                                   .configKey(this.configKey)
+		                                   .configType(this.configType)
+		                                   .configDefault(this.configDefault)
+		                                   .configValue(this.configValue)
+		                                   .build();
 	}
 }

@@ -144,7 +144,7 @@ public class AclConsistencySchedule {
 	private void deduplicateUserUnitAcls() {
 		Iterable<Acl> acls = aclService.findAllUserUnitAcls();
 		if (acls == null || !acls.iterator()
-								 .hasNext()) {
+		                         .hasNext()) {
 			return;
 		}
 
@@ -160,14 +160,14 @@ public class AclConsistencySchedule {
 			}
 
 			var unitAcl = Acl.builder()
-							 .aclId(aclId)
-							 .userId(null)
-							 .unitId(unitId)
-							 .createPrivilege(acl.isCreatePrivilege())
-							 .modifyPrivilege(acl.isModifyPrivilege())
-							 .readPrivilege(acl.isReadPrivilege())
-							 .deletePrivilege(acl.isDeletePrivilege())
-							 .build();
+			                 .aclId(aclId)
+			                 .userId(null)
+			                 .unitId(unitId)
+			                 .createPrivilege(acl.isCreatePrivilege())
+			                 .modifyPrivilege(acl.isModifyPrivilege())
+			                 .readPrivilege(acl.isReadPrivilege())
+			                 .deletePrivilege(acl.isDeletePrivilege())
+			                 .build();
 			try {
 				aclService.save(unitAcl);
 			} catch (VempainAclException e) {
@@ -195,36 +195,36 @@ public class AclConsistencySchedule {
 
 			if (originalAcls == null || originalAcls.isEmpty()) {
 				var newAcl = Acl.builder()
-								.aclId(aclId)
-								.userId(OPERATOR_ID)
-								.unitId(null)
-								.readPrivilege(true)
-								.modifyPrivilege(true)
-								.createPrivilege(true)
-								.deletePrivilege(true)
-								.build();
+				                .aclId(aclId)
+				                .userId(OPERATOR_ID)
+				                .unitId(null)
+				                .readPrivilege(true)
+				                .modifyPrivilege(true)
+				                .createPrivilege(true)
+				                .deletePrivilege(true)
+				                .build();
 				try {
 					aclService.save(newAcl);
 				} catch (VempainAclException e) {
 					log.error("Failed to create an ACL for object ({}) ID {}", entity.getClass()
-																					 .getName(), entity.getId());
+					                                                                 .getName(), entity.getId());
 				}
 			} else {
 				for (Acl acl : originalAcls) {
 					var newAcl = Acl.builder()
-									.aclId(aclId)
-									.userId(acl.getUserId())
-									.unitId(acl.getUnitId())
-									.readPrivilege(acl.isReadPrivilege())
-									.modifyPrivilege(acl.isModifyPrivilege())
-									.createPrivilege(acl.isCreatePrivilege())
-									.deletePrivilege(acl.isDeletePrivilege())
-									.build();
+					                .aclId(aclId)
+					                .userId(acl.getUserId())
+					                .unitId(acl.getUnitId())
+					                .readPrivilege(acl.isReadPrivilege())
+					                .modifyPrivilege(acl.isModifyPrivilege())
+					                .createPrivilege(acl.isCreatePrivilege())
+					                .deletePrivilege(acl.isDeletePrivilege())
+					                .build();
 					try {
 						aclService.save(newAcl);
 					} catch (VempainAclException e) {
 						log.error("Failed to copy an ACL for object ({}) ID {}", entity.getClass()
-																					   .getName(), entity.getId());
+						                                                               .getName(), entity.getId());
 					}
 				}
 
@@ -253,14 +253,14 @@ public class AclConsistencySchedule {
 		for (Iterator<Long> itr = missingAcls.iterator(); itr.hasNext(); ) {
 			Long aclId = itr.next();
 			var newAcl = Acl.builder()
-							.aclId(aclId)
-							.userId(OPERATOR_ID)
-							.unitId(null)
-							.readPrivilege(true)
-							.modifyPrivilege(true)
-							.createPrivilege(true)
-							.deletePrivilege(true)
-							.build();
+			                .aclId(aclId)
+			                .userId(OPERATOR_ID)
+			                .unitId(null)
+			                .readPrivilege(true)
+			                .modifyPrivilege(true)
+			                .createPrivilege(true)
+			                .deletePrivilege(true)
+			                .build();
 			try {
 				log.info("Creating missing ACL: {}", newAcl);
 				aclService.save(newAcl);

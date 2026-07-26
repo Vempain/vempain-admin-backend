@@ -45,8 +45,8 @@ public interface WebSiteManagementAPI {
 	@Operation(summary = "List all site web users", description = "Returns a list of all site web users", tags = "WebSiteManagementAPI")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Successfully retrieved list",
-						 content = @Content(array = @ArraySchema(schema = @Schema(implementation = WebSiteUserResponse.class)),
-											mediaType = MediaType.APPLICATION_JSON_VALUE)),
+			             content = @Content(array = @ArraySchema(schema = @Schema(implementation = WebSiteUserResponse.class)),
+			                                mediaType = MediaType.APPLICATION_JSON_VALUE)),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
 	})
@@ -57,8 +57,8 @@ public interface WebSiteManagementAPI {
 	@Parameter(name = "userId", description = "Site web user ID", required = true, example = "7")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Successfully retrieved user",
-						 content = @Content(schema = @Schema(implementation = WebSiteUserResponse.class),
-											mediaType = MediaType.APPLICATION_JSON_VALUE)),
+			             content = @Content(schema = @Schema(implementation = WebSiteUserResponse.class),
+			                                mediaType = MediaType.APPLICATION_JSON_VALUE)),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "404", description = "User not found", content = @Content),
 			@ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
@@ -70,8 +70,8 @@ public interface WebSiteManagementAPI {
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "User details including username and password", required = true)
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "User created successfully",
-						 content = @Content(schema = @Schema(implementation = WebSiteUserResponse.class),
-											mediaType = MediaType.APPLICATION_JSON_VALUE)),
+			             content = @Content(schema = @Schema(implementation = WebSiteUserResponse.class),
+			                                mediaType = MediaType.APPLICATION_JSON_VALUE)),
 			@ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "409", description = "Username already exists", content = @Content),
@@ -85,8 +85,8 @@ public interface WebSiteManagementAPI {
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Updated user details", required = true)
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "User updated successfully",
-						 content = @Content(schema = @Schema(implementation = WebSiteUserResponse.class),
-											mediaType = MediaType.APPLICATION_JSON_VALUE)),
+			             content = @Content(schema = @Schema(implementation = WebSiteUserResponse.class),
+			                                mediaType = MediaType.APPLICATION_JSON_VALUE)),
 			@ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "404", description = "User not found", content = @Content),
@@ -111,8 +111,8 @@ public interface WebSiteManagementAPI {
 	@Parameter(name = "userId", description = "Site web user ID", required = true, example = "7")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Successfully retrieved resources",
-						 content = @Content(schema = @Schema(implementation = WebSiteUserResponse.class),
-											mediaType = MediaType.APPLICATION_JSON_VALUE)),
+			             content = @Content(schema = @Schema(implementation = WebSiteUserResponse.class),
+			                                mediaType = MediaType.APPLICATION_JSON_VALUE)),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "404", description = "User not found", content = @Content),
 			@ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
@@ -124,8 +124,8 @@ public interface WebSiteManagementAPI {
 	@Operation(summary = "List all site ACL entries", description = "Returns all ACL assignments", tags = "WebSiteManagementAPI")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Successfully retrieved list",
-						 content = @Content(array = @ArraySchema(schema = @Schema(implementation = WebSiteAclResponse.class)),
-											mediaType = MediaType.APPLICATION_JSON_VALUE)),
+			             content = @Content(array = @ArraySchema(schema = @Schema(implementation = WebSiteAclResponse.class)),
+			                                mediaType = MediaType.APPLICATION_JSON_VALUE)),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
 	})
@@ -136,8 +136,8 @@ public interface WebSiteManagementAPI {
 	@Parameter(name = "aclId", description = "Site ACL ID", required = true, example = "42")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Successfully retrieved users",
-						 content = @Content(schema = @Schema(implementation = WebSiteAclUsersResponse.class),
-											mediaType = MediaType.APPLICATION_JSON_VALUE)),
+			             content = @Content(schema = @Schema(implementation = WebSiteAclUsersResponse.class),
+			                                mediaType = MediaType.APPLICATION_JSON_VALUE)),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
 	})
@@ -148,8 +148,8 @@ public interface WebSiteManagementAPI {
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "ACL assignment details", required = true)
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "ACL entry created successfully",
-						 content = @Content(schema = @Schema(implementation = WebSiteAclResponse.class),
-											mediaType = MediaType.APPLICATION_JSON_VALUE)),
+			             content = @Content(schema = @Schema(implementation = WebSiteAclResponse.class),
+			                                mediaType = MediaType.APPLICATION_JSON_VALUE)),
 			@ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "404", description = "User not found", content = @Content),
@@ -171,38 +171,42 @@ public interface WebSiteManagementAPI {
 	ResponseEntity<Void> deleteAcl(@PathVariable("id") Long id);
 
 	// ////////////////////////////// Site Resource APIs //////////////////////////////
-	@Operation(summary = "List available site resources", description = "Returns paginated list of site resources that can be linked to ACLs", tags = "WebSiteManagementAPI")
+	@Operation(summary = "List available site resources",
+	           description = "Returns paginated list of site resources that can be linked to ACLs",
+	           tags = "WebSiteManagementAPI")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Successfully retrieved resources",
-						 content = @Content(schema = @Schema(implementation = WebSiteResourcePageResponse.class),
-											mediaType = MediaType.APPLICATION_JSON_VALUE)),
+			             content = @Content(schema = @Schema(implementation = WebSiteResourcePageResponse.class),
+			                                mediaType = MediaType.APPLICATION_JSON_VALUE)),
 			@ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
 	})
 	@GetMapping(value = MAIN_PATH + "/resources", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<WebSiteResourcePageResponse> getResources(@RequestParam(value = "type", required = false) WebSiteResourceEnum resourceType,
-															 @RequestParam(value = "file_type", required = false) FileTypeEnum fileType,
-															 @RequestParam(value = "query", required = false) String query,
-															 @RequestParam(value = "acl_id", required = false) Long aclId,
-															 @RequestParam(value = "sort", defaultValue = "id") String sort,
-															 @RequestParam(value = "direction", defaultValue = "asc") String direction,
-															 @RequestParam(value = "page", defaultValue = "0") int page,
-															 @RequestParam(value = "size", defaultValue = "25") int size);
+	                                                         @RequestParam(value = "file_type", required = false) FileTypeEnum fileType,
+	                                                         @RequestParam(value = "query", required = false) String query,
+	                                                         @RequestParam(value = "acl_id", required = false) Long aclId,
+	                                                         @RequestParam(value = "sort", defaultValue = "id") String sort,
+	                                                         @RequestParam(value = "direction", defaultValue = "asc") String direction,
+	                                                         @RequestParam(value = "page", defaultValue = "0") int page,
+	                                                         @RequestParam(value = "size", defaultValue = "25") int size);
 
 	// ////////////////////////////// Site Configuration APIs //////////////////////////////
 	@Operation(summary = "List all site configuration entries", description = "Returns all configuration assignments", tags = "WebSiteManagementAPI")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Successfully retrieved list",
-						 content = @Content(array = @ArraySchema(schema = @Schema(implementation = WebSiteAclResponse.class)),
-											mediaType = MediaType.APPLICATION_JSON_VALUE)),
+			             content = @Content(array = @ArraySchema(schema = @Schema(implementation = WebSiteAclResponse.class)),
+			                                mediaType = MediaType.APPLICATION_JSON_VALUE)),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
 	})
 	@GetMapping(value = CONFIG_ADMIN_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<WebSiteConfigurationResponse>> getAllSiteConfigurations();
 
-	@Operation(summary = "Fetch existing site configuration by id", description = "Returns configuration entry for a specific key", tags = "WebSiteManagementAPI")
+	@Operation(summary = "Fetch existing site configuration by id",
+	           description = "Returns configuration entry for a specific key",
+	           tags = "WebSiteManagementAPI")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "404", description = "Configuration entry not found", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
@@ -211,11 +215,13 @@ public interface WebSiteManagementAPI {
 	@GetMapping(value = CONFIG_ADMIN_PATH + "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<WebSiteConfigurationResponse> getSiteConfigurationById(@PathVariable("id") Long id);
 
-	@Operation(summary = "Update existing site configuration entry", description = "Updates value of an existing configuration entry", tags = "WebSiteManagementAPI")
+	@Operation(summary = "Update existing site configuration entry",
+	           description = "Updates value of an existing configuration entry",
+	           tags = "WebSiteManagementAPI")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Configuration entry updated successfully",
-						 content = @Content(schema = @Schema(implementation = WebSiteConfigurationResponse.class),
-											mediaType = MediaType.APPLICATION_JSON_VALUE)),
+			             content = @Content(schema = @Schema(implementation = WebSiteConfigurationResponse.class),
+			                                mediaType = MediaType.APPLICATION_JSON_VALUE)),
 			@ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "404", description = "Configuration entry not found", content = @Content),

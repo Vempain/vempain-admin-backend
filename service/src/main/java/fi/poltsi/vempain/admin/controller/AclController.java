@@ -40,8 +40,8 @@ public class AclController implements AclAPI {
 		Iterable<Acl> aclData = aclService.findAclByAclId(aclId);
 
 		if (StreamSupport.stream(aclData.spliterator(), false)
-						 .findAny()
-						 .isEmpty()) {
+		                 .findAny()
+		                 .isEmpty()) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "There are no ACL in the database");
 		}
 

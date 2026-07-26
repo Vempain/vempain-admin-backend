@@ -28,15 +28,15 @@ public class Layout extends AbstractVempainEntity {
 
 	public LayoutResponse getLayoutResponse() {
 		return LayoutResponse.builder()
-							 .id(this.id)
-							 .layoutName(this.layoutName)
-							 .structure(this.structure)
-							 .acls(null)
-							 .locked(this.locked)
-							 .creator(this.creator)
-							 .created(this.created)
-							 .modifier(this.modifier)
-							 .modified(this.modified)
-							 .build();
+		                     .id(this.id)
+		                     .layoutName(this.layoutName)
+		                     .structure(this.structure)
+		                     .acls(null)
+		                     .locked(this.locked)
+		                     .creator(this.creator)
+		                     .created(this.created)
+		                     .modifier(this.modifier)
+		                     .modified(this.modified)
+		                     .build();
 	}
 }

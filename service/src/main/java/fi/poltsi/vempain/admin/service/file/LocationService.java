@@ -19,7 +19,7 @@ public class LocationService {
 			return null;
 		}
 		var entity = gpsLocationRepository.findById(dto.getId())
-										  .orElseGet(() -> {
+		                                  .orElseGet(() -> {
 											  var created = new GpsLocation();
 											  created.setId(dto.getId());
 											  return created;

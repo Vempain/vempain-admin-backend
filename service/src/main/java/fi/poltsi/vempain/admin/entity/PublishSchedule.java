@@ -68,14 +68,14 @@ public class PublishSchedule {
 
 	public PublishScheduleResponse toResponse() {
 		return PublishScheduleResponse.builder()
-									  .id(id)
-									  .publishTime(publishTime)
-									  .publishStatus(publishStatus)
-									  .publishMessage(publishMessage)
-									  .publishType(publishType)
-									  .publishId(publishId)
-									  .createdAt(createdAt)
-									  .updatedAt(updatedAt)
-									  .build();
+		                              .id(id)
+		                              .publishTime(publishTime)
+		                              .publishStatus(publishStatus)
+		                              .publishMessage(publishMessage)
+		                              .publishType(publishType)
+		                              .publishId(publishId)
+		                              .createdAt(createdAt)
+		                              .updatedAt(updatedAt)
+		                              .build();
 	}
 }

@@ -87,23 +87,23 @@ public class PageService {
 		long aclId = aclService.saveNewAclForObject(request.getAcls());
 
 		var page = Page.builder()
-					   .aclId(aclId)
-					   .formId(request.getFormId())
-					   .header(request.getHeader()
-									  .trim())
-					   .title(request.getTitle()
-									 .trim())
-					   .pagePath(request.getPagePath())
-					   .body(request.getBody()
-									.trim())
-					   .indexList(request.isIndexList())
-					   .locked(false)
-					   .secure(request.isSecure())
-					   .creator(userId)
-					   .created(Instant.now())
-					   .modifier(null)
-					   .modified(null)
-					   .build();
+		               .aclId(aclId)
+		               .formId(request.getFormId())
+		               .header(request.getHeader()
+		                              .trim())
+		               .title(request.getTitle()
+		                             .trim())
+		               .pagePath(request.getPagePath())
+		               .body(request.getBody()
+		                            .trim())
+		               .indexList(request.isIndexList())
+		               .locked(false)
+		               .secure(request.isSecure())
+		               .creator(userId)
+		               .created(Instant.now())
+		               .modifier(null)
+		               .modified(null)
+		               .build();
 
 		return save(page);
 	}
@@ -157,19 +157,19 @@ public class PageService {
 
 		// If the path is updated, then make sure it is not already used by some other page
 		if (!request.getPagePath()
-					.trim()
-					.equals(page.getPagePath()
-								.trim())) {
+		            .trim()
+		            .equals(page.getPagePath()
+		                        .trim())) {
 			log.debug("User is updating the path of page ID {} from {} to {}", request.getId(), page.getPagePath(), request.getPagePath());
 
 			try {
 				var pathPage = findByPath(request.getPagePath()
-												 .trim());
+				                                 .trim());
 
 				if (!pathPage.getId()
-							 .equals(page.getId())) {
+				             .equals(page.getId())) {
 					log.error("Failed to update page as the path {} already exists and belongs to page ID {}", request.getPagePath()
-																													  .trim(), pathPage.getId());
+					                                                                                                  .trim(), pathPage.getId());
 					throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST);
 				}
 			} catch (VempainEntityNotFoundException e) {
@@ -188,13 +188,13 @@ public class PageService {
 
 		try {
 			page.setBody(request.getBody()
-								.trim());
+			                    .trim());
 			page.setPagePath(request.getPagePath()
-									.trim());
+			                        .trim());
 			page.setTitle(request.getTitle()
-								 .trim());
+			                     .trim());
 			page.setHeader(request.getHeader()
-								  .trim());
+			                      .trim());
 			page.setIndexList(request.isIndexList());
 			page.setFormId(request.getFormId());
 			page.setParentId(parentId);
@@ -221,7 +221,7 @@ public class PageService {
 
 		if (!accessService.hasDeletePermission(page.getAclId())) {
 			log.error("User {} tried to delete page {} ({}) with insufficient permissions", userId, page.getId(),
-					  page.getPagePath());
+			          page.getPagePath());
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, VempainMessages.UNAUTHORIZED_ACCESS);
 		}
 

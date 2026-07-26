@@ -48,9 +48,9 @@ public class PageController implements PageAPI {
 		} else if (queryDetailEnum == QueryDetailEnum.MINIMAL) {
 			for (Page page : pageList) {
 				responses.add(PageResponse.builder()
-										  .id(page.getId())
-										  .pagePath(page.getPagePath())
-										  .build());
+				                          .id(page.getId())
+				                          .pagePath(page.getPagePath())
+				                          .build());
 			}
 		} else if (queryDetailEnum == QueryDetailEnum.UNPOPULATED) {
 			for (Page page : pageList) {
@@ -84,7 +84,7 @@ public class PageController implements PageAPI {
 		if (page == null) {
 			log.error("Could not retrieve page with ID {}", pageId);
 			return ResponseEntity.status(HttpStatus.NOT_FOUND)
-								 .body(null);
+			                     .body(null);
 		}
 
 		log.debug("Found page with ID {}: {}", pageId, page.getPagePath());
@@ -127,12 +127,12 @@ public class PageController implements PageAPI {
 		try {
 			deleteService.deletePageById(pageId);
 			return ResponseEntity.ok(DeleteResponse.builder()
-												   .count(1)
-												   .id(pageId)
-												   .name("Form")
-												   .timestamp(Instant.now())
-												   .httpStatus(HttpStatus.OK)
-												   .build());
+			                                       .count(1)
+			                                       .id(pageId)
+			                                       .name("Form")
+			                                       .timestamp(Instant.now())
+			                                       .httpStatus(HttpStatus.OK)
+			                                       .build());
 		} catch (VempainEntityNotFoundException e) {
 			log.error("Failed to delete a page:\n{}", e.getMessage());
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, VempainMessages.INTERNAL_ERROR);
@@ -153,26 +153,26 @@ public class PageController implements PageAPI {
 			}
 
 			response = PublishResponse.builder()
-									  .result(PublishResultEnum.OK)
-									  .message("Successfully scheduled to publish all pages")
-									  .timestamp(Instant.now())
-									  .build();
+			                          .result(PublishResultEnum.OK)
+			                          .message("Successfully scheduled to publish all pages")
+			                          .timestamp(Instant.now())
+			                          .build();
 		} else {
 			try {
 				publishService.publishAllPages();
 				response = PublishResponse.builder()
-										  .result(PublishResultEnum.OK)
-										  .message("Successfully published all pages")
-										  .timestamp(Instant.now())
-										  .build();
+				                          .result(PublishResultEnum.OK)
+				                          .message("Successfully published all pages")
+				                          .timestamp(Instant.now())
+				                          .build();
 			} catch (VempainEntityNotFoundException e) {
 				response = PublishResponse.builder()
-										  .result(PublishResultEnum.FAIL)
-										  .message("Could not find any pages")
-										  .timestamp(Instant.now())
-										  .build();
+				                          .result(PublishResultEnum.FAIL)
+				                          .message("Could not find any pages")
+				                          .timestamp(Instant.now())
+				                          .build();
 				return ResponseEntity.status(HttpStatus.NOT_FOUND)
-									 .body(response);
+				                     .body(response);
 			}
 		}
 
@@ -195,18 +195,18 @@ public class PageController implements PageAPI {
 		try {
 			publishService.publishPage(publishRequest.getId());
 			response = PublishResponse.builder()
-									  .result(PublishResultEnum.OK)
-									  .message("Successfully published page")
-									  .timestamp(Instant.now())
-									  .build();
+			                          .result(PublishResultEnum.OK)
+			                          .message("Successfully published page")
+			                          .timestamp(Instant.now())
+			                          .build();
 		} catch (VempainEntityNotFoundException e) {
 			response = PublishResponse.builder()
-									  .result(PublishResultEnum.FAIL)
-									  .message("Could not find page")
-									  .timestamp(Instant.now())
-									  .build();
+			                          .result(PublishResultEnum.FAIL)
+			                          .message("Could not find page")
+			                          .timestamp(Instant.now())
+			                          .build();
 			return ResponseEntity.status(HttpStatus.NOT_FOUND)
-								 .body(response);
+			                     .body(response);
 		}
 
 		return ResponseEntity.ok(response);
@@ -218,19 +218,19 @@ public class PageController implements PageAPI {
 
 		if (publishResponse == null) {
 			response = PublishResponse.builder()
-									  .result(PublishResultEnum.FAIL)
-									  .message("Failed to schedule page for publishing")
-									  .timestamp(Instant.now())
-									  .build();
+			                          .result(PublishResultEnum.FAIL)
+			                          .message("Failed to schedule page for publishing")
+			                          .timestamp(Instant.now())
+			                          .build();
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-								 .body(response);
+			                     .body(response);
 		}
 
 		response = PublishResponse.builder()
-								  .result(PublishResultEnum.OK)
-								  .message("Successfully scheduled page for publishing")
-								  .timestamp(Instant.now())
-								  .build();
+		                          .result(PublishResultEnum.OK)
+		                          .message("Successfully scheduled page for publishing")
+		                          .timestamp(Instant.now())
+		                          .build();
 		return ResponseEntity.ok(response);
 	}
 
@@ -244,23 +244,23 @@ public class PageController implements PageAPI {
 		pageService.deleteByUser(pageId);
 
 		PublishResponse response = PublishResponse.builder()
-												  .result(PublishResultEnum.OK)
-												  .message("Successfully deleted page")
-												  .timestamp(Instant.now())
-												  .build();
+		                                          .result(PublishResultEnum.OK)
+		                                          .message("Successfully deleted page")
+		                                          .timestamp(Instant.now())
+		                                          .build();
 		return ResponseEntity.ok(response);
 	}
 
 	private void verifyPageRequest(PageRequest pageRequest) {
 		if (pageRequest == null
-			|| (pageRequest.getPagePath() == null || pageRequest.getPagePath()
-																.isBlank())
-			|| (pageRequest.getTitle() == null || pageRequest.getTitle()
-															 .isBlank())
-			|| (pageRequest.getHeader() == null || pageRequest.getHeader()
-															  .isBlank())
-			|| (pageRequest.getAcls() == null || pageRequest.getAcls()
-															.isEmpty())) {
+		    || (pageRequest.getPagePath() == null || pageRequest.getPagePath()
+		                                                        .isBlank())
+		    || (pageRequest.getTitle() == null || pageRequest.getTitle()
+		                                                     .isBlank())
+		    || (pageRequest.getHeader() == null || pageRequest.getHeader()
+		                                                      .isBlank())
+		    || (pageRequest.getAcls() == null || pageRequest.getAcls()
+		                                                    .isEmpty())) {
 			log.error("Malformed request when creating new page: {}", pageRequest);
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Malformed page creation request");
 		}

@@ -36,7 +36,7 @@ public class FileThumb extends AbstractFileImageEntity implements Serializable, 
 	private String filepath;
 	@Basic
 	@Column(name = "filesize")
-	private Long          filesize;
+	private Long filesize;
 	@Basic
 	@Column(name = "sha1sum")
 	private String sha1sum;
@@ -44,13 +44,13 @@ public class FileThumb extends AbstractFileImageEntity implements Serializable, 
 	@Override
 	public FileThumbResponse toResponse() {
 		return FileThumbResponse.builder()
-								.id(this.getId())
-								.parentId(this.getParentId())
-								.parentType(this.getParentType())
-								.width(this.getWidth())
-								.height(this.getHeight())
-								.siteFile(this.getSiteFile()
-											  .toResponse())
-								.build();
+		                        .id(this.getId())
+		                        .parentId(this.getParentId())
+		                        .parentType(this.getParentType())
+		                        .width(this.getWidth())
+		                        .height(this.getHeight())
+		                        .siteFile(this.getSiteFile()
+		                                      .toResponse())
+		                        .build();
 	}
 }

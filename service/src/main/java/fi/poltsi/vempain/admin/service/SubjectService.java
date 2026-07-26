@@ -30,13 +30,13 @@ public class SubjectService {
 				""";
 
 		var resList = entityManager.createNativeQuery(sql)
-								   .setParameter("subject", tagRequest.getTagName())
-								   .setParameter("de", tagRequest.getTagNameDe())
-								   .setParameter("en", tagRequest.getTagNameEn())
-								   .setParameter("es", tagRequest.getTagNameEs())
-								   .setParameter("fi", tagRequest.getTagNameFi())
-								   .setParameter("se", tagRequest.getTagNameSv())
-								   .getResultList();
+		                           .setParameter("subject", tagRequest.getTagName())
+		                           .setParameter("de", tagRequest.getTagNameDe())
+		                           .setParameter("en", tagRequest.getTagNameEn())
+		                           .setParameter("es", tagRequest.getTagNameEs())
+		                           .setParameter("fi", tagRequest.getTagNameFi())
+		                           .setParameter("se", tagRequest.getTagNameSv())
+		                           .getResultList();
 
 		if (resList.isEmpty()) {
 			throw new IllegalStateException("Upsert returned no id for subject: " + tagRequest.getTagName());
@@ -61,13 +61,13 @@ public class SubjectService {
 			var tagName = tagRequest.getTagName();
 			log.debug("Adding/updating subject for tag: {}", tagName);
 			var subject = subjectRepository.findSubjectBySubjectName(tagName)
-										   .orElse(null);
+			                               .orElse(null);
 
 			if (subject == null) {
 				log.debug("Subject {} not found, creating new", tagName);
 				Long subjectId = upsertSubjectReturnId(tagRequest);
 				subject = subjectRepository.findById(subjectId)
-										   .orElse(null);
+				                           .orElse(null);
 				if (subject == null) {
 					log.error("Failed to load subject {} after upsert, id={}", tagName, subjectId);
 					continue;
@@ -88,32 +88,32 @@ public class SubjectService {
 		boolean updated = false;
 
 		if (tagRequest.getTagNameDe() != null
-			&& !tagRequest.getTagNameDe()
-						  .equals(subject.getSubjectNameDe())) {
+		    && !tagRequest.getTagNameDe()
+		                  .equals(subject.getSubjectNameDe())) {
 			subject.setSubjectNameDe(tagRequest.getTagNameDe());
 			updated = true;
 		}
 		if (tagRequest.getTagNameEn() != null
-			&& !tagRequest.getTagNameEn()
-						  .equals(subject.getSubjectNameEn())) {
+		    && !tagRequest.getTagNameEn()
+		                  .equals(subject.getSubjectNameEn())) {
 			subject.setSubjectNameEn(tagRequest.getTagNameEn());
 			updated = true;
 		}
 		if (tagRequest.getTagNameFi() != null
-			&& !tagRequest.getTagNameFi()
-						  .equals(subject.getSubjectNameFi())) {
+		    && !tagRequest.getTagNameFi()
+		                  .equals(subject.getSubjectNameFi())) {
 			subject.setSubjectNameFi(tagRequest.getTagNameFi());
 			updated = true;
 		}
 		if (tagRequest.getTagNameSv() != null
-			&& !tagRequest.getTagNameSv()
-						  .equals(subject.getSubjectNameSe())) {
+		    && !tagRequest.getTagNameSv()
+		                  .equals(subject.getSubjectNameSe())) {
 			subject.setSubjectNameSe(tagRequest.getTagNameSv());
 			updated = true;
 		}
 		if (tagRequest.getTagNameEs() != null
-			&& !tagRequest.getTagNameEs()
-						  .equals(subject.getSubjectNameEs())) {
+		    && !tagRequest.getTagNameEs()
+		                  .equals(subject.getSubjectNameEs())) {
 			subject.setSubjectNameEs(tagRequest.getTagNameEs());
 			updated = true;
 		}
@@ -127,16 +127,16 @@ public class SubjectService {
 	public void addSubjectToFile(Long siteFileId, Long subjectId) {
 		entityManager.createNativeQuery(
 							 "INSERT INTO file_subject (site_file_id, subject_id) VALUES (:siteFileId, :subjectId)")
-					 .setParameter("siteFileId", siteFileId)
-					 .setParameter("subjectId", subjectId)
-					 .executeUpdate();
+		             .setParameter("siteFileId", siteFileId)
+		             .setParameter("subjectId", subjectId)
+		             .executeUpdate();
 	}
 
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void removeAllSubjectsFromFile(long siteFileId) {
 		entityManager.createNativeQuery("DELETE FROM file_subject WHERE site_file_id = :siteFileId")
-					 .setParameter("siteFileId", siteFileId)
-					 .executeUpdate();
+		             .setParameter("siteFileId", siteFileId)
+		             .executeUpdate();
 	}
 
 	public List<Subject> getSubjectsByFileId(long fileCommonId) {

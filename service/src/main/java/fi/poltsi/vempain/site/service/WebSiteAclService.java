@@ -46,7 +46,7 @@ public class WebSiteAclService {
 	public List<WebSiteAclResponse> findAll() {
 		var responses = new ArrayList<WebSiteAclResponse>();
 		webSiteAclRepository.findAll()
-							.forEach(acl -> responses.add(acl.toResponse()));
+		                    .forEach(acl -> responses.add(acl.toResponse()));
 		return responses;
 	}
 
@@ -58,8 +58,8 @@ public class WebSiteAclService {
 	 */
 	public WebSiteAclResponse findById(Long id) {
 		return webSiteAclRepository.findById(id)
-								   .map(WebSiteAcl::toResponse)
-								   .orElseThrow(() -> {
+		                           .map(WebSiteAcl::toResponse)
+		                           .orElseThrow(() -> {
 									   log.error("Site ACL entry not found with ID: {}", id);
 									   return new ResponseStatusException(HttpStatus.NOT_FOUND, "Site ACL entry not found");
 								   });
@@ -78,18 +78,18 @@ public class WebSiteAclService {
 
 		for (var acl : aclEntries) {
 			webSiteUserRepository.findById(acl.getUserId())
-								 .ifPresent(user ->
+			                     .ifPresent(user ->
 													users.add(WebSiteAclUsersResponse.UserSummary.builder()
-																								 .userId(user.getId())
-																								 .username(user.getUsername())
-																								 .build())
+													                                             .userId(user.getId())
+													                                             .username(user.getUsername())
+													                                             .build())
 								 );
 		}
 
 		return WebSiteAclUsersResponse.builder()
-									  .aclId(aclId)
-									  .users(users)
-									  .build();
+		                              .aclId(aclId)
+		                              .users(users)
+		                              .build();
 	}
 
 	/**
@@ -100,7 +100,7 @@ public class WebSiteAclService {
 	 */
 	public WebSiteUserResponse findResourcesByUserId(Long userId) {
 		var user = webSiteUserRepository.findById(userId)
-										.orElseThrow(() -> {
+		                                .orElseThrow(() -> {
 											log.error("Site web user not found with ID: {}", userId);
 											return new ResponseStatusException(HttpStatus.NOT_FOUND, "Site web user not found");
 										});
@@ -112,14 +112,14 @@ public class WebSiteAclService {
 		for (var file : webSiteFileRepository.findAll()) {
 			if (aclIds.contains(file.getAclId())) {
 				resources.add(WebSiteResourceResponse.builder()
-													 .resourceType(SITE_FILE)
-													 .resourceId(file.getId())
-													 .name(file.getFilePath())
-													 .path(file.getFilePath())
-													 .aclId(file.getAclId())
-													 .fileType(file.getFileType()
-																   .name())
-													 .build());
+				                                     .resourceType(SITE_FILE)
+				                                     .resourceId(file.getId())
+				                                     .name(file.getFilePath())
+				                                     .path(file.getFilePath())
+				                                     .aclId(file.getAclId())
+				                                     .fileType(file.getFileType()
+				                                                   .name())
+				                                     .build());
 			}
 		}
 
@@ -127,26 +127,26 @@ public class WebSiteAclService {
 		for (var gallery : webSiteGalleryRepository.findAll()) {
 			if (aclIds.contains(gallery.getAclId())) {
 				resources.add(WebSiteResourceResponse.builder()
-													 .resourceType(GALLERY)
-													 .resourceId(gallery.getId())
-													 .name(gallery.getShortname())
-													 .path(gallery.getShortname())
-													 .aclId(gallery.getAclId())
-													 .fileType("Gallery")
-													 .build());
+				                                     .resourceType(GALLERY)
+				                                     .resourceId(gallery.getId())
+				                                     .name(gallery.getShortname())
+				                                     .path(gallery.getShortname())
+				                                     .aclId(gallery.getAclId())
+				                                     .fileType("Gallery")
+				                                     .build());
 			}
 		}
 		// Find pages with matching ACL IDs
 		for (var page : webSitePageRepository.findAll()) {
 			if (aclIds.contains(page.getAclId())) {
 				resources.add(WebSiteResourceResponse.builder()
-													 .resourceType(PAGE)
-													 .resourceId(page.getId())
-													 .name(page.getTitle())
-													 .path(page.getFilePath())
-													 .aclId(page.getAclId())
-													 .fileType("Page")
-													 .build());
+				                                     .resourceType(PAGE)
+				                                     .resourceId(page.getId())
+				                                     .name(page.getTitle())
+				                                     .path(page.getFilePath())
+				                                     .aclId(page.getAclId())
+				                                     .fileType("Page")
+				                                     .build());
 			}
 		}
 
@@ -177,15 +177,15 @@ public class WebSiteAclService {
 		}
 
 		var acl = WebSiteAcl.builder()
-							.aclId(request.getAclId())
-							.userId(request.getUserId())
-							.creator(adminUserId)
-							.created(Instant.now())
-							.build();
+		                    .aclId(request.getAclId())
+		                    .userId(request.getUserId())
+		                    .creator(adminUserId)
+		                    .created(Instant.now())
+		                    .build();
 
 		var saved = webSiteAclRepository.save(acl);
 		log.debug("Created new site ACL entry ID: {} linking ACL ID {} to user ID {} by admin user: {}",
-				  saved.getId(), request.getAclId(), request.getUserId(), adminUserId);
+		          saved.getId(), request.getAclId(), request.getUserId(), adminUserId);
 		return saved.toResponse();
 	}
 

@@ -53,15 +53,15 @@ public class AccessService {
 	public Long getUserId() {
 		// If we're running as a ITC, we return the first user ID we can find in database
 		if (Objects.requireNonNull(environment.getProperty("vempain.test"))
-				   .equalsIgnoreCase("true")) {
+		           .equalsIgnoreCase("true")) {
 			var users = userService.findAll();
 
 			if (StreamSupport.stream(users.spliterator(), false)
-							 .findAny()
-							 .isPresent()) {
+			                 .findAny()
+			                 .isPresent()) {
 				return users.iterator()
-							.next()
-							.getId();
+				            .next()
+				            .getId();
 			} else {
 				log.error("No user found in database, have you set up the test correctly?");
 				// Probably the test has not been set up properly
@@ -106,7 +106,7 @@ public class AccessService {
 
 	private boolean hasPermission(long aclId, List<Boolean> permissionList) {
 		if (Objects.requireNonNull(environment.getProperty("vempain.test"))
-				   .equalsIgnoreCase("true")) {
+		           .equalsIgnoreCase("true")) {
 			return true;
 		}
 
@@ -128,15 +128,15 @@ public class AccessService {
 	protected boolean aclListContainsPermission(List<Boolean> permissionList, UserAccount userAccount, List<Acl> acls) {
 		for (Acl acl : acls) {
 			if (acl.getUserId() != null &&
-				acl.getUserId()
-				   .equals(userAccount.getId())
-				&& hasPermissions(acl, permissionList)) {
+			    acl.getUserId()
+			       .equals(userAccount.getId())
+			    && hasPermissions(acl, permissionList)) {
 				return true;
 			} else if (acl.getUnitId() != null) {
 				for (Unit unit : userAccount.getUnits()) {
 					return unit.getId()
-							   .equals(acl.getUnitId())
-						   && hasPermissions(acl, permissionList);
+					           .equals(acl.getUnitId())
+					       && hasPermissions(acl, permissionList);
 				}
 			}
 		}
@@ -154,7 +154,7 @@ public class AccessService {
 
 	private UserAccount getUser() {
 		var auth = SecurityContextHolder.getContext()
-										.getAuthentication();
+		                                .getAuthentication();
 
 		if (auth != null) {
 			UserDetailsImpl userDetails;

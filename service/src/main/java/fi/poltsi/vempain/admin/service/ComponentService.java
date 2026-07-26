@@ -81,7 +81,7 @@ public class ComponentService {
 			return component;
 		} else {
 			log.error("User {} tried to access component {} ({}) with insufficient permissions", userId, component.getId(),
-					  component.getCompName());
+			          component.getCompName());
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, VempainMessages.UNAUTHORIZED_ACCESS);
 		}
 	}
@@ -107,7 +107,7 @@ public class ComponentService {
 		}
 
 		aclService.deleteByAclId(optionalComponent.get()
-												  .getAclId());
+		                                          .getAclId());
 		componentRepository.deleteById(componentId);
 	}
 
@@ -132,23 +132,23 @@ public class ComponentService {
 		long aclId = aclService.saveNewAclForObject(request.getAcls());
 
 		Component newComponent = Component.builder()
-										  .compData(request.getCompData())
-										  .compName(request.getCompName())
-										  .locked(false)
-										  .aclId(aclId)
-										  .creator(userId)
-										  .created(Instant.now())
-										  .modifier(userId)
-										  .modified(Instant.now()
-														   .plus(1, ChronoUnit.SECONDS))
-										  .build();
+		                                  .compData(request.getCompData())
+		                                  .compName(request.getCompName())
+		                                  .locked(false)
+		                                  .aclId(aclId)
+		                                  .creator(userId)
+		                                  .created(Instant.now())
+		                                  .modifier(userId)
+		                                  .modified(Instant.now()
+		                                                   .plus(1, ChronoUnit.SECONDS))
+		                                  .build();
 
 		return componentRepository.save(newComponent);
 	}
 
 	@Transactional(propagation = Propagation.REQUIRED)
 	public Component updateFromRequest(ComponentRequest request) throws VempainEntityNotFoundException, VempainComponentException,
-																		VempainAclException, VempainAbstractException {
+	                                                                    VempainAclException, VempainAbstractException {
 		var userId = accessService.getValidUserId();
 		Component component;
 
@@ -189,7 +189,7 @@ public class ComponentService {
 
 		if (!accessService.hasDeletePermission(component.getAclId())) {
 			log.error("User {} tried to delete component {} ({}) with insufficient permissions", userId, component.getId(),
-					  component.getCompName());
+			          component.getCompName());
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, VempainMessages.UNAUTHORIZED_ACCESS);
 		}
 
@@ -213,13 +213,13 @@ public class ComponentService {
 
 	private void validateComponent(Component component) throws VempainComponentException, VempainAbstractException {
 		if (component.getCompData() == null || component.getCompData()
-														.isBlank()) {
+		                                                .isBlank()) {
 			log.error("Component data is not set: {}", component);
 			throw new VempainComponentException("Component data is not set");
 		}
 
 		if (component.getCompName() == null || component.getCompName()
-														.isBlank()) {
+		                                                .isBlank()) {
 			log.error("Component name is not set: {}", component);
 			throw new VempainComponentException("Component name is not set");
 		}

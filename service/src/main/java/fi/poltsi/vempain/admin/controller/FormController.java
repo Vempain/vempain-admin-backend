@@ -100,12 +100,12 @@ public class FormController implements FormAPI {
 		try {
 			deleteService.deleteFormById(formId);
 			return ResponseEntity.ok(DeleteResponse.builder()
-												   .count(1)
-												   .id(formId)
-												   .name("Form")
-												   .timestamp(Instant.now())
-												   .httpStatus(HttpStatus.OK)
-												   .build());
+			                                       .count(1)
+			                                       .id(formId)
+			                                       .name("Form")
+			                                       .timestamp(Instant.now())
+			                                       .httpStatus(HttpStatus.OK)
+			                                       .build());
 
 		} catch (VempainEntityNotFoundException e) {
 			log.error("Failed to delete a form:\n{}", e.getMessage());

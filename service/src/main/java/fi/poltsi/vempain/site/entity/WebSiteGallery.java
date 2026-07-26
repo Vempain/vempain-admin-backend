@@ -21,34 +21,26 @@ import java.time.Instant;
 @AllArgsConstructor
 @Table(name = "web_site_gallery")
 public class WebSiteGallery {
+	@Column(name = "acl_id", nullable = false)
+	protected long    aclId;
+	@Column(name = "creator", nullable = false)
+	protected Long    creator;
+	@Column(name = "created", nullable = false)
+	protected Instant created;
+	@Column(name = "modifier")
+	protected Long    modifier;
+	@Column(name = "modified")
+	protected Instant modified;
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
 	private   long    id;
-
-	@Column(name = "acl_id", nullable = false)
-	protected long aclId;
-
 	@Column(name = "gallery_id", nullable = false)
 	private long galleryId;
-
 	@Size(min = 2, max = 2000, message = "Description should be between 2 and 2000 characters")
 	@Column(name = "description")
 	private String description;
-
 	@Size(min = 2, max = 256, message = "Description should be between 2 and 256 characters")
 	@Column(name = "shortname")
 	private String shortname;
-
-	@Column(name = "creator", nullable = false)
-	protected Long creator;
-
-	@Column(name = "created", nullable = false)
-	protected Instant created;
-
-	@Column(name = "modifier")
-	protected Long modifier;
-
-	@Column(name = "modified")
-	protected Instant modified;
 }

@@ -36,7 +36,7 @@ public class WebSiteUserService {
 		var responses = new ArrayList<WebSiteUserResponse>();
 
 		webSiteUserRepository.findAll()
-							 .forEach(user -> responses.add(webSiteAclService.findResourcesByUserId(user.getId())));
+		                     .forEach(user -> responses.add(webSiteAclService.findResourcesByUserId(user.getId())));
 		return responses;
 	}
 
@@ -48,8 +48,8 @@ public class WebSiteUserService {
 	 */
 	public WebSiteUserResponse findById(Long userId) {
 		return webSiteUserRepository.findById(userId)
-									.map(user -> webSiteAclService.findResourcesByUserId(user.getId()))
-									.orElseThrow(() -> {
+		                            .map(user -> webSiteAclService.findResourcesByUserId(user.getId()))
+		                            .orElseThrow(() -> {
 										log.error("Site web user not found with ID: {}", userId);
 										return new ResponseStatusException(HttpStatus.NOT_FOUND, "Site web user not found");
 									});
@@ -63,8 +63,8 @@ public class WebSiteUserService {
 	 */
 	public WebSiteUserResponse findByUsername(String username) {
 		return webSiteUserRepository.findByUsername(username)
-									.map(WebSiteUser::toResponse)
-									.orElseThrow(() -> {
+		                            .map(WebSiteUser::toResponse)
+		                            .orElseThrow(() -> {
 										log.error("Site web user not found with username: {}", username);
 										return new ResponseStatusException(HttpStatus.NOT_FOUND, "Site web user not found");
 									});
@@ -82,7 +82,7 @@ public class WebSiteUserService {
 
 		// Validate password is provided for new user
 		if (request.getPassword() == null || request.getPassword()
-													.isBlank()) {
+		                                            .isBlank()) {
 			log.error("Password is required when creating a new site web user");
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password is required");
 		}
@@ -96,12 +96,12 @@ public class WebSiteUserService {
 		String passwordHash = AuthTools.passwordHash(request.getPassword());
 
 		WebSiteUser user = WebSiteUser.builder()
-									  .username(request.getUsername())
-									  .passwordHash(passwordHash)
-									  .globalPermission(request.getGlobalPermission())
-									  .creator(adminUserId)
-									  .created(Instant.now())
-									  .build();
+		                              .username(request.getUsername())
+		                              .passwordHash(passwordHash)
+		                              .globalPermission(request.getGlobalPermission())
+		                              .creator(adminUserId)
+		                              .created(Instant.now())
+		                              .build();
 
 		WebSiteUser saved = webSiteUserRepository.save(user);
 		log.debug("Created new site web user with ID: {} by admin user: {}", saved.getId(), adminUserId);
@@ -120,14 +120,14 @@ public class WebSiteUserService {
 		Long adminUserId = accessService.getValidUserId();
 
 		WebSiteUser user = webSiteUserRepository.findById(userId)
-												.orElseThrow(() -> {
+		                                        .orElseThrow(() -> {
 													log.error("Site web user not found with ID: {}", userId);
 													return new ResponseStatusException(HttpStatus.NOT_FOUND, "Site web user not found");
 												});
 
 		// Update username if changed and not already taken
 		if (!user.getUsername()
-				 .equals(request.getUsername())) {
+		         .equals(request.getUsername())) {
 			if (webSiteUserRepository.existsByUsername(request.getUsername())) {
 				log.error("Username already exists: {}", request.getUsername());
 				throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already exists");
@@ -137,7 +137,7 @@ public class WebSiteUserService {
 
 		// Update password if provided
 		if (request.getPassword() != null && !request.getPassword()
-													 .isBlank()) {
+		                                             .isBlank()) {
 			String passwordHash = AuthTools.passwordHash(request.getPassword());
 			user.setPasswordHash(passwordHash);
 		}
@@ -187,7 +187,7 @@ public class WebSiteUserService {
 		}
 
 		WebSiteUser user = webSiteUserRepository.findById(userId)
-												.orElseThrow(() -> {
+		                                        .orElseThrow(() -> {
 													log.error("Site web user not found with ID: {}", userId);
 													return new ResponseStatusException(HttpStatus.NOT_FOUND, "Site web user not found");
 												});

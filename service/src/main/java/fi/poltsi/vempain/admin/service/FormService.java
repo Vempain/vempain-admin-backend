@@ -85,7 +85,7 @@ public class FormService {
 			return getFormResponse(form);
 		} else {
 			log.error("User {} tried to access component {} ({}) with insufficient permissions", userId, form.getId(),
-					  form.getFormName());
+			          form.getFormName());
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, VempainMessages.UNAUTHORIZED_ACCESS);
 		}
 	}
@@ -155,13 +155,13 @@ public class FormService {
 	public FormResponse saveRequest(FormRequest formRequest) throws EntityAlreadyExistsException, InvalidRequestException, ProcessingFailedException {
 
 		if (isFormNameTaken(formRequest.getName()
-									   .trim())) {
+		                               .trim())) {
 			log.error("Form name {} already exists", formRequest.getName());
 			throw new EntityAlreadyExistsException("Tried to save a form with an existing name", "form");
 		}
 
 		if (formRequest.getComponents() == null || formRequest.getComponents()
-															  .isEmpty()) {
+		                                                      .isEmpty()) {
 			log.error("Missing component list in form request: {}", formRequest);
 			throw new InvalidRequestException("Missing component list in form request");
 		}
@@ -176,12 +176,12 @@ public class FormService {
 		}
 
 		Form form = Form.builder()
-						.formName(formRequest.getName())
-						.layoutId(formRequest.getLayoutId())
-						.aclId(aclId)
-						.creator(accessService.getUserId())
-						.created(Instant.now())
-						.build();
+		                .formName(formRequest.getName())
+		                .layoutId(formRequest.getLayoutId())
+		                .aclId(aclId)
+		                .creator(accessService.getUserId())
+		                .created(Instant.now())
+		                .build();
 
 		var newForm = save(form);
 
@@ -213,15 +213,15 @@ public class FormService {
 		}
 
 		if (formRequest.getComponents() == null || formRequest.getComponents()
-															  .isEmpty()) {
+		                                                      .isEmpty()) {
 			log.error("Missing component list in form request: {}", formRequest);
 			throw new InvalidRequestException("Missing component list in form request");
 		}
 
 		// If the name has changed, check whether the new name is unique
 		if (!form.getFormName()
-				 .equals(formRequest.getName()
-									.trim())) {
+		         .equals(formRequest.getName()
+		                            .trim())) {
 			if (isFormNameTaken(formRequest.getName())) {
 				log.error("Form name {} already exists", formRequest.getName());
 				throw new EntityAlreadyExistsException("Tried to save a form with an existing name", "form");

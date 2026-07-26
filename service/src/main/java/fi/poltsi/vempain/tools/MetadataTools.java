@@ -20,7 +20,7 @@ public class MetadataTools {
 	public void copyMetadata(File sourceFile, File destinationFile) {
 		var builder = new ProcessBuilder();
 		builder.command(exifToolPath, "-overwrite_original_in_place", "-TagsFromFile", sourceFile.getAbsolutePath(), "-all:all",
-						destinationFile.getAbsolutePath());
+		                destinationFile.getAbsolutePath());
 		var output = new StringBuilder();
 
 		try {
@@ -30,14 +30,14 @@ public class MetadataTools {
 				log.debug("Metadata copied successfully from file {} to file {}", sourceFile, destinationFile);
 			} else {
 				log.error("Failed to copy metadata from file {} to file {}. Exit value: {}\nOutput: {}", sourceFile, destinationFile,
-						  exitVal, output);
+				          exitVal, output);
 			}
 		} catch (IOException e) {
 			log.error("Failed to copy metadata from file {} to file {}", sourceFile, destinationFile, e);
 		} catch (InterruptedException e) {
 			log.error("Failed to copy metadata from file {} to file {}", sourceFile, destinationFile, e);
 			Thread.currentThread()
-				  .interrupt();
+			      .interrupt();
 		}
 	}
 
@@ -61,7 +61,7 @@ public class MetadataTools {
 		} catch (InterruptedException e) {
 			log.error("Failed to parse metadata of file {}", file, e);
 			Thread.currentThread()
-				  .interrupt();
+			      .interrupt();
 		}
 
 		return null;

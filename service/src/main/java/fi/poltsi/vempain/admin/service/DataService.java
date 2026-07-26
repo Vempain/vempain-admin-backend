@@ -78,9 +78,9 @@ public class DataService {
 		}
 
 		var haystack = String.join(" ",
-				normalizeFilter(entity.getIdentifier()),
-				normalizeFilter(entity.getType()),
-				normalizeFilter(entity.getDescription()) == null ? "" : normalizeFilter(entity.getDescription())
+		                           normalizeFilter(entity.getIdentifier()),
+		                           normalizeFilter(entity.getType()),
+		                           normalizeFilter(entity.getDescription()) == null ? "" : normalizeFilter(entity.getDescription())
 		);
 		return haystack.contains(normalizedSearch);
 	}
@@ -90,7 +90,8 @@ public class DataService {
 			return null;
 		}
 
-		var normalized = value.trim().toLowerCase();
+		var normalized = value.trim()
+		                      .toLowerCase();
 		return normalized.isEmpty() ? null : normalized;
 	}
 
@@ -102,7 +103,8 @@ public class DataService {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND);
 		}
 
-		return optional.get().toDataResponse();
+		return optional.get()
+		               .toDataResponse();
 	}
 
 	@Transactional
@@ -116,18 +118,18 @@ public class DataService {
 
 		var now = Instant.now();
 		var entity = DataEntity.builder()
-							   .identifier(request.getIdentifier())
-							   .type(request.getType())
-							   .description(request.getDescription())
-							   .columnDefinitions(request.getColumnDefinitions())
-							   .createSql(request.getCreateSql())
-							   .fetchAllSql(request.getFetchAllSql())
-							   .fetchSubsetSql(request.getFetchSubsetSql())
-							   .generated(request.getGenerated() != null ? request.getGenerated() : now)
-							   .csvData(request.getCsvData())
-							   .createdAt(now)
-							   .updatedAt(now)
-							   .build();
+		                       .identifier(request.getIdentifier())
+		                       .type(request.getType())
+		                       .description(request.getDescription())
+		                       .columnDefinitions(request.getColumnDefinitions())
+		                       .createSql(request.getCreateSql())
+		                       .fetchAllSql(request.getFetchAllSql())
+		                       .fetchSubsetSql(request.getFetchSubsetSql())
+		                       .generated(request.getGenerated() != null ? request.getGenerated() : now)
+		                       .csvData(request.getCsvData())
+		                       .createdAt(now)
+		                       .updatedAt(now)
+		                       .build();
 
 		var saved = dataRepository.save(entity);
 		log.info("Created data set with identifier '{}'", saved.getIdentifier());
@@ -207,7 +209,8 @@ public class DataService {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "create_sql must define table columns");
 		}
 
-		var columnDefinitionSql = createSql.substring(openParenthesisIndex).trim();
+		var columnDefinitionSql = createSql.substring(openParenthesisIndex)
+		                                   .trim();
 		return "CREATE TABLE " + quotedTableName + " " + columnDefinitionSql;
 	}
 
@@ -216,7 +219,8 @@ public class DataService {
 			return;
 		}
 
-		var trimmed = createSql.trim().toUpperCase();
+		var trimmed = createSql.trim()
+		                       .toUpperCase();
 
 		if (!trimmed.startsWith("CREATE TABLE")) {
 			log.error("create_sql does not start with CREATE TABLE: {}", createSql);
@@ -250,7 +254,9 @@ public class DataService {
 			}
 		}
 
-		var columnList = String.join(", ", headers.stream().map(h -> "\"" + h + "\"").toList());
+		var columnList = String.join(", ", headers.stream()
+		                                          .map(h -> "\"" + h + "\"")
+		                                          .toList());
 		var placeholders = "?, ".repeat(headers.size());
 		placeholders = placeholders.substring(0, placeholders.length() - 2);
 		var insertSql = "INSERT INTO " + tableName + " (" + columnList + ") VALUES (" + placeholders + ")";
@@ -269,7 +275,7 @@ public class DataService {
 			if (values.size() != headers.size()) {
 				log.error("CSV row {} has {} columns but expected {}", i, values.size(), headers.size());
 				throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-						"CSV row " + i + " has " + values.size() + " columns but expected " + headers.size());
+				                                  "CSV row " + i + " has " + values.size() + " columns but expected " + headers.size());
 			}
 
 			var rowNumber = i;
@@ -300,7 +306,8 @@ public class DataService {
 			var types = new HashMap<String, Integer>();
 
 			for (int i = 1; i <= metadata.getColumnCount(); i++) {
-				types.put(metadata.getColumnName(i).toLowerCase(Locale.ROOT), metadata.getColumnType(i));
+				types.put(metadata.getColumnName(i)
+				                  .toLowerCase(Locale.ROOT), metadata.getColumnType(i));
 			}
 
 			return types;
@@ -379,7 +386,8 @@ public class DataService {
 		}
 
 		try {
-			return Timestamp.from(OffsetDateTime.parse(value).toInstant());
+			return Timestamp.from(OffsetDateTime.parse(value)
+			                                    .toInstant());
 		} catch (DateTimeParseException ignored) {
 			// Fall through to local timestamp parsing.
 		}
@@ -427,14 +435,16 @@ public class DataService {
 					inQuotes = !inQuotes;
 				}
 			} else if (c == ',' && !inQuotes) {
-				result.add(current.toString().trim());
+				result.add(current.toString()
+				                  .trim());
 				current.setLength(0);
 			} else {
 				current.append(c);
 			}
 		}
 
-		result.add(current.toString().trim());
+		result.add(current.toString()
+		                  .trim());
 		return result;
 	}
 
@@ -444,39 +454,47 @@ public class DataService {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST);
 		}
 
-		if (request.getIdentifier() == null || request.getIdentifier().isBlank()
-			|| !IDENTIFIER_PATTERN.matcher(request.getIdentifier()).matches()) {
+		if (request.getIdentifier() == null || request.getIdentifier()
+		                                              .isBlank()
+		    || !IDENTIFIER_PATTERN.matcher(request.getIdentifier())
+		                          .matches()) {
 			log.error("Invalid identifier in data request: '{}'", request.getIdentifier());
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-											  "Identifier must start with a letter and contain only lowercase letters, numbers, and underscores");
+			                                  "Identifier must start with a letter and contain only lowercase letters, numbers, and underscores");
 		}
 
-		if (request.getType() == null || request.getType().isBlank()) {
+		if (request.getType() == null || request.getType()
+		                                        .isBlank()) {
 			log.error("Missing type in data request");
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST);
 		}
 
-		if (request.getColumnDefinitions() == null || request.getColumnDefinitions().isBlank()) {
+		if (request.getColumnDefinitions() == null || request.getColumnDefinitions()
+		                                                     .isBlank()) {
 			log.error("Missing column definitions in data request");
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST);
 		}
 
-		if (request.getCreateSql() == null || request.getCreateSql().isBlank()) {
+		if (request.getCreateSql() == null || request.getCreateSql()
+		                                             .isBlank()) {
 			log.error("Missing create SQL in data request");
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST);
 		}
 
-		if (request.getFetchAllSql() == null || request.getFetchAllSql().isBlank()) {
+		if (request.getFetchAllSql() == null || request.getFetchAllSql()
+		                                               .isBlank()) {
 			log.error("Missing fetch-all SQL in data request");
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST);
 		}
 
-		if (request.getFetchSubsetSql() == null || request.getFetchSubsetSql().isBlank()) {
+		if (request.getFetchSubsetSql() == null || request.getFetchSubsetSql()
+		                                                  .isBlank()) {
 			log.error("Missing fetch-subset SQL in data request");
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST);
 		}
 
-		if (request.getCsvData() == null || request.getCsvData().isBlank()) {
+		if (request.getCsvData() == null || request.getCsvData()
+		                                           .isBlank()) {
 			log.error("Missing CSV data in data request");
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST);
 		}

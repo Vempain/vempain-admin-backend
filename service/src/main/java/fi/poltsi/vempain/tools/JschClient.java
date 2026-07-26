@@ -25,20 +25,20 @@ import java.util.List;
 @Setter
 @Component
 public class JschClient {
-	private static final int SESSION_TIMEOUT = 26_000;
-	private static final int CHANNEL_TIMEOUT = 25_000;
+	private static final int    SESSION_TIMEOUT = 26_000;
+	private static final int    CHANNEL_TIMEOUT = 25_000;
 	private final        JSch        jsch;
 	private              Session     jschSession;
 	private              Channel     channel;
 	private              ChannelSftp channelSftp;
 	@Value("${vempain.site.www-root}")
-	private String siteWwwRoot;
+	private              String siteWwwRoot;
 	@Value("${vempain.admin.file.site-file-directory}")
-	private String siteFileDirectory;
+	private              String siteFileDirectory;
 	@Value("${vempain.site.thumb-directory}")
-	private String thumbSubDir;
+	private              String thumbSubDir;
 	@Value("${vempain.site.image-size}")
-	private int    siteImageSize;
+	private              int    siteImageSize;
 
 	@Autowired
 	private ImageTools imageTools;
@@ -105,7 +105,7 @@ public class JschClient {
 		for (FileThumb fileThumb : thumbList) {
 			var absolutePathThumbFile = siteFileDirectory + File.separator + fileThumb.getFilepath() + File.separator + fileThumb.getFilename();
 			var targetDir = siteWwwRoot + File.separator + fileThumb.getParentType().shortName + File.separator + fileThumb.getSiteFile()
-																														   .getFilePath() + File.separator + thumbSubDir;
+			                                                                                                               .getFilePath() + File.separator + thumbSubDir;
 			log.debug("Transferring thumb {} to {}", absolutePathThumbFile, targetDir);
 			channelSftp.put(absolutePathThumbFile, targetDir);
 		}

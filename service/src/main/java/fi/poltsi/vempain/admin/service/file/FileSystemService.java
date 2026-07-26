@@ -33,7 +33,7 @@ public class FileSystemService {
 		if (files != null) {
 			for (File file : files) {
 				if (file.isDirectory()
-					&& !Objects.equals(file.toString(), siteFileDirectory + File.separator + FileTypeEnum.THUMB.shortName)) {
+				    && !Objects.equals(file.toString(), siteFileDirectory + File.separator + FileTypeEnum.THUMB.shortName)) {
 					rootList.add(buildDirectoryTree(file));
 				}
 			}
@@ -44,8 +44,8 @@ public class FileSystemService {
 
 	private DirectoryNodeResponse buildDirectoryTree(File dir) {
 		var node = DirectoryNodeResponse.builder()
-										.directoryName(dir.getName())
-										.build();
+		                                .directoryName(dir.getName())
+		                                .build();
 
 		File[] files = dir.listFiles();
 
