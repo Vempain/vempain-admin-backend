@@ -19,3 +19,8 @@ logging:
 vempain:
   cmd-line:
     exiftool: "/usr/bin/exiftool"
+springdoc:
+  swagger-ui:
+    enabled: false
+  api-docs:
+    enabled: false
