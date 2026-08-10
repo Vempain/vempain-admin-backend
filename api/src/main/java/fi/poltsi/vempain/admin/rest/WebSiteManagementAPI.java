@@ -1,16 +1,16 @@
 package fi.poltsi.vempain.admin.rest;
 
 import fi.poltsi.vempain.admin.api.Constants;
-import fi.poltsi.vempain.admin.api.site.WebSiteResourceEnum;
 import fi.poltsi.vempain.admin.api.site.request.WebSiteAclRequest;
 import fi.poltsi.vempain.admin.api.site.request.WebSiteConfigurationRequest;
+import fi.poltsi.vempain.admin.api.site.request.WebSiteResourcePagedRequest;
 import fi.poltsi.vempain.admin.api.site.request.WebSiteUserRequest;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteAclResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteAclUsersResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteConfigurationResponse;
-import fi.poltsi.vempain.admin.api.site.response.WebSiteResourcePageResponse;
+import fi.poltsi.vempain.admin.api.site.response.WebSiteResourceResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteUserResponse;
-import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -29,7 +29,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -176,21 +175,14 @@ public interface WebSiteManagementAPI {
 	           tags = "WebSiteManagementAPI")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Successfully retrieved resources",
-			             content = @Content(schema = @Schema(implementation = WebSiteResourcePageResponse.class),
+			             content = @Content(schema = @Schema(implementation = PagedResponse.class),
 			                                mediaType = MediaType.APPLICATION_JSON_VALUE)),
 			@ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
 			@ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
 			@ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
 	})
-	@GetMapping(value = MAIN_PATH + "/resources", produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<WebSiteResourcePageResponse> getResources(@RequestParam(value = "type", required = false) WebSiteResourceEnum resourceType,
-	                                                         @RequestParam(value = "file_type", required = false) FileTypeEnum fileType,
-	                                                         @RequestParam(value = "query", required = false) String query,
-	                                                         @RequestParam(value = "acl_id", required = false) Long aclId,
-	                                                         @RequestParam(value = "sort", defaultValue = "id") String sort,
-	                                                         @RequestParam(value = "direction", defaultValue = "asc") String direction,
-	                                                         @RequestParam(value = "page", defaultValue = "0") int page,
-	                                                         @RequestParam(value = "size", defaultValue = "25") int size);
+	@PostMapping(value = MAIN_PATH + "/resources", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	ResponseEntity<PagedResponse<WebSiteResourceResponse>> getResources(@Valid @RequestBody WebSiteResourcePagedRequest request);
 
 	// ////////////////////////////// Site Configuration APIs //////////////////////////////
 	@Operation(summary = "List all site configuration entries", description = "Returns all configuration assignments", tags = "WebSiteManagementAPI")

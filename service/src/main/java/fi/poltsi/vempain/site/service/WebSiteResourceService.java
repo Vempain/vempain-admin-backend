@@ -1,9 +1,10 @@
 package fi.poltsi.vempain.site.service;
 
 import fi.poltsi.vempain.admin.api.site.WebSiteResourceEnum;
-import fi.poltsi.vempain.admin.api.site.response.WebSiteResourcePageResponse;
+import fi.poltsi.vempain.admin.api.site.request.WebSiteResourcePagedRequest;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteResourceResponse;
 import fi.poltsi.vempain.admin.service.AccessService;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.file.api.FileTypeEnum;
 import fi.poltsi.vempain.site.entity.WebSiteFile;
 import fi.poltsi.vempain.site.entity.WebSiteGallery;
@@ -49,14 +50,18 @@ public class WebSiteResourceService {
 	 * @param size     the page size (number of items per page)
 	 * @return a paginated response containing the requested resources
 	 */
-	public WebSiteResourcePageResponse listResources(WebSiteResourceEnum type, FileTypeEnum fileType,
-	                                                 String query, Long aclId, String sort, String direction, int page, int size) {
+	public PagedResponse<WebSiteResourceResponse> listResources(WebSiteResourcePagedRequest request) {
 		accessService.checkAuthentication();
 
 		// Defensive normalization for paging
-		var safePage = Math.max(page, 0);
-		var safeSize = Math.min(Math.max(size, 1), 200); // cap page size to avoid accidental large scans
-		var dir = "desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC;
+		var safePage = request.getPage();
+		var safeSize = Math.min(request.getSize(), 200); // cap page size to avoid accidental large scans
+		var dir = request.getDirection() == null ? Sort.Direction.ASC : request.getDirection();
+		var type = request.getType();
+		var fileType = request.getFileType();
+		var query = request.getSearch();
+		var aclId = request.getAclId();
+		var sort = request.getSortBy();
 		var allTypes = (type == null);
 		var effectiveType = allTypes ? WebSiteResourceEnum.SITE_FILE : type;
 
@@ -219,7 +224,7 @@ public class WebSiteResourceService {
 		return new PageImpl<>(content, pageable, total);
 	}
 
-	private WebSiteResourcePageResponse mapFilePage(Page<WebSiteFile> page) {
+	private PagedResponse<WebSiteResourceResponse> mapFilePage(Page<WebSiteFile> page) {
 		var items = page.map(file -> WebSiteResourceResponse.builder()
 		                                                    .resourceType(WebSiteResourceEnum.SITE_FILE)
 		                                                    .resourceId(file.getId())
@@ -232,7 +237,7 @@ public class WebSiteResourceService {
 		return toPageResponse(page, items);
 	}
 
-	private WebSiteResourcePageResponse mapGalleryPage(Page<WebSiteGallery> page) {
+	private PagedResponse<WebSiteResourceResponse> mapGalleryPage(Page<WebSiteGallery> page) {
 		var items = page.map(gallery -> WebSiteResourceResponse.builder()
 		                                                       .resourceType(WebSiteResourceEnum.GALLERY)
 		                                                       .resourceId(gallery.getId())
@@ -244,7 +249,7 @@ public class WebSiteResourceService {
 		return toPageResponse(page, items);
 	}
 
-	private WebSiteResourcePageResponse mapPagePage(Page<WebSitePage> page) {
+	private PagedResponse<WebSiteResourceResponse> mapPagePage(Page<WebSitePage> page) {
 		var items = page.map(sitePage -> WebSiteResourceResponse.builder()
 		                                                        .resourceType(WebSiteResourceEnum.PAGE)
 		                                                        .resourceId(sitePage.getId())
@@ -256,14 +261,9 @@ public class WebSiteResourceService {
 		return toPageResponse(page, items);
 	}
 
-	private WebSiteResourcePageResponse toPageResponse(Page<?> page, List<WebSiteResourceResponse> items) {
-		return WebSiteResourcePageResponse.builder()
-		                                  .pageNumber(page.getNumber())
-		                                  .pageSize(page.getSize())
-		                                  .totalElements(page.getTotalElements())
-		                                  .totalPages(page.getTotalPages())
-		                                  .items(items)
-		                                  .build();
+	private PagedResponse<WebSiteResourceResponse> toPageResponse(Page<?> page, List<WebSiteResourceResponse> items) {
+		return PagedResponse.of(items, page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages(),
+		                        page.isFirst(), page.isLast());
 	}
 
 	public long getNextWebSiteAcl() {
@@ -273,7 +273,7 @@ public class WebSiteResourceService {
 		return nextAcl;
 	}
 
-	private WebSiteResourcePageResponse listAllResourceTypes(String query, Long aclId, Sort sortSpec, int safePage, int safeSize) {
+	private PagedResponse<WebSiteResourceResponse> listAllResourceTypes(String query, Long aclId, Sort sortSpec, int safePage, int safeSize) {
 		var requiredLong = (long) (safePage + 1) * safeSize;
 
 		if (requiredLong > Integer.MAX_VALUE) {
@@ -290,13 +290,7 @@ public class WebSiteResourceService {
 		var totalElements = filePage.getTotalElements() + galleryPage.getTotalElements() + pagePage.getTotalElements();
 
 		if (totalElements == 0) {
-			return WebSiteResourcePageResponse.builder()
-			                                  .pageNumber(safePage)
-			                                  .pageSize(safeSize)
-			                                  .totalElements(0)
-			                                  .totalPages(0)
-			                                  .items(List.of())
-			                                  .build();
+			return PagedResponse.of(List.of(), safePage, safeSize, 0, 0, true, true);
 		}
 
 		var combined = new ArrayList<WebSiteResourceResponse>();
@@ -307,24 +301,14 @@ public class WebSiteResourceService {
 		var start = (long) safePage * safeSize;
 
 		if (start >= totalElements || start >= combined.size()) {
-			return WebSiteResourcePageResponse.builder()
-			                                  .pageNumber(safePage)
-			                                  .pageSize(safeSize)
-			                                  .totalElements(totalElements)
-			                                  .totalPages((int) Math.ceil((double) totalElements / safeSize))
-			                                  .items(List.of())
-			                                  .build();
+			var totalPages = (int) Math.ceil((double) totalElements / safeSize);
+			return PagedResponse.of(List.of(), safePage, safeSize, totalElements, totalPages, safePage == 0, true);
 		}
 
 		var end = (int) Math.min(start + safeSize, Math.min(totalElements, combined.size()));
 		var pageItems = combined.subList((int) start, end);
-		return WebSiteResourcePageResponse.builder()
-		                                  .pageNumber(safePage)
-		                                  .pageSize(safeSize)
-		                                  .totalElements(totalElements)
-		                                  .totalPages((int) Math.ceil((double) totalElements / safeSize))
-		                                  .items(pageItems)
-		                                  .build();
+		var totalPages = (int) Math.ceil((double) totalElements / safeSize);
+		return PagedResponse.of(pageItems, safePage, safeSize, totalElements, totalPages, safePage == 0, safePage + 1 >= totalPages);
 	}
 
 	private List<WebSiteResourceResponse> toFileResponses(Page<WebSiteFile> filePage) {

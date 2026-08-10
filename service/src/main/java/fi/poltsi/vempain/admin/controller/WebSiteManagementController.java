@@ -1,17 +1,17 @@
 package fi.poltsi.vempain.admin.controller;
 
-import fi.poltsi.vempain.admin.api.site.WebSiteResourceEnum;
 import fi.poltsi.vempain.admin.api.site.request.WebSiteAclRequest;
 import fi.poltsi.vempain.admin.api.site.request.WebSiteConfigurationRequest;
+import fi.poltsi.vempain.admin.api.site.request.WebSiteResourcePagedRequest;
 import fi.poltsi.vempain.admin.api.site.request.WebSiteUserRequest;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteAclResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteAclUsersResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteConfigurationResponse;
-import fi.poltsi.vempain.admin.api.site.response.WebSiteResourcePageResponse;
+import fi.poltsi.vempain.admin.api.site.response.WebSiteResourceResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteUserResponse;
 import fi.poltsi.vempain.admin.rest.WebSiteManagementAPI;
 import fi.poltsi.vempain.admin.service.AccessService;
-import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.site.service.WebSiteAclService;
 import fi.poltsi.vempain.site.service.WebSiteConfigurationService;
 import fi.poltsi.vempain.site.service.WebSiteResourceService;
@@ -114,10 +114,9 @@ public class WebSiteManagementController implements WebSiteManagementAPI {
 	// ========== Site Resource Endpoints ==========
 
 	@Override
-	public ResponseEntity<WebSiteResourcePageResponse> getResources(WebSiteResourceEnum resourceType, FileTypeEnum fileType, String query, Long aclId,
-	                                                                String sort, String direction, int page, int size) {
+	public ResponseEntity<PagedResponse<WebSiteResourceResponse>> getResources(WebSiteResourcePagedRequest request) {
 		accessService.checkAuthentication();
-		return ResponseEntity.ok(webSiteResourceService.listResources(resourceType, fileType, query, aclId, sort, direction, page, size));
+		return ResponseEntity.ok(webSiteResourceService.listResources(request));
 	}
 
 	// ========== Site configuration Endpoints ==========

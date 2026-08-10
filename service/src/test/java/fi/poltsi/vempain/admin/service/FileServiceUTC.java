@@ -1,5 +1,6 @@
 package fi.poltsi.vempain.admin.service;
 
+import fi.poltsi.vempain.admin.api.request.file.SiteFilePagedRequest;
 import fi.poltsi.vempain.admin.entity.Subject;
 import fi.poltsi.vempain.admin.entity.file.FileThumb;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
@@ -395,7 +396,7 @@ class FileServiceUTC {
 		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
 		when(siteFileRepository.findByFileType(eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
 
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum.IMAGE, pageRequest, "test", null);
+		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "test", null));
 
 		assertNotNull(result);
 		verify(siteFileRepository).findByFileType(eq(FileTypeEnum.IMAGE), any());
@@ -407,7 +408,7 @@ class FileServiceUTC {
 		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
 		when(siteFileRepository.findByFileType(eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
 
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum.IMAGE, pageRequest, "  ", "filename");
+		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "  ", "filename"));
 
 		assertNotNull(result);
 		verify(siteFileRepository).findByFileType(eq(FileTypeEnum.IMAGE), any());
@@ -419,7 +420,7 @@ class FileServiceUTC {
 		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
 		when(siteFileRepository.findByFileNameContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
 
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum.IMAGE, pageRequest, "test", "filename");
+		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "test", "filename"));
 
 		assertNotNull(result);
 		verify(siteFileRepository).findByFileNameContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any());
@@ -431,7 +432,7 @@ class FileServiceUTC {
 		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
 		when(siteFileRepository.findByFileNameContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
 
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum.IMAGE, pageRequest, "test", "file_name");
+		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "test", "file_name"));
 
 		assertNotNull(result);
 		verify(siteFileRepository).findByFileNameContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any());
@@ -443,7 +444,7 @@ class FileServiceUTC {
 		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
 		when(siteFileRepository.findByFileNameContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
 
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum.IMAGE, pageRequest, "test", "FileName");
+		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "test", "FileName"));
 
 		assertNotNull(result);
 		verify(siteFileRepository).findByFileNameContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any());
@@ -455,7 +456,7 @@ class FileServiceUTC {
 		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
 		when(siteFileRepository.findByFileType(eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
 
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum.IMAGE, pageRequest, "test", "unknownColumn");
+		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "test", "unknownColumn"));
 
 		assertNotNull(result);
 		verify(siteFileRepository).findByFileType(eq(FileTypeEnum.IMAGE), any());
@@ -467,7 +468,7 @@ class FileServiceUTC {
 		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
 		when(siteFileRepository.findByFilePathContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
 
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum.IMAGE, pageRequest, "test", "filepath");
+		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "test", "filepath"));
 
 		assertNotNull(result);
 		verify(siteFileRepository).findByFilePathContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any());
@@ -479,7 +480,7 @@ class FileServiceUTC {
 		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
 		when(siteFileRepository.findByMimeTypeContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
 
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum.IMAGE, pageRequest, "test", "mimetype");
+		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "test", "mimetype"));
 
 		assertNotNull(result);
 		verify(siteFileRepository).findByMimeTypeContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any());
@@ -492,7 +493,7 @@ class FileServiceUTC {
 		var isoDate = "2023-01-01T00:00:00Z";
 		when(siteFileRepository.findByCreatedAfterAndFileType(any(Instant.class), eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
 
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum.IMAGE, pageRequest, isoDate, "created");
+		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, isoDate, "created"));
 
 		assertNotNull(result);
 		verify(siteFileRepository).findByCreatedAfterAndFileType(any(Instant.class), eq(FileTypeEnum.IMAGE), any());
@@ -505,7 +506,7 @@ class FileServiceUTC {
 		var isoDate = "2023-01-01T00:00:00Z";
 		when(siteFileRepository.findByModifiedAfterAndFileType(any(Instant.class), eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
 
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum.IMAGE, pageRequest, isoDate, "modified");
+		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, isoDate, "modified"));
 
 		assertNotNull(result);
 		verify(siteFileRepository).findByModifiedAfterAndFileType(any(Instant.class), eq(FileTypeEnum.IMAGE), any());
@@ -517,7 +518,7 @@ class FileServiceUTC {
 		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
 		when(siteFileRepository.findBySubjectNameContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
 
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum.IMAGE, pageRequest, "test", "subject");
+		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "test", "subject"));
 
 		assertNotNull(result);
 		verify(siteFileRepository).findBySubjectNameContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any());
@@ -529,7 +530,7 @@ class FileServiceUTC {
 		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
 		when(siteFileRepository.findBySizeGreaterThanEqualAndFileType(eq(1024L), eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
 
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum.IMAGE, pageRequest, "1024", "size");
+		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "1024", "size"));
 
 		assertNotNull(result);
 		verify(siteFileRepository).findBySizeGreaterThanEqualAndFileType(eq(1024L), eq(FileTypeEnum.IMAGE), any());
@@ -541,7 +542,7 @@ class FileServiceUTC {
 		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
 		when(siteFileRepository.findByFileType(eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
 
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum.IMAGE, pageRequest, "notANumber", "size");
+		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "notANumber", "size"));
 
 		assertNotNull(result);
 		verify(siteFileRepository).findByFileType(eq(FileTypeEnum.IMAGE), any());
@@ -553,7 +554,7 @@ class FileServiceUTC {
 		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
 		when(siteFileRepository.findByFileType(eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
 
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum.IMAGE, pageRequest, null, null);
+		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, null, null));
 
 		assertNotNull(result);
 		verify(siteFileRepository).findByFileType(eq(FileTypeEnum.IMAGE), any());
@@ -565,9 +566,26 @@ class FileServiceUTC {
 		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
 		when(siteFileRepository.findByFileType(eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
 
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum.IMAGE, pageRequest, null, null);
+		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, null, null));
 
 		assertNotNull(result);
 		verify(siteFileRepository).findByFileType(eq(FileTypeEnum.IMAGE), any());
+	}
+
+	private SiteFilePagedRequest request(FileTypeEnum fileType, PageRequest pageRequest, String search, String filterColumn) {
+		var request = new SiteFilePagedRequest();
+		request.setFileType(fileType);
+		request.setPage(pageRequest.getPageNumber());
+		request.setSize(pageRequest.getPageSize());
+		request.setSearch(search);
+		request.setFilterColumn(filterColumn);
+		var order = pageRequest.getSort()
+		                       .stream()
+		                       .findFirst();
+		order.ifPresent(value -> {
+			request.setSortBy(value.getProperty());
+			request.setDirection(value.getDirection());
+		});
+		return request;
 	}
 }

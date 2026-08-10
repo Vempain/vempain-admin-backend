@@ -2,13 +2,14 @@ package fi.poltsi.vempain.admin.service.file;
 
 import fi.poltsi.vempain.admin.api.QueryDetailEnum;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
-import fi.poltsi.vempain.admin.api.response.file.GalleryPageResponse;
 import fi.poltsi.vempain.admin.api.response.file.GalleryResponse;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
 import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.service.AccessService;
+import fi.poltsi.vempain.auth.api.request.PagedRequest;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.service.AclService;
 import lombok.RequiredArgsConstructor;
@@ -169,13 +170,13 @@ public class GalleryService {
 	}
 
 	@Transactional(readOnly = true)
-	public GalleryPageResponse searchGalleries(int page, int size, String sort, String direction, String search, boolean caseSensitive) {
-		int safePage = Math.max(page, 0);
-		int safeSize = Math.min(Math.max(size, 1), 200);
-		Sort sortSpec = buildSort(sort, direction);
+	public PagedResponse<GalleryResponse> searchGalleries(PagedRequest request) {
+		int safePage = request.getPage();
+		int safeSize = Math.min(request.getSize(), 200);
+		Sort sortSpec = buildSort(request.getSortBy(), request.getDirection());
 		Pageable pageable = PageRequest.of(safePage, safeSize, sortSpec);
 
-		var pageResult = galleryRepository.searchGalleries(search, caseSensitive, pageable);
+		var pageResult = galleryRepository.searchGalleries(request.getSearch(), Boolean.TRUE.equals(request.getCaseSensitive()), pageable);
 
 		// Populate ACL + files for each gallery already authorized
 		var items = new ArrayList<GalleryResponse>();
@@ -187,17 +188,12 @@ public class GalleryService {
 			}
 		}
 
-		return GalleryPageResponse.builder()
-		                          .pageNumber(pageResult.getNumber())
-		                          .pageSize(pageResult.getSize())
-		                          .totalPages(pageResult.getTotalPages())
-		                          .totalElements(pageResult.getTotalElements())
-		                          .items(items)
-		                          .build();
+		return PagedResponse.of(items, pageResult.getNumber(), pageResult.getSize(), pageResult.getTotalElements(),
+		                        pageResult.getTotalPages(), pageResult.isFirst(), pageResult.isLast());
 	}
 
-	private Sort buildSort(String sort, String direction) {
-		Sort.Direction dir = "desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC;
+	private Sort buildSort(String sort, Sort.Direction direction) {
+		Sort.Direction dir = direction == null ? Sort.Direction.ASC : direction;
 		return switch (sort == null ? "" : sort.toLowerCase(Locale.ROOT)) {
 			case "short_name", "shortname" -> Sort.by(dir, "shortname");
 			case "description" -> Sort.by(dir, "description");

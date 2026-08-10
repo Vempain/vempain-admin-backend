@@ -9,7 +9,6 @@ import fi.poltsi.vempain.admin.api.request.file.GalleryPublishRequest;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
 import fi.poltsi.vempain.admin.api.response.DeleteResponse;
 import fi.poltsi.vempain.admin.api.response.PublishResponse;
-import fi.poltsi.vempain.admin.api.response.file.GalleryPageResponse;
 import fi.poltsi.vempain.admin.api.response.file.GalleryResponse;
 import fi.poltsi.vempain.admin.entity.PageGallery;
 import fi.poltsi.vempain.admin.rest.file.GalleryAPI;
@@ -17,6 +16,8 @@ import fi.poltsi.vempain.admin.service.PageGalleryService;
 import fi.poltsi.vempain.admin.service.PublishService;
 import fi.poltsi.vempain.admin.service.ScheduleService;
 import fi.poltsi.vempain.admin.service.file.GalleryService;
+import fi.poltsi.vempain.auth.api.request.PagedRequest;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -214,8 +215,8 @@ public class GalleryController implements GalleryAPI {
 	}
 
 	@Override
-	public ResponseEntity<GalleryPageResponse> searchGalleries(int page, int size, String sort, String direction, String search, boolean caseSensitive) {
-		return ResponseEntity.ok(galleryService.searchGalleries(page, size, sort, direction, search, caseSensitive));
+	public ResponseEntity<PagedResponse<GalleryResponse>> searchGalleries(PagedRequest request) {
+		return ResponseEntity.ok(galleryService.searchGalleries(request));
 	}
 
 	private ResponseEntity<PublishResponse> createGalleryPublishSchedule(Instant publishDateTime, Long galleryId, String message) {
