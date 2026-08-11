@@ -179,8 +179,8 @@ public interface GalleryAPI {
 	@PatchMapping(value = MAIN_PATH + "/publish", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<PublishResponse> publishGallery(@Valid @RequestBody PublishRequest publishRequest);
 
-	@Operation(summary = "Search and page galleries",
-	           description = "Filter galleries by search term (applied to short name, description, site file name/path) and paginate the results.",
+	@Operation(summary = "Get a page of galleries",
+			   description = "Filter and paginate galleries.",
 	           tags = "GalleryAPI")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
@@ -192,8 +192,8 @@ public interface GalleryAPI {
 			@ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
 	})
 	@SecurityRequirement(name = "Bearer Authentication")
-	@PostMapping(value = MAIN_PATH + "/search", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<PagedResponse<GalleryResponse>> searchGalleries(@Valid @RequestBody PagedRequest request);
+	@PostMapping(value = MAIN_PATH + "/paged", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	ResponseEntity<PagedResponse<GalleryResponse>> getPagedGalleries(@Valid @RequestBody PagedRequest request);
 
 	@Operation(summary = "Publish selected galleries", description = "Publishes a list of galleries", tags = "GalleryAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "List of gallery IDs to publish", required = true,

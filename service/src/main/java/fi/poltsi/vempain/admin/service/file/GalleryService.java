@@ -170,7 +170,7 @@ public class GalleryService {
 	}
 
 	@Transactional(readOnly = true)
-	public PagedResponse<GalleryResponse> searchGalleries(PagedRequest request) {
+	public PagedResponse<GalleryResponse> findPagedByUser(PagedRequest request) {
 		int safePage = request.getPage();
 		int safeSize = Math.min(request.getSize(), 200);
 		Sort sortSpec = buildSort(request.getSortBy(), request.getDirection());

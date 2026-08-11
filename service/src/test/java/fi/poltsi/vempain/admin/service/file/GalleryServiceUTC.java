@@ -291,7 +291,7 @@ class GalleryServiceUTC {
 		when(aclService.findAclByAclId(10L)).thenReturn(List.of(Acl.builder().aclId(10L).build()));
 		when(galleryFileService.findGalleryFileByGalleryId(1L)).thenReturn(Collections.emptyList());
 
-		var result = galleryService.searchGalleries(request(10, "short_name", "asc", "test", false));
+		var result = galleryService.findPagedByUser(request(10, "short_name", "asc", "test", false));
 
 		assertNotNull(result);
 		assertEquals(1, result.getContent()
@@ -306,7 +306,7 @@ class GalleryServiceUTC {
 		when(aclService.findAclByAclId(10L)).thenReturn(List.of(Acl.builder().aclId(10L).build()));
 		when(galleryFileService.findGalleryFileByGalleryId(1L)).thenReturn(Collections.emptyList());
 
-		var result = galleryService.searchGalleries(request(10, "shortname", "desc", "test", true));
+		var result = galleryService.findPagedByUser(request(10, "shortname", "desc", "test", true));
 
 		assertNotNull(result);
 		assertEquals(1, result.getContent()
@@ -321,7 +321,7 @@ class GalleryServiceUTC {
 		when(aclService.findAclByAclId(10L)).thenReturn(List.of(Acl.builder().aclId(10L).build()));
 		when(galleryFileService.findGalleryFileByGalleryId(1L)).thenReturn(Collections.emptyList());
 
-		var result = galleryService.searchGalleries(request(10, "description", "asc", "", false));
+		var result = galleryService.findPagedByUser(request(10, "description", "asc", "", false));
 
 		assertNotNull(result);
 	}
@@ -332,7 +332,7 @@ class GalleryServiceUTC {
 		when(galleryRepository.searchGalleries(anyString(), anyBoolean(), any(Pageable.class))).thenReturn(page);
 		when(accessService.hasReadPermission(10L)).thenReturn(false);
 
-		var result = galleryService.searchGalleries(request(10, null, "asc", "x", false));
+		var result = galleryService.findPagedByUser(request(10, null, "asc", "x", false));
 
 		assertNotNull(result);
 		assertTrue(result.getContent()
@@ -354,7 +354,7 @@ class GalleryServiceUTC {
 		when(galleryFileService.findGalleryFileByGalleryId(1L)).thenReturn(List.of(galleryFile));
 		when(siteFileRepository.findByIdWithoutMetadata(5L)).thenReturn(Optional.of(siteFile));
 
-		var result = galleryService.searchGalleries(request(10, "id", "asc", "test", false));
+		var result = galleryService.findPagedByUser(request(10, "id", "asc", "test", false));
 
 		assertNotNull(result);
 		assertEquals(1, result.getContent()

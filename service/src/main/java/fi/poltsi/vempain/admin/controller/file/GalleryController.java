@@ -46,6 +46,11 @@ public class GalleryController implements GalleryAPI {
 	}
 
 	@Override
+	public ResponseEntity<PagedResponse<GalleryResponse>> getPagedGalleries(PagedRequest request) {
+		return ResponseEntity.ok(galleryService.findPagedByUser(request));
+	}
+
+	@Override
 	public ResponseEntity<List<GalleryResponse>> getGalleriesByPage(long pageId, QueryDetailEnum queryDetailEnum) {
 		var pageGalleries = new ArrayList<GalleryResponse>();
 		var galleries = pageGalleryService.findPageGalleryByPageId(pageId);
@@ -212,11 +217,6 @@ public class GalleryController implements GalleryAPI {
 	public ResponseEntity<PublishResponse> publishSelectedGalleries(GalleryPublishRequest request) {
 		var response = publishService.publishSelectedGalleries(request.getGalleryIds());
 		return ResponseEntity.ok(response);
-	}
-
-	@Override
-	public ResponseEntity<PagedResponse<GalleryResponse>> searchGalleries(PagedRequest request) {
-		return ResponseEntity.ok(galleryService.searchGalleries(request));
 	}
 
 	private ResponseEntity<PublishResponse> createGalleryPublishSchedule(Instant publishDateTime, Long galleryId, String message) {

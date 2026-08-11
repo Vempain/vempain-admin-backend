@@ -65,7 +65,7 @@ class GalleryServiceSearchUTC {
 																   .aclId(10L)
 																   .build()));
 
-		var resp = galleryService.searchGalleries(request("foo", "id", false));
+		var resp = galleryService.findPagedByUser(request("foo", "id", false));
 
 		assertNotNull(resp);
 		assertEquals(1, resp.getTotalElements());
