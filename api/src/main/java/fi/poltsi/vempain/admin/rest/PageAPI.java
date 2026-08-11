@@ -1,12 +1,13 @@
 package fi.poltsi.vempain.admin.rest;
 
 import fi.poltsi.vempain.admin.api.Constants;
-import fi.poltsi.vempain.admin.api.QueryDetailEnum;
+import fi.poltsi.vempain.admin.api.request.PagePagedRequest;
 import fi.poltsi.vempain.admin.api.request.PageRequest;
 import fi.poltsi.vempain.admin.api.request.PublishRequest;
 import fi.poltsi.vempain.admin.api.response.DeleteResponse;
 import fi.poltsi.vempain.admin.api.response.PageResponse;
 import fi.poltsi.vempain.admin.api.response.PublishResponse;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -17,7 +18,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -39,20 +39,18 @@ import java.util.List;
 public interface PageAPI {
 	String MAIN_PATH = Constants.REST_CONTENT_PREFIX + "/pages";
 
-	@Operation(summary = "Fetch list of all pages", description = "Returns a list of pages", tags = "PageAPI")
-	@Parameter(name = "details", description = "How much details should be included", example = "FULL", required = true)
+	@Operation(summary = "Fetch a page of pages", description = "Returns a paged list of pages", tags = "PageAPI")
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",
-	                                    description = "Got list of pages",
-	                                    content = {@Content(array = @ArraySchema(schema = @Schema(implementation = PageResponse.class)),
-	                                                        mediaType = MediaType.APPLICATION_JSON_VALUE)}),
+	                                    description = "Got page of pages",
+	                                    content = @Content(schema = @Schema(implementation = PagedResponse.class),
+	                                                       mediaType = MediaType.APPLICATION_JSON_VALUE)),
 	                       @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
 	                       @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
 	                       @ApiResponse(responseCode = "404", description = "No pages found", content = @Content),
 	                       @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
-	@GetMapping(value = MAIN_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<List<PageResponse>> getPages(@RequestParam(name = "details") @NotNull QueryDetailEnum requestForm);
-
+	@PostMapping(value = MAIN_PATH + "/paged", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	ResponseEntity<PagedResponse<PageResponse>> getPages(@Valid @RequestBody PagePagedRequest request);
 
 	@Operation(summary = "Fetch list of all pages using a particular form", description = "Returns a list of pages", tags = "PageAPI")
 	@ApiResponses(value = {@ApiResponse(responseCode = "200",

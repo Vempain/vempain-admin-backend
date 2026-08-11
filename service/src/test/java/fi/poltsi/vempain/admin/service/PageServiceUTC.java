@@ -1,6 +1,7 @@
 package fi.poltsi.vempain.admin.service;
 
 import fi.poltsi.vempain.admin.VempainMessages;
+import fi.poltsi.vempain.admin.api.request.PagePagedRequest;
 import fi.poltsi.vempain.admin.api.request.PageRequest;
 import fi.poltsi.vempain.admin.entity.Page;
 import fi.poltsi.vempain.admin.exception.ProcessingFailedException;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -86,6 +88,50 @@ class PageServiceUTC {
 		} catch (Exception e) {
 			fail("Should not have received an exception: " + e);
 		}
+	}
+
+	@Test
+	void findPagedByUserAppliesPaginationAndSorting() {
+		var pages = TestUTCTools.generatePageList(5L);
+		when(pageRepository.findAll()).thenReturn(pages);
+		when(accessService.hasReadPermission(anyLong())).thenReturn(true);
+
+		var request = new PagePagedRequest();
+		request.setPage(1);
+		request.setSize(2);
+		request.setSortBy("id");
+		request.setDirection(Sort.Direction.DESC);
+
+		var response = pageService.findPagedByUser(request);
+
+		assertEquals(5, response.getTotalElements());
+		assertEquals(3, response.getTotalPages());
+		assertEquals(2, response.getContent()
+		                        .size());
+		assertEquals(3L, response.getContent()
+		                         .get(0)
+		                         .getId());
+	}
+
+	@Test
+	void findPagedByUserAppliesSearch() {
+		var pages = TestUTCTools.generatePageList(5L);
+		pages.get(2)
+		     .setPagePath("/page/3");
+		when(pageRepository.findAll()).thenReturn(pages);
+		when(accessService.hasReadPermission(anyLong())).thenReturn(true);
+
+		var request = new PagePagedRequest();
+		request.setPage(0);
+		request.setSize(25);
+		request.setSearch("/page/3");
+
+		var response = pageService.findPagedByUser(request);
+
+		assertEquals(1, response.getTotalElements());
+		assertEquals("/page/3", response.getContent()
+		                                .get(0)
+		                                .getPagePath());
 	}
 
 	@Test
