@@ -2,13 +2,13 @@ package fi.poltsi.vempain.admin.service.file;
 
 import fi.poltsi.vempain.admin.api.QueryDetailEnum;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
-import fi.poltsi.vempain.admin.api.response.file.GalleryPageResponse;
 import fi.poltsi.vempain.admin.api.response.file.GalleryResponse;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
 import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.service.AccessService;
+import fi.poltsi.vempain.auth.api.request.PagedRequest;
 import fi.poltsi.vempain.auth.entity.Acl;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.service.AclService;
@@ -39,6 +39,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -291,10 +292,11 @@ class GalleryServiceUTC {
 		when(aclService.findAclByAclId(10L)).thenReturn(List.of(Acl.builder().aclId(10L).build()));
 		when(galleryFileService.findGalleryFileByGalleryId(1L)).thenReturn(Collections.emptyList());
 
-		GalleryPageResponse result = galleryService.searchGalleries(0, 10, "short_name", "asc", "test", false);
+		var result = galleryService.findPagedByUser(request(10, "short_name", "asc", "test", false));
 
 		assertNotNull(result);
-		assertEquals(1, result.getItems().size());
+		assertEquals(1, result.getContent()
+		                      .size());
 	}
 
 	@Test
@@ -305,10 +307,11 @@ class GalleryServiceUTC {
 		when(aclService.findAclByAclId(10L)).thenReturn(List.of(Acl.builder().aclId(10L).build()));
 		when(galleryFileService.findGalleryFileByGalleryId(1L)).thenReturn(Collections.emptyList());
 
-		GalleryPageResponse result = galleryService.searchGalleries(0, 10, "shortname", "desc", "test", true);
+		var result = galleryService.findPagedByUser(request(10, "shortname", "desc", "test", true));
 
 		assertNotNull(result);
-		assertEquals(1, result.getItems().size());
+		assertEquals(1, result.getContent()
+		                      .size());
 	}
 
 	@Test
@@ -319,7 +322,7 @@ class GalleryServiceUTC {
 		when(aclService.findAclByAclId(10L)).thenReturn(List.of(Acl.builder().aclId(10L).build()));
 		when(galleryFileService.findGalleryFileByGalleryId(1L)).thenReturn(Collections.emptyList());
 
-		GalleryPageResponse result = galleryService.searchGalleries(0, 10, "description", "asc", "", false);
+		var result = galleryService.findPagedByUser(request(10, "description", "asc", "", false));
 
 		assertNotNull(result);
 	}
@@ -330,10 +333,11 @@ class GalleryServiceUTC {
 		when(galleryRepository.searchGalleries(anyString(), anyBoolean(), any(Pageable.class))).thenReturn(page);
 		when(accessService.hasReadPermission(10L)).thenReturn(false);
 
-		GalleryPageResponse result = galleryService.searchGalleries(0, 10, null, "asc", "x", false);
+		var result = galleryService.findPagedByUser(request(10, null, "asc", "x", false));
 
 		assertNotNull(result);
-		assertTrue(result.getItems().isEmpty());
+		assertTrue(result.getContent()
+		                 .isEmpty());
 	}
 
 	@Test
@@ -351,13 +355,47 @@ class GalleryServiceUTC {
 		when(galleryFileService.findGalleryFileByGalleryId(1L)).thenReturn(List.of(galleryFile));
 		when(siteFileRepository.findByIdWithoutMetadata(5L)).thenReturn(Optional.of(siteFile));
 
-		GalleryPageResponse result = galleryService.searchGalleries(0, 10, "id", "asc", "test", false);
+		var result = galleryService.findPagedByUser(request(10, "id", "asc", "test", false));
 
 		assertNotNull(result);
-		assertEquals(1, result.getItems().size());
+		assertEquals(1, result.getContent()
+		                      .size());
+	}
+
+	@Test
+	void searchGalleriesWithoutFilesDoesNotLoadGalleryFilesOk() {
+		var page = new PageImpl<>(List.of(sampleGallery));
+		when(galleryRepository.searchGalleriesWithoutFiles(anyString(), anyBoolean(), any(Pageable.class))).thenReturn(page);
+		when(accessService.hasReadPermission(10L)).thenReturn(true);
+		when(aclService.findAclByAclId(10L)).thenReturn(List.of(Acl.builder()
+		                                                           .aclId(10L)
+		                                                           .build()));
+
+		var result = galleryService.findPagedByUserWithoutFiles(request(10, "short_name", "asc", "test", false));
+
+		assertEquals(1, result.getContent()
+		                      .size());
+		assertTrue(result.getContent()
+		                 .getFirst()
+		                 .getSiteFiles()
+		                 .isEmpty());
+		verifyNoInteractions(galleryFileService, siteFileRepository);
 	}
 
 	// ---- findAllAsResponsesForUser full detail (populateGalleryWithSiteFiles withMetadata=true) ----
+
+	private PagedRequest request(int size, String sortBy, String direction, String search, boolean caseSensitive) {
+		var request = new PagedRequest();
+		request.setPage(0);
+		request.setSize(size);
+		request.setSortBy(sortBy);
+		request.setDirection("desc".equalsIgnoreCase(direction)
+		                     ? org.springframework.data.domain.Sort.Direction.DESC
+		                     : org.springframework.data.domain.Sort.Direction.ASC);
+		request.setSearch(search);
+		request.setCaseSensitive(caseSensitive);
+		return request;
+	}
 
 	@Test
 	void findAllAsResponsesForUserFullDetailWithSiteFilesOk() {

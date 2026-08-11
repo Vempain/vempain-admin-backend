@@ -24,14 +24,25 @@ public class GalleryRepositoryImpl implements GalleryRepositoryCustom {
 
 	@Override
 	public Page<Gallery> searchGalleries(String searchTerm, boolean caseSensitive, Pageable pageable) {
-		List<String> tokens = tokenize(searchTerm);
-		String base = """
-				FROM gallery g
-				LEFT JOIN gallery_file gf ON gf.gallery_id = g.id
-				LEFT JOIN (SELECT id, file_name, file_path, NULL AS metadata FROM site_file) sf ON sf.id = gf.site_file_id
-				""";
+		return searchGalleries(searchTerm, caseSensitive, pageable, true);
+	}
 
-		String whereClause = buildWhereClause(tokens, caseSensitive);
+	@Override
+	public Page<Gallery> searchGalleriesWithoutFiles(String searchTerm, boolean caseSensitive, Pageable pageable) {
+		return searchGalleries(searchTerm, caseSensitive, pageable, false);
+	}
+
+	private Page<Gallery> searchGalleries(String searchTerm, boolean caseSensitive, Pageable pageable, boolean includeFiles) {
+		List<String> tokens = tokenize(searchTerm);
+		String base = includeFiles
+					  ? """
+							  FROM gallery g
+							  LEFT JOIN gallery_file gf ON gf.gallery_id = g.id
+							  LEFT JOIN (SELECT id, file_name, file_path, NULL AS metadata FROM site_file) sf ON sf.id = gf.site_file_id
+							  """
+					  : "FROM gallery g ";
+
+		String whereClause = buildWhereClause(tokens, caseSensitive, includeFiles);
 		String orderClause = buildOrderClause(pageable);
 
 		String selectSql = "SELECT DISTINCT g.* " + base + whereClause + orderClause +
@@ -60,7 +71,7 @@ public class GalleryRepositoryImpl implements GalleryRepositoryCustom {
 		}
 	}
 
-	private String buildWhereClause(List<String> tokens, boolean caseSensitive) {
+	private String buildWhereClause(List<String> tokens, boolean caseSensitive, boolean includeFiles) {
 		if (tokens.isEmpty()) {
 			return "";
 		}
@@ -72,12 +83,14 @@ public class GalleryRepositoryImpl implements GalleryRepositoryCustom {
 			sb.append('(')
 			  .append(like("g.shortname", i, caseSensitive))
 			  .append(" OR ")
-			  .append(like("g.description", i, caseSensitive))
-			  .append(" OR ")
-			  .append(like("sf.file_name", i, caseSensitive))
-			  .append(" OR ")
-			  .append(like("sf.file_path", i, caseSensitive))
-			  .append(')');
+			  .append(like("g.description", i, caseSensitive));
+			if (includeFiles) {
+				sb.append(" OR ")
+				  .append(like("sf.file_name", i, caseSensitive))
+				  .append(" OR ")
+				  .append(like("sf.file_path", i, caseSensitive));
+			}
+			sb.append(')');
 		}
 		return sb.toString();
 	}

@@ -3,7 +3,7 @@ package fi.poltsi.vempain.admin.controller;
 import fi.poltsi.vempain.admin.VempainMessages;
 import fi.poltsi.vempain.admin.api.ContentTypeEnum;
 import fi.poltsi.vempain.admin.api.PublishResultEnum;
-import fi.poltsi.vempain.admin.api.QueryDetailEnum;
+import fi.poltsi.vempain.admin.api.request.PagePagedRequest;
 import fi.poltsi.vempain.admin.api.request.PageRequest;
 import fi.poltsi.vempain.admin.api.request.PublishRequest;
 import fi.poltsi.vempain.admin.api.response.DeleteResponse;
@@ -15,6 +15,7 @@ import fi.poltsi.vempain.admin.service.DeleteService;
 import fi.poltsi.vempain.admin.service.PageService;
 import fi.poltsi.vempain.admin.service.PublishService;
 import fi.poltsi.vempain.admin.service.ScheduleService;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,31 +38,8 @@ public class PageController implements PageAPI {
 	private final ScheduleService scheduleService;
 
 	@Override
-	public ResponseEntity<List<PageResponse>> getPages(QueryDetailEnum queryDetailEnum) {
-		var pageList = pageService.findAllByUser();
-		var responses = new ArrayList<PageResponse>();
-
-		if (queryDetailEnum == QueryDetailEnum.FULL) {
-			for (Page page : pageList) {
-				responses.add(pageService.populateResponse(page));
-			}
-		} else if (queryDetailEnum == QueryDetailEnum.MINIMAL) {
-			for (Page page : pageList) {
-				responses.add(PageResponse.builder()
-				                          .id(page.getId())
-				                          .pagePath(page.getPagePath())
-				                          .build());
-			}
-		} else if (queryDetailEnum == QueryDetailEnum.UNPOPULATED) {
-			for (Page page : pageList) {
-				responses.add(page.toResponse());
-			}
-		} else {
-			log.error("Unknown query detail enum: {}", queryDetailEnum);
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown query detail enum");
-		}
-
-		return ResponseEntity.ok(responses);
+	public ResponseEntity<PagedResponse<PageResponse>> getPages(PagePagedRequest request) {
+		return ResponseEntity.ok(pageService.findPagedByUser(request));
 	}
 
 	@Override

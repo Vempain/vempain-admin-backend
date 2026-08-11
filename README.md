@@ -10,6 +10,17 @@
 
 [Local](http://localhost:8081/actuator/swagger-ui/index.html)
 
+### Paginated admin resources
+
+Paginated page, site-file, gallery, and website-resource endpoints use `POST` requests with a JSON `PagedRequest` body. The body contains zero-based `page` and
+`size` values and may include `sort_by`, `direction`, `search`, and domain-specific filters. Responses use the shared `PagedResponse` shape with
+`content` and pagination metadata. Legacy query-parameter pagination endpoints are no longer supported. Page access checks are applied before slicing, so
+pagination metadata only includes pages visible to the current user.
+
+Gallery dropdowns use `POST /content-management/galleries/paged-without-files`, which returns the same
+`PagedResponse` metadata while avoiding gallery-file joins and file loading. Use the regular
+`/paged` endpoint when file counts or file details are required.
+
 ## Running in Docker
 
 ### Building the docker image

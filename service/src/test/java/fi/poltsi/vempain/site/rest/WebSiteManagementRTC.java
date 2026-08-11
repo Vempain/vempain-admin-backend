@@ -1,7 +1,8 @@
 package fi.poltsi.vempain.site.rest;
 
 import fi.poltsi.vempain.admin.api.site.WebSiteResourceEnum;
-import fi.poltsi.vempain.admin.api.site.response.WebSiteResourcePageResponse;
+import fi.poltsi.vempain.admin.api.site.request.WebSiteResourcePagedRequest;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.file.api.FileTypeEnum;
 import fi.poltsi.vempain.site.entity.WebSiteFile;
 import fi.poltsi.vempain.site.entity.WebSiteGallery;
@@ -27,7 +28,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @Slf4j
@@ -97,63 +98,83 @@ class WebSiteManagementRTC {
 	@WithUserDetails(value = "admin", userDetailsServiceBeanName = "userDetailsServiceImpl")
 	@DisplayName("List site files default paging")
 	void listSiteFilesDefault() throws Exception {
-		var result = mockMvc.perform(get("/admin-management/site/resources").accept(MediaType.APPLICATION_JSON))
+		var result = mockMvc.perform(post("/admin-management/site/resources")
+											 .contentType(MediaType.APPLICATION_JSON)
+				                             .content(objectMapper.writeValueAsBytes(resourceRequest(null, null, null, null, null, null, 0, 25)))
+				                             .accept(MediaType.APPLICATION_JSON))
 							.andExpect(status().isOk())
 							.andReturn();
 		log.info("MVC Result: {}", result.getResponse()
 										 .getContentAsString());
 		var response = objectMapper.readValue(result.getResponse()
-													.getContentAsString(), WebSiteResourcePageResponse.class);
+		                                            .getContentAsString(), new TypeReference<PagedResponse<Object>>() {
+		});
 		log.info("Response: {}", response);
-		assertThat(response.getItems()).hasSizeGreaterThanOrEqualTo(2);
+		assertThat(response.getContent()).hasSizeGreaterThanOrEqualTo(2);
 	}
 
 	@Test
 	@WithUserDetails(value = "admin", userDetailsServiceBeanName = "userDetailsServiceImpl")
 	@DisplayName("Filter by ACL ID and file type")
 	void filterByAclAndFileType() throws Exception {
-		MvcResult result = mockMvc.perform(get("/admin-management/site/resources")
-												   .param("acl_id", "100")
-												   .param("file_type", FileTypeEnum.IMAGE.name())
+		MvcResult result = mockMvc.perform(post("/admin-management/site/resources")
+												   .contentType(MediaType.APPLICATION_JSON)
+				                                   .content(objectMapper.writeValueAsBytes(resourceRequest(null, FileTypeEnum.IMAGE, null, 100L, null, null, 0, 25)))
 												   .accept(MediaType.APPLICATION_JSON))
 								  .andExpect(status().isOk())
 								  .andReturn();
 		var resp = objectMapper.readValue(result.getResponse()
-												.getContentAsByteArray(), new TypeReference<WebSiteResourcePageResponse>() {
+		                                        .getContentAsByteArray(), new TypeReference<PagedResponse<Object>>() {
 		});
-		assertThat(resp.getItems()).hasSize(1);
+		assertThat(resp.getContent()).hasSize(1);
 	}
 
 	@Test
 	@WithUserDetails(value = "admin", userDetailsServiceBeanName = "userDetailsServiceImpl")
 	@DisplayName("List galleries when type=GALLERY")
 	void listGalleries() throws Exception {
-		MvcResult result = mockMvc.perform(get("/admin-management/site/resources")
-												   .param("type", WebSiteResourceEnum.GALLERY.name())
+		MvcResult result = mockMvc.perform(post("/admin-management/site/resources")
+												   .contentType(MediaType.APPLICATION_JSON)
+				                                   .content(objectMapper.writeValueAsBytes(resourceRequest(WebSiteResourceEnum.GALLERY, null, null, null, null, null, 0, 25)))
 												   .accept(MediaType.APPLICATION_JSON))
 								  .andExpect(status().isOk())
 								  .andReturn();
 		var resp = objectMapper.readValue(result.getResponse()
-												.getContentAsByteArray(), new TypeReference<WebSiteResourcePageResponse>() {
+		                                        .getContentAsByteArray(), new TypeReference<PagedResponse<Object>>() {
 		});
-		assertThat(resp.getItems()).hasSize(1);
+		assertThat(resp.getContent()).hasSize(1);
 	}
 
 	@Test
 	@WithUserDetails(value = "admin", userDetailsServiceBeanName = "userDetailsServiceImpl")
 	@DisplayName("List pages when type=PAGE with sort=name")
 	void listPagesSortedByVirtualName() throws Exception {
-		MvcResult result = mockMvc.perform(get("/admin-management/site/resources")
-												   .param("type", WebSiteResourceEnum.PAGE.name())
-												   .param("sort", "name")
-												   .param("direction", "desc")
+		MvcResult result = mockMvc.perform(post("/admin-management/site/resources")
+												   .contentType(MediaType.APPLICATION_JSON)
+				                                   .content(objectMapper.writeValueAsBytes(resourceRequest(WebSiteResourceEnum.PAGE, null, null, null, "name", "desc", 0, 25)))
 												   .accept(MediaType.APPLICATION_JSON))
 								  .andExpect(status().isOk())
 								  .andReturn();
 		var response = objectMapper.readValue(result.getResponse()
-												.getContentAsByteArray(), new TypeReference<WebSiteResourcePageResponse>() {
+		                                            .getContentAsByteArray(), new TypeReference<PagedResponse<Object>>() {
 		});
 		log.info("Response: {}", response);
-		assertThat(response.getItems()).hasSize(1);
+		assertThat(response.getContent()).hasSize(1);
+	}
+
+	private WebSiteResourcePagedRequest resourceRequest(WebSiteResourceEnum type, FileTypeEnum fileType, String search, Long aclId,
+	                                                    String sortBy, String direction, int page, int size) {
+		var request = new WebSiteResourcePagedRequest();
+		request.setType(type);
+		request.setFileType(fileType);
+		request.setSearch(search);
+		request.setAclId(aclId);
+		request.setSortBy(sortBy);
+		request.setDirection("desc".equalsIgnoreCase(direction)
+		                     ? org.springframework.data.domain.Sort.Direction.DESC
+		                     : org.springframework.data.domain.Sort.Direction.ASC);
+		request.setPage(page);
+		request.setSize(size);
+		return request;
 	}
 }
