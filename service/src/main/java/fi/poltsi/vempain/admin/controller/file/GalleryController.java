@@ -51,6 +51,11 @@ public class GalleryController implements GalleryAPI {
 	}
 
 	@Override
+	public ResponseEntity<PagedResponse<GalleryResponse>> getPagedGalleriesWithoutFiles(PagedRequest request) {
+		return ResponseEntity.ok(galleryService.findPagedByUserWithoutFiles(request));
+	}
+
+	@Override
 	public ResponseEntity<List<GalleryResponse>> getGalleriesByPage(long pageId, QueryDetailEnum queryDetailEnum) {
 		var pageGalleries = new ArrayList<GalleryResponse>();
 		var galleries = pageGalleryService.findPageGalleryByPageId(pageId);

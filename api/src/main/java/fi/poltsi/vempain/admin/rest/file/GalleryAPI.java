@@ -195,6 +195,22 @@ public interface GalleryAPI {
 	@PostMapping(value = MAIN_PATH + "/paged", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<PagedResponse<GalleryResponse>> getPagedGalleries(@Valid @RequestBody PagedRequest request);
 
+	@Operation(summary = "Get a page of galleries without files",
+			   description = "Filter and paginate galleries without loading their associated files.",
+			   tags = "GalleryAPI")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+						 description = "Paged gallery result without files",
+						 content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+											schema = @Schema(implementation = PagedResponse.class))),
+			@ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+	})
+	@SecurityRequirement(name = "******")
+	@PostMapping(value = MAIN_PATH + "/paged-without-files", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	ResponseEntity<PagedResponse<GalleryResponse>> getPagedGalleriesWithoutFiles(@Valid @RequestBody PagedRequest request);
+
 	@Operation(summary = "Publish selected galleries", description = "Publishes a list of galleries", tags = "GalleryAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "List of gallery IDs to publish", required = true,
 	                                                      content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,

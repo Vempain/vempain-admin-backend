@@ -39,6 +39,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -359,6 +360,26 @@ class GalleryServiceUTC {
 		assertNotNull(result);
 		assertEquals(1, result.getContent()
 		                      .size());
+	}
+
+	@Test
+	void searchGalleriesWithoutFilesDoesNotLoadGalleryFilesOk() {
+		var page = new PageImpl<>(List.of(sampleGallery));
+		when(galleryRepository.searchGalleriesWithoutFiles(anyString(), anyBoolean(), any(Pageable.class))).thenReturn(page);
+		when(accessService.hasReadPermission(10L)).thenReturn(true);
+		when(aclService.findAclByAclId(10L)).thenReturn(List.of(Acl.builder()
+		                                                           .aclId(10L)
+		                                                           .build()));
+
+		var result = galleryService.findPagedByUserWithoutFiles(request(10, "short_name", "asc", "test", false));
+
+		assertEquals(1, result.getContent()
+		                      .size());
+		assertTrue(result.getContent()
+		                 .getFirst()
+		                 .getSiteFiles()
+		                 .isEmpty());
+		verifyNoInteractions(galleryFileService, siteFileRepository);
 	}
 
 	// ---- findAllAsResponsesForUser full detail (populateGalleryWithSiteFiles withMetadata=true) ----

@@ -171,25 +171,43 @@ public class GalleryService {
 
 	@Transactional(readOnly = true)
 	public PagedResponse<GalleryResponse> findPagedByUser(PagedRequest request) {
+		return findPagedByUser(request, true);
+	}
+
+	@Transactional(readOnly = true)
+	public PagedResponse<GalleryResponse> findPagedByUserWithoutFiles(PagedRequest request) {
+		return findPagedByUser(request, false);
+	}
+
+	private PagedResponse<GalleryResponse> findPagedByUser(PagedRequest request, boolean includeFiles) {
 		int safePage = request.getPage();
 		int safeSize = Math.min(request.getSize(), 200);
 		Sort sortSpec = buildSort(request.getSortBy(), request.getDirection());
 		Pageable pageable = PageRequest.of(safePage, safeSize, sortSpec);
 
-		var pageResult = galleryRepository.searchGalleries(request.getSearch(), Boolean.TRUE.equals(request.getCaseSensitive()), pageable);
+		var pageResult = includeFiles
+						 ? galleryRepository.searchGalleries(request.getSearch(), Boolean.TRUE.equals(request.getCaseSensitive()), pageable)
+						 : galleryRepository.searchGalleriesWithoutFiles(request.getSearch(), Boolean.TRUE.equals(request.getCaseSensitive()), pageable);
 
-		// Populate ACL + files for each gallery already authorized
 		var items = new ArrayList<GalleryResponse>();
 
 		for (var gallery : pageResult.getContent()) {
 			if (accessService.hasReadPermission(gallery.getAclId())) {
-				populateGalleryWithSiteFiles(gallery, false);
+				if (includeFiles) {
+					populateGalleryWithSiteFiles(gallery, false);
+				} else {
+					populateGalleryWithAcls(gallery);
+				}
 				items.add(gallery.getResponse());
 			}
 		}
 
 		return PagedResponse.of(items, pageResult.getNumber(), pageResult.getSize(), pageResult.getTotalElements(),
 		                        pageResult.getTotalPages(), pageResult.isFirst(), pageResult.isLast());
+	}
+
+	private void populateGalleryWithAcls(Gallery gallery) {
+		gallery.setAcls(aclService.findAclByAclId(gallery.getAclId()));
 	}
 
 	private Sort buildSort(String sort, Sort.Direction direction) {
