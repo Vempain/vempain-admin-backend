@@ -104,6 +104,8 @@ public class PageService {
 			case "page_path" -> Comparator.comparing(Page::getPagePath, String.CASE_INSENSITIVE_ORDER);
 			case "title" -> Comparator.comparing(Page::getTitle, String.CASE_INSENSITIVE_ORDER);
 			case "created" -> Comparator.comparing(Page::getCreated);
+			case "modified" -> Comparator.comparing(Page::getModified,
+													Comparator.nullsFirst(Comparator.naturalOrder()));
 			default -> Comparator.comparing(Page::getId);
 		};
 	}
