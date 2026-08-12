@@ -19,6 +19,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.StreamSupport;
 
@@ -111,6 +112,32 @@ class PageServiceUTC {
 		assertEquals(3L, response.getContent()
 		                         .get(0)
 		                         .getId());
+	}
+
+	@Test
+	void findPagedByUserSortsByModified() {
+		var pages = TestUTCTools.generatePageList(3L);
+		pages.get(0)
+		     .setModified(Instant.parse("2026-03-10T14:00:00Z"));
+		pages.get(1)
+		     .setModified(Instant.parse("2026-03-10T12:00:00Z"));
+		pages.get(2)
+		     .setModified(Instant.parse("2026-03-10T13:00:00Z"));
+		when(pageRepository.findAll()).thenReturn(pages);
+		when(accessService.hasReadPermission(anyLong())).thenReturn(true);
+
+		var request = new PagePagedRequest();
+		request.setPage(0);
+		request.setSize(25);
+		request.setSortBy("modified");
+		request.setDirection(Sort.Direction.ASC);
+
+		var response = pageService.findPagedByUser(request);
+
+		assertEquals(List.of(2L, 3L, 1L), response.getContent()
+												  .stream()
+												  .map(page -> page.getId())
+												  .toList());
 	}
 
 	@Test
