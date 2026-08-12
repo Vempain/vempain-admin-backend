@@ -572,6 +572,23 @@ class FileServiceUTC {
 		verify(siteFileRepository).findByFileType(eq(FileTypeEnum.IMAGE), any());
 	}
 
+	@Test
+	void findAllSiteFilesAsPageableResponseFiltered_sortBySnakeCaseFileName_remapped() {
+		var pageRequest = PageRequest.of(0, 10, Sort.by("file_name"));
+		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
+		when(siteFileRepository.findByFileType(eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
+
+		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, null, null));
+
+		assertNotNull(result);
+		var pageableCaptor = org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+		verify(siteFileRepository).findByFileType(eq(FileTypeEnum.IMAGE), pageableCaptor.capture());
+		assertEquals("fileName", pageableCaptor.getValue()
+		                                       .getSort()
+		                                       .getOrderFor("fileName")
+		                                       .getProperty());
+	}
+
 	private SiteFilePagedRequest request(FileTypeEnum fileType, PageRequest pageRequest, String search, String filterColumn) {
 		var request = new SiteFilePagedRequest();
 		request.setFileType(fileType);

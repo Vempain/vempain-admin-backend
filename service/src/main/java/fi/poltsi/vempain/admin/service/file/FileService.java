@@ -229,16 +229,33 @@ public class FileService {
 		var remappedOrders = pageRequest.getSort()
 		                                .stream()
 		                                .map(order -> {
-											var property = switch (order.getProperty()) {
+											var javaPropertyName = toJavaPropertyName(order.getProperty());
+											var property = switch (javaPropertyName) {
 												case "createdAt" -> "created";
 												case "modifiedAt" -> "modified";
-												default -> order.getProperty();
+												default -> javaPropertyName;
 											};
 											return order.withProperty(property);
 										})
 		                                .toList();
 		var sort = remappedOrders.isEmpty() ? Sort.unsorted() : Sort.by(remappedOrders);
 		return PageRequest.of(pageRequest.getPageNumber(), pageRequest.getPageSize(), sort);
+	}
+
+	private String toJavaPropertyName(String property) {
+		var result = new StringBuilder(property.length());
+		var capitalizeNext = false;
+		for (char character : property.toCharArray()) {
+			if (character == '_') {
+				capitalizeNext = true;
+			} else if (capitalizeNext) {
+				result.append(Character.toUpperCase(character));
+				capitalizeNext = false;
+			} else {
+				result.append(character);
+			}
+		}
+		return result.toString();
 	}
 
 	// FileSubject
