@@ -17,9 +17,10 @@ Paginated page, site-file, gallery, and website-resource endpoints use `POST` re
 `content` and pagination metadata. Legacy query-parameter pagination endpoints are no longer supported. Page access checks are applied before slicing, so
 pagination metadata only includes pages visible to the current user.
 
-Gallery dropdowns use `POST /content-management/galleries/paged-without-files`, which returns the same
-`PagedResponse` metadata while avoiding gallery-file joins and file loading. Use the regular
-`/paged` endpoint when file counts or file details are required.
+Gallery dropdowns use `POST /content-management/galleries/paged-list`, which returns
+`FileGroupListResponse` items containing gallery metadata and `file_count` without loading file details. Page-linked gallery lists use
+`GET /content-management/galleries/page/{pageId}/list` with the same lightweight response shape. Use `/paged` when full gallery file details are required. The
+legacy `/paged-without-files` endpoint remains available for compatibility.
 
 ## Running in Docker
 

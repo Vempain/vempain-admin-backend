@@ -2,6 +2,7 @@ package fi.poltsi.vempain.admin.service.file;
 
 import fi.poltsi.vempain.admin.api.QueryDetailEnum;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
+import fi.poltsi.vempain.admin.api.response.file.FileGroupListResponse;
 import fi.poltsi.vempain.admin.api.response.file.GalleryResponse;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
@@ -9,6 +10,7 @@ import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
 import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.auth.api.request.PagedRequest;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.entity.Acl;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.service.AclService;
@@ -427,6 +429,38 @@ class GalleryServiceUTC {
 
 		assertNotNull(result);
 		assertTrue(result.iterator().hasNext());
+	}
+
+	@Test
+	void findPagedGalleryListByUserReturnsMetadataAndFileCount() {
+		var request = request(25, "short_name", "asc", null, false);
+		when(galleryRepository.searchGalleriesForList(any(), anyBoolean(), any(Pageable.class)))
+				.thenReturn(new PageImpl<>(List.of(sampleGallery), Pageable.ofSize(25), 1));
+		when(accessService.hasReadPermission(10L)).thenReturn(true);
+		when(aclService.findAclByAclId(10L)).thenReturn(List.of(Acl.builder()
+		                                                           .aclId(10L)
+		                                                           .build()));
+		when(galleryFileService.findGalleryFileByGalleryId(1L)).thenReturn(List.of(
+				fi.poltsi.vempain.admin.entity.file.GalleryFile.builder()
+				                                               .galleryId(1L)
+				                                               .siteFileId(5L)
+				                                               .build(),
+				fi.poltsi.vempain.admin.entity.file.GalleryFile.builder()
+				                                               .galleryId(1L)
+				                                               .siteFileId(6L)
+				                                               .build()));
+
+		PagedResponse<FileGroupListResponse> result = galleryService.findPagedGalleryListByUser(request);
+
+		assertEquals(1, result.getContent()
+		                      .size());
+		assertEquals("test-gallery", result.getContent()
+		                                   .getFirst()
+		                                   .getShortName());
+		assertEquals(2, result.getContent()
+		                      .getFirst()
+		                      .getFileCount());
+		verify(galleryFileService).findGalleryFileByGalleryId(1L);
 	}
 
 }

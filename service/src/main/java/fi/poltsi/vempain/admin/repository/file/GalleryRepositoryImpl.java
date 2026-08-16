@@ -32,6 +32,11 @@ public class GalleryRepositoryImpl implements GalleryRepositoryCustom {
 		return searchGalleries(searchTerm, caseSensitive, pageable, false);
 	}
 
+	@Override
+	public Page<Gallery> searchGalleriesForList(String searchTerm, boolean caseSensitive, Pageable pageable) {
+		return searchGalleries(searchTerm, caseSensitive, pageable, false);
+	}
+
 	private Page<Gallery> searchGalleries(String searchTerm, boolean caseSensitive, Pageable pageable, boolean includeFiles) {
 		List<String> tokens = tokenize(searchTerm);
 		String base = includeFiles

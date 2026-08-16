@@ -2,6 +2,7 @@ package fi.poltsi.vempain.admin.service.file;
 
 import fi.poltsi.vempain.admin.api.QueryDetailEnum;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
+import fi.poltsi.vempain.admin.api.response.file.FileGroupListResponse;
 import fi.poltsi.vempain.admin.api.response.file.GalleryResponse;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
@@ -177,6 +178,40 @@ public class GalleryService {
 	@Transactional(readOnly = true)
 	public PagedResponse<GalleryResponse> findPagedByUserWithoutFiles(PagedRequest request) {
 		return findPagedByUser(request, false);
+	}
+
+	@Transactional(readOnly = true)
+	public PagedResponse<FileGroupListResponse> findPagedGalleryListByUser(PagedRequest request) {
+		int safePage = request.getPage();
+		int safeSize = Math.min(request.getSize(), 200);
+		Sort sortSpec = buildSort(request.getSortBy(), request.getDirection());
+		Pageable pageable = PageRequest.of(safePage, safeSize, sortSpec);
+		var pageResult = galleryRepository.searchGalleriesForList(request.getSearch(), Boolean.TRUE.equals(request.getCaseSensitive()), pageable);
+		var items = new ArrayList<FileGroupListResponse>();
+
+		for (var gallery : pageResult.getContent()) {
+			if (accessService.hasReadPermission(gallery.getAclId())) {
+				populateGalleryWithAcls(gallery);
+				var fileCount = galleryFileService.findGalleryFileByGalleryId(gallery.getId())
+				                                  .size();
+				items.add(gallery.getListResponse(fileCount));
+			}
+		}
+
+		return PagedResponse.of(items, pageResult.getNumber(), pageResult.getSize(), pageResult.getTotalElements(),
+								pageResult.getTotalPages(), pageResult.isFirst(), pageResult.isLast());
+	}
+
+	@Transactional(readOnly = true)
+	public FileGroupListResponse findGalleryListById(long galleryId) {
+		var gallery = galleryRepository.findById(galleryId)
+		                               .orElse(null);
+		if (gallery == null || !accessService.hasReadPermission(gallery.getAclId())) {
+			return null;
+		}
+		populateGalleryWithAcls(gallery);
+		return gallery.getListResponse(galleryFileService.findGalleryFileByGalleryId(galleryId)
+		                                                 .size());
 	}
 
 	private PagedResponse<GalleryResponse> findPagedByUser(PagedRequest request, boolean includeFiles) {
