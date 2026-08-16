@@ -1,10 +1,10 @@
 package fi.poltsi.vempain.admin.rest.file;
 
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
+import fi.poltsi.vempain.admin.api.request.file.SiteFilePagedRequest;
 import fi.poltsi.vempain.admin.api.response.RefreshResponse;
 import fi.poltsi.vempain.admin.api.response.file.SiteFileResponse;
 import fi.poltsi.vempain.auth.api.response.PagedResponse;
-import fi.poltsi.vempain.file.api.FileTypeEnum;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -13,13 +13,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.constraints.NotNull;
-import org.springframework.data.domain.Sort;
+import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import static fi.poltsi.vempain.admin.api.Constants.REST_FILE_PREFIX;
 
@@ -28,12 +28,6 @@ public interface FileAPI {
 	String MAIN_PATH = REST_FILE_PREFIX;
 
 	@Operation(summary = "Get site files as a pageable", description = "Fetch all site files in pageable format", tags = "FileAPI")
-	@Parameter(name = "page_number", description = "Page number", allowEmptyValue = true, example = "1")
-	@Parameter(name = "page_size", description = "Page number", allowEmptyValue = true, example = "10")
-	@Parameter(name = "sort_by", description = "What field the page should be sorted by", example = "filename")
-	@Parameter(name = "direction", description = "What direction should the sorting be done", example = "DESC")
-	@Parameter(name = "filter", description = "Filter the column by the string", example = "Find me")
-	@Parameter(name = "filter_column", description = "By which column should the filtering be done", example = "message")
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200", description = "Got a list of site files"),
 			@ApiResponse(responseCode = "400", description = "Invalid request issued"),
@@ -41,16 +35,8 @@ public interface FileAPI {
 			@ApiResponse(responseCode = "500", description = "Internal server error")
 	})
 	@SecurityRequirement(name = "Bearer Authentication")
-	@GetMapping(value = MAIN_PATH + "/site-files", produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<PagedResponse<SiteFileResponse>> getPageableSiteFiles(
-			@RequestParam(name = "file_type") @NotNull FileTypeEnum FileTypeEnum,
-			@RequestParam(name = "page_number") int pageNumber,
-			@RequestParam(name = "page_size") int pageSize,
-			@RequestParam(name = "sort_by", defaultValue = "id") String sortBy,
-			@RequestParam(name = "direction", defaultValue = "ASC") Sort.Direction direction,
-			@RequestParam(name = "filter", defaultValue = "") String filter,
-			@RequestParam(name = "filter_column", defaultValue = "") String filterColumn
-	);
+	@PostMapping(value = MAIN_PATH + "/site-files/paged", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	ResponseEntity<PagedResponse<SiteFileResponse>> getPageableSiteFiles(@Valid @RequestBody SiteFilePagedRequest request);
 
 	@Operation(summary = "Refresh the file information of a gallery", description = "Reload all the file data of the files belonging to a gallery",
 	           tags = "FileAPI")

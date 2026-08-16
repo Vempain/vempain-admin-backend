@@ -1,7 +1,7 @@
 package fi.poltsi.vempain.site.service;
 
 import fi.poltsi.vempain.admin.api.site.WebSiteResourceEnum;
-import fi.poltsi.vempain.admin.api.site.response.WebSiteResourcePageResponse;
+import fi.poltsi.vempain.admin.api.site.request.WebSiteResourcePagedRequest;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteResourceResponse;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.file.api.FileTypeEnum;
@@ -83,11 +83,11 @@ class WebSiteResourceServiceUTC {
 		when(galleryRepo.findAll(any(PageRequest.class))).thenAnswer(inv -> new PageImpl<>(List.of(gallery), inv.getArgument(0), 1));
 		when(pageRepo.findAll(any(PageRequest.class))).thenAnswer(inv -> new PageImpl<>(List.of(page), inv.getArgument(0), 1));
 
-		WebSiteResourcePageResponse resp = service.listResources(null, null, null, null, null, null, 0, 10);
-		assertThat(resp.getItems()).hasSize(3);
-		assertThat(resp.getItems()).extracting(WebSiteResourceResponse::getResourceType)
+		var resp = service.listResources(request(null, null, null, null, null, null, 0, 10));
+		assertThat(resp.getContent()).hasSize(3);
+		assertThat(resp.getContent()).extracting(WebSiteResourceResponse::getResourceType)
 								   .containsExactlyInAnyOrder(WebSiteResourceEnum.SITE_FILE, WebSiteResourceEnum.GALLERY, WebSiteResourceEnum.PAGE);
-		assertThat(resp.getPageNumber()).isEqualTo(0);
+		assertThat(resp.getPage()).isEqualTo(0);
 	}
 
 	@Test
@@ -106,7 +106,7 @@ class WebSiteResourceServiceUTC {
 			return new PageImpl<>(List.of(file), pr, 1);
 		});
 
-		service.listResources(WebSiteResourceEnum.SITE_FILE, null, null, null, "non_existing_field", "asc", 0, 5);
+		service.listResources(request(WebSiteResourceEnum.SITE_FILE, null, null, null, "non_existing_field", "asc", 0, 5));
 	}
 
 	@Test
@@ -121,10 +121,10 @@ class WebSiteResourceServiceUTC {
 		when(fileRepo.findByAclIdAndFileTypeAndFilePathContainingIgnoreCase(eq(99L), eq(FileTypeEnum.IMAGE), eq("filtered"), any()))
 				.thenAnswer(inv -> new PageImpl<>(List.of(file), inv.getArgument(3), 1));
 
-		WebSiteResourcePageResponse resp = service.listResources(WebSiteResourceEnum.SITE_FILE, FileTypeEnum.IMAGE, "filtered", 99L, "id", "desc", 0, 25);
-		assertThat(resp.getItems()).extracting("aclId")
+		var resp = service.listResources(request(WebSiteResourceEnum.SITE_FILE, FileTypeEnum.IMAGE, "filtered", 99L, "id", "desc", 0, 25));
+		assertThat(resp.getContent()).extracting("aclId")
 								   .containsExactly(99L);
-		assertThat(resp.getItems()
+		assertThat(resp.getContent()
 					   .getFirst()
 					   .getFileType()).isEqualTo("image");
 	}
@@ -143,9 +143,9 @@ class WebSiteResourceServiceUTC {
 		when(pageRepo.findByAclIdAndFilePathContainingIgnoreCase(anyLong(), anyString(), any()))
 				.thenAnswer(inv -> new PageImpl<>(List.of(pageEntity), inv.getArgument(2), 1));
 
-		WebSiteResourcePageResponse resp = service.listResources(WebSiteResourceEnum.PAGE, null, "search", 11L, "title", "asc", 0, 10);
-		assertThat(resp.getItems()).hasSize(1);
-		assertThat(resp.getItems()
+		var resp = service.listResources(request(WebSiteResourceEnum.PAGE, null, "search", 11L, "title", "asc", 0, 10));
+		assertThat(resp.getContent()).hasSize(1);
+		assertThat(resp.getContent()
 					   .getFirst()
 					   .getPath()).isEqualTo("/x/path");
 	}
@@ -164,10 +164,26 @@ class WebSiteResourceServiceUTC {
 		when(galleryRepo.findByAclIdAndDescriptionContainingIgnoreCase(anyLong(), anyString(), any()))
 				.thenAnswer(inv -> new PageImpl<>(List.of(gallery), inv.getArgument(2), 1));
 
-		WebSiteResourcePageResponse resp = service.listResources(WebSiteResourceEnum.GALLERY, null, "aaa", 22L, "shortname", "asc", 0, 10);
-		assertThat(resp.getItems()).hasSize(1);
-		assertThat(resp.getItems()
+		var resp = service.listResources(request(WebSiteResourceEnum.GALLERY, null, "aaa", 22L, "shortname", "asc", 0, 10));
+		assertThat(resp.getContent()).hasSize(1);
+		assertThat(resp.getContent()
 					   .getFirst()
 					   .getName()).isEqualTo("Short");
+	}
+
+	private WebSiteResourcePagedRequest request(WebSiteResourceEnum type, FileTypeEnum fileType, String search, Long aclId,
+	                                            String sortBy, String direction, int page, int size) {
+		var request = new WebSiteResourcePagedRequest();
+		request.setType(type);
+		request.setFileType(fileType);
+		request.setSearch(search);
+		request.setAclId(aclId);
+		request.setSortBy(sortBy);
+		request.setDirection("desc".equalsIgnoreCase(direction)
+		                     ? Sort.Direction.DESC
+		                     : Sort.Direction.ASC);
+		request.setPage(page);
+		request.setSize(size);
+		return request;
 	}
 }

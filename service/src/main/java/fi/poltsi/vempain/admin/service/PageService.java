@@ -1,11 +1,13 @@
 package fi.poltsi.vempain.admin.service;
 
 import fi.poltsi.vempain.admin.VempainMessages;
+import fi.poltsi.vempain.admin.api.request.PagePagedRequest;
 import fi.poltsi.vempain.admin.api.request.PageRequest;
 import fi.poltsi.vempain.admin.api.response.PageResponse;
 import fi.poltsi.vempain.admin.entity.Page;
 import fi.poltsi.vempain.admin.exception.ProcessingFailedException;
 import fi.poltsi.vempain.admin.repository.PageRepository;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.AclService;
@@ -19,7 +21,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -45,9 +49,69 @@ public class PageService {
 			if (accessService.hasReadPermission(page.getAclId())) {
 				accessiblePages.add(page);
 			}
+
 		}
 
 		return accessiblePages;
+	}
+
+	public PagedResponse<PageResponse> findPagedByUser(PagePagedRequest request) {
+		var pages = new ArrayList<>(findAllByUser());
+		var search = request.getSearch();
+		if (search != null && !search.isBlank()) {
+			var query = request.getCaseSensitive() != null && request.getCaseSensitive()
+			            ? search
+			            : search.toLowerCase(Locale.ROOT);
+			pages.removeIf(page -> !contains(page.getPagePath(), query, request)
+			                       && !contains(page.getTitle(), query, request)
+			                       && !contains(page.getHeader(), query, request));
+		}
+
+		var sortBy = request.getSortBy();
+		if (sortBy != null && !sortBy.isBlank()) {
+			var comparator = pageComparator(sortBy);
+			if (request.getDirection() == org.springframework.data.domain.Sort.Direction.DESC) {
+				comparator = comparator.reversed();
+			}
+			pages.sort(comparator);
+		}
+
+		var page = request.getPage();
+		var size = request.getSize();
+		var totalElements = pages.size();
+		var totalPages = (int) Math.ceil((double) totalElements / size);
+		var fromIndex = Math.min(page * size, totalElements);
+		var toIndex = Math.min(fromIndex + size, totalElements);
+		var content = pages.subList(fromIndex, toIndex)
+		                   .stream()
+		                   .map(this::toUnpopulatedResponse)
+		                   .toList();
+		return PagedResponse.of(content, page, size, totalElements, totalPages, page == 0, page + 1 >= totalPages);
+	}
+
+	private boolean contains(String value, String query, PagePagedRequest request) {
+		var candidate = request.getCaseSensitive() != null && request.getCaseSensitive()
+		                ? value
+		                : value.toLowerCase(Locale.ROOT);
+		return candidate.contains(query);
+	}
+
+	private Comparator<Page> pageComparator(String sortBy) {
+		return switch (sortBy) {
+			case "id" -> Comparator.comparing(Page::getId);
+			case "parent_id" -> Comparator.comparing(page -> page.getParentId() == null ? 0L : page.getParentId());
+			case "form_id" -> Comparator.comparing(Page::getFormId);
+			case "page_path" -> Comparator.comparing(Page::getPagePath, String.CASE_INSENSITIVE_ORDER);
+			case "title" -> Comparator.comparing(Page::getTitle, String.CASE_INSENSITIVE_ORDER);
+			case "created" -> Comparator.comparing(Page::getCreated);
+			case "modified" -> Comparator.comparing(Page::getModified,
+													Comparator.nullsFirst(Comparator.naturalOrder()));
+			default -> Comparator.comparing(Page::getId);
+		};
+	}
+
+	private PageResponse toUnpopulatedResponse(Page page) {
+		return page.toResponse();
 	}
 
 	public Page findById(long pageId) {

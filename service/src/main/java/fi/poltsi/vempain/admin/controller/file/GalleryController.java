@@ -9,7 +9,7 @@ import fi.poltsi.vempain.admin.api.request.file.GalleryPublishRequest;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
 import fi.poltsi.vempain.admin.api.response.DeleteResponse;
 import fi.poltsi.vempain.admin.api.response.PublishResponse;
-import fi.poltsi.vempain.admin.api.response.file.GalleryPageResponse;
+import fi.poltsi.vempain.admin.api.response.file.FileGroupListResponse;
 import fi.poltsi.vempain.admin.api.response.file.GalleryResponse;
 import fi.poltsi.vempain.admin.entity.PageGallery;
 import fi.poltsi.vempain.admin.rest.file.GalleryAPI;
@@ -17,6 +17,8 @@ import fi.poltsi.vempain.admin.service.PageGalleryService;
 import fi.poltsi.vempain.admin.service.PublishService;
 import fi.poltsi.vempain.admin.service.ScheduleService;
 import fi.poltsi.vempain.admin.service.file.GalleryService;
+import fi.poltsi.vempain.auth.api.request.PagedRequest;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -45,12 +47,42 @@ public class GalleryController implements GalleryAPI {
 	}
 
 	@Override
+	public ResponseEntity<PagedResponse<GalleryResponse>> getPagedGalleries(PagedRequest request) {
+		return ResponseEntity.ok(galleryService.findPagedByUser(request));
+	}
+
+	@Override
+	public ResponseEntity<PagedResponse<GalleryResponse>> getPagedGalleriesWithoutFiles(PagedRequest request) {
+		return ResponseEntity.ok(galleryService.findPagedByUserWithoutFiles(request));
+	}
+
+	@Override
+	public ResponseEntity<PagedResponse<FileGroupListResponse>> getPagedGalleryList(PagedRequest request) {
+		return ResponseEntity.ok(galleryService.findPagedGalleryListByUser(request));
+	}
+
+	@Override
 	public ResponseEntity<List<GalleryResponse>> getGalleriesByPage(long pageId, QueryDetailEnum queryDetailEnum) {
 		var pageGalleries = new ArrayList<GalleryResponse>();
 		var galleries = pageGalleryService.findPageGalleryByPageId(pageId);
 
 		for (PageGallery pageGallery : galleries) {
 			pageGalleries.add(galleryService.findById(pageGallery.getGalleryId()));
+		}
+
+		return ResponseEntity.ok(pageGalleries);
+	}
+
+	@Override
+	public ResponseEntity<List<FileGroupListResponse>> getGalleryListByPage(long pageId) {
+		var pageGalleries = new ArrayList<FileGroupListResponse>();
+		var galleries = pageGalleryService.findPageGalleryByPageId(pageId);
+
+		for (PageGallery pageGallery : galleries) {
+			var gallery = galleryService.findGalleryListById(pageGallery.getGalleryId());
+			if (gallery != null) {
+				pageGalleries.add(gallery);
+			}
 		}
 
 		return ResponseEntity.ok(pageGalleries);
@@ -211,11 +243,6 @@ public class GalleryController implements GalleryAPI {
 	public ResponseEntity<PublishResponse> publishSelectedGalleries(GalleryPublishRequest request) {
 		var response = publishService.publishSelectedGalleries(request.getGalleryIds());
 		return ResponseEntity.ok(response);
-	}
-
-	@Override
-	public ResponseEntity<GalleryPageResponse> searchGalleries(int page, int size, String sort, String direction, String search, boolean caseSensitive) {
-		return ResponseEntity.ok(galleryService.searchGalleries(page, size, sort, direction, search, caseSensitive));
 	}
 
 	private ResponseEntity<PublishResponse> createGalleryPublishSchedule(Instant publishDateTime, Long galleryId, String message) {

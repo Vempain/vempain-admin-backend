@@ -1,7 +1,7 @@
 package fi.poltsi.vempain.admin.controller;
 
 import fi.poltsi.vempain.admin.VempainMessages;
-import fi.poltsi.vempain.admin.api.QueryDetailEnum;
+import fi.poltsi.vempain.admin.api.request.PagePagedRequest;
 import fi.poltsi.vempain.admin.api.request.PageRequest;
 import fi.poltsi.vempain.admin.api.response.PageResponse;
 import fi.poltsi.vempain.admin.entity.Page;
@@ -11,6 +11,7 @@ import fi.poltsi.vempain.admin.service.PublishService;
 import fi.poltsi.vempain.admin.service.ScheduleService;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
 import fi.poltsi.vempain.auth.api.response.AclResponse;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.service.AclService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -55,26 +56,31 @@ class PageControllerUTC {
 	@Test
 	void getPagesOk() {
 		var pages = TestUTCTools.generatePageList(5L);
-		when(pageService.findAllByUser()).thenReturn(pages);
+		var request = new PagePagedRequest();
+		request.setPage(0);
+		request.setSize(5);
 
 		var acls = TestUTCTools.generateAclResponses(1L, 1L);
 
+		var pageResponses = new ArrayList<PageResponse>();
 		for (Page page : pages) {
 			var pageResponse = page.toResponse();
 			pageResponse.setPublished(Instant.now()
 											 .minus(20, ChronoUnit.MINUTES));
 			pageResponse.setAcls(acls);
-			when(pageService.populateResponse(page)).thenReturn(pageResponse);
+			pageResponses.add(pageResponse);
 		}
+		when(pageService.findPagedByUser(request)).thenReturn(PagedResponse.of(pageResponses, 0, 5, 5, 1, true, true));
 
 		try {
-			ResponseEntity<List<PageResponse>> responseEntity = pageController.getPages(QueryDetailEnum.FULL);
+			ResponseEntity<PagedResponse<PageResponse>> responseEntity = pageController.getPages(request);
 			assertNotNull(responseEntity);
-			List<PageResponse> pageResponses = responseEntity.getBody();
-			assertNotNull(pageResponses);
-			assertEquals(5L, pageResponses.size());
+			PagedResponse<PageResponse> pagedResponse = responseEntity.getBody();
+			assertNotNull(pagedResponse);
+			assertEquals(5L, pagedResponse.getContent()
+			                              .size());
 
-			for (PageResponse pageResponse : pageResponses) {
+			for (PageResponse pageResponse : pagedResponse.getContent()) {
 				assertNotNull(pageResponse);
 				assertNotNull(pageResponse.getAcls());
 				assertFalse(pageResponse.getAcls()
@@ -87,12 +93,17 @@ class PageControllerUTC {
 
 	@Test
 	void getPagesEmptyListOk() {
+		var request = new PagePagedRequest();
+		request.setPage(0);
+		request.setSize(5);
+		when(pageService.findPagedByUser(request)).thenReturn(PagedResponse.of(new ArrayList<>(), 0, 5, 0, 0, true, true));
 		try {
-			ResponseEntity<List<PageResponse>> responseEntity = pageController.getPages(QueryDetailEnum.FULL);
+			ResponseEntity<PagedResponse<PageResponse>> responseEntity = pageController.getPages(request);
 			assertNotNull(responseEntity);
-			List<PageResponse> pageResponses = responseEntity.getBody();
-			assertNotNull(pageResponses);
-			assertEquals(0, pageResponses.size());
+			PagedResponse<PageResponse> response = responseEntity.getBody();
+			assertNotNull(response);
+			assertEquals(0, response.getContent()
+			                        .size());
 		} catch (Exception e) {
 			fail("Should not have received an exception: " + e);
 		}

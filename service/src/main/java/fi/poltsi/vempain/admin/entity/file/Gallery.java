@@ -1,5 +1,6 @@
 package fi.poltsi.vempain.admin.entity.file;
 
+import fi.poltsi.vempain.admin.api.response.file.FileGroupListResponse;
 import fi.poltsi.vempain.admin.api.response.file.GalleryResponse;
 import fi.poltsi.vempain.admin.api.response.file.SiteFileResponse;
 import fi.poltsi.vempain.auth.api.response.AclResponse;
@@ -53,6 +54,7 @@ public class Gallery extends AbstractVempainEntity implements Serializable {
 			for (var siteFile : this.siteFiles) {
 				siteFileResponses.add(siteFile.toResponse());
 			}
+
 		}
 
 		var aclResponses = new ArrayList<AclResponse>();
@@ -72,6 +74,26 @@ public class Gallery extends AbstractVempainEntity implements Serializable {
 		                      .modifier(this.modifier)
 		                      .modified(this.modified)
 		                      .build();
+	}
+
+	public FileGroupListResponse getListResponse(long fileCount) {
+		var aclResponses = new ArrayList<AclResponse>();
+		if (this.acls != null) {
+			for (var acl : this.acls) {
+				aclResponses.add(acl.toResponse());
+			}
+		}
+		return FileGroupListResponse.builder()
+									.acls(aclResponses)
+									.id(this.id)
+									.shortName(this.shortname)
+									.description(this.description)
+									.fileCount(fileCount)
+									.creator(this.creator)
+									.created(this.created)
+									.modifier(this.modifier)
+									.modified(this.modified)
+									.build();
 	}
 
 	public WebSiteGallery getSiteGallery() {

@@ -6,5 +6,8 @@ import org.springframework.data.domain.Pageable;
 
 public interface GalleryRepositoryCustom {
 	Page<Gallery> searchGalleries(String searchTerm, boolean caseSensitive, Pageable pageable);
-}
 
+	Page<Gallery> searchGalleriesWithoutFiles(String searchTerm, boolean caseSensitive, Pageable pageable);
+
+	Page<Gallery> searchGalleriesForList(String searchTerm, boolean caseSensitive, Pageable pageable);
+}

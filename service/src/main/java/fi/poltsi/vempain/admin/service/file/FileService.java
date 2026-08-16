@@ -1,6 +1,7 @@
 package fi.poltsi.vempain.admin.service.file;
 
 import fi.poltsi.vempain.admin.api.PublishResultEnum;
+import fi.poltsi.vempain.admin.api.request.file.SiteFilePagedRequest;
 import fi.poltsi.vempain.admin.api.response.RefreshDetailResponse;
 import fi.poltsi.vempain.admin.api.response.RefreshResponse;
 import fi.poltsi.vempain.admin.api.response.file.SiteFileResponse;
@@ -18,7 +19,6 @@ import fi.poltsi.vempain.admin.service.SubjectService;
 import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.service.AclService;
-import fi.poltsi.vempain.file.api.FileTypeEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
@@ -170,38 +170,44 @@ public class FileService {
 
 	// FileAudio
 	@Transactional(readOnly = true)
-	public PagedResponse<SiteFileResponse> findAllSiteFilesAsPageableResponseFiltered(FileTypeEnum FileTypeEnum, PageRequest pageRequest, String filter, String filterColumn) {
-		log.debug("Fetching pageable site files with filter '{}' on column '{}' for file type {}", filter, filterColumn, FileTypeEnum);
-		log.debug("Page request: {}", pageRequest);
+	public PagedResponse<SiteFileResponse> findAllSiteFilesAsPageableResponseFiltered(SiteFilePagedRequest request) {
+		log.debug("Fetching pageable site files with filter '{}' on column '{}' for file type {}", request.getSearch(), request.getFilterColumn(), request.getFileType());
 		Page<SiteFile> siteFiles;
+		var sortBy = request.getSortBy() == null || request.getSortBy()
+		                                                   .isBlank() ? "id" : request.getSortBy();
+		var pageRequest = PageRequest.of(request.getPage(), request.getSize(),
+		                                 request.getDirection() == null ? Sort.by(sortBy) : Sort.by(request.getDirection(), sortBy));
+		log.debug("Page request: {}", pageRequest);
 		Pageable pageable = sanitizePageable(pageRequest);
 
+		var filter = request.getSearch();
+		var filterColumn = request.getFilterColumn();
 		var normalizedFilterColumn = (filterColumn == null) ? "" : filterColumn.trim()
 		                                                                       .toLowerCase(Locale.ROOT)
 		                                                                       .replace("_", "");
 
 		if (filter == null || filter.isBlank()
 		    || filterColumn == null || filterColumn.isBlank()) {
-			siteFiles = siteFileRepository.findByFileType(FileTypeEnum, pageable);
+			siteFiles = siteFileRepository.findByFileType(request.getFileType(), pageable);
 		} else {
 			siteFiles = switch (normalizedFilterColumn) {
-				case "filename" -> siteFileRepository.findByFileNameContainingIgnoreCaseAndFileType(filter, FileTypeEnum, pageable);
-				case "filepath" -> siteFileRepository.findByFilePathContainingIgnoreCaseAndFileType(filter, FileTypeEnum, pageable);
-				case "mimetype" -> siteFileRepository.findByMimeTypeContainingIgnoreCaseAndFileType(filter, FileTypeEnum, pageable);
-				case "created" -> siteFileRepository.findByCreatedAfterAndFileType(Instant.parse(filter), FileTypeEnum, pageable);
-				case "modified" -> siteFileRepository.findByModifiedAfterAndFileType(Instant.parse(filter), FileTypeEnum, pageable);
-				case "subject" -> siteFileRepository.findBySubjectNameContainingIgnoreCaseAndFileType(filter, FileTypeEnum, pageable);
+				case "filename" -> siteFileRepository.findByFileNameContainingIgnoreCaseAndFileType(filter, request.getFileType(), pageable);
+				case "filepath" -> siteFileRepository.findByFilePathContainingIgnoreCaseAndFileType(filter, request.getFileType(), pageable);
+				case "mimetype" -> siteFileRepository.findByMimeTypeContainingIgnoreCaseAndFileType(filter, request.getFileType(), pageable);
+				case "created" -> siteFileRepository.findByCreatedAfterAndFileType(Instant.parse(filter), request.getFileType(), pageable);
+				case "modified" -> siteFileRepository.findByModifiedAfterAndFileType(Instant.parse(filter), request.getFileType(), pageable);
+				case "subject" -> siteFileRepository.findBySubjectNameContainingIgnoreCaseAndFileType(filter, request.getFileType(), pageable);
 				case "size" -> {
 					long sizeFilter;
 					try {
 						sizeFilter = Long.parseLong(filter);
 					} catch (NumberFormatException nfe) {
 						log.warn("Invalid size filter '{}', falling back to class-only listing", filter);
-						yield siteFileRepository.findByFileType(FileTypeEnum, pageable);
+						yield siteFileRepository.findByFileType(request.getFileType(), pageable);
 					}
-					yield siteFileRepository.findBySizeGreaterThanEqualAndFileType(sizeFilter, FileTypeEnum, pageable);
+					yield siteFileRepository.findBySizeGreaterThanEqualAndFileType(sizeFilter, request.getFileType(), pageable);
 				}
-				default -> siteFileRepository.findByFileType(FileTypeEnum, pageable);
+				default -> siteFileRepository.findByFileType(request.getFileType(), pageable);
 			};
 		}
 
@@ -223,16 +229,33 @@ public class FileService {
 		var remappedOrders = pageRequest.getSort()
 		                                .stream()
 		                                .map(order -> {
-											var property = switch (order.getProperty()) {
+											var javaPropertyName = toJavaPropertyName(order.getProperty());
+											var property = switch (javaPropertyName) {
 												case "createdAt" -> "created";
 												case "modifiedAt" -> "modified";
-												default -> order.getProperty();
+												default -> javaPropertyName;
 											};
 											return order.withProperty(property);
 										})
 		                                .toList();
 		var sort = remappedOrders.isEmpty() ? Sort.unsorted() : Sort.by(remappedOrders);
 		return PageRequest.of(pageRequest.getPageNumber(), pageRequest.getPageSize(), sort);
+	}
+
+	private String toJavaPropertyName(String property) {
+		var result = new StringBuilder(property.length());
+		var capitalizeNext = false;
+		for (char character : property.toCharArray()) {
+			if (character == '_') {
+				capitalizeNext = true;
+			} else if (capitalizeNext) {
+				result.append(Character.toUpperCase(character));
+				capitalizeNext = false;
+			} else {
+				result.append(character);
+			}
+		}
+		return result.toString();
 	}
 
 	// FileSubject

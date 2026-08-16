@@ -1,10 +1,10 @@
 package fi.poltsi.vempain.admin.service.file;
 
-import fi.poltsi.vempain.admin.api.response.file.GalleryPageResponse;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
 import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
 import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.service.AccessService;
+import fi.poltsi.vempain.auth.api.request.PagedRequest;
 import fi.poltsi.vempain.auth.entity.Acl;
 import fi.poltsi.vempain.auth.service.AclService;
 import org.junit.jupiter.api.BeforeEach;
@@ -65,12 +65,22 @@ class GalleryServiceSearchUTC {
 																   .aclId(10L)
 																   .build()));
 
-		GalleryPageResponse resp = galleryService.searchGalleries(0, 25, "id", "asc", "foo", false);
+		var resp = galleryService.findPagedByUser(request("foo", "id", false));
 
 		assertNotNull(resp);
 		assertEquals(1, resp.getTotalElements());
-		assertEquals(1, resp.getItems()
+		assertEquals(1, resp.getContent()
 							.size());
 	}
-}
 
+	private PagedRequest request(String search, String sortBy, boolean caseSensitive) {
+		var request = new PagedRequest();
+		request.setPage(0);
+		request.setSize(25);
+		request.setSearch(search);
+		request.setSortBy(sortBy);
+		request.setDirection(org.springframework.data.domain.Sort.Direction.ASC);
+		request.setCaseSensitive(caseSensitive);
+		return request;
+	}
+}

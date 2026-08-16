@@ -1,6 +1,7 @@
 package fi.poltsi.vempain.admin.service;
 
 import fi.poltsi.vempain.admin.VempainMessages;
+import fi.poltsi.vempain.admin.api.request.PagePagedRequest;
 import fi.poltsi.vempain.admin.api.request.PageRequest;
 import fi.poltsi.vempain.admin.entity.Page;
 import fi.poltsi.vempain.admin.exception.ProcessingFailedException;
@@ -14,9 +15,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.StreamSupport;
 
@@ -86,6 +89,76 @@ class PageServiceUTC {
 		} catch (Exception e) {
 			fail("Should not have received an exception: " + e);
 		}
+	}
+
+	@Test
+	void findPagedByUserAppliesPaginationAndSorting() {
+		var pages = TestUTCTools.generatePageList(5L);
+		when(pageRepository.findAll()).thenReturn(pages);
+		when(accessService.hasReadPermission(anyLong())).thenReturn(true);
+
+		var request = new PagePagedRequest();
+		request.setPage(1);
+		request.setSize(2);
+		request.setSortBy("id");
+		request.setDirection(Sort.Direction.DESC);
+
+		var response = pageService.findPagedByUser(request);
+
+		assertEquals(5, response.getTotalElements());
+		assertEquals(3, response.getTotalPages());
+		assertEquals(2, response.getContent()
+		                        .size());
+		assertEquals(3L, response.getContent()
+		                         .get(0)
+		                         .getId());
+	}
+
+	@Test
+	void findPagedByUserSortsByModified() {
+		var pages = TestUTCTools.generatePageList(3L);
+		pages.get(0)
+		     .setModified(Instant.parse("2026-03-10T14:00:00Z"));
+		pages.get(1)
+		     .setModified(Instant.parse("2026-03-10T12:00:00Z"));
+		pages.get(2)
+		     .setModified(Instant.parse("2026-03-10T13:00:00Z"));
+		when(pageRepository.findAll()).thenReturn(pages);
+		when(accessService.hasReadPermission(anyLong())).thenReturn(true);
+
+		var request = new PagePagedRequest();
+		request.setPage(0);
+		request.setSize(25);
+		request.setSortBy("modified");
+		request.setDirection(Sort.Direction.ASC);
+
+		var response = pageService.findPagedByUser(request);
+
+		assertEquals(List.of(2L, 3L, 1L), response.getContent()
+												  .stream()
+												  .map(page -> page.getId())
+												  .toList());
+	}
+
+	@Test
+	void findPagedByUserAppliesSearch() {
+		var pages = TestUTCTools.generatePageList(5L);
+		pages.get(2)
+		     .setPagePath("/page/3");
+		when(pageRepository.findAll()).thenReturn(pages);
+		when(accessService.hasReadPermission(anyLong())).thenReturn(true);
+
+		var request = new PagePagedRequest();
+		request.setPage(0);
+		request.setSize(25);
+		request.setSearch("/page/3");
+
+		var response = pageService.findPagedByUser(request);
+
+		assertEquals(1, response.getTotalElements());
+		assertEquals("/page/3", response.getContent()
+		                                .get(0)
+		                                .getPagePath());
 	}
 
 	@Test
