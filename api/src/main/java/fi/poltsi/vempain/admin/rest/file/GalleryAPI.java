@@ -7,6 +7,7 @@ import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
 import fi.poltsi.vempain.admin.api.response.DeleteResponse;
 import fi.poltsi.vempain.admin.api.response.PageResponse;
 import fi.poltsi.vempain.admin.api.response.PublishResponse;
+import fi.poltsi.vempain.admin.api.response.file.FileGroupListResponse;
 import fi.poltsi.vempain.admin.api.response.file.GalleryResponse;
 import fi.poltsi.vempain.auth.api.request.PagedRequest;
 import fi.poltsi.vempain.auth.api.response.PagedResponse;
@@ -70,6 +71,21 @@ public interface GalleryAPI {
 	@GetMapping(value = MAIN_PATH + "/page/{pageId}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<GalleryResponse>> getGalleriesByPage(@PathVariable(name = "pageId") long pageId,
 	                                                         @RequestParam(name = "details") @NotNull QueryDetailEnum queryDetailEnum);
+
+	@Operation(summary = "Get lightweight galleries linked to a page",
+			   description = "Fetch gallery metadata and file counts for galleries linked to a given page without loading file details.",
+			   tags = "GalleryAPI")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200", description = "Got a lightweight list of galleries",
+						 content = {@Content(array = @ArraySchema(schema = @Schema(implementation = FileGroupListResponse.class)),
+											 mediaType = MediaType.APPLICATION_JSON_VALUE)}),
+			@ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+	})
+	@SecurityRequirement(name = "******")
+	@GetMapping(value = MAIN_PATH + "/page/{pageId}/list", produces = MediaType.APPLICATION_JSON_VALUE)
+	ResponseEntity<List<FileGroupListResponse>> getGalleryListByPage(@PathVariable(name = "pageId") long pageId);
 
 	@Operation(summary = "Fetch a specific gallery", description = "Return the requested gallery", tags = "GalleryAPI")
 	@Parameter(name = "gallery_id", example = "123", description = "ID of the gallery to be retrieved", required = true)
@@ -210,6 +226,22 @@ public interface GalleryAPI {
 	@SecurityRequirement(name = "******")
 	@PostMapping(value = MAIN_PATH + "/paged-without-files", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<PagedResponse<GalleryResponse>> getPagedGalleriesWithoutFiles(@Valid @RequestBody PagedRequest request);
+
+	@Operation(summary = "Get a lightweight page of galleries",
+			   description = "Filter and paginate galleries without loading associated file details. The response contains gallery metadata and file_count for list and selector use.",
+			   tags = "GalleryAPI")
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+						 description = "Paged lightweight gallery result",
+						 content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+											schema = @Schema(implementation = PagedResponse.class))),
+			@ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
+			@ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+	})
+	@SecurityRequirement(name = "******")
+	@PostMapping(value = MAIN_PATH + "/paged-list", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	ResponseEntity<PagedResponse<FileGroupListResponse>> getPagedGalleryList(@Valid @RequestBody PagedRequest request);
 
 	@Operation(summary = "Publish selected galleries", description = "Publishes a list of galleries", tags = "GalleryAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "List of gallery IDs to publish", required = true,

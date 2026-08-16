@@ -3,6 +3,7 @@ package fi.poltsi.vempain.admin.controller.file;
 import fi.poltsi.vempain.admin.api.request.PublishRequest;
 import fi.poltsi.vempain.admin.api.request.file.GalleryPublishRequest;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
+import fi.poltsi.vempain.admin.api.response.file.FileGroupListResponse;
 import fi.poltsi.vempain.admin.api.response.file.GalleryResponse;
 import fi.poltsi.vempain.admin.entity.PageGallery;
 import fi.poltsi.vempain.admin.service.PageGalleryService;
@@ -45,6 +46,36 @@ class GalleryControllerUTC {
 		var result = galleryController.getPagedGalleriesWithoutFiles(request);
 
 		assertSame(response, result.getBody());
+	}
+
+	@Test
+	void getPagedGalleryListDelegatesToService() {
+		var request = new PagedRequest();
+		var response = PagedResponse.of(java.util.List.<FileGroupListResponse>of(), 0, 25, 0, 0, true, true);
+		when(galleryService.findPagedGalleryListByUser(request)).thenReturn(response);
+
+		var result = galleryController.getPagedGalleryList(request);
+
+		assertSame(response, result.getBody());
+		verify(galleryService).findPagedGalleryListByUser(request);
+	}
+
+	@Test
+	void getGalleryListByPageDelegatesToService() {
+		var gallery = fi.poltsi.vempain.admin.api.response.file.FileGroupListResponse.builder()
+		                                                                             .id(7L)
+		                                                                             .build();
+		var pageGallery = PageGallery.builder()
+		                             .galleryId(7L)
+		                             .build();
+		when(pageGalleryService.findPageGalleryByPageId(3L)).thenReturn(java.util.List.of(pageGallery));
+		when(galleryService.findGalleryListById(7L)).thenReturn(gallery);
+
+		var result = galleryController.getGalleryListByPage(3L);
+
+		assertSame(gallery, result.getBody()
+		                          .getFirst());
+		verify(galleryService).findGalleryListById(7L);
 	}
 
 	@Test

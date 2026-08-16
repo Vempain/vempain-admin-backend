@@ -9,6 +9,7 @@ import fi.poltsi.vempain.admin.api.request.file.GalleryPublishRequest;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
 import fi.poltsi.vempain.admin.api.response.DeleteResponse;
 import fi.poltsi.vempain.admin.api.response.PublishResponse;
+import fi.poltsi.vempain.admin.api.response.file.FileGroupListResponse;
 import fi.poltsi.vempain.admin.api.response.file.GalleryResponse;
 import fi.poltsi.vempain.admin.entity.PageGallery;
 import fi.poltsi.vempain.admin.rest.file.GalleryAPI;
@@ -56,12 +57,32 @@ public class GalleryController implements GalleryAPI {
 	}
 
 	@Override
+	public ResponseEntity<PagedResponse<FileGroupListResponse>> getPagedGalleryList(PagedRequest request) {
+		return ResponseEntity.ok(galleryService.findPagedGalleryListByUser(request));
+	}
+
+	@Override
 	public ResponseEntity<List<GalleryResponse>> getGalleriesByPage(long pageId, QueryDetailEnum queryDetailEnum) {
 		var pageGalleries = new ArrayList<GalleryResponse>();
 		var galleries = pageGalleryService.findPageGalleryByPageId(pageId);
 
 		for (PageGallery pageGallery : galleries) {
 			pageGalleries.add(galleryService.findById(pageGallery.getGalleryId()));
+		}
+
+		return ResponseEntity.ok(pageGalleries);
+	}
+
+	@Override
+	public ResponseEntity<List<FileGroupListResponse>> getGalleryListByPage(long pageId) {
+		var pageGalleries = new ArrayList<FileGroupListResponse>();
+		var galleries = pageGalleryService.findPageGalleryByPageId(pageId);
+
+		for (PageGallery pageGallery : galleries) {
+			var gallery = galleryService.findGalleryListById(pageGallery.getGalleryId());
+			if (gallery != null) {
+				pageGalleries.add(gallery);
+			}
 		}
 
 		return ResponseEntity.ok(pageGalleries);
