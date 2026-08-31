@@ -9,6 +9,8 @@ import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.rest.ComponentAPI;
 import fi.poltsi.vempain.admin.service.ComponentService;
 import fi.poltsi.vempain.admin.service.DeleteService;
+import fi.poltsi.vempain.auth.api.request.PagedRequest;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.exception.VempainAbstractException;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
@@ -41,8 +43,18 @@ public class ComponentController implements ComponentAPI {
 		for (Component component : components) {
 			responses.add(createResponseWithAcls(component));
 		}
-
 		return ResponseEntity.ok(responses);
+	}
+
+	@Override
+	public ResponseEntity<PagedResponse<ComponentResponse>> getPagedComponents(PagedRequest request) {
+		var result = componentService.findPagedByUser(request);
+		var responses = result.getContent()
+		                      .stream()
+		                      .map(this::createResponseWithAcls)
+		                      .toList();
+		return ResponseEntity.ok(PagedResponse.of(responses, result.getPage(), result.getSize(), result.getTotalElements(),
+		                                          result.getTotalPages(), result.isFirst(), result.isLast()));
 	}
 
 	@Override

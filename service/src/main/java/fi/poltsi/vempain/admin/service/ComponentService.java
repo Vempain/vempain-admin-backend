@@ -5,6 +5,8 @@ import fi.poltsi.vempain.admin.api.request.ComponentRequest;
 import fi.poltsi.vempain.admin.entity.Component;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.repository.ComponentRepository;
+import fi.poltsi.vempain.auth.api.request.PagedRequest;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.exception.VempainAbstractException;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
@@ -21,6 +23,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -50,8 +53,29 @@ public class ComponentService {
 				accessableComponents.add(component);
 			}
 		}
-
 		return accessableComponents;
+	}
+
+	public PagedResponse<Component> findPagedByUser(PagedRequest request) {
+		var components = new ArrayList<>(findAllByUser());
+		var search = request.getSearch();
+		if (search != null && !search.isBlank()) {
+			var query = Boolean.TRUE.equals(request.getCaseSensitive()) ? search : search.toLowerCase(Locale.ROOT);
+			components.removeIf(component -> {
+				var name = component.getCompName();
+				var candidate = Boolean.TRUE.equals(request.getCaseSensitive()) ? name : name.toLowerCase(Locale.ROOT);
+				return !candidate.contains(query);
+			});
+		}
+		components.sort(java.util.Comparator.comparing(Component::getId));
+		if (request.getSortBy() != null && request.getSortBy()
+		                                          .equals("comp_name")) {
+			components.sort(java.util.Comparator.comparing(Component::getCompName, String.CASE_INSENSITIVE_ORDER));
+		}
+		if (request.getDirection() == org.springframework.data.domain.Sort.Direction.DESC) {
+			java.util.Collections.reverse(components);
+		}
+		return PagedResponseService.create(components, request);
 	}
 
 	public Component findById(long componentId) throws VempainComponentException {

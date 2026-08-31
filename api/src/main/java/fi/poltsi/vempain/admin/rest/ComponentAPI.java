@@ -4,6 +4,8 @@ import fi.poltsi.vempain.admin.api.Constants;
 import fi.poltsi.vempain.admin.api.request.ComponentRequest;
 import fi.poltsi.vempain.admin.api.response.ComponentResponse;
 import fi.poltsi.vempain.admin.api.response.DeleteResponse;
+import fi.poltsi.vempain.auth.api.request.PagedRequest;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -45,6 +47,9 @@ public interface ComponentAPI {
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = MAIN_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<ComponentResponse>> getComponents();
+
+	@PostMapping(value = MAIN_PATH + "/paged", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	ResponseEntity<PagedResponse<ComponentResponse>> getPagedComponents(@Valid @RequestBody PagedRequest request);
 
 	@Operation(summary = "Get a component defined by id", description = "Returns a single component based on id", tags = "ComponentAPI")
 	@Parameter(name = "component_id", example = "123", description = "ID of the component to be retrieved", required = true)

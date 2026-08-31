@@ -7,6 +7,8 @@ import fi.poltsi.vempain.admin.entity.Layout;
 import fi.poltsi.vempain.admin.exception.ProcessingFailedException;
 import fi.poltsi.vempain.admin.exception.VempainLayoutException;
 import fi.poltsi.vempain.admin.repository.LayoutRepository;
+import fi.poltsi.vempain.auth.api.request.PagedRequest;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.exception.VempainAbstractException;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
@@ -22,6 +24,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -46,8 +49,28 @@ public class LayoutService {
 				responses.add(layoutResponse);
 			}
 		}
-
 		return responses;
+	}
+
+	public PagedResponse<LayoutResponse> findPagedByUser(PagedRequest request) {
+		var layouts = new ArrayList<>(findAllByUser());
+		var search = request.getSearch();
+		if (search != null && !search.isBlank()) {
+			var query = Boolean.TRUE.equals(request.getCaseSensitive()) ? search : search.toLowerCase(Locale.ROOT);
+			layouts.removeIf(layout -> {
+				var name = Boolean.TRUE.equals(request.getCaseSensitive()) ? layout.getLayoutName() : layout.getLayoutName()
+				                                                                                            .toLowerCase(Locale.ROOT);
+				return !name.contains(query);
+			});
+		}
+		layouts.sort(java.util.Comparator.comparing(LayoutResponse::getId));
+		if ("layout_name".equals(request.getSortBy())) {
+			layouts.sort(java.util.Comparator.comparing(LayoutResponse::getLayoutName, String.CASE_INSENSITIVE_ORDER));
+		}
+		if (request.getDirection() == org.springframework.data.domain.Sort.Direction.DESC) {
+			java.util.Collections.reverse(layouts);
+		}
+		return PagedResponseService.create(layouts, request);
 	}
 
 	public Layout findById(long layoutId) throws VempainEntityNotFoundException {

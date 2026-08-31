@@ -5,6 +5,8 @@ import fi.poltsi.vempain.admin.api.QueryDetailEnum;
 import fi.poltsi.vempain.admin.api.request.FormRequest;
 import fi.poltsi.vempain.admin.api.response.DeleteResponse;
 import fi.poltsi.vempain.admin.api.response.FormResponse;
+import fi.poltsi.vempain.auth.api.request.PagedRequest;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -47,6 +49,9 @@ public interface FormAPI {
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = MAIN_PATH)
 	ResponseEntity<List<FormResponse>> getForms(@RequestParam(name = "details") @NotNull QueryDetailEnum requestForm);
+
+	@PostMapping(value = MAIN_PATH + "/paged", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	ResponseEntity<PagedResponse<FormResponse>> getPagedForms(@Valid @RequestBody PagedRequest request);
 
 	@Operation(summary = "Get all forms using a component", description = "Returns a list of form which uses a certain component",
 	           tags = "FormAPI")

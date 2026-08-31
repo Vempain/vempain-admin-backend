@@ -1,7 +1,9 @@
 package fi.poltsi.vempain.admin.rest;
 
 import fi.poltsi.vempain.admin.api.Constants;
+import fi.poltsi.vempain.auth.api.request.PagedRequest;
 import fi.poltsi.vempain.auth.api.request.UnitRequest;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.api.response.UnitResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -41,6 +43,9 @@ public interface UnitAPI {
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = MAIN_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<UnitResponse>> getUnits();
+
+	@PostMapping(value = MAIN_PATH + "/paged", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	ResponseEntity<PagedResponse<UnitResponse>> getPagedUnits(@Valid @RequestBody PagedRequest request);
 
 	@Operation(summary = "Fetch a specific unit by unit ID", description = "Returns details of a specific unit", tags = "UnitAPI")
 	@Parameter(name = "unit_id", example = "12", description = "Unit ID to be fetched", required = true)

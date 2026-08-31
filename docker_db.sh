@@ -13,7 +13,7 @@ setup_database_container() {
     docker rm -f "${container_name}"
     docker volume rm "${volume_name}"
 
-    docker run -d -p "${port}:5432" -v "${volume_name}:/var/lib/postgresql/data/" \
+    docker run -d -p "${port}:5432" -v "${volume_name}:/var/lib/postgresql/" \
         -e "POSTGRES_HOST_AUTH_METHOD=trust" \
         --name "${container_name}" postgres:18-alpine
 
