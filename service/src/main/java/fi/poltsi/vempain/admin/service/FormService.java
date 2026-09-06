@@ -14,7 +14,9 @@ import fi.poltsi.vempain.admin.exception.InvalidRequestException;
 import fi.poltsi.vempain.admin.exception.ProcessingFailedException;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.repository.FormRepository;
+import fi.poltsi.vempain.auth.api.request.PagedRequest;
 import fi.poltsi.vempain.auth.api.response.AclResponse;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.entity.Acl;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
@@ -31,6 +33,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -55,8 +58,28 @@ public class FormService {
 				responses.add(getFormResponse(form));
 			}
 		}
-
 		return responses;
+	}
+
+	public PagedResponse<FormResponse> findPagedAsResponsesForUser(PagedRequest request) throws VempainComponentException {
+		var forms = new ArrayList<>(findAllAsResponsesForUser(QueryDetailEnum.FULL));
+		var search = request.getSearch();
+		if (search != null && !search.isBlank()) {
+			var query = Boolean.TRUE.equals(request.getCaseSensitive()) ? search : search.toLowerCase(Locale.ROOT);
+			forms.removeIf(form -> {
+				var name = Boolean.TRUE.equals(request.getCaseSensitive()) ? form.getName() : form.getName()
+				                                                                                  .toLowerCase(Locale.ROOT);
+				return !name.contains(query);
+			});
+		}
+		forms.sort(java.util.Comparator.comparing(FormResponse::getId));
+		if ("name".equals(request.getSortBy())) {
+			forms.sort(java.util.Comparator.comparing(FormResponse::getName, String.CASE_INSENSITIVE_ORDER));
+		}
+		if (request.getDirection() == org.springframework.data.domain.Sort.Direction.DESC) {
+			java.util.Collections.reverse(forms);
+		}
+		return PagedResponseService.create(forms, request);
 	}
 
 	public Form findById(long formId) throws VempainEntityNotFoundException {

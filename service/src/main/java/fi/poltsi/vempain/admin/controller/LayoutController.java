@@ -8,6 +8,8 @@ import fi.poltsi.vempain.admin.exception.VempainLayoutException;
 import fi.poltsi.vempain.admin.rest.LayoutAPI;
 import fi.poltsi.vempain.admin.service.DeleteService;
 import fi.poltsi.vempain.admin.service.LayoutService;
+import fi.poltsi.vempain.auth.api.request.PagedRequest;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +30,11 @@ public class LayoutController implements LayoutAPI {
 	@Override
 	public ResponseEntity<List<LayoutResponse>> getLayouts() {
 		return ResponseEntity.ok(layoutService.findAllByUser());
+	}
+
+	@Override
+	public ResponseEntity<PagedResponse<LayoutResponse>> getPagedLayouts(PagedRequest request) {
+		return ResponseEntity.ok(layoutService.findPagedByUser(request));
 	}
 
 	@Override
