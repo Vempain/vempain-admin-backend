@@ -90,6 +90,9 @@ public class PageService {
 	}
 
 	private boolean contains(String value, String query, PagePagedRequest request) {
+		if (value == null) {
+			return false;
+		}
 		var candidate = request.getCaseSensitive() != null && request.getCaseSensitive()
 		                ? value
 		                : value.toLowerCase(Locale.ROOT);

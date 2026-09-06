@@ -1,7 +1,9 @@
 package fi.poltsi.vempain.admin.controller;
 
 import fi.poltsi.vempain.admin.rest.UserAPI;
+import fi.poltsi.vempain.auth.api.request.PagedRequest;
 import fi.poltsi.vempain.auth.api.request.UserRequest;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.api.response.UserResponse;
 import fi.poltsi.vempain.auth.entity.UserAccount;
 import fi.poltsi.vempain.auth.service.UserService;
@@ -15,6 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 // TODO Check that the user has permission to access this API
 
@@ -33,8 +36,37 @@ public class UserController implements UserAPI {
 		for (var userAccount : userAccounts) {
 			responses.add(userAccount.getUserResponse());
 		}
-
 		return ResponseEntity.ok(responses);
+	}
+
+	@Override
+	public ResponseEntity<PagedResponse<UserResponse>> getPagedUsers(PagedRequest request) {
+		var responses = new ArrayList<UserResponse>();
+		userService.findAll()
+		           .forEach(user -> responses.add(user.getUserResponse()));
+		var query = request.getSearch();
+		if (query != null && !query.isBlank()) {
+			var normalized = Boolean.TRUE.equals(request.getCaseSensitive()) ? query : query.toLowerCase(Locale.ROOT);
+			responses.removeIf(user -> {
+				var name = Boolean.TRUE.equals(request.getCaseSensitive()) ? user.getName() : user.getName()
+				                                                                                  .toLowerCase(Locale.ROOT);
+				var login = Boolean.TRUE.equals(request.getCaseSensitive()) ? user.getLoginName() : user.getLoginName()
+				                                                                                        .toLowerCase(Locale.ROOT);
+				return !name.contains(normalized) && !login.contains(normalized);
+			});
+		}
+		responses.sort(java.util.Comparator.comparing(UserResponse::getName, String.CASE_INSENSITIVE_ORDER));
+		if ("id".equals(request.getSortBy())) {
+			responses.sort(java.util.Comparator.comparing(UserResponse::getId));
+		}
+		if (request.getDirection() == org.springframework.data.domain.Sort.Direction.DESC) {
+			java.util.Collections.reverse(responses);
+		}
+		return ResponseEntity.ok(PagedResponse.of(responses.subList(Math.min(request.getPage() * request.getSize(), responses.size()),
+		                                                            Math.min((request.getPage() + 1) * request.getSize(), responses.size())),
+		                                          request.getPage(), request.getSize(), responses.size(),
+		                                          (int) Math.ceil((double) responses.size() / request.getSize()), request.getPage() == 0,
+		                                          request.getPage() + 1 >= Math.ceil((double) responses.size() / request.getSize())));
 	}
 
 	@Override

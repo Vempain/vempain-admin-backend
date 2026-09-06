@@ -12,6 +12,8 @@ import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.rest.FormAPI;
 import fi.poltsi.vempain.admin.service.DeleteService;
 import fi.poltsi.vempain.admin.service.FormService;
+import fi.poltsi.vempain.auth.api.request.PagedRequest;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +36,15 @@ public class FormController implements FormAPI {
 	public ResponseEntity<List<FormResponse>> getForms(QueryDetailEnum requestForm) {
 		try {
 			return ResponseEntity.ok(formService.findAllAsResponsesForUser(requestForm));
+		} catch (VempainComponentException e) {
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to fetch any forms for user");
+		}
+	}
+
+	@Override
+	public ResponseEntity<PagedResponse<FormResponse>> getPagedForms(PagedRequest request) {
+		try {
+			return ResponseEntity.ok(formService.findPagedAsResponsesForUser(request));
 		} catch (VempainComponentException e) {
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to fetch any forms for user");
 		}

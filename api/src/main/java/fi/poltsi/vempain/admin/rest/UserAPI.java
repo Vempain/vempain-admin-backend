@@ -1,7 +1,9 @@
 package fi.poltsi.vempain.admin.rest;
 
 import fi.poltsi.vempain.admin.api.Constants;
+import fi.poltsi.vempain.auth.api.request.PagedRequest;
 import fi.poltsi.vempain.auth.api.request.UserRequest;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.api.response.UserResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -41,6 +43,9 @@ public interface UserAPI {
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = MAIN_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<List<UserResponse>> getUsers();
+
+	@PostMapping(value = MAIN_PATH + "/paged", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	ResponseEntity<PagedResponse<UserResponse>> getPagedUsers(@Valid @RequestBody PagedRequest request);
 
 	@Operation(summary = "Fetch a specific user by user ID", description = "Returns details of a specific user", tags = "UserAPI")
 	@Parameter(name = "user_id", example = "12", description = "User ID to be fetched", required = true)
