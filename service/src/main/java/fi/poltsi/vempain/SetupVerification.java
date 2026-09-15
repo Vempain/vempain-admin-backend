@@ -61,15 +61,13 @@ class SetupVerification implements ApplicationContextAware {
 
 		for (String[] keyPair : requiredKeys) {
 			var value = env.getProperty(keyPair[0]);
-			log.debug("Verifying that key {} is defined and not empty: {}", keyPair[0], value);
+			log.debug("Verifying that key {} is defined and not empty", keyPair[0]);
 
 			if (value == null || value.isEmpty()) {
 				closeApplication("Missing configuration value for key: " + keyPair[0]);
 			} else if (value.equals("override-me")) {
 				closeApplication("Configuration value for key " + keyPair[0] + " is still set to default value");
 			} else {
-				var path = Paths.get(value);
-
 				switch (keyPair[1]) {
 					case TYPE_NUMBER:
 						if (!NumberUtils.isCreatable(value)) {
@@ -78,20 +76,22 @@ class SetupVerification implements ApplicationContextAware {
 
 						break;
 					case TYPE_PATH:
+						var path = Paths.get(value);
 						if (!Files.exists(path)) {
 							closeApplication("Path from configuration " + keyPair[0] + " pointing to " + value + " does not exist");
 						}
 						break;
 					case TYPE_FILE:
-						if (!Files.exists(path)) {
+						var file = Paths.get(value);
+						if (!Files.exists(file)) {
 							closeApplication("File from configuration " + keyPair[0] + " pointing to " + value + " does not exist");
 						}
 
-						if (!Files.isRegularFile(path)) {
+						if (!Files.isRegularFile(file)) {
 							closeApplication("File from configuration " + keyPair[0] + " pointing to " + value + " is not a file");
 						}
 
-						if (!Files.isExecutable(path)) {
+						if (!Files.isExecutable(file)) {
 							closeApplication("File from configuration " + keyPair[0] + " pointing to " + value + " is not executable");
 						}
 						break;
@@ -123,7 +123,7 @@ class SetupVerification implements ApplicationContextAware {
 		             .map(ps -> ((EnumerablePropertySource<?>) ps).getPropertyNames())
 		             .flatMap(Arrays::stream)
 		             .distinct()
-		             .filter(prop -> !(prop.contains("credentials") || prop.contains("password")))
+		             .filter(prop -> !isSensitiveProperty(prop))
 		             .sorted()
 		             .forEach(prop -> printProperty(env, prop));
 		log.debug("===========================================");
@@ -136,6 +136,16 @@ class SetupVerification implements ApplicationContextAware {
 		} catch (Exception e) {
 			log.error("Failed to fetch property value for {}", key);
 		}
+	}
+
+	private boolean isSensitiveProperty(String key) {
+		var normalized = key.toLowerCase();
+		return normalized.contains("password")
+		       || normalized.contains("secret")
+		       || normalized.contains("token")
+		       || normalized.contains("private-key")
+		       || normalized.contains("credentials")
+		       || normalized.contains("api-key");
 	}
 
 	@Override

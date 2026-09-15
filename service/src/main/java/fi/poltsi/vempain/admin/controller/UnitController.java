@@ -1,6 +1,7 @@
 package fi.poltsi.vempain.admin.controller;
 
 import fi.poltsi.vempain.admin.rest.UnitAPI;
+import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.auth.api.request.PagedRequest;
 import fi.poltsi.vempain.auth.api.request.UnitRequest;
 import fi.poltsi.vempain.auth.api.response.PagedResponse;
@@ -20,16 +21,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-// TODO Check that the user has permission to access this API
-
 @Slf4j
 @RequiredArgsConstructor
 @RestController
 public class UnitController implements UnitAPI {
 	private final UnitService unitService;
+	private final AccessService accessService;
 
 	@Override
 	public ResponseEntity<List<UnitResponse>> getUnits() {
+		accessService.checkAdminAccess();
 		Iterable<Unit> units = unitService.findAll();
 
 		ArrayList<UnitResponse> responses = new ArrayList<>();
@@ -42,6 +43,7 @@ public class UnitController implements UnitAPI {
 
 	@Override
 	public ResponseEntity<PagedResponse<UnitResponse>> getPagedUnits(PagedRequest request) {
+		accessService.checkAdminAccess();
 		var responses = new ArrayList<UnitResponse>();
 		unitService.findAll()
 		           .forEach(unit -> responses.add(unit.getUnitResponse()));
@@ -70,6 +72,7 @@ public class UnitController implements UnitAPI {
 
 	@Override
 	public ResponseEntity<UnitResponse> findById(Long unitId) {
+		accessService.checkAdminAccess();
 		if (unitId == null || unitId < 0) {
 			log.error("Invalid unit ID: {}", unitId);
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Malformed parameter");
@@ -89,18 +92,22 @@ public class UnitController implements UnitAPI {
 
 	@Override
 	public ResponseEntity<UnitResponse> addUnit(UnitRequest unitRequest) {
+		accessService.checkAdminAccess();
 		var newUnitResponse = unitService.createUnit(unitRequest);
 		return ResponseEntity.ok(newUnitResponse);
 	}
 
 	@Override
 	public ResponseEntity<UnitResponse> updateUser(Long unitId, UnitRequest unitRequest) {
+		accessService.checkAdminAccess();
 		var updatedUnitResponse = unitService.updateUnit(unitId, unitRequest);
 		return ResponseEntity.ok(updatedUnitResponse);
 	}
 
 	@ExceptionHandler(RuntimeException.class)
-	public final ResponseEntity<Exception> handleRuntimeExceptions(RuntimeException e) {
-		return new ResponseEntity<>(e, HttpStatus.INTERNAL_SERVER_ERROR);
+	public final ResponseEntity<Void> handleRuntimeExceptions(RuntimeException e) {
+		log.error("Unit operation failed", e);
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+		                     .build();
 	}
 }

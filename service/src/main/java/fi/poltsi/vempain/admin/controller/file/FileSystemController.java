@@ -2,6 +2,7 @@ package fi.poltsi.vempain.admin.controller.file;
 
 import fi.poltsi.vempain.admin.api.response.file.DirectoryNodeResponse;
 import fi.poltsi.vempain.admin.rest.file.FileSystemAPI;
+import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.file.FileSystemService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,9 +16,11 @@ import java.util.List;
 @RestController
 public class FileSystemController implements FileSystemAPI {
 	private final FileSystemService fileSystemService;
+	private final AccessService accessService;
 
 	@Override
 	public ResponseEntity<List<DirectoryNodeResponse>> getConvertedDirectoryStructure() {
+		accessService.checkAdminAccess();
 		return ResponseEntity.ok(fileSystemService.getConvertedDirectoryTree());
 	}
 }

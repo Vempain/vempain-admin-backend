@@ -1,7 +1,7 @@
 ### Common settings ###
 spring:
   profiles:
-    default: local
+    default: prod
   application:
     name: Vempain Admin
   servlet:
@@ -17,15 +17,15 @@ spring:
       cleanup-cron: "5 * * * * *"
       initialize-schema: always
   admin-datasource:
-    url: jdbc:postgresql://localhost:5432/vempain_admin_db?currentSchema=vempain_admin&useSSL=false
+    url: ${VEMPAIN_ADMIN_DB_URL}
     driver-class-name: org.postgresql.Driver
-    username: vempain_admin
-    password: vempain_admin_password
+    username: ${VEMPAIN_ADMIN_DB_USERNAME}
+    password: ${VEMPAIN_ADMIN_DB_PASSWORD}
   site-datasource:
-    url: jdbc:postgresql://localhost:5433/vempain_site_db?currentSchema=vempain_site&useSSL=false
+    url: ${VEMPAIN_SITE_DB_URL}
     driver-class-name: org.postgresql.Driver
-    username: vempain_site
-    password: vempain_site_password
+    username: ${VEMPAIN_SITE_DB_USERNAME}
+    password: ${VEMPAIN_SITE_DB_PASSWORD}
   jpa:
     show-sql: false
     open-in-view: false
@@ -39,14 +39,14 @@ server:
     context-path: /api
   tomcat:
     max-http-form-post-size: 120MB
-    max-swallow-size: -1
+    max-swallow-size: 120MB
 
 actuator:
   enabled: true
   endpoints:
     web:
       exposure:
-        include: "*"
+        include: [ health, info ]
 
 management:
   server:
@@ -54,9 +54,12 @@ management:
   endpoints:
     web:
       exposure:
-        include: [ "*", "openapi", "swagger-ui" ]
+        include: [ health, info ]
     access:
-      default: unrestricted
+      default: none
+  endpoint:
+    health:
+      access: read-only
   metrics:
     tags:
       application: vempain-admin-backend
@@ -89,10 +92,10 @@ vempain:
   license: "GPL 2.0"
   license-url: "https://www.gnu.org/licenses/old-licenses/gpl-2.0.html"
   app:
-    frontend-url: override-me
-    jwt-secret: override-me
-    jwt-expiration-ms: 86400000
-  test: true
+    frontend-url: ${VEMPAIN_ADMIN_FRONTEND_URL}
+    jwt-secret: ${VEMPAIN_JWT_SECRET}
+    jwt-expiration-ms: ${VEMPAIN_JWT_EXPIRATION_MS}
+  test: false
   admin:
     file:
       image-format: "jpeg"
@@ -113,7 +116,7 @@ vempain:
       address: override-me
       port: 22
   cors:
-    allowed-origins: "${vempain.app.frontend-url},http://localhost:8081"
+    allowed-origins: "${vempain.app.frontend-url}"
     cors-pattern: '/**'
     max-age: 3600
   cmd-line:

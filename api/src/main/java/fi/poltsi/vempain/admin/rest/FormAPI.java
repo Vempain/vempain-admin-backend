@@ -20,7 +20,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,7 +30,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
-@CrossOrigin(origins = "*", maxAge = 3600) // TODO Remove before going to production
 @Tag(name = "FormAPI", description = "Form API for Vempain form objects")
 public interface FormAPI {
 	String MAIN_PATH = Constants.REST_CONTENT_PREFIX + "/forms";

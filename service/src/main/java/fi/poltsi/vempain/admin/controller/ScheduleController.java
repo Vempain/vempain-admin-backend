@@ -6,6 +6,7 @@ import fi.poltsi.vempain.admin.api.response.PublishScheduleResponse;
 import fi.poltsi.vempain.admin.api.response.ScheduleTriggerResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileImportScheduleResponse;
 import fi.poltsi.vempain.admin.rest.ScheduleAPI;
+import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.ScheduleService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,9 +28,11 @@ public class ScheduleController implements ScheduleAPI {
 	private ScheduledAnnotationBeanPostProcessor postProcessor;
 	private TaskScheduler                        taskScheduler;
 	private ScheduleService                      scheduleService;
+	private AccessService accessService;
 
 	@Override
 	public ResponseEntity<List<ScheduleTriggerResponse>> getSystemSchedules() {
+		accessService.checkAdminAccess();
 		Set<ScheduledTask> scheduledTaskSet = postProcessor.getScheduledTasks();
 		ArrayList<ScheduleTriggerResponse> scheduleTriggerResponses = new ArrayList<>();
 		var idCounter = 1L;
@@ -49,6 +52,7 @@ public class ScheduleController implements ScheduleAPI {
 
 	@Override
 	public ResponseEntity<ScheduleTriggerResponse> getSystemScheduleByName(String systemScheduleName) {
+		accessService.checkAdminAccess();
 		Set<ScheduledTask> scheduledTaskSet = postProcessor.getScheduledTasks();
 
 		for (ScheduledTask scheduledTask : scheduledTaskSet) {
@@ -70,6 +74,7 @@ public class ScheduleController implements ScheduleAPI {
 
 	@Override
 	public ResponseEntity<ScheduleTriggerResponse> triggerSystemSchedule(TriggerSystemScheduleRequest schedule) {
+		accessService.checkAdminAccess();
 		log.debug("Call to trigger system schedule: {}", schedule);
 		Set<ScheduledTask> scheduledTaskSet = postProcessor.getScheduledTasks();
 
@@ -98,6 +103,7 @@ public class ScheduleController implements ScheduleAPI {
 
 	@Override
 	public ResponseEntity<List<PublishScheduleResponse>> listPublishingSchedules() {
+		accessService.checkAdminAccess();
 		log.debug("Call to get all the publishing schedules");
 		var upcomingPublishSchedules = scheduleService.getUpcomingPublishSchedules();
 		return ResponseEntity.ok(upcomingPublishSchedules);
@@ -105,6 +111,7 @@ public class ScheduleController implements ScheduleAPI {
 
 	@Override
 	public ResponseEntity<PublishScheduleResponse> getPublishingScheduleById(long id) {
+		accessService.checkAdminAccess();
 		log.debug("Call to get publishing schedule ID: {}", id);
 		var publishScheduleResponse = scheduleService.getPublishScheduleById(id);
 
@@ -118,6 +125,7 @@ public class ScheduleController implements ScheduleAPI {
 
 	@Override
 	public ResponseEntity<PublishScheduleResponse> triggerPublishSchedule(PublishScheduleRequest publishScheduleRequest) {
+		accessService.checkAdminAccess();
 		log.debug("Call to trigger publishing schedule: {}", publishScheduleRequest);
 
 		var publishScheduleResponse = scheduleService.triggerPublishSchedule(publishScheduleRequest);
@@ -132,6 +140,7 @@ public class ScheduleController implements ScheduleAPI {
 
 	@Override
 	public ResponseEntity<List<FileImportScheduleResponse>> listFileImportSchedules() {
+		accessService.checkAdminAccess();
 		log.debug("Call to get all the file import schedules");
 		var upcomingFileImportSchedules = scheduleService.getUpcomingFileImportSchedules();
 		return ResponseEntity.ok(upcomingFileImportSchedules);
@@ -139,6 +148,7 @@ public class ScheduleController implements ScheduleAPI {
 
 	@Override
 	public ResponseEntity<FileImportScheduleResponse> getFileImportScheduleById(long id) {
+		accessService.checkAdminAccess();
 		log.debug("Call to get file import schedule ID: {}", id);
 		var fileImportSchedule = scheduleService.getFileImportScheduleById(id);
 

@@ -25,7 +25,7 @@ public class AclController implements AclAPI {
 
 	@Override
 	public ResponseEntity<List<AclResponse>> getAllAcl() {
-		accessService.checkAuthentication();
+		accessService.checkAdminAccess();
 
 		Iterable<Acl> aclData = aclService.findAll();
 
@@ -34,7 +34,7 @@ public class AclController implements AclAPI {
 
 	@Override
 	public ResponseEntity<List<AclResponse>> getAcl(Long aclId) {
-		accessService.checkAuthentication();
+		accessService.checkAdminAccess();
 		log.debug("Acl REST API called with aclId: {}", aclId);
 		log.debug("Retrieving all acl info based on ID");
 		Iterable<Acl> aclData = aclService.findAclByAclId(aclId);

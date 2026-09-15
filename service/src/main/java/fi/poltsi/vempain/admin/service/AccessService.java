@@ -1,6 +1,7 @@
 package fi.poltsi.vempain.admin.service;
 
 import fi.poltsi.vempain.admin.VempainMessages;
+import fi.poltsi.vempain.admin.api.Constants;
 import fi.poltsi.vempain.auth.entity.Acl;
 import fi.poltsi.vempain.auth.entity.Unit;
 import fi.poltsi.vempain.auth.entity.UserAccount;
@@ -87,6 +88,20 @@ public class AccessService {
 	}
 
 	/**
+	 * Require modify access to the reserved administrator ACL used by
+	 * administration endpoints that do not belong to a content ACL.
+	 */
+	public void checkAdminAccess() {
+		try {
+			if (!hasModifyPermission(Constants.ADMIN_ID)) {
+				throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Administrator access is required");
+			}
+		} catch (SessionAuthenticationException e) {
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, VempainMessages.INVALID_USER_SESSION);
+		}
+	}
+
+	/**
 	 * Returns the user ID of the currently authenticated user.
 	 * If the user is not authenticated, a frontend compatible exception is thrown.
 	 *
@@ -162,7 +177,7 @@ public class AccessService {
 			try {
 				userDetails = (UserDetailsImpl) auth.getPrincipal();
 			} catch (Exception e) {
-				log.error("Failed to fetch authorisation principal from {}", auth);
+				log.error("Failed to fetch the authenticated user principal");
 				return null;
 			}
 

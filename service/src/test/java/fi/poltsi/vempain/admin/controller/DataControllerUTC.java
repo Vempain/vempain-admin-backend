@@ -4,6 +4,7 @@ import fi.poltsi.vempain.admin.VempainMessages;
 import fi.poltsi.vempain.admin.api.request.DataRequest;
 import fi.poltsi.vempain.admin.api.response.DataResponse;
 import fi.poltsi.vempain.admin.api.response.DataSummaryResponse;
+import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.DataService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,8 @@ class DataControllerUTC {
 
 	@Mock
 	private DataService dataService;
+	@Mock
+	private AccessService accessService;
 
 	@InjectMocks
 	private DataController dataController;

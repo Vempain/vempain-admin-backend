@@ -1,6 +1,7 @@
 package fi.poltsi.vempain.admin.controller.file;
 
 import fi.poltsi.vempain.admin.api.response.file.DirectoryNodeResponse;
+import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.file.FileSystemService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +18,8 @@ import static org.mockito.Mockito.when;
 class FileSystemControllerUTC {
 	@Mock
 	private FileSystemService    fileSystemService;
+	@Mock
+	private AccessService accessService;
 	@InjectMocks
 	private FileSystemController controller;
 
