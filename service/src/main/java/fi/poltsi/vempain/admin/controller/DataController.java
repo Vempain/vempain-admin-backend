@@ -4,6 +4,7 @@ import fi.poltsi.vempain.admin.api.request.DataRequest;
 import fi.poltsi.vempain.admin.api.response.DataResponse;
 import fi.poltsi.vempain.admin.api.response.DataSummaryResponse;
 import fi.poltsi.vempain.admin.rest.DataAPI;
+import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.DataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,9 +18,11 @@ import java.util.List;
 @RestController
 public class DataController implements DataAPI {
 	private final DataService dataService;
+	private final AccessService accessService;
 
 	@Override
 	public ResponseEntity<List<DataSummaryResponse>> getAllDataSets(String type, String identifierPrefix, String search) {
+		accessService.checkAdminAccess();
 		log.debug("Received request to list all data sets with filters type='{}', identifierPrefix='{}', search='{}'", type, identifierPrefix, search);
 		var summaries = dataService.findAll(type, identifierPrefix, search);
 		return ResponseEntity.ok(summaries);
@@ -27,6 +30,7 @@ public class DataController implements DataAPI {
 
 	@Override
 	public ResponseEntity<DataResponse> getDataSetByIdentifier(String identifier) {
+		accessService.checkAdminAccess();
 		log.debug("Received request to get data set with identifier '{}'", identifier);
 		var response = dataService.findByIdentifier(identifier);
 		return ResponseEntity.ok(response);
@@ -34,6 +38,7 @@ public class DataController implements DataAPI {
 
 	@Override
 	public ResponseEntity<DataResponse> createDataSet(DataRequest dataRequest) {
+		accessService.checkAdminAccess();
 		log.debug("Received request to create a new data set: {}", dataRequest != null ? dataRequest.getIdentifier() : null);
 		var response = dataService.create(dataRequest);
 		return ResponseEntity.ok(response);
@@ -41,6 +46,7 @@ public class DataController implements DataAPI {
 
 	@Override
 	public ResponseEntity<DataResponse> updateDataSet(DataRequest dataRequest) {
+		accessService.checkAdminAccess();
 		log.debug("Received request to update data set: {}", dataRequest != null ? dataRequest.getIdentifier() : null);
 		var response = dataService.update(dataRequest);
 		return ResponseEntity.ok(response);
@@ -48,6 +54,7 @@ public class DataController implements DataAPI {
 
 	@Override
 	public ResponseEntity<DataResponse> publishDataSet(String identifier) {
+		accessService.checkAdminAccess();
 		log.debug("Received request to publish data set with identifier '{}'", identifier);
 		var response = dataService.publish(identifier);
 		return ResponseEntity.ok(response);

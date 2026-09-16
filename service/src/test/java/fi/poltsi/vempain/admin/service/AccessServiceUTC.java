@@ -51,6 +51,37 @@ class AccessServiceUTC {
 	private AccessService accessService;
 
 	@Test
+	void checkAdminAccessAllowsAdministratorAcl() {
+		when(environment.getProperty("vempain.test")).thenReturn("false");
+		when(securityContext.getAuthentication()).thenReturn(authentication);
+		SecurityContextHolder.setContext(securityContext);
+		var userAccount = TestUTCTools.generateUser(1L);
+		when(authentication.getPrincipal()).thenReturn(UserDetailsImpl.build(userAccount));
+		when(userService.findById(1L)).thenReturn(Optional.of(userAccount));
+		when(aclService.findAclByAclId(1L)).thenReturn(List.of(TestUTCTools.generateAcl(1L, 1L, 1L, null)));
+
+		accessService.checkAdminAccess();
+	}
+
+	@Test
+	void checkAdminAccessRejectsUserWithoutAdministratorAcl() {
+		when(environment.getProperty("vempain.test")).thenReturn("false");
+		when(securityContext.getAuthentication()).thenReturn(authentication);
+		SecurityContextHolder.setContext(securityContext);
+		var userAccount = TestUTCTools.generateUser(2L);
+		when(authentication.getPrincipal()).thenReturn(UserDetailsImpl.build(userAccount));
+		when(userService.findById(2L)).thenReturn(Optional.of(userAccount));
+		when(aclService.findAclByAclId(1L)).thenReturn(Collections.emptyList());
+
+		try {
+			accessService.checkAdminAccess();
+			fail("Should have received ResponseStatusException");
+		} catch (ResponseStatusException e) {
+			assertEquals(HttpStatus.FORBIDDEN, e.getStatusCode());
+		}
+	}
+
+	@Test
 	void hasReadPermissionOk() {
 		when(environment.getProperty("vempain.test")).thenReturn("false");
 		when(securityContext.getAuthentication()).thenReturn(authentication);

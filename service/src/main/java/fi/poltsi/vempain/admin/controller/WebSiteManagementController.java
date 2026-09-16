@@ -37,35 +37,35 @@ public class WebSiteManagementController implements WebSiteManagementAPI {
 
 	@Override
 	public ResponseEntity<List<WebSiteUserResponse>> getAllUsers() {
-		accessService.checkAuthentication();
+		accessService.checkAdminAccess();
 		log.debug("Fetching all site web users");
 		return ResponseEntity.ok(webSiteUserService.findAll());
 	}
 
 	@Override
 	public ResponseEntity<WebSiteUserResponse> getUserById(Long userId) {
-		accessService.checkAuthentication();
+		accessService.checkAdminAccess();
 		log.debug("Fetching site web user with ID: {}", userId);
 		return ResponseEntity.ok(webSiteUserService.findById(userId));
 	}
 
 	@Override
 	public ResponseEntity<WebSiteUserResponse> createUser(WebSiteUserRequest request) {
-		accessService.checkAuthentication();
+		accessService.checkAdminAccess();
 		log.debug("Creating new site web user with username: {}", request.getUsername());
 		return ResponseEntity.ok(webSiteUserService.create(request));
 	}
 
 	@Override
 	public ResponseEntity<WebSiteUserResponse> updateUser(Long userId, WebSiteUserRequest request) {
-		accessService.checkAuthentication();
+		accessService.checkAdminAccess();
 		log.debug("Updating site web user ID: {}", userId);
 		return ResponseEntity.ok(webSiteUserService.update(userId, request));
 	}
 
 	@Override
 	public ResponseEntity<Void> deleteUser(Long userId) {
-		accessService.checkAuthentication();
+		accessService.checkAdminAccess();
 		log.debug("Deleting site web user ID: {}", userId);
 		webSiteUserService.delete(userId);
 		return ResponseEntity.noContent()
@@ -76,35 +76,35 @@ public class WebSiteManagementController implements WebSiteManagementAPI {
 
 	@Override
 	public ResponseEntity<List<WebSiteAclResponse>> getAllAcls() {
-		accessService.checkAuthentication();
+		accessService.checkAdminAccess();
 		log.debug("Fetching all site ACL entries");
 		return ResponseEntity.ok(webSiteAclService.findAll());
 	}
 
 	@Override
 	public ResponseEntity<WebSiteAclUsersResponse> getUsersByAclId(Long aclId) {
-		accessService.checkAuthentication();
+		accessService.checkAdminAccess();
 		log.debug("Fetching users for ACL ID: {}", aclId);
 		return ResponseEntity.ok(webSiteAclService.findUsersByAclId(aclId));
 	}
 
 	@Override
 	public ResponseEntity<WebSiteUserResponse> getResourcesByUserId(Long userId) {
-		accessService.checkAuthentication();
+		accessService.checkAdminAccess();
 		log.debug("Fetching resources for user ID: {}", userId);
 		return ResponseEntity.ok(webSiteAclService.findResourcesByUserId(userId));
 	}
 
 	@Override
 	public ResponseEntity<WebSiteAclResponse> createAcl(WebSiteAclRequest request) {
-		accessService.checkAuthentication();
+		accessService.checkAdminAccess();
 		log.debug("Creating site ACL entry: ACL ID {} for user ID {}", request.getAclId(), request.getUserId());
 		return ResponseEntity.ok(webSiteAclService.create(request));
 	}
 
 	@Override
 	public ResponseEntity<Void> deleteAcl(Long id) {
-		accessService.checkAuthentication();
+		accessService.checkAdminAccess();
 		log.debug("Deleting site ACL entry ID: {}", id);
 		webSiteAclService.delete(id);
 		return ResponseEntity.noContent()
@@ -115,7 +115,7 @@ public class WebSiteManagementController implements WebSiteManagementAPI {
 
 	@Override
 	public ResponseEntity<PagedResponse<WebSiteResourceResponse>> getResources(WebSiteResourcePagedRequest request) {
-		accessService.checkAuthentication();
+		accessService.checkAdminAccess();
 		return ResponseEntity.ok(webSiteResourceService.listResources(request));
 	}
 
@@ -123,12 +123,14 @@ public class WebSiteManagementController implements WebSiteManagementAPI {
 
 	@Override
 	public ResponseEntity<List<WebSiteConfigurationResponse>> getAllSiteConfigurations() {
+		accessService.checkAdminAccess();
 		var configurations = webSiteConfigurationService.getAllConfigurations();
 		return ResponseEntity.ok(configurations);
 	}
 
 	@Override
 	public ResponseEntity<WebSiteConfigurationResponse> getSiteConfigurationById(Long id) {
+		accessService.checkAdminAccess();
 		var configuration = webSiteConfigurationService.getConfigurationById(id);
 		if (configuration != null) {
 			return ResponseEntity.ok(configuration);
@@ -140,6 +142,7 @@ public class WebSiteManagementController implements WebSiteManagementAPI {
 
 	@Override
 	public ResponseEntity<WebSiteConfigurationResponse> updateSiteConfiguration(WebSiteConfigurationRequest request) {
+		accessService.checkAdminAccess();
 		var updatedConfiguration = webSiteConfigurationService.updateConfiguration(request);
 
 		if (updatedConfiguration == null) {

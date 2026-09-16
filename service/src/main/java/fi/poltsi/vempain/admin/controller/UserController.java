@@ -1,6 +1,7 @@
 package fi.poltsi.vempain.admin.controller;
 
 import fi.poltsi.vempain.admin.rest.UserAPI;
+import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.auth.api.request.PagedRequest;
 import fi.poltsi.vempain.auth.api.request.UserRequest;
 import fi.poltsi.vempain.auth.api.response.PagedResponse;
@@ -19,16 +20,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-// TODO Check that the user has permission to access this API
-
 @Slf4j
 @RequiredArgsConstructor
 @RestController
 public class UserController implements UserAPI {
 	private final UserService userService;
+	private final AccessService accessService;
 
 	@Override
 	public ResponseEntity<List<UserResponse>> getUsers() {
+		accessService.checkAdminAccess();
 		Iterable<UserAccount> userAccounts = userService.findAll();
 
 		ArrayList<UserResponse> responses = new ArrayList<>();
@@ -41,6 +42,7 @@ public class UserController implements UserAPI {
 
 	@Override
 	public ResponseEntity<PagedResponse<UserResponse>> getPagedUsers(PagedRequest request) {
+		accessService.checkAdminAccess();
 		var responses = new ArrayList<UserResponse>();
 		userService.findAll()
 		           .forEach(user -> responses.add(user.getUserResponse()));
@@ -71,6 +73,7 @@ public class UserController implements UserAPI {
 
 	@Override
 	public ResponseEntity<UserResponse> findById(Long userId) {
+		accessService.checkAdminAccess();
 		if (userId == null || userId < 0) {
 			log.error("Invalid unit ID: {}", userId);
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Malformed parameter");
@@ -88,6 +91,7 @@ public class UserController implements UserAPI {
 
 	@Override
 	public ResponseEntity<UserResponse> addUser(UserRequest userRequest) {
+		accessService.checkAdminAccess();
 		var userResponse = userService.createUser(userRequest);
 
 		return ResponseEntity.ok(userResponse);
@@ -95,12 +99,15 @@ public class UserController implements UserAPI {
 
 	@Override
 	public ResponseEntity<UserResponse> updateUser(Long userId, UserRequest userRequest) {
+		accessService.checkAdminAccess();
 		var userResponse = userService.updateUser(userId, userRequest);
 		return ResponseEntity.ok(userResponse);
 	}
 
 	@ExceptionHandler(RuntimeException.class)
-	public final ResponseEntity<Exception> handleRuntimeExceptions(RuntimeException e) {
-		return new ResponseEntity<>(e, HttpStatus.INTERNAL_SERVER_ERROR);
+	public final ResponseEntity<Void> handleRuntimeExceptions(RuntimeException e) {
+		log.error("User operation failed", e);
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+		                     .build();
 	}
 }

@@ -72,7 +72,7 @@ class WebSiteManagementControllerUTC {
 		                            .value());
 		assertNull(controller.getResources(resourceRequest)
 		                     .getBody());
-		verify(accessService, org.mockito.Mockito.times(11)).checkAuthentication();
+		verify(accessService, org.mockito.Mockito.times(11)).checkAdminAccess();
 	}
 
 	@Test

@@ -37,7 +37,7 @@ class AclControllerUTC {
 	@Test
 	void getAllAclOk() {
 		doNothing().when(accessService)
-				   .checkAuthentication();
+		           .checkAdminAccess();
 		MockServiceTools.aclServiceFindAllOk(aclService, count);
 
 		ResponseEntity<List<AclResponse>> aclResponseEntity = aclController.getAllAcl();
@@ -50,7 +50,7 @@ class AclControllerUTC {
 	@Test
 	void getAllAclOkNoAcl() {
 		doNothing().when(accessService)
-				   .checkAuthentication();
+		           .checkAdminAccess();
 		MockServiceTools.aclServiceFindAllOk(aclService, 0);
 
 		ResponseEntity<List<AclResponse>> aclResponseEntity = aclController.getAllAcl();
@@ -62,9 +62,9 @@ class AclControllerUTC {
 
 	@Test
 	void getAllAclFailNoAccess() {
-		doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "User must be logged on to use this resource"))
+		doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Administrator access is required"))
 				.when(accessService)
-				.checkAuthentication();
+				.checkAdminAccess();
 		// MockServiceTools.aclServiceFindAllOk(aclService, count);
 
 		try {
@@ -72,14 +72,14 @@ class AclControllerUTC {
 			fail("We should have gotten an exception");
 		} catch (ResponseStatusException e) {
 			assertEquals(HttpStatus.FORBIDDEN, e.getStatusCode());
-			assertEquals("403 FORBIDDEN \"User must be logged on to use this resource\"", e.getMessage());
+			assertEquals("403 FORBIDDEN \"Administrator access is required\"", e.getMessage());
 		}
 	}
 
 	@Test
 	void getAclOk() {
 		doNothing().when(accessService)
-				   .checkAuthentication();
+		           .checkAdminAccess();
 		MockServiceTools.aclServicefindAclByAclIdOk(aclService, 1L);
 		ResponseEntity<List<AclResponse>> responseEntity = aclController.getAcl(1L);
 		assertNotNull(responseEntity);
@@ -90,9 +90,9 @@ class AclControllerUTC {
 
 	@Test
 	void getAclFailNoAccess() {
-		doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "User must be logged on to use this resource"))
+		doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Administrator access is required"))
 				.when(accessService)
-				.checkAuthentication();
+				.checkAdminAccess();
 		// MockServiceTools.aclServicefindAclByAclIdOk(aclService, 1L);
 
 		try {
@@ -100,14 +100,14 @@ class AclControllerUTC {
 			fail("We should have gotten an exception");
 		} catch (ResponseStatusException e) {
 			assertEquals(HttpStatus.FORBIDDEN, e.getStatusCode());
-			assertEquals("403 FORBIDDEN \"User must be logged on to use this resource\"", e.getMessage());
+			assertEquals("403 FORBIDDEN \"Administrator access is required\"", e.getMessage());
 		}
 	}
 
 	@Test
 	void getAclFailNoAcl() {
 		doNothing().when(accessService)
-				   .checkAuthentication();
+		           .checkAdminAccess();
 		MockServiceTools.aclServicefindAclByAclIdEmptyList(aclService, 1L);
 
 		try {

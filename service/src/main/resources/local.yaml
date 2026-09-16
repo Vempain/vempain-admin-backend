@@ -9,6 +9,3 @@ logging:
     fi:
       poltsi: debug
       poltsi.vempain.auth: info
-vempain:
-  cmd-line:
-    exiftool: "/usr/bin/exiftool"

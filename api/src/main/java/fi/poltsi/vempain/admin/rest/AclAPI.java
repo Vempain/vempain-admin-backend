@@ -13,13 +13,11 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
-@CrossOrigin(origins = "*", maxAge = 3600) // TODO Remove before going to production
 @Tag(name = "AclAPI", description = "Acl API for Vempain Acl objects")
 public interface AclAPI {
 	String MAIN_PATH = Constants.REST_CONTENT_PREFIX + "/acls";

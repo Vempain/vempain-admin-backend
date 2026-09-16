@@ -18,7 +18,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,7 +27,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 
-@CrossOrigin(origins = "*", maxAge = 3600) // TODO Remove before going to production
 @Tag(name = "LayoutAPI", description = "Layout API for Vempain layout objects")
 public interface LayoutAPI {
 	String MAIN_PATH = Constants.REST_CONTENT_PREFIX + "/layouts";

@@ -2,12 +2,6 @@ spring:
   config:
     activate:
       on-profile: prod
-  # These need to be in place so that application can find the drivers
-  admin-datasource:
-    driver-class-name: org.postgresql.Driver
-  site-datasource:
-    driver-class-name: org.postgresql.Driver
-
 logging:
   level:
     root: INFO
@@ -16,9 +10,6 @@ logging:
         web: WARN
       hibernate:
         SQL: WARN
-vempain:
-  cmd-line:
-    exiftool: "/usr/bin/exiftool"
 springdoc:
   swagger-ui:
     enabled: false

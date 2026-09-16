@@ -3,6 +3,7 @@ package fi.poltsi.vempain.admin.controller.file;
 import fi.poltsi.vempain.admin.api.request.file.FileIngestRequest;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestResponse;
 import fi.poltsi.vempain.admin.rest.file.FileIngestAPI;
+import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.file.FileIngestService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,10 +20,12 @@ import static fi.poltsi.vempain.auth.tools.JsonTools.toJson;
 @RequiredArgsConstructor
 public class FileIngestController implements FileIngestAPI {
 	private final FileIngestService fileIngestService;
+	private final AccessService accessService;
 	private final ObjectMapper      objectMapper;
 
 	@Override
 	public ResponseEntity<FileIngestResponse> ingest(String fileIngestRequestJSON, MultipartFile multipartFile) {
+		accessService.checkAdminAccess();
 		// First we use object mapper to convert the fileIngestRequestJSON into FileIngestRequest
 		FileIngestRequest fileIngestRequest;
 

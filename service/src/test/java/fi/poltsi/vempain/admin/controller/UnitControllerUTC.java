@@ -1,5 +1,6 @@
 package fi.poltsi.vempain.admin.controller;
 
+import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
 import fi.poltsi.vempain.auth.api.response.UnitResponse;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
@@ -18,6 +19,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.when;
 
@@ -25,6 +27,8 @@ import static org.mockito.Mockito.when;
 class UnitControllerUTC {
 	@Mock
 	UnitService unitService;
+	@Mock
+	AccessService accessService;
 
 	@InjectMocks
 	private UnitController unitController;
@@ -116,12 +120,10 @@ class UnitControllerUTC {
 	@Test
 	void handleRuntimeExceptionsOk() {
 		try {
-			ResponseEntity<Exception> responseEntity = unitController.handleRuntimeExceptions(new NullPointerException("Test exception"));
+			ResponseEntity<Void> responseEntity = unitController.handleRuntimeExceptions(new NullPointerException("Test exception"));
 			assertNotNull(responseEntity);
 			assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-			Exception e = responseEntity.getBody();
-			assertNotNull(e);
-			assertEquals("Test exception", e.getMessage());
+			assertNull(responseEntity.getBody());
 		} catch (Exception e) {
 			fail("Should not have received an exception: " + e);
 		}
