@@ -9,10 +9,3 @@ logging:
     fi:
       poltsi: debug
       poltsi.vempain.auth: info
-vempain:
-  app:
-    frontend-url: ${VEMPAIN_ADMIN_FRONTEND_URL}
-    jwt-secret: ${VEMPAIN_JWT_SECRET}
-    jwt-expiration-ms: ${VEMPAIN_JWT_EXPIRATION_MS}
-  cmd-line:
-    exiftool: "/usr/bin/exiftool"

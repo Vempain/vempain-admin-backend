@@ -17,15 +17,15 @@ spring:
       cleanup-cron: "5 * * * * *"
       initialize-schema: always
   admin-datasource:
-    url: ${VEMPAIN_ADMIN_DB_URL}
+    url: override-me
     driver-class-name: org.postgresql.Driver
-    username: ${VEMPAIN_ADMIN_DB_USERNAME}
-    password: ${VEMPAIN_ADMIN_DB_PASSWORD}
+    username: override-me
+    password: override-me
   site-datasource:
-    url: ${VEMPAIN_SITE_DB_URL}
+    url: override-me
     driver-class-name: org.postgresql.Driver
-    username: ${VEMPAIN_SITE_DB_USERNAME}
-    password: ${VEMPAIN_SITE_DB_PASSWORD}
+    username: override-me
+    password: override-me
   jpa:
     show-sql: false
     open-in-view: false
@@ -92,9 +92,9 @@ vempain:
   license: "GPL 2.0"
   license-url: "https://www.gnu.org/licenses/old-licenses/gpl-2.0.html"
   app:
-    frontend-url: ${VEMPAIN_ADMIN_FRONTEND_URL}
-    jwt-secret: ${VEMPAIN_JWT_SECRET}
-    jwt-expiration-ms: ${VEMPAIN_JWT_EXPIRATION_MS}
+    frontend-url: override-me
+    jwt-secret: override-me
+    jwt-expiration-ms: override-me
   test: false
   admin:
     file:

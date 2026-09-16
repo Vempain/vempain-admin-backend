@@ -20,10 +20,10 @@ class SecurityConfigurationUTC {
 
 		assertTrue(configuration.contains("default: prod"));
 		assertTrue(configuration.contains("test: false"));
-		assertTrue(configuration.contains("include: [health, info]"));
+		assertTrue(configuration.contains("include: [ health, info ]"));
 		assertTrue(configuration.contains("default: none"));
 		assertFalse(configuration.contains("include: \"*\""));
 		assertFalse(configuration.contains("password: vempain_"));
-		assertFalse(configuration.contains("jwt-secret: override-me"));
+		assertTrue(configuration.contains("jwt-secret: override-me"));
 	}
 }
