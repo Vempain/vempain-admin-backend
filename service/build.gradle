@@ -2,14 +2,14 @@ import org.apache.tools.ant.filters.ReplaceTokens
 
 plugins {
 	id 'application'
-	id 'org.springframework.boot' version "${springBootVersion}"
-	id "io.freefair.lombok" version "${ioFreeFairLombok}"
-	id 'io.spring.dependency-management' version "${gradleSpringPluginVersion}"
+	alias(libs.plugins.spring.boot)
+	alias(libs.plugins.freefair.lombok)
+	alias(libs.plugins.spring.dependency.management)
 	id "jacoco"
 }
 
 group = 'fi.poltsi.vempain'
-version = project.hasProperty("releaseVersion") ? project.releaseVersion : '0.0.1-SNAPSHOT'
+version = libs.versions.release.get()
 
 bootJar {
 	archiveFileName = "${rootProject.name}-${version}.jar"
@@ -17,7 +17,7 @@ bootJar {
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of("${javaVersion}")
+		languageVersion = JavaLanguageVersion.of(libs.versions.java.get())
 	}
 }
 
@@ -42,40 +42,40 @@ repositories {
 }
 
 dependencies {
-	annotationProcessor "org.springframework.boot:spring-boot-configuration-processor:${springBootVersion}"
+	annotationProcessor "org.springframework.boot:spring-boot-configuration-processor:${libs.versions.spring.boot.get()}"
 	implementation project(':api')
 	// This needs to be built first in vempain-auth
-	implementation "fi.poltsi.vempain:vempain-auth-core:${vempainAuthVersion}"
-	implementation "fi.poltsi.vempain:vempain-auth-api:${vempainAuthVersion}"
-	implementation "fi.poltsi.vempain:vempain-file-backend-api:${vempainFileVersion}"
-	implementation "org.springframework.boot:spring-boot:${springBootVersion}"
-	implementation "org.springframework.boot:spring-boot-starter-security:${springBootVersion}"
-	implementation "org.springframework.boot:spring-boot-starter-actuator:${springBootVersion}"
-	implementation "org.springframework.boot:spring-boot-starter-validation:${springBootVersion}"
-	implementation "org.springframework.boot:spring-boot-starter-jdbc:${springBootVersion}"
-	implementation "org.springframework.boot:spring-boot-starter-data-jpa:${springBootVersion}"
-	implementation "org.springframework.boot:spring-boot-starter-flyway:${springBootVersion}"
-	implementation "io.jsonwebtoken:jjwt-api:${jjwtVersion}"
-	implementation "org.apache.commons:commons-text:${commonsTextVersion}"
-	implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
-	runtimeOnly "org.postgresql:postgresql:${postgresqlVersion}"
-	implementation "org.json:json:${jsonVersion}"
-	implementation "net.coobird:thumbnailator:${thumbnailatorVersion}"
-	implementation "com.github.mwiede:jsch:${jschVersion}"
-	implementation "jakarta.xml.bind:jakarta.xml.bind-api:${jakartaBindApiVersion}"
-	implementation "jakarta.annotation:jakarta.annotation-api:${jakartaAnnotationApiVersion}"
-	implementation "com.github.spotbugs:spotbugs-annotations:${spotbugsAnnotationsVersion}"
-	implementation "org.apache.commons:commons-lang3:${commonsLang3Version}"
-	implementation "commons-codec:commons-codec:${commonsCodecVersion}"
-	runtimeOnly "io.jsonwebtoken:jjwt-impl:${jjwtVersion}"
-	runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jjwtVersion}"
-	testImplementation "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
-	testImplementation "org.springframework.boot:spring-boot-starter-security-test:${springBootVersion}"
-	testImplementation "org.springframework.boot:spring-boot-starter-webmvc-test:${springBootVersion}"
-	testImplementation "org.springframework.boot:spring-boot-starter-data-jpa-test:${springBootVersion}"
-	testImplementation "org.testcontainers:testcontainers-junit-jupiter:${testContainersVersion}"
-	testImplementation "org.testcontainers:testcontainers-postgresql:${testContainersVersion}"
-	testImplementation "org.mockito:mockito-junit-jupiter:${mockitoVersion}"
+	implementation "fi.poltsi.vempain:vempain-auth-core:${libs.versions.vempain.auth.get()}"
+	implementation "fi.poltsi.vempain:vempain-auth-api:${libs.versions.vempain.auth.get()}"
+	implementation "fi.poltsi.vempain:vempain-file-backend-api:${libs.versions.vempain.file.get()}"
+	implementation "org.springframework.boot:spring-boot:${libs.versions.spring.boot.get()}"
+	implementation "org.springframework.boot:spring-boot-starter-security:${libs.versions.spring.boot.get()}"
+	implementation "org.springframework.boot:spring-boot-starter-actuator:${libs.versions.spring.boot.get()}"
+	implementation "org.springframework.boot:spring-boot-starter-validation:${libs.versions.spring.boot.get()}"
+	implementation "org.springframework.boot:spring-boot-starter-jdbc:${libs.versions.spring.boot.get()}"
+	implementation "org.springframework.boot:spring-boot-starter-data-jpa:${libs.versions.spring.boot.get()}"
+	implementation "org.springframework.boot:spring-boot-starter-flyway:${libs.versions.spring.boot.get()}"
+	implementation "io.jsonwebtoken:jjwt-api:${libs.versions.jjwt.get()}"
+	implementation "org.apache.commons:commons-text:${libs.versions.commons.text.get()}"
+	implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${libs.versions.springdoc.get()}"
+	runtimeOnly "org.postgresql:postgresql:${libs.versions.postgresql.get()}"
+	implementation "org.json:json:${libs.versions.json.get()}"
+	implementation "net.coobird:thumbnailator:${libs.versions.thumbnailator.get()}"
+	implementation "com.github.mwiede:jsch:${libs.versions.jsch.get()}"
+	implementation "jakarta.xml.bind:jakarta.xml.bind-api:${libs.versions.jakarta.bind.api.get()}"
+	implementation "jakarta.annotation:jakarta.annotation-api:${libs.versions.jakarta.annotation.api.get()}"
+	implementation "com.github.spotbugs:spotbugs-annotations:${libs.versions.spotbugs.annotations.get()}"
+	implementation "org.apache.commons:commons-lang3:${libs.versions.commons.lang3.get()}"
+	implementation "commons-codec:commons-codec:${libs.versions.commons.codec.get()}"
+	runtimeOnly "io.jsonwebtoken:jjwt-impl:${libs.versions.jjwt.get()}"
+	runtimeOnly "io.jsonwebtoken:jjwt-jackson:${libs.versions.jjwt.get()}"
+	testImplementation "org.springframework.boot:spring-boot-starter-test:${libs.versions.spring.boot.get()}"
+	testImplementation "org.springframework.boot:spring-boot-starter-security-test:${libs.versions.spring.boot.get()}"
+	testImplementation "org.springframework.boot:spring-boot-starter-webmvc-test:${libs.versions.spring.boot.get()}"
+	testImplementation "org.springframework.boot:spring-boot-starter-data-jpa-test:${libs.versions.spring.boot.get()}"
+	testImplementation "org.testcontainers:testcontainers-junit-jupiter:${libs.versions.testcontainers.get()}"
+	testImplementation "org.testcontainers:testcontainers-postgresql:${libs.versions.testcontainers.get()}"
+	testImplementation "org.mockito:mockito-junit-jupiter:${libs.versions.mockito.get()}"
 }
 
 application {
@@ -86,7 +86,7 @@ application {
 compileJava.inputs.files(processResources)
 
 jacoco {
-	toolVersion = "${jacocoVersion}"
+	toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.named('test') {

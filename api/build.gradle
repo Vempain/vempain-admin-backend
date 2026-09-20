@@ -1,6 +1,6 @@
 plugins {
 	id 'java-library'
-	id "io.freefair.lombok" version "${ioFreeFairLombok}"
+	alias(libs.plugins.freefair.lombok)
 	id 'maven-publish'
 	id "jacoco"
 }
@@ -17,7 +17,7 @@ repositories {
 }
 
 group = 'fi.poltsi.vempain'
-version = project.hasProperty("releaseVersion") ? project.releaseVersion : '0.0.1-SNAPSHOT'
+version = libs.versions.release.get()
 
 jar {
 	archiveFileName = "${rootProject.name}-api-${version}.jar"
@@ -35,16 +35,16 @@ tasks.withType(Javadoc).configureEach {
 }
 
 dependencies {
-	api "org.springframework.boot:spring-boot-jackson:${springBootVersion}"
-	api "org.springframework.boot:spring-boot-starter-webmvc:${springBootVersion}"
+	api "org.springframework.boot:spring-boot-jackson:${libs.versions.spring.boot.get()}"
+	api "org.springframework.boot:spring-boot-starter-webmvc:${libs.versions.spring.boot.get()}"
 	// This needs to be built first in vempain-auth
-	api "fi.poltsi.vempain:vempain-auth-api:${vempainAuthVersion}"
-	api "fi.poltsi.vempain:vempain-file-backend-api:${vempainFileVersion}"
-	implementation "io.swagger.core.v3:swagger-annotations:${swaggerVersion}"
-	implementation "jakarta.validation:jakarta.validation-api:${jakartaValidationApiVersion}"
-	testImplementation "org.mockito:mockito-junit-jupiter:${mockitoVersion}"
-	testImplementation "org.junit.jupiter:junit-jupiter:${junitVersion}"
-	testImplementation "org.junit.platform:junit-platform-launcher:${junitVersion}"
+	api "fi.poltsi.vempain:vempain-auth-api:${libs.versions.vempain.auth.get()}"
+	api "fi.poltsi.vempain:vempain-file-backend-api:${libs.versions.vempain.file.get()}"
+	implementation "io.swagger.core.v3:swagger-annotations:${libs.versions.swagger.get()}"
+	implementation "jakarta.validation:jakarta.validation-api:${libs.versions.jakarta.validation.api.get()}"
+	testImplementation "org.mockito:mockito-junit-jupiter:${libs.versions.mockito.get()}"
+	testImplementation "org.junit.jupiter:junit-jupiter:${libs.versions.junit.get()}"
+	testImplementation "org.junit.platform:junit-platform-launcher:${libs.versions.junit.get()}"
 }
 
 // Publish the API module to GitHub Packages when invoked by CI
@@ -85,7 +85,7 @@ publishing {
 }
 
 jacoco {
-	toolVersion = "${jacocoVersion}"
+	toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.named('test') {
