@@ -31,9 +31,12 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
 
 server:
   port: 8080
+  shutdown: graceful
   forward-headers-strategy: native
   servlet:
     context-path: /api
@@ -60,6 +63,13 @@ management:
   endpoint:
     health:
       access: read-only
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+        liveness:
+          include: livenessState
   metrics:
     tags:
       application: vempain-admin-backend
@@ -82,6 +92,8 @@ logging:
       poltsi: INFO
 
 vempain:
+  scheduling:
+    enabled: ${VEMPAIN_SCHEDULING_ENABLED:true}
   developer:
     name: "Paul-Erik Törrönen"
     url: "https://poltsi.fi/"
