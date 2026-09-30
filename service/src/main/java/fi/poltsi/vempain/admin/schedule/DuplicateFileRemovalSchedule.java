@@ -2,7 +2,7 @@ package fi.poltsi.vempain.admin.schedule;
 
 import fi.poltsi.vempain.admin.entity.file.FileThumb;
 import fi.poltsi.vempain.admin.service.file.FileService;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -20,16 +20,21 @@ import java.util.ArrayList;
  */
 
 @Slf4j
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Service
 public class DuplicateFileRemovalSchedule {
 	private static final long   DELAY         = 60 * 60 * 1000L;
 	private static final String INITIAL_DELAY = "#{ 30 * 1000 + T(java.util.concurrent.ThreadLocalRandom).current().nextInt(" + DELAY + ") }";
 
 	private final FileService fileService;
+	@org.springframework.beans.factory.annotation.Value("${vempain.scheduling.enabled:true}")
+	private boolean schedulingEnabled = true;
 
 	@Scheduled(fixedDelay = DELAY, initialDelayString = INITIAL_DELAY)
 	public void removeDuplicateImages() {
+		if (!schedulingEnabled) {
+			return;
+		}
 		var iterableThumbFiles = fileService.getDuplicateThumbFiles();
 		cleanThumbFiles(iterableThumbFiles);
 	}

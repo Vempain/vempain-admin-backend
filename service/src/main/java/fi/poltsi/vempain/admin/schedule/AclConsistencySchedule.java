@@ -54,9 +54,14 @@ public class AclConsistencySchedule {
 	private final ArrayList<AbstractVempainEntity> duplicateAclObjects = new ArrayList<>();
 	// internal state (not injected)
 	private       Set<Long>   tableAcls = new HashSet<>();
+	@org.springframework.beans.factory.annotation.Value("${vempain.scheduling.enabled:true}")
+	private boolean schedulingEnabled = true;
 
 	@Scheduled(fixedDelay = DELAY, initialDelayString = INITIAL_DELAY)
 	public void verify() {
+		if (!schedulingEnabled) {
+			return;
+		}
 		resetState();
 
 		tableAcls = getAclSetFromTable();

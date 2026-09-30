@@ -23,6 +23,8 @@ public class MissingThumbGeneratorSchedule {
 
 	@Value("${vempain.admin.file.site-file-directory}")
 	private String siteFileDirectory;
+	@Value("${vempain.scheduling.enabled:true}")
+	private boolean schedulingEnabled = true;
 
 	public MissingThumbGeneratorSchedule(FileService fileService, FileThumbService fileThumbService) {
 		this.fileService = fileService;
@@ -31,6 +33,9 @@ public class MissingThumbGeneratorSchedule {
 
 	@Scheduled(fixedDelay = DELAY, initialDelayString = INITIAL_DELAY)
 	public void findMissingThumbnails() {
+		if (!schedulingEnabled) {
+			return;
+		}
 		checkMissingInFileSystem();
 	}
 

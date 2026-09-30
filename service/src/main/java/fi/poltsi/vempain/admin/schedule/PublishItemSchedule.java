@@ -5,7 +5,7 @@ import fi.poltsi.vempain.admin.api.PublishStatusEnum;
 import fi.poltsi.vempain.admin.repository.PublishScheduleRepository;
 import fi.poltsi.vempain.admin.service.PublishService;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 
 @Slf4j
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Service
 public class PublishItemSchedule {
 	private static final long   DELAY         = 5 * 60 * 1000L;
@@ -24,10 +24,15 @@ public class PublishItemSchedule {
 
 	private final PublishScheduleRepository publishScheduleRepository;
 	private final PublishService            publishService;
+	@org.springframework.beans.factory.annotation.Value("${vempain.scheduling.enabled:true}")
+	private boolean schedulingEnabled = true;
 
 	@Scheduled(fixedDelay = DELAY, initialDelayString = INITIAL_DELAY)
 	@Transactional(propagation = Propagation.REQUIRED)
 	protected void publishItems() {
+		if (!schedulingEnabled) {
+			return;
+		}
 		var scheduledPublishes = publishScheduleRepository.findAllByPublishStatusEqualsAndPublishTimeBefore(PublishStatusEnum.NOT_PUBLISHED, Instant.now());
 
 		if (scheduledPublishes.isEmpty()) {
