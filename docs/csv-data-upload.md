@@ -249,7 +249,7 @@ Published data sets can be embedded into page bodies through the Vempain Admin r
   ```
 
 The website frontend uses those identifiers to fetch data from the published `website_data__<identifier>` tables.
-For end-user editor instructions and verification steps, see `vempain-website/docs/DATA_EMBEDS.md`.
+For end-user editor instructions and verification steps, see the website frontend documentation and embed components under `vempain-website-frontend/src/`.
 
 Invalid examples: `1data`, `MyData`, `data-set`, `data set`
 

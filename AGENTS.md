@@ -32,6 +32,8 @@
 ## Project-specific conventions
 - JSON DTOs commonly use **snake_case** via Jackson naming annotations even when Java fields are camelCase. Example: `WebSiteUserRequest` / `WebSiteUserResponse`.
 - JSON API fields are mandatory snake_case across this repo; do not introduce camelCase JSON keys in DTO annotations, request/response payloads, or API docs.
+- Prefer Lombok annotations for applicable Java boilerplate such as constructors, accessors, builders, and logging, unless they obscure behavior or conflict
+  with framework requirements.
 - Prefer Jackson v3 `tools.jackson.databind.*` naming/mapper APIs for DTO JSON behavior; keep non-`tools.jackson` annotations only when there is no
   `tools.jackson` equivalent available in current dependencies.
 - Entities often provide `toResponse()` helpers; keep response mapping close to the entity when the repo already follows that pattern (see `WebSiteUser`).
@@ -63,4 +65,3 @@
 - `AbstractITCTest` is the integration-test backbone: it starts two Postgres containers, runs **Flyway clean+migrate before each test**, and recreates filesystem directories under `/var/tmp`.
 - If you change schema, repository behavior, or filesystem/publish logic, add/update both a focused `UTC` and the relevant `ITC` when feasible.
 - GPS data-set listing behavior is integration-tested in `service/src/test/java/fi/poltsi/vempain/admin/service/DataServiceITC.java`; keep selector-query changes covered there.
-
