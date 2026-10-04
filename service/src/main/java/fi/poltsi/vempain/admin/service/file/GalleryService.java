@@ -83,6 +83,14 @@ public class GalleryService {
 		return gallery.getResponse();
 	}
 
+	public void requireModify(long galleryId) {
+		var gallery = galleryRepository.findById(galleryId)
+									   .orElseThrow(() -> new org.springframework.security.access.AccessDeniedException("Gallery is not accessible"));
+		if (!accessService.hasModifyPermission(gallery.getAclId())) {
+			throw new org.springframework.security.access.AccessDeniedException("User does not have permission to modify gallery");
+		}
+	}
+
 	@Transactional(propagation = Propagation.REQUIRED)
 	public GalleryResponse createGallery(GalleryRequest galleryRequest) throws VempainAclException {
 		var aclId = aclService.getNextAclId();
@@ -120,6 +128,9 @@ public class GalleryService {
 			log.warn("Could not find gallery with ID: {}", galleryRequest.getId());
 			return null;
 		}
+		if (!accessService.hasModifyPermission(currentGallery.getAclId())) {
+			throw new org.springframework.security.access.AccessDeniedException("User does not have permission to modify gallery");
+		}
 
 		currentGallery.setShortname(galleryRequest.getShortName());
 		currentGallery.setDescription(galleryRequest.getDescription());
@@ -143,6 +154,14 @@ public class GalleryService {
 
 	@Transactional
 	public void deleteGallery(long galleryId) {
+		var gallery = galleryRepository.findById(galleryId)
+		                               .orElse(null);
+		if (gallery == null) {
+			return;
+		}
+		if (!accessService.hasDeletePermission(gallery.getAclId())) {
+			throw new org.springframework.security.access.AccessDeniedException("User does not have permission to delete gallery");
+		}
 		galleryRepository.deleteById(galleryId);
 	}
 

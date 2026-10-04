@@ -27,6 +27,7 @@ public class DeleteService {
 	private final PageRepository       pageRepository;
 	private final FormRepository       formRepository;
 	private final LayoutRepository     layoutRepository;
+	private final AccessService accessService;
 
 	/**
 	 * Delete a layout as well as any forms and pages that are associated with the layout
@@ -41,6 +42,7 @@ public class DeleteService {
 		}
 
 		var layout = optionalLayout.get();
+		requireDelete(layout.getAclId(), "layout");
 		var forms = formRepository.findByLayoutId(layoutId);
 
 		for (var form : forms) {
@@ -68,6 +70,7 @@ public class DeleteService {
 
 		// Remove the ACLs
 		var component = optionalComponent.get();
+		requireDelete(component.getAclId(), "component");
 
 		// Remove the forms
 		var formComponents = formComponentService.findFormComponentByComponentId(componentId);
@@ -95,6 +98,7 @@ public class DeleteService {
 		}
 
 		var form = optionalForm.get();
+		requireDelete(form.getAclId(), "form");
 
 		var pages = pageRepository.findByFormId(formId);
 
@@ -127,8 +131,15 @@ public class DeleteService {
 			log.error("Page not found: {}", pageId);
 			throw new VempainEntityNotFoundException("Page not found by id: " + pageId, "page");
 		}
+		requireDelete(page.getAclId(), "page");
 
 		aclRepository.deleteAclsByAclId(page.getAclId());
 		pageRepository.deletePageById(pageId);
+	}
+
+	private void requireDelete(long aclId, String resource) {
+		if (!accessService.hasDeletePermission(aclId)) {
+			throw new org.springframework.security.access.AccessDeniedException("User does not have permission to delete " + resource);
+		}
 	}
 }

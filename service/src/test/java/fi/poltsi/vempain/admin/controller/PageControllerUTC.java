@@ -145,7 +145,7 @@ class PageControllerUTC {
 
 	@Test
 	void getPageByIdNotFoundReturns404() {
-		when(pageService.findById(999999L)).thenReturn(null);
+		when(pageService.findByIdByUser(999999L)).thenReturn(null);
 
 		try {
 			var response = pageController.getPageById(999999L);

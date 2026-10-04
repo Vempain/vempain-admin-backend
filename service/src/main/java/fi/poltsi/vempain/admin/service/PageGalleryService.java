@@ -2,10 +2,12 @@ package fi.poltsi.vempain.admin.service;
 
 import fi.poltsi.vempain.admin.api.response.file.GalleryResponse;
 import fi.poltsi.vempain.admin.entity.PageGallery;
+import fi.poltsi.vempain.admin.repository.PageRepository;
 import fi.poltsi.vempain.admin.service.file.GalleryService;
 import jakarta.persistence.EntityManager;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,8 @@ import java.util.List;
 public class PageGalleryService {
 	private final EntityManager entityManager;
 	private final GalleryService galleryService;
+	private final PageRepository pageRepository;
+	private final AccessService  accessService;
 
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void deletePageGallery(Long pageId, Long galleryId, Long sortOrder) {
@@ -61,6 +65,10 @@ public class PageGalleryService {
 
 	@Transactional(propagation = Propagation.REQUIRED)
 	public List<GalleryResponse> setPageGalleries(long pageId, List<Long> galleryIdList) {
+		requirePageModify(pageId);
+		for (var galleryId : galleryIdList) {
+			galleryService.requireModify(galleryId);
+		}
 		deletePageGalleryByPage(pageId);
 		var galleryResponses = new ArrayList<GalleryResponse>();
 
@@ -78,12 +86,24 @@ public class PageGalleryService {
 
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void addPageGallery(Long pageId, Long galleryId, int sortOrder) {
+		requirePageModify(pageId);
+		galleryService.requireModify(galleryId);
 		var query = entityManager.createNativeQuery("INSERT INTO page_gallery (page_id, gallery_id, sort_order) " +
 		                                            "VALUES (:pageId, :galleryId, :sortOrder)");
 		query.setParameter("pageId", pageId);
 		query.setParameter("galleryId", galleryId);
 		query.setParameter("sortOrder", sortOrder);
 		query.executeUpdate();
+	}
+
+	private void requirePageModify(long pageId) {
+		var page = pageRepository.findById(pageId);
+		if (page == null) {
+			throw new AccessDeniedException("Page is not accessible");
+		}
+		if (!accessService.hasModifyPermission(page.getAclId())) {
+			throw new AccessDeniedException("User does not have permission to modify page galleries");
+		}
 	}
 
 	private List<PageGallery> mapPageGalleryResults(List<Object[]> pgObjects) {

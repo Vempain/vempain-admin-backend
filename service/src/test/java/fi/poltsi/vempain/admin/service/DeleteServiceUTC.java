@@ -12,6 +12,7 @@ import fi.poltsi.vempain.admin.repository.PageRepository;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.repository.AclRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -45,9 +46,18 @@ class DeleteServiceUTC {
 	private FormRepository       formRepository;
 	@Mock
 	private LayoutRepository     layoutRepository;
+	@Mock
+	private AccessService accessService;
 
 	@InjectMocks
 	private DeleteService deleteService;
+
+	@BeforeEach
+	void setUp() {
+		org.mockito.Mockito.lenient()
+		                   .when(accessService.hasDeletePermission(anyLong()))
+		                   .thenReturn(true);
+	}
 
 	// ---- deleteLayoutById ----
 
