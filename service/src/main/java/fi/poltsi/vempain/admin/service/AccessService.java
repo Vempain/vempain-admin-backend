@@ -149,9 +149,11 @@ public class AccessService {
 				return true;
 			} else if (acl.getUnitId() != null) {
 				for (Unit unit : userAccount.getUnits()) {
-					return unit.getId()
-					           .equals(acl.getUnitId())
-					       && hasPermissions(acl, permissionList);
+					if (unit.getId()
+							.equals(acl.getUnitId())
+						&& hasPermissions(acl, permissionList)) {
+						return true;
+					}
 				}
 			}
 		}

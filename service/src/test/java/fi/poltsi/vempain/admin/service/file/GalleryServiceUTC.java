@@ -65,6 +65,15 @@ class GalleryServiceUTC {
 
 	@BeforeEach
 	void setUp() {
+		org.mockito.Mockito.lenient()
+		                   .when(accessService.hasReadPermission(anyLong()))
+		                   .thenReturn(true);
+		org.mockito.Mockito.lenient()
+		                   .when(accessService.hasModifyPermission(anyLong()))
+		                   .thenReturn(true);
+		org.mockito.Mockito.lenient()
+		                   .when(accessService.hasDeletePermission(anyLong()))
+		                   .thenReturn(true);
 		sampleGallery = Gallery.builder()
 							   .id(1L)
 							   .shortname("test-gallery")
@@ -277,6 +286,7 @@ class GalleryServiceUTC {
 
 	@Test
 	void deleteGalleryOk() {
+		when(galleryRepository.findById(1L)).thenReturn(Optional.of(sampleGallery));
 		doNothing().when(galleryRepository).deleteById(1L);
 
 		galleryService.deleteGallery(1L);

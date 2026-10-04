@@ -44,7 +44,7 @@ public class PageController implements PageAPI {
 
 	@Override
 	public ResponseEntity<List<PageResponse>> getPagesByFormId(long formId) {
-		var pages = pageService.findAllByFormId(formId);
+		var pages = pageService.findAllByFormIdForUser(formId);
 
 		ArrayList<PageResponse> responses = new ArrayList<>();
 
@@ -57,7 +57,7 @@ public class PageController implements PageAPI {
 
 	@Override
 	public ResponseEntity<PageResponse> getPageById(long pageId) {
-		var page = pageService.findById(pageId);
+		var page = pageService.findByIdByUser(pageId);
 
 		if (page == null) {
 			log.error("Could not retrieve page with ID {}", pageId);

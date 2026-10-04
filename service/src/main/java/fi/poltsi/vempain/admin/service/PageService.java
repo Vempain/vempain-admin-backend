@@ -41,6 +41,12 @@ public class PageService {
 		return pageRepository.findByFormId(formId);
 	}
 
+	public List<Page> findAllByFormIdForUser(long formId) {
+		return findAllByFormId(formId).stream()
+									  .filter(page -> accessService.hasReadPermission(page.getAclId()))
+									  .toList();
+	}
+
 	public List<Page> findAllByUser() {
 		Iterable<Page> pages = findAll();
 		ArrayList<Page> accessiblePages = new ArrayList<>();
@@ -119,6 +125,17 @@ public class PageService {
 
 	public Page findById(long pageId) {
 		return pageRepository.findById(pageId);
+	}
+
+	public Page findByIdByUser(long pageId) {
+		var page = findById(pageId);
+		if (page == null) {
+			return null;
+		}
+		if (!accessService.hasReadPermission(page.getAclId())) {
+			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, VempainMessages.UNAUTHORIZED_ACCESS);
+		}
+		return page;
 	}
 
 	public Page findByPath(String path) throws VempainEntityNotFoundException {

@@ -2,7 +2,9 @@ package fi.poltsi.vempain.admin.service;
 
 import fi.poltsi.vempain.admin.api.response.file.GalleryResponse;
 import fi.poltsi.vempain.admin.entity.PageGallery;
+import fi.poltsi.vempain.admin.repository.PageRepository;
 import fi.poltsi.vempain.admin.service.file.GalleryService;
+import fi.poltsi.vempain.admin.tools.TestUTCTools;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +36,10 @@ class PageGalleryServiceUTC {
 	private GalleryService galleryService;
 	@Mock
 	private Query          query;
+	@Mock
+	private PageRepository pageRepository;
+	@Mock
+	private AccessService  accessService;
 
 	@InjectMocks
 	private PageGalleryService pageGalleryService;
@@ -42,6 +48,11 @@ class PageGalleryServiceUTC {
 	void setUp() {
 		when(entityManager.createNativeQuery(anyString())).thenReturn(query);
 		when(query.setParameter(anyString(), org.mockito.ArgumentMatchers.any())).thenReturn(query);
+		when(pageRepository.findById(org.mockito.ArgumentMatchers.anyLong())).thenReturn(TestUTCTools.generatePage(1L));
+		when(accessService.hasModifyPermission(org.mockito.ArgumentMatchers.anyLong())).thenReturn(true);
+		org.mockito.Mockito.doNothing()
+		                   .when(galleryService)
+		                   .requireModify(org.mockito.ArgumentMatchers.anyLong());
 	}
 
 	// ---- deletePageGallery ----

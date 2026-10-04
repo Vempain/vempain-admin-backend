@@ -66,7 +66,7 @@ public class FormController implements FormAPI {
 	public ResponseEntity<FormResponse> getFormById(Long formId) {
 
 		try {
-			var formResponse = formService.getFormResponseById(formId);
+			var formResponse = formService.findByIdForUser(formId);
 			return ResponseEntity.ok(formResponse);
 		} catch (VempainEntityNotFoundException e) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Failed to fetch form for user");
