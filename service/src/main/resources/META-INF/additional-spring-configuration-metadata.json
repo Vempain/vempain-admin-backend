@@ -21,11 +21,6 @@
       "description": "Is this a development environment."
     },
     {
-      "name": "vempain.test",
-      "type": "java.lang.Boolean",
-      "description": "Are we running tests."
-    },
-    {
       "name": "vempain.type",
       "type": "java.lang.String",
       "description": "Description for vempain.type."

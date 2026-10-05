@@ -429,6 +429,47 @@ class GalleryServiceUTC {
 		assertEquals(1, result.size());
 	}
 
+	@Test
+	void populatedGalleryContainsOnlySiteFilesTheUserMayRead() {
+		var readableFile = SiteFile.builder()
+		                           .id(5L)
+		                           .aclId(50L)
+		                           .creator(1L)
+		                           .build();
+		var hiddenFile = SiteFile.builder()
+		                         .id(6L)
+		                         .aclId(60L)
+		                         .creator(1L)
+		                         .build();
+		when(galleryRepository.findById(1L)).thenReturn(Optional.of(sampleGallery));
+		when(accessService.hasReadPermission(10L)).thenReturn(true);
+		when(accessService.hasReadPermission(50L)).thenReturn(true);
+		when(accessService.hasReadPermission(60L)).thenReturn(false);
+		when(aclService.findAclByAclId(10L)).thenReturn(List.of(Acl.builder()
+		                                                           .aclId(10L)
+		                                                           .build()));
+		when(galleryFileService.findGalleryFileByGalleryId(1L)).thenReturn(List.of(
+				fi.poltsi.vempain.admin.entity.file.GalleryFile.builder()
+				                                               .galleryId(1L)
+				                                               .siteFileId(5L)
+				                                               .build(),
+				fi.poltsi.vempain.admin.entity.file.GalleryFile.builder()
+				                                               .galleryId(1L)
+				                                               .siteFileId(6L)
+				                                               .build()));
+		when(siteFileRepository.findByIdWithoutMetadata(5L)).thenReturn(Optional.of(readableFile));
+		when(siteFileRepository.findByIdWithoutMetadata(6L)).thenReturn(Optional.of(hiddenFile));
+
+		var response = galleryService.findById(1L);
+
+		assertNotNull(response);
+		assertEquals(1, response.getSiteFiles()
+								.size());
+		assertEquals(5L, response.getSiteFiles()
+								 .getFirst()
+								 .getId());
+	}
+
 	// ---- findAll ----
 
 	@Test

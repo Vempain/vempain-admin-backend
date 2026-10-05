@@ -19,7 +19,8 @@ class SecurityConfigurationUTC {
 		}
 
 		assertTrue(configuration.contains("default: prod"));
-		assertTrue(configuration.contains("test: false"));
+		// The former vempain.test authorization bypass must not exist in any form
+		assertFalse(configuration.contains("\n  test: "), "vempain.test must not be configurable");
 		assertTrue(configuration.contains("include: [ health, info ]"));
 		assertTrue(configuration.contains("default: none"));
 		assertFalse(configuration.contains("include: \"*\""));

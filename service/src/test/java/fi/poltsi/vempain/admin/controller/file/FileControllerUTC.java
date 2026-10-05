@@ -18,6 +18,10 @@ import static org.mockito.Mockito.when;
 class FileControllerUTC {
 	@Mock
 	private FileService    fileService;
+	@Mock
+	private fi.poltsi.vempain.admin.service.file.GalleryService galleryService;
+	@Mock
+	private fi.poltsi.vempain.admin.service.AccessService       accessService;
 	@InjectMocks
 	private FileController controller;
 
@@ -37,5 +41,9 @@ class FileControllerUTC {
 		                              .getBody());
 		assertSame(refresh, controller.refreshAllGalleryFiles()
 		                              .getBody());
+		org.mockito.Mockito.verify(galleryService)
+		                   .requireModify(3L);
+		org.mockito.Mockito.verify(accessService)
+		                   .checkAdminAccess();
 	}
 }

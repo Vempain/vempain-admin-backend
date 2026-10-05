@@ -13,6 +13,7 @@ import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.repository.file.FileThumbPageableRepository;
 import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
 import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
+import fi.poltsi.vempain.admin.repository.file.SiteFileSpecifications;
 import fi.poltsi.vempain.admin.repository.file.SubjectRepository;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.SubjectService;
@@ -24,10 +25,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -170,9 +171,12 @@ public class FileService {
 
 	// FileAudio
 	@Transactional(readOnly = true)
+	/**
+	 * Paged site-file listing for the current user. Site files are ACL-linked, so the result contains only the files the user may read;
+	 * the ACL filter, the optional column filter and the file type are all evaluated in the database query.
+	 */
 	public PagedResponse<SiteFileResponse> findAllSiteFilesAsPageableResponseFiltered(SiteFilePagedRequest request) {
 		log.debug("Fetching pageable site files with filter '{}' on column '{}' for file type {}", request.getSearch(), request.getFilterColumn(), request.getFileType());
-		Page<SiteFile> siteFiles;
 		var sortBy = request.getSortBy() == null || request.getSortBy()
 		                                                   .isBlank() ? "id" : request.getSortBy();
 		var pageRequest = PageRequest.of(request.getPage(), request.getSize(),
@@ -180,36 +184,16 @@ public class FileService {
 		log.debug("Page request: {}", pageRequest);
 		Pageable pageable = sanitizePageable(pageRequest);
 
-		var filter = request.getSearch();
-		var filterColumn = request.getFilterColumn();
-		var normalizedFilterColumn = (filterColumn == null) ? "" : filterColumn.trim()
-		                                                                       .toLowerCase(Locale.ROOT)
-		                                                                       .replace("_", "");
+		Specification<SiteFile> specification = accessService.<SiteFile>readableSpecification()
+															 .and(SiteFileSpecifications.hasFileType(request.getFileType()));
 
-		if (filter == null || filter.isBlank()
-		    || filterColumn == null || filterColumn.isBlank()) {
-			siteFiles = siteFileRepository.findByFileType(request.getFileType(), pageable);
-		} else {
-			siteFiles = switch (normalizedFilterColumn) {
-				case "filename" -> siteFileRepository.findByFileNameContainingIgnoreCaseAndFileType(filter, request.getFileType(), pageable);
-				case "filepath" -> siteFileRepository.findByFilePathContainingIgnoreCaseAndFileType(filter, request.getFileType(), pageable);
-				case "mimetype" -> siteFileRepository.findByMimeTypeContainingIgnoreCaseAndFileType(filter, request.getFileType(), pageable);
-				case "created" -> siteFileRepository.findByCreatedAfterAndFileType(Instant.parse(filter), request.getFileType(), pageable);
-				case "modified" -> siteFileRepository.findByModifiedAfterAndFileType(Instant.parse(filter), request.getFileType(), pageable);
-				case "subject" -> siteFileRepository.findBySubjectNameContainingIgnoreCaseAndFileType(filter, request.getFileType(), pageable);
-				case "size" -> {
-					long sizeFilter;
-					try {
-						sizeFilter = Long.parseLong(filter);
-					} catch (NumberFormatException nfe) {
-						log.warn("Invalid size filter '{}', falling back to class-only listing", filter);
-						yield siteFileRepository.findByFileType(request.getFileType(), pageable);
-					}
-					yield siteFileRepository.findBySizeGreaterThanEqualAndFileType(sizeFilter, request.getFileType(), pageable);
-				}
-				default -> siteFileRepository.findByFileType(request.getFileType(), pageable);
-			};
+		var filterSpecification = filterSpecification(request.getSearch(), request.getFilterColumn());
+
+		if (filterSpecification != null) {
+			specification = specification.and(filterSpecification);
 		}
+
+		var siteFiles = siteFileRepository.findAll(specification, pageable);
 
 		return PagedResponse.of(
 				siteFiles.getContent()
@@ -223,6 +207,38 @@ public class FileService {
 				siteFiles.isFirst(),
 				siteFiles.isLast()
 		);
+	}
+
+	/**
+	 * @return the column filter as a specification, or {@code null} when the request carries no usable filter (class-only listing)
+	 */
+	private Specification<SiteFile> filterSpecification(String filter, String filterColumn) {
+		if (filter == null || filter.isBlank()
+			|| filterColumn == null || filterColumn.isBlank()) {
+			return null;
+		}
+
+		var normalizedFilterColumn = filterColumn.trim()
+												 .toLowerCase(Locale.ROOT)
+												 .replace("_", "");
+
+		return switch (normalizedFilterColumn) {
+			case "filename" -> SiteFileSpecifications.fileNameContains(filter);
+			case "filepath" -> SiteFileSpecifications.filePathContains(filter);
+			case "mimetype" -> SiteFileSpecifications.mimeTypeContains(filter);
+			case "created" -> SiteFileSpecifications.createdAfter(Instant.parse(filter));
+			case "modified" -> SiteFileSpecifications.modifiedAfter(Instant.parse(filter));
+			case "subject" -> SiteFileSpecifications.idIn(siteFileRepository.findSiteFileIdsBySubjectNameContaining(filter));
+			case "size" -> {
+				try {
+					yield SiteFileSpecifications.sizeAtLeast(Long.parseLong(filter));
+				} catch (NumberFormatException nfe) {
+					log.warn("Invalid size filter '{}', falling back to class-only listing", filter);
+					yield null;
+				}
+			}
+			default -> null;
+		};
 	}
 
 	private Pageable sanitizePageable(PageRequest pageRequest) {

@@ -107,7 +107,6 @@ vempain:
     frontend-url: override-me
     jwt-secret: override-me
     jwt-expiration-ms: override-me
-  test: false
   admin:
     file:
       image-format: "jpeg"

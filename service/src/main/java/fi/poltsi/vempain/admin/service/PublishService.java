@@ -5,6 +5,8 @@ import com.jcraft.jsch.SftpException;
 import fi.poltsi.vempain.admin.api.PublishResultEnum;
 import fi.poltsi.vempain.admin.api.response.PublishResponse;
 import fi.poltsi.vempain.admin.entity.FormComponent;
+import fi.poltsi.vempain.admin.entity.Page;
+import fi.poltsi.vempain.admin.entity.file.Gallery;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.service.file.FileService;
@@ -25,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -82,16 +85,109 @@ public class PublishService {
 		var pages = pageService.findAllByUser();
 
 		for (var page : pages) {
-			publishPage(page.getId());
+			if (!canPublishPage(page)) {
+				log.warn("Skipping publish for page {} because the user lacks permission on the page or one of its linked entities", page.getId());
+				continue;
+			}
+
+			publishPageAsSystem(page.getId());
 		}
 
 		// Reset the site cache
 		webSitePageRepository.resetCache();
 	}
 
+	/**
+	 * Publishes a page on behalf of the current user. The user needs the modify privilege on the page and the read privilege on the
+	 * form, layout and components it is built from; every gallery attached to the page is published too, so the user must also be
+	 * allowed to publish those galleries and read their files.
+	 *
+	 * @throws AccessDeniedException when the current user may not publish the page or one of its linked entities
+	 */
 	@Transactional(propagation = Propagation.REQUIRED)
 	public long publishPage(Long pageId) throws VempainEntityNotFoundException {
+		authorizePagePublish(pageId);
+		return publishPageAsSystem(pageId);
+	}
+
+	/**
+	 * Verifies that the current user may publish the page and everything it depends on.
+	 *
+	 * @throws VempainEntityNotFoundException when the page does not exist
+	 * @throws AccessDeniedException          when the current user lacks a required privilege
+	 */
+	public void authorizePagePublish(long pageId) throws VempainEntityNotFoundException {
 		var page = pageService.findById(pageId);
+
+		if (page == null) {
+			throw new VempainEntityNotFoundException("Page not found by id: " + pageId, "page");
+		}
+
+		if (!canPublishPage(page)) {
+			throw new AccessDeniedException("User does not have permission to publish page " + pageId + " or one of its linked entities");
+		}
+	}
+
+	/**
+	 * @return {@code true} when the current user holds the modify privilege on the page, the read privilege on its form, layout and
+	 * components, and may publish every gallery attached to the page (including reading all of the gallery files)
+	 */
+	public boolean canPublishPage(Page page) {
+		if (page == null || !accessService.hasModifyPermission(page.getAclId())) {
+			return false;
+		}
+
+		try {
+			var form = formService.findById(page.getFormId());
+
+			if (!accessService.hasReadPermission(form.getAclId())) {
+				return false;
+			}
+
+			var layout = layoutService.findById(form.getLayoutId());
+
+			if (!accessService.hasReadPermission(layout.getAclId())) {
+				return false;
+			}
+
+			for (FormComponent formComponent : formService.findAllFormComponentsByFormId(page.getFormId())) {
+				try {
+					var component = componentService.findById(formComponent.getComponentId());
+
+					if (!accessService.hasReadPermission(component.getAclId())) {
+						return false;
+					}
+				} catch (VempainComponentException e) {
+					// A missing component is skipped by the publish as well, it cannot leak anything
+					log.warn("Component {} referenced by form {} does not exist", formComponent.getComponentId(), form.getId());
+				}
+			}
+		} catch (VempainEntityNotFoundException e) {
+			log.warn("Page {} refers to a missing form or layout: {}", page.getId(), e.getMessage());
+			return false;
+		}
+
+		for (var pageGallery : pageGalleryService.findPageGalleryByPageId(page.getId())) {
+			if (!canPublishGallery(pageGallery.getGalleryId())) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Publishes a page without checking the caller's privileges. Only for system initiated work such as {@code PublishItemSchedule},
+	 * which executes publishes that were authorized when they were scheduled.
+	 */
+	@Transactional(propagation = Propagation.REQUIRED)
+	public long publishPageAsSystem(Long pageId) throws VempainEntityNotFoundException {
+		var page = pageService.findById(pageId);
+
+		if (page == null) {
+			throw new VempainEntityNotFoundException("Page not found by id: " + pageId, "page");
+		}
+
 		var form = formService.findById(page.getFormId());
 		var formComponents = formService.findAllFormComponentsByFormId(page.getFormId());
 		var layout = layoutService.findById(form.getLayoutId());
@@ -167,7 +263,7 @@ public class PublishService {
 
 		if (!pageGalleries.isEmpty()) {
 			for (var pageGallery : pageGalleries) {
-				publishGallery(pageGallery.getGalleryId());
+				publishGalleryAsSystem(pageGallery.getGalleryId());
 			}
 		}
 
@@ -192,6 +288,57 @@ public class PublishService {
 
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void publishGallery(Long galleryId) throws VempainEntityNotFoundException {
+		authorizeGalleryPublish(galleryId);
+		publishGalleryAsSystem(galleryId);
+	}
+
+	/**
+	 * Verifies that the current user may publish the gallery: modify privilege on the gallery and read privilege on every file in it.
+	 *
+	 * @throws VempainEntityNotFoundException when the gallery does not exist
+	 * @throws AccessDeniedException          when the current user lacks a required privilege
+	 */
+	public void authorizeGalleryPublish(long galleryId) throws VempainEntityNotFoundException {
+		var gallery = fileService.findGalleryById(galleryId);
+
+		if (gallery == null) {
+			log.error("Failed to publish a non-existing gallery by ID: {}", galleryId);
+			throw new VempainEntityNotFoundException();
+		}
+
+		if (!canPublishGallery(gallery)) {
+			throw new AccessDeniedException("User does not have permission to publish gallery " + galleryId + " or to read all of its files");
+		}
+	}
+
+	public boolean canPublishGallery(long galleryId) {
+		return canPublishGallery(fileService.findGalleryById(galleryId));
+	}
+
+	/**
+	 * @return {@code true} when the current user holds the modify privilege on the gallery and the read privilege on each of its site files
+	 */
+	public boolean canPublishGallery(Gallery gallery) {
+		if (gallery == null || !accessService.hasModifyPermission(gallery.getAclId())) {
+			return false;
+		}
+
+		var siteFiles = gallery.getSiteFiles();
+
+		if (siteFiles == null || siteFiles.isEmpty()) {
+			return true;
+		}
+
+		return siteFiles.stream()
+						.allMatch(siteFile -> accessService.hasReadPermission(siteFile.getAclId()));
+	}
+
+	/**
+	 * Publishes a gallery without checking the caller's privileges. Only for system initiated work ({@code PublishItemSchedule} and page
+	 * publishing, which has already authorized the attached galleries).
+	 */
+	@Transactional(propagation = Propagation.REQUIRED)
+	public void publishGalleryAsSystem(Long galleryId) throws VempainEntityNotFoundException {
 		var gallery = fileService.findGalleryById(galleryId);
 
 		if (gallery == null) {
@@ -315,7 +462,12 @@ public class PublishService {
 		var galleries = fileService.findAllGalleries();
 
 		for (var gallery : galleries) {
-			publishGallery(gallery.getId());
+			if (!canPublishGallery(gallery.getId())) {
+				log.warn("Skipping publish for gallery {} because the user lacks permission on the gallery or its files", gallery.getId());
+				continue;
+			}
+
+			publishGalleryAsSystem(gallery.getId());
 		}
 	}
 
@@ -339,13 +491,13 @@ public class PublishService {
 				continue;
 			}
 
-			if (!accessService.hasModifyPermission(gallery.getAclId())) {
-				log.warn("Skipping publish for gallery {} because user lacks modify permission", galleryId);
+			if (!canPublishGallery(gallery)) {
+				log.warn("Skipping publish for gallery {} because user lacks modify permission on it or read permission on its files", galleryId);
 				continue;
 			}
 
 			try {
-				publishGallery(galleryId);
+				publishGalleryAsSystem(galleryId);
 				publishedCount++;
 			} catch (VempainEntityNotFoundException e) {
 				log.warn("Failed to publish gallery {}: {}", galleryId, e.getMessage());

@@ -124,9 +124,14 @@ public class PageController implements PageAPI {
 		PublishResponse response;
 
 		if (publishDate != null) {
-			var pages = pageService.findAll();
+			var pages = pageService.findAllByUser();
 
 			for (var page : pages) {
+				if (!publishService.canPublishPage(page)) {
+					log.warn("Not scheduling page {} because the user may not publish it", page.getId());
+					continue;
+				}
+
 				createPagePublishSchedule(publishDate, page.getId(), "Publish all pages");
 			}
 
@@ -166,11 +171,13 @@ public class PageController implements PageAPI {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_ID_IN_REQUEST);
 		}
 
-		if (publishRequest.isPublishSchedule()) {
-			return createPagePublishSchedule(publishRequest.getPublishDateTime(), publishRequest.getId(), publishRequest.getPublishMessage());
-		}
-
 		try {
+			if (publishRequest.isPublishSchedule()) {
+				// The scheduler publishes without a user context, so the permission is verified when the schedule is created
+				publishService.authorizePagePublish(publishRequest.getId());
+				return createPagePublishSchedule(publishRequest.getPublishDateTime(), publishRequest.getId(), publishRequest.getPublishMessage());
+			}
+
 			publishService.publishPage(publishRequest.getId());
 			response = PublishResponse.builder()
 			                          .result(PublishResultEnum.OK)

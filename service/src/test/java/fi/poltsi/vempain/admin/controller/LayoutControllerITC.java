@@ -47,7 +47,8 @@ class LayoutControllerITC extends AbstractITCTest {
 			assertNotNull(layoutResponse.getCreated());
 			assertNull(layoutResponse.getModified());
 			assertNotNull(layoutResponse.getAcls());
-			assertEquals(1, layoutResponse.getAcls()
+			// TestITCTools grants both the generated owner and the administrator running the test
+			assertEquals(2, layoutResponse.getAcls()
 										  .size());
 		}
 	}

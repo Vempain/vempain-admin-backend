@@ -5,6 +5,7 @@ import fi.poltsi.vempain.file.api.FileTypeEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.ListPagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
@@ -16,7 +17,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface SiteFileRepository extends ListPagingAndSortingRepository<SiteFile, Long>, JpaRepository<SiteFile, Long> {
+public interface SiteFileRepository extends ListPagingAndSortingRepository<SiteFile, Long>, JpaRepository<SiteFile, Long>, JpaSpecificationExecutor<SiteFile> {
 	Optional<SiteFile> findByFilePathAndFileName(String filePath, String fileName);
 
 	List<SiteFile> findByIdIn(ArrayList<Long> siteFileIdList);
@@ -73,4 +74,15 @@ public interface SiteFileRepository extends ListPagingAndSortingRepository<SiteF
 
 	@Query("SELECT MAX(s.fileId) FROM SiteFile s")
 	Long findMaxFileId();
+
+	/**
+	 * IDs of the site files that have a subject whose name contains the given text (case insensitive). Used together with the ACL
+	 * specification so that subject searches stay paged and ACL filtered in the database.
+	 */
+	@Query(value = """
+			SELECT DISTINCT fs.site_file_id FROM file_subject fs
+				JOIN subjects su ON su.id = fs.subject_id
+			WHERE LOWER(su.subject) LIKE LOWER(CONCAT('%', :subjectName, '%'))
+			""", nativeQuery = true)
+	List<Long> findSiteFileIdsBySubjectNameContaining(@Param("subjectName") String subjectName);
 }

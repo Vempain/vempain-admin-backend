@@ -76,6 +76,20 @@ class ComponentControllerITC extends AbstractITCTest {
 			aclList.add(aclRequest);
 		}
 
+		// The update replaces the component ACL with this list. Without a test-mode bypass the administrator running the test must stay
+		// on the list, otherwise the follow-up read is (correctly) denied.
+		aclList.add(AclRequest.builder()
+							  .aclId(componentResponse.getAcls()
+													  .getFirst()
+													  .getAclId())
+							  .user(fi.poltsi.vempain.admin.api.Constants.ADMIN_ID)
+							  .unit(null)
+							  .createPrivilege(true)
+							  .readPrivilege(true)
+							  .modifyPrivilege(true)
+							  .deletePrivilege(true)
+							  .build());
+
 		ComponentRequest request = ComponentRequest.builder()
 												   .id(componentResponse.getId())
 												   .compName(componentResponse.getCompName())
