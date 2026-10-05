@@ -5,6 +5,7 @@ import fi.poltsi.vempain.admin.entity.Form;
 import fi.poltsi.vempain.admin.entity.Layout;
 import fi.poltsi.vempain.admin.entity.Page;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
+import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.exception.VempainLayoutException;
 import fi.poltsi.vempain.admin.service.ComponentService;
@@ -28,9 +29,11 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Slf4j
@@ -49,9 +52,11 @@ public class AclConsistencySchedule {
 	private final UnitService unitService;
 	private final UserService userService;
 	private final FileService      fileService;
-	private final Set<Long>                        missingAcls         = new HashSet<>();
-	private final Set<Long>                        orphanAcls          = new HashSet<>();
-	private final ArrayList<AbstractVempainEntity> duplicateAclObjects = new ArrayList<>();
+	private final Set<Long>                        missingAcls          = new HashSet<>();
+	private final Map<Long, Long>                  missingAclCreators   = new HashMap<>();
+	private final Set<Long>                        orphanAcls           = new HashSet<>();
+	private final ArrayList<AbstractVempainEntity> duplicateAclObjects  = new ArrayList<>();
+	private final ArrayList<AbstractVempainEntity> unassignedAclObjects = new ArrayList<>();
 	// internal state (not injected)
 	private       Set<Long>   tableAcls = new HashSet<>();
 	@org.springframework.beans.factory.annotation.Value("${vempain.scheduling.enabled:true}")
@@ -92,6 +97,7 @@ public class AclConsistencySchedule {
 
 		deduplicateUserUnitAcls();
 		deduplicateObjectAcls();
+		assignMissingAcls();
 		createMissingAcls();
 		removeOrphanAcls();
 		removeDuplicateAcls();
@@ -99,8 +105,10 @@ public class AclConsistencySchedule {
 
 	private void resetState() {
 		missingAcls.clear();
+		missingAclCreators.clear();
 		orphanAcls.clear();
 		duplicateAclObjects.clear();
+		unassignedAclObjects.clear();
 		// tableAcls is recomputed in verify()
 	}
 
@@ -233,24 +241,55 @@ public class AclConsistencySchedule {
 					}
 				}
 
-				try {
-					entity.setAclId(aclId);
-					switch (entity) {
-						case Component inst -> componentService.save(inst);
-						case Form inst -> formService.save(inst);
-						case Gallery inst -> fileService.saveGallery(inst);
-						case Layout inst -> layoutService.save(inst);
-						case Page inst -> pageService.save(inst);
-						case Unit inst -> unitService.save(inst);
-						case UserAccount inst -> userService.save(inst);
-						default -> {
-						}
-					}
-					log.info("Saved object ({}) ID {} with new ACL ID {}", entity.getClass(), entity.getId(), entity.getAclId());
-				} catch (VempainLayoutException | VempainComponentException | VempainAbstractException e) {
-					log.error("Failed to update the ACL ID {} of object {}", aclId, entity.getId());
-				}
+				entity.setAclId(aclId);
+				saveEntity(entity);
 			}
+		}
+	}
+
+	/**
+	 * Entities without an assigned ACL (acl_id not positive) are denied for everyone. Create a new ACL granting all privileges to the
+	 * entity's creator (the operator when the creator is unknown) and link it to the entity.
+	 */
+	private void assignMissingAcls() {
+		if (unassignedAclObjects.isEmpty()) {
+			return;
+		}
+
+		for (AbstractVempainEntity entity : unassignedAclObjects) {
+			var owner = entity.getCreator() != null ? entity.getCreator() : OPERATOR_ID;
+
+			try {
+				var aclId = aclService.createNewAcl(owner, null, true, true, true, true);
+				entity.setAclId(aclId);
+				saveEntity(entity);
+				log.info("Assigned new ACL ID {} owned by user {} to object ({}) ID {}", aclId, owner, entity.getClass()
+																											 .getName(), entity.getId());
+			} catch (VempainAclException e) {
+				log.error("Failed to create an ACL for object ({}) ID {} owned by user {}: {}", entity.getClass()
+																									  .getName(), entity.getId(), owner,
+						  e.getMessage());
+			}
+		}
+	}
+
+	private void saveEntity(AbstractVempainEntity entity) {
+		try {
+			switch (entity) {
+				case Component inst -> componentService.save(inst);
+				case Form inst -> formService.save(inst);
+				case Gallery inst -> fileService.saveGallery(inst);
+				case SiteFile inst -> fileService.saveSiteFile(inst);
+				case Layout inst -> layoutService.save(inst);
+				case Page inst -> pageService.save(inst);
+				case Unit inst -> unitService.save(inst);
+				case UserAccount inst -> userService.save(inst);
+				default -> log.warn("No save handler for object type {}", entity.getClass()
+																				.getName());
+			}
+			log.info("Saved object ({}) ID {} with ACL ID {}", entity.getClass(), entity.getId(), entity.getAclId());
+		} catch (VempainLayoutException | VempainComponentException | VempainAbstractException e) {
+			log.error("Failed to update the ACL ID {} of object {}", entity.getAclId(), entity.getId());
 		}
 	}
 
@@ -259,7 +298,7 @@ public class AclConsistencySchedule {
 			Long aclId = itr.next();
 			var newAcl = Acl.builder()
 			                .aclId(aclId)
-			                .userId(OPERATOR_ID)
+							.userId(missingAclCreators.getOrDefault(aclId, OPERATOR_ID))
 			                .unitId(null)
 			                .readPrivilege(true)
 			                .modifyPrivilege(true)
@@ -295,6 +334,11 @@ public class AclConsistencySchedule {
 		}
 
 		for (T object : objectList) {
+			if (object.getAclId() <= 0) {
+				log.error("The {} id {} has no ACL assigned", name, object.getId());
+				unassignedAclObjects.add(object);
+				continue;
+			}
 			if (!acls.add(object.getAclId())) {
 				log.error("The {} id {} tried to add a duplicate ACL ID {}", name, object.getId(), object.getAclId());
 				duplicateAclObjects.add(object);
@@ -302,6 +346,9 @@ public class AclConsistencySchedule {
 			if (!tableAcls.contains(object.getAclId())) {
 				log.error("The {} id {} ACL ID {} is missing from acl table", name, object.getId(), object.getAclId());
 				missingAcls.add(object.getAclId());
+				if (object.getCreator() != null) {
+					missingAclCreators.putIfAbsent(object.getAclId(), object.getCreator());
+				}
 			}
 		}
 		return acls;

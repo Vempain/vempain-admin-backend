@@ -15,7 +15,6 @@ services:
       - spring.site-datasource.password=${ENV_VEMPAIN_SITE_DB_PASSWORD}
       - vempain.app.jwt-secret=${ENV_VEMPAIN_JWT_SECRET:?ENV_VEMPAIN_JWT_SECRET must be set}
       - vempain.app.jwt-expiration-ms=86400000
-      - vempain.test=false
       - vempain.admin.file.site-file-directory=/vempain_admin/site-files
       - vempain.admin.ssh.user=${ENV_VEMPAIN_SITE_SSH_USER}
       - vempain.admin.ssh.home-dir=/vempain_admin/vempain

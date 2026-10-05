@@ -23,7 +23,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -39,7 +41,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -390,199 +391,155 @@ class FileServiceUTC {
 		assertNotNull(result);
 	}
 
-	@Test
-	void findAllSiteFilesAsPageableResponseFiltered_nullFilterColumn_fallsBackToFindByFileType() {
-		var pageRequest = PageRequest.of(0, 10);
+	// ---- findAllSiteFilesAsPageableResponseFiltered: every listing is ACL filtered through accessService.readableSpecification() ----
+
+	@SuppressWarnings("unchecked")
+	private PageRequest stubReadableListing(PageRequest pageRequest) {
 		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
-		when(siteFileRepository.findByFileType(eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
+		when(accessService.<SiteFile>readableSpecification()).thenReturn((root, query, criteriaBuilder) -> null);
+		when(siteFileRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(emptyPage);
+		return pageRequest;
+	}
+
+	@SuppressWarnings("unchecked")
+	private void verifyReadableListing() {
+		verify(accessService).<SiteFile>readableSpecification();
+		verify(siteFileRepository).findAll(any(Specification.class), any(Pageable.class));
+	}
+
+	@Test
+	void findAllSiteFilesAsPageableResponseFiltered_nullFilterColumn_usesAclFilteredQuery() {
+		var pageRequest = stubReadableListing(PageRequest.of(0, 10));
 
 		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "test", null));
 
 		assertNotNull(result);
-		verify(siteFileRepository).findByFileType(eq(FileTypeEnum.IMAGE), any());
+		verifyReadableListing();
 	}
 
 	@Test
-	void findAllSiteFilesAsPageableResponseFiltered_blankFilter_fallsBackToFindByFileType() {
-		var pageRequest = PageRequest.of(0, 10);
-		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
-		when(siteFileRepository.findByFileType(eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
+	void findAllSiteFilesAsPageableResponseFiltered_blankFilter_usesAclFilteredQuery() {
+		var pageRequest = stubReadableListing(PageRequest.of(0, 10));
 
 		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "  ", "filename"));
 
 		assertNotNull(result);
-		verify(siteFileRepository).findByFileType(eq(FileTypeEnum.IMAGE), any());
+		verifyReadableListing();
 	}
 
 	@Test
-	void findAllSiteFilesAsPageableResponseFiltered_exactFilenameColumn_invokesFilenameRepository() {
-		var pageRequest = PageRequest.of(0, 10);
-		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
-		when(siteFileRepository.findByFileNameContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
+	void findAllSiteFilesAsPageableResponseFiltered_everyColumnFilterStaysAclFiltered() {
+		for (var column : List.of("filename", "file_name", "FileName", "filepath", "mimetype", "unknownColumn", "size")) {
+			org.mockito.Mockito.reset(accessService, siteFileRepository);
+			var pageRequest = stubReadableListing(PageRequest.of(0, 10));
 
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "test", "filename"));
+			var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "1024", column));
 
-		assertNotNull(result);
-		verify(siteFileRepository).findByFileNameContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any());
+			assertNotNull(result);
+			verifyReadableListing();
+		}
 	}
 
 	@Test
-	void findAllSiteFilesAsPageableResponseFiltered_underscoreFilenameColumn_normalizedAndInvokesFilenameRepository() {
-		var pageRequest = PageRequest.of(0, 10);
-		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
-		when(siteFileRepository.findByFileNameContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
+	void findAllSiteFilesAsPageableResponseFiltered_temporalColumns_parseIsoInstant() {
+		for (var column : List.of("created", "modified")) {
+			org.mockito.Mockito.reset(accessService, siteFileRepository);
+			var pageRequest = stubReadableListing(PageRequest.of(0, 10));
 
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "test", "file_name"));
+			var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "2023-01-01T00:00:00Z", column));
 
-		assertNotNull(result);
-		verify(siteFileRepository).findByFileNameContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any());
+			assertNotNull(result);
+			verifyReadableListing();
+		}
 	}
 
 	@Test
-	void findAllSiteFilesAsPageableResponseFiltered_mixedCaseFilenameColumn_normalizedAndInvokesFilenameRepository() {
-		var pageRequest = PageRequest.of(0, 10);
-		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
-		when(siteFileRepository.findByFileNameContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
-
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "test", "FileName"));
-
-		assertNotNull(result);
-		verify(siteFileRepository).findByFileNameContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any());
-	}
-
-	@Test
-	void findAllSiteFilesAsPageableResponseFiltered_unknownColumn_fallsBackToFindByFileType() {
-		var pageRequest = PageRequest.of(0, 10);
-		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
-		when(siteFileRepository.findByFileType(eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
-
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "test", "unknownColumn"));
-
-		assertNotNull(result);
-		verify(siteFileRepository).findByFileType(eq(FileTypeEnum.IMAGE), any());
-	}
-
-	@Test
-	void findAllSiteFilesAsPageableResponseFiltered_filepathColumn_invokesFilepathRepository() {
-		var pageRequest = PageRequest.of(0, 10);
-		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
-		when(siteFileRepository.findByFilePathContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
-
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "test", "filepath"));
-
-		assertNotNull(result);
-		verify(siteFileRepository).findByFilePathContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any());
-	}
-
-	@Test
-	void findAllSiteFilesAsPageableResponseFiltered_mimetypeColumn_invokesMimetypeRepository() {
-		var pageRequest = PageRequest.of(0, 10);
-		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
-		when(siteFileRepository.findByMimeTypeContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
-
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "test", "mimetype"));
-
-		assertNotNull(result);
-		verify(siteFileRepository).findByMimeTypeContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any());
-	}
-
-	@Test
-	void findAllSiteFilesAsPageableResponseFiltered_createdColumn_invokesCreatedRepository() {
-		var pageRequest = PageRequest.of(0, 10);
-		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
-		var isoDate = "2023-01-01T00:00:00Z";
-		when(siteFileRepository.findByCreatedAfterAndFileType(any(Instant.class), eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
-
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, isoDate, "created"));
-
-		assertNotNull(result);
-		verify(siteFileRepository).findByCreatedAfterAndFileType(any(Instant.class), eq(FileTypeEnum.IMAGE), any());
-	}
-
-	@Test
-	void findAllSiteFilesAsPageableResponseFiltered_modifiedColumn_invokesModifiedRepository() {
-		var pageRequest = PageRequest.of(0, 10);
-		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
-		var isoDate = "2023-01-01T00:00:00Z";
-		when(siteFileRepository.findByModifiedAfterAndFileType(any(Instant.class), eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
-
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, isoDate, "modified"));
-
-		assertNotNull(result);
-		verify(siteFileRepository).findByModifiedAfterAndFileType(any(Instant.class), eq(FileTypeEnum.IMAGE), any());
-	}
-
-	@Test
-	void findAllSiteFilesAsPageableResponseFiltered_subjectColumn_invokesSubjectRepository() {
-		var pageRequest = PageRequest.of(0, 10);
-		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
-		when(siteFileRepository.findBySubjectNameContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
+	void findAllSiteFilesAsPageableResponseFiltered_subjectColumn_resolvesSiteFileIdsBySubject() {
+		var pageRequest = stubReadableListing(PageRequest.of(0, 10));
+		when(siteFileRepository.findSiteFileIdsBySubjectNameContaining("test")).thenReturn(List.of(5L, 6L));
 
 		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "test", "subject"));
 
 		assertNotNull(result);
-		verify(siteFileRepository).findBySubjectNameContainingIgnoreCaseAndFileType(eq("test"), eq(FileTypeEnum.IMAGE), any());
+		verify(siteFileRepository).findSiteFileIdsBySubjectNameContaining("test");
+		verifyReadableListing();
 	}
 
 	@Test
-	void findAllSiteFilesAsPageableResponseFiltered_sizeColumn_invokesSizeRepository() {
-		var pageRequest = PageRequest.of(0, 10);
-		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
-		when(siteFileRepository.findBySizeGreaterThanEqualAndFileType(eq(1024L), eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
-
-		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "1024", "size"));
-
-		assertNotNull(result);
-		verify(siteFileRepository).findBySizeGreaterThanEqualAndFileType(eq(1024L), eq(FileTypeEnum.IMAGE), any());
-	}
-
-	@Test
-	void findAllSiteFilesAsPageableResponseFiltered_invalidSizeColumn_fallsBackToFindByFileType() {
-		var pageRequest = PageRequest.of(0, 10);
-		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
-		when(siteFileRepository.findByFileType(eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
+	void findAllSiteFilesAsPageableResponseFiltered_invalidSizeColumn_fallsBackToClassOnlyListing() {
+		var pageRequest = stubReadableListing(PageRequest.of(0, 10));
 
 		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "notANumber", "size"));
 
 		assertNotNull(result);
-		verify(siteFileRepository).findByFileType(eq(FileTypeEnum.IMAGE), any());
+		verifyReadableListing();
+	}
+
+	@Test
+	void findAllSiteFilesAsPageableResponseFiltered_returnsOnlyRowsFromTheAclFilteredPage() {
+		var pageRequest = PageRequest.of(0, 10);
+		var readable = SiteFile.builder()
+							   .id(1L)
+							   .aclId(11L)
+							   .creator(1L)
+							   .created(Instant.now())
+							   .fileName("readable.jpg")
+							   .filePath("/a")
+							   .mimeType("image/jpeg")
+							   .fileType(FileTypeEnum.IMAGE)
+							   .comment("")
+							   .metadata("{}")
+							   .sha256sum("x")
+							   .build();
+		when(accessService.<SiteFile>readableSpecification()).thenReturn((root, query, criteriaBuilder) -> null);
+		when(siteFileRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(readable), pageRequest, 1));
+
+		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, null, null));
+
+		assertEquals(1, result.getContent()
+							  .size());
+		assertEquals(1L, result.getContent()
+							   .getFirst()
+							   .getId());
 	}
 
 	@Test
 	void findAllSiteFilesAsPageableResponseFiltered_sortByCreatedAt_remapped() {
-		var pageRequest = PageRequest.of(0, 10, Sort.by("createdAt"));
-		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
-		when(siteFileRepository.findByFileType(eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
+		var pageRequest = stubReadableListing(PageRequest.of(0, 10, Sort.by("createdAt")));
 
 		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, null, null));
 
 		assertNotNull(result);
-		verify(siteFileRepository).findByFileType(eq(FileTypeEnum.IMAGE), any());
+		var pageableCaptor = org.mockito.ArgumentCaptor.forClass(Pageable.class);
+		verify(siteFileRepository).findAll(any(Specification.class), pageableCaptor.capture());
+		assertNotNull(pageableCaptor.getValue()
+									.getSort()
+									.getOrderFor("created"));
 	}
 
 	@Test
 	void findAllSiteFilesAsPageableResponseFiltered_sortByModifiedAt_remapped() {
-		var pageRequest = PageRequest.of(0, 10, Sort.by("modifiedAt"));
-		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
-		when(siteFileRepository.findByFileType(eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
+		var pageRequest = stubReadableListing(PageRequest.of(0, 10, Sort.by("modifiedAt")));
 
 		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, null, null));
 
 		assertNotNull(result);
-		verify(siteFileRepository).findByFileType(eq(FileTypeEnum.IMAGE), any());
+		var pageableCaptor = org.mockito.ArgumentCaptor.forClass(Pageable.class);
+		verify(siteFileRepository).findAll(any(Specification.class), pageableCaptor.capture());
+		assertNotNull(pageableCaptor.getValue()
+									.getSort()
+									.getOrderFor("modified"));
 	}
 
 	@Test
 	void findAllSiteFilesAsPageableResponseFiltered_sortBySnakeCaseFileName_remapped() {
-		var pageRequest = PageRequest.of(0, 10, Sort.by("file_name"));
-		var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
-		when(siteFileRepository.findByFileType(eq(FileTypeEnum.IMAGE), any())).thenReturn(emptyPage);
+		var pageRequest = stubReadableListing(PageRequest.of(0, 10, Sort.by("file_name")));
 
 		var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, null, null));
 
 		assertNotNull(result);
-		var pageableCaptor = org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
-		verify(siteFileRepository).findByFileType(eq(FileTypeEnum.IMAGE), pageableCaptor.capture());
+		var pageableCaptor = org.mockito.ArgumentCaptor.forClass(Pageable.class);
+		verify(siteFileRepository).findAll(any(Specification.class), pageableCaptor.capture());
 		assertEquals("fileName", pageableCaptor.getValue()
 		                                       .getSort()
 		                                       .getOrderFor("fileName")

@@ -49,13 +49,13 @@ public class PublishItemSchedule {
 
 			if (scheduledPublish.getPublishType() == ContentTypeEnum.PAGE) {
 				try {
-					publishService.publishPage(scheduledPublish.getPublishId());
+					publishService.publishPageAsSystem(scheduledPublish.getPublishId());
 				} catch (VempainEntityNotFoundException e) {
 					log.error("The page to publish no longer exists: {}", scheduledPublish.getPublishId());
 				}
 			} else if (scheduledPublish.getPublishType() == ContentTypeEnum.GALLERY) {
 				try {
-					publishService.publishGallery(scheduledPublish.getPublishId());
+					publishService.publishGalleryAsSystem(scheduledPublish.getPublishId());
 				} catch (VempainEntityNotFoundException e) {
 					log.error("The gallery to publish no longer exists: {}", scheduledPublish.getPublishId());
 				}

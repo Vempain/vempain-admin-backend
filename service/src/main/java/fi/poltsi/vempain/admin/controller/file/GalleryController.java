@@ -176,6 +176,11 @@ public class GalleryController implements GalleryAPI {
 			var galleries = galleryService.findAll();
 
 			for (var gallery : galleries) {
+				if (!publishService.canPublishGallery(gallery.getId())) {
+					log.warn("Not scheduling gallery {} because the user may not publish it", gallery.getId());
+					continue;
+				}
+
 				createGalleryPublishSchedule(publishDate, gallery.getId(), "Publish all galleries");
 			}
 
@@ -215,11 +220,13 @@ public class GalleryController implements GalleryAPI {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_ID_IN_REQUEST);
 		}
 
-		if (publishRequest.isPublishSchedule()) {
-			return createGalleryPublishSchedule(publishRequest.getPublishDateTime(), publishRequest.getId(), publishRequest.getPublishMessage());
-		}
-
 		try {
+			if (publishRequest.isPublishSchedule()) {
+				// The scheduler publishes without a user context, so the permission is verified when the schedule is created
+				publishService.authorizeGalleryPublish(publishRequest.getId());
+				return createGalleryPublishSchedule(publishRequest.getPublishDateTime(), publishRequest.getId(), publishRequest.getPublishMessage());
+			}
+
 			publishService.publishGallery(publishRequest.getId());
 			response = PublishResponse.builder()
 			                          .result(PublishResultEnum.OK)

@@ -13,7 +13,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -44,15 +43,12 @@ class AccessServiceUTC {
 	private AclService  aclService;
 	@Mock
 	private UserService userService;
-	@Mock
-	private Environment environment;
 
 	@InjectMocks
 	private AccessService accessService;
 
 	@Test
 	void checkAdminAccessAllowsAdministratorAcl() {
-		when(environment.getProperty("vempain.test")).thenReturn("false");
 		when(securityContext.getAuthentication()).thenReturn(authentication);
 		SecurityContextHolder.setContext(securityContext);
 		var userAccount = TestUTCTools.generateUser(1L);
@@ -65,7 +61,6 @@ class AccessServiceUTC {
 
 	@Test
 	void checkAdminAccessRejectsUserWithoutAdministratorAcl() {
-		when(environment.getProperty("vempain.test")).thenReturn("false");
 		when(securityContext.getAuthentication()).thenReturn(authentication);
 		SecurityContextHolder.setContext(securityContext);
 		var userAccount = TestUTCTools.generateUser(2L);
@@ -83,7 +78,6 @@ class AccessServiceUTC {
 
 	@Test
 	void hasReadPermissionOk() {
-		when(environment.getProperty("vempain.test")).thenReturn("false");
 		when(securityContext.getAuthentication()).thenReturn(authentication);
 		SecurityContextHolder.setContext(securityContext);
 		UserAccount userAccount = TestUTCTools.generateUser(1L);
@@ -103,7 +97,6 @@ class AccessServiceUTC {
 
 	@Test
 	void hasReadPermissionViaUnitOk() {
-		when(environment.getProperty("vempain.test")).thenReturn("false");
 		when(securityContext.getAuthentication()).thenReturn(authentication);
 		SecurityContextHolder.setContext(securityContext);
 		UserAccount userAccount = TestUTCTools.generateUser(1L);
@@ -117,16 +110,25 @@ class AccessServiceUTC {
 		Acl acl = TestUTCTools.generateAcl(1L, 1L, null, 1L);
 		when(aclService.findAclByAclId(1L)).thenReturn(Collections.singletonList(acl));
 
-		try {
-			accessService.hasReadPermission(1L);
-		} catch (Exception e) {
-			fail("Should not have received an exception: " + e.getMessage());
-		}
+		assertTrue(accessService.hasReadPermission(1L));
+	}
+
+	@Test
+	void unitAclGrantsOnlyWhenTheUnitRowHoldsThePrivilege() {
+		UserAccount userAccount = TestUTCTools.generateUser(1L);
+		Unit unit = TestUTCTools.generateUnit(7L);
+		userAccount.setUnits(new HashSet<>(List.of(unit)));
+		Acl unitAcl = TestUTCTools.generateAcl(1L, 1L, null, 7L);
+		unitAcl.setDeletePrivilege(false);
+
+		assertTrue(accessService.aclListContainsPermission(List.of(true, false, false, false), userAccount, List.of(unitAcl)));
+		assertFalse(accessService.aclListContainsPermission(List.of(false, false, false, true), userAccount, List.of(unitAcl)));
+		Acl otherUnitAcl = TestUTCTools.generateAcl(2L, 1L, null, 8L);
+		assertFalse(accessService.aclListContainsPermission(List.of(true, false, false, false), userAccount, List.of(otherUnitAcl)));
 	}
 
 	@Test
 	void hasReadPermissionNullAuthenticationFail() {
-		when(environment.getProperty("vempain.test")).thenReturn("false");
 		when(securityContext.getAuthentication()).thenReturn(authentication);
 		SecurityContextHolder.setContext(securityContext);
 		UserAccount userAccount = TestUTCTools.generateUser(1L);
@@ -146,7 +148,6 @@ class AccessServiceUTC {
 
 	@Test
 	void hasReadPermissionNoUSerFoundFail() {
-		when(environment.getProperty("vempain.test")).thenReturn("false");
 		when(securityContext.getAuthentication()).thenReturn(authentication);
 		SecurityContextHolder.setContext(securityContext);
 		UserAccount userAccount = TestUTCTools.generateUser(1L);
@@ -168,7 +169,6 @@ class AccessServiceUTC {
 
 	@Test
 	void hasReadPermissionNoAclFoundFail() {
-		when(environment.getProperty("vempain.test")).thenReturn("false");
 		when(securityContext.getAuthentication()).thenReturn(authentication);
 		SecurityContextHolder.setContext(securityContext);
 		UserAccount userAccount = TestUTCTools.generateUser(1L);
@@ -187,7 +187,6 @@ class AccessServiceUTC {
 
 	@Test
 	void hasModifyPermissionOk() {
-		when(environment.getProperty("vempain.test")).thenReturn("false");
 		when(securityContext.getAuthentication()).thenReturn(authentication);
 		SecurityContextHolder.setContext(securityContext);
 		UserAccount userAccount = TestUTCTools.generateUser(1L);
@@ -204,7 +203,6 @@ class AccessServiceUTC {
 
 	@Test
 	void hasCreatePermissionOk() {
-		when(environment.getProperty("vempain.test")).thenReturn("false");
 		when(securityContext.getAuthentication()).thenReturn(authentication);
 		SecurityContextHolder.setContext(securityContext);
 		UserAccount userAccount = TestUTCTools.generateUser(1L);
@@ -221,7 +219,6 @@ class AccessServiceUTC {
 
 	@Test
 	void hasDeletePermissionOk() {
-		when(environment.getProperty("vempain.test")).thenReturn("false");
 		when(securityContext.getAuthentication()).thenReturn(authentication);
 		SecurityContextHolder.setContext(securityContext);
 		UserAccount userAccount = TestUTCTools.generateUser(1L);
@@ -238,7 +235,6 @@ class AccessServiceUTC {
 
 	@Test
 	void getUserIdOk() {
-		when(environment.getProperty("vempain.test")).thenReturn("false");
 		when(securityContext.getAuthentication()).thenReturn(authentication);
 		SecurityContextHolder.setContext(securityContext);
 		UserAccount userAccount = TestUTCTools.generateUser(1L);
@@ -255,7 +251,6 @@ class AccessServiceUTC {
 
 	@Test
 	void getUserIdNoUserFail() {
-		when(environment.getProperty("vempain.test")).thenReturn("false");
 		when(securityContext.getAuthentication()).thenReturn(authentication);
 		SecurityContextHolder.setContext(securityContext);
 		UserAccount userAccount = TestUTCTools.generateUser(1L);
@@ -275,7 +270,6 @@ class AccessServiceUTC {
 
 	@Test
 	void checkAuthenticationOk() {
-		when(environment.getProperty("vempain.test")).thenReturn("false");
 		when(securityContext.getAuthentication()).thenReturn(authentication);
 		SecurityContextHolder.setContext(securityContext);
 		UserAccount userAccount = TestUTCTools.generateUser(1L);
@@ -292,7 +286,6 @@ class AccessServiceUTC {
 
 	@Test
 	void checkAuthenticationNoUserFail() {
-		when(environment.getProperty("vempain.test")).thenReturn("false");
 		when(securityContext.getAuthentication()).thenReturn(authentication);
 		SecurityContextHolder.setContext(securityContext);
 		UserAccount userAccount = TestUTCTools.generateUser(1L);
@@ -309,64 +302,6 @@ class AccessServiceUTC {
 			assertEquals(HttpStatus.FORBIDDEN, e.getStatusCode());
 		} catch (Exception e) {
 			fail("Should not have received an exception: " + e);
-		}
-	}
-
-	@Test
-	void getUserIdTestModeWithUsersOk() {
-		when(environment.getProperty("vempain.test")).thenReturn("true");
-		UserAccount userAccount = TestUTCTools.generateUser(1L);
-		when(userService.findAll()).thenReturn(List.of(userAccount));
-
-		try {
-			Long id = accessService.getUserId();
-			assertEquals(1L, id);
-		} catch (Exception e) {
-			fail("Should not have received an exception: " + e.getMessage());
-		}
-	}
-
-	@Test
-	void getUserIdTestModeNoUsersFail() {
-		when(environment.getProperty("vempain.test")).thenReturn("true");
-		when(userService.findAll()).thenReturn(Collections.emptyList());
-
-		try {
-			accessService.getUserId();
-			fail("Should have received SessionAuthenticationException");
-		} catch (SessionAuthenticationException e) {
-			assertEquals(VempainMessages.INVALID_USER_SESSION, e.getMessage());
-		} catch (Exception e) {
-			fail("Should only have received SessionAuthenticationException: " + e.getMessage());
-		}
-	}
-
-	@Test
-	void getValidUserIdOk() {
-		when(environment.getProperty("vempain.test")).thenReturn("true");
-		UserAccount userAccount = TestUTCTools.generateUser(1L);
-		when(userService.findAll()).thenReturn(List.of(userAccount));
-
-		try {
-			long id = accessService.getValidUserId();
-			assertEquals(1L, id);
-		} catch (Exception e) {
-			fail("Should not have received an exception: " + e.getMessage());
-		}
-	}
-
-	@Test
-	void getValidUserIdNoSessionFail() {
-		when(environment.getProperty("vempain.test")).thenReturn("true");
-		when(userService.findAll()).thenReturn(Collections.emptyList());
-
-		try {
-			accessService.getValidUserId();
-			fail("Should have received ResponseStatusException");
-		} catch (ResponseStatusException e) {
-			assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
-		} catch (Exception e) {
-			fail("Should only have received ResponseStatusException: " + e.getMessage());
 		}
 	}
 
@@ -490,6 +425,121 @@ class AccessServiceUTC {
 			mask.set(i, true);
 			assertFalse(accessService.hasPermissions(acl, mask));
 		}
+	}
+
+	@Test
+	void getValidUserIdOk() {
+		when(securityContext.getAuthentication()).thenReturn(authentication);
+		SecurityContextHolder.setContext(securityContext);
+		UserAccount userAccount = TestUTCTools.generateUser(1L);
+		when(authentication.getPrincipal()).thenReturn(UserDetailsImpl.build(userAccount));
+		when(userService.findById(1L)).thenReturn(Optional.of(userAccount));
+
+		assertEquals(1L, accessService.getValidUserId());
+	}
+
+	@Test
+	void getValidUserIdNoSessionFail() {
+		when(securityContext.getAuthentication()).thenReturn(null);
+		SecurityContextHolder.setContext(securityContext);
+
+		try {
+			accessService.getValidUserId();
+			fail("Should have received ResponseStatusException");
+		} catch (ResponseStatusException e) {
+			assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
+		}
+	}
+
+	@Test
+	void principalThatIsNotVempainUserIsRejected() {
+		when(securityContext.getAuthentication()).thenReturn(authentication);
+		SecurityContextHolder.setContext(securityContext);
+		when(authentication.getPrincipal()).thenReturn("anonymousUser");
+
+		try {
+			accessService.hasReadPermission(1L);
+			fail("Should have received a SessionAuthenticationException");
+		} catch (SessionAuthenticationException e) {
+			assertEquals(VempainMessages.INVALID_USER_SESSION, e.getMessage());
+		}
+	}
+
+	@Test
+	void nullPrincipalIsRejected() {
+		when(securityContext.getAuthentication()).thenReturn(authentication);
+		SecurityContextHolder.setContext(securityContext);
+		when(authentication.getPrincipal()).thenReturn(null);
+
+		try {
+			accessService.getUserId();
+			fail("Should have received a SessionAuthenticationException");
+		} catch (SessionAuthenticationException e) {
+			assertEquals(VempainMessages.INVALID_USER_SESSION, e.getMessage());
+		}
+	}
+
+	@Test
+	void principalWithoutIdIsRejected() {
+		when(securityContext.getAuthentication()).thenReturn(authentication);
+		SecurityContextHolder.setContext(securityContext);
+		when(authentication.getPrincipal()).thenReturn(new UserDetailsImpl(null, "login", "nick", "mail", "pw", new HashSet<>(), List.of()));
+
+		try {
+			accessService.getUserId();
+			fail("Should have received a SessionAuthenticationException");
+		} catch (SessionAuthenticationException e) {
+			assertEquals(VempainMessages.INVALID_USER_SESSION, e.getMessage());
+		}
+		org.mockito.Mockito.verifyNoInteractions(userService);
+	}
+
+	@Test
+	void checkAdminAccessWithoutSessionIsUnauthorized() {
+		when(securityContext.getAuthentication()).thenReturn(null);
+		SecurityContextHolder.setContext(securityContext);
+
+		try {
+			accessService.checkAdminAccess();
+			fail("Should have received ResponseStatusException");
+		} catch (ResponseStatusException e) {
+			assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
+		}
+	}
+
+	@Test
+	void nonPositiveAclIdIsDeniedWithoutLookup() {
+		when(securityContext.getAuthentication()).thenReturn(authentication);
+		SecurityContextHolder.setContext(securityContext);
+		UserAccount userAccount = TestUTCTools.generateUser(1L);
+		when(authentication.getPrincipal()).thenReturn(UserDetailsImpl.build(userAccount));
+		when(userService.findById(1L)).thenReturn(Optional.of(userAccount));
+
+		assertFalse(accessService.hasReadPermission(0L));
+		assertFalse(accessService.hasModifyPermission(-1L));
+		org.mockito.Mockito.verifyNoInteractions(aclService);
+	}
+
+	@Test
+	void unitAclIsIgnoredWhenUserHasNoUnits() {
+		UserAccount userAccount = TestUTCTools.generateUser(1L);
+		userAccount.setUnits(null);
+		Acl unitAcl = TestUTCTools.generateAcl(1L, 1L, null, 7L);
+
+		assertFalse(accessService.aclListContainsPermission(List.of(true, false, false, false), userAccount, List.of(unitAcl)));
+	}
+
+	@Test
+	void readableSpecificationWithoutUserMatchesNothing() {
+		when(securityContext.getAuthentication()).thenReturn(null);
+		SecurityContextHolder.setContext(securityContext);
+
+		var specification = accessService.<fi.poltsi.vempain.admin.entity.file.SiteFile>readableSpecification();
+		var criteriaBuilder = org.mockito.Mockito.mock(jakarta.persistence.criteria.CriteriaBuilder.class);
+		var disjunction = org.mockito.Mockito.mock(jakarta.persistence.criteria.Predicate.class);
+		when(criteriaBuilder.disjunction()).thenReturn(disjunction);
+
+		assertEquals(disjunction, specification.toPredicate(null, null, criteriaBuilder));
 	}
 
 	private void testPermissions(List<Boolean> permissionList, List<Boolean> userPermissions, List<Boolean> groupPermissions,

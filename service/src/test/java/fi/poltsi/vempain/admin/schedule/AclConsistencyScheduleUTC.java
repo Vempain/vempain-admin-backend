@@ -13,6 +13,7 @@ import fi.poltsi.vempain.admin.tools.TestUTCTools;
 import fi.poltsi.vempain.auth.entity.Acl;
 import fi.poltsi.vempain.auth.entity.Unit;
 import fi.poltsi.vempain.auth.entity.UserAccount;
+import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.service.AclService;
 import fi.poltsi.vempain.auth.service.UnitService;
 import fi.poltsi.vempain.auth.service.UserService;
@@ -25,7 +26,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -224,5 +228,79 @@ class AclConsistencyScheduleUTC {
 		users.getFirst()
 			 .setAclId(6L);
 		when(userService.findAll()).thenReturn(users);
+	}
+
+	@Test
+	void verifyAssignsCreatorOwnedAclToEntitiesWithoutAcl() throws Exception {
+		setupSingleObjects();
+		var acls = new ArrayList<Acl>();
+		for (long i = 1; i <= 6; i++) {
+			acls.addAll(TestUTCTools.generateAclList(i, 2L));
+		}
+		when(aclService.findAll()).thenReturn(acls);
+
+		var orphanComponent = TestUTCTools.generateComponentList(1L)
+										  .getFirst();
+		orphanComponent.setAclId(0L);
+		orphanComponent.setCreator(42L);
+		var components = new ArrayList<Component>(TestUTCTools.generateComponentList(1L));
+		components.add(orphanComponent);
+		when(componentService.findAll()).thenReturn(components);
+		when(aclService.createNewAcl(42L, null, true, true, true, true)).thenReturn(77L);
+
+		aclConsistencySchedule.verify();
+
+		verify(aclService).createNewAcl(42L, null, true, true, true, true);
+		verify(componentService).save(orphanComponent);
+		assertEquals(77L, orphanComponent.getAclId());
+	}
+
+	@Test
+	void verifyAssignsOperatorOwnedAclWhenCreatorIsUnknown() throws Exception {
+		setupSingleObjects();
+		var acls = new ArrayList<Acl>();
+		for (long i = 1; i <= 6; i++) {
+			acls.addAll(TestUTCTools.generateAclList(i, 2L));
+		}
+		when(aclService.findAll()).thenReturn(acls);
+
+		var siteFile = fi.poltsi.vempain.admin.entity.file.SiteFile.builder()
+																   .id(9L)
+																   .aclId(0L)
+																   .creator(null)
+																   .build();
+		when(fileService.findAllSiteFiles()).thenReturn(List.of(siteFile));
+		when(aclService.createNewAcl(1L, null, true, true, true, true)).thenReturn(78L);
+
+		aclConsistencySchedule.verify();
+
+		verify(fileService).saveSiteFile(siteFile);
+		assertEquals(78L, siteFile.getAclId());
+	}
+
+	@Test
+	void verifyLogsAndContinuesWhenAclCreationFails() throws Exception {
+		setupSingleObjects();
+		var acls = new ArrayList<Acl>();
+		for (long i = 1; i <= 6; i++) {
+			acls.addAll(TestUTCTools.generateAclList(i, 2L));
+		}
+		when(aclService.findAll()).thenReturn(acls);
+
+		var orphanPage = TestUTCTools.generatePageList(1L)
+									 .getFirst();
+		orphanPage.setAclId(0L);
+		orphanPage.setCreator(5L);
+		var pages = new ArrayList<Page>(TestUTCTools.generatePageList(1L));
+		pages.getFirst()
+			 .setAclId(4L);
+		pages.add(orphanPage);
+		when(pageService.findAll()).thenReturn(pages);
+		when(aclService.createNewAcl(5L, null, true, true, true, true)).thenThrow(new VempainAclException("Invalid user ID given in the ACL"));
+
+		aclConsistencySchedule.verify();
+
+		verify(pageService, never()).save(orphanPage);
+		assertEquals(0L, orphanPage.getAclId());
 	}
 }

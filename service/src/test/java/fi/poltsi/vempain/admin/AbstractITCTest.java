@@ -20,12 +20,14 @@ import fi.poltsi.vempain.auth.repository.UnitRepository;
 import fi.poltsi.vempain.auth.repository.UserAccountRepository;
 import fi.poltsi.vempain.auth.service.AclService;
 import fi.poltsi.vempain.auth.service.UnitService;
+import fi.poltsi.vempain.auth.service.UserDetailsImpl;
 import fi.poltsi.vempain.auth.service.UserService;
 import fi.poltsi.vempain.site.repository.WebSitePageRepository;
 import fi.poltsi.vempain.tools.JschClient;
 import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 import org.flywaydb.core.Flyway;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -34,6 +36,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.junit.jupiter.Container;
@@ -41,8 +45,11 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.StreamSupport;
 
+import static fi.poltsi.vempain.admin.api.Constants.ADMIN_ID;
 import static fi.poltsi.vempain.tools.LocalFileTools.createAndVerifyDirectory;
 import static fi.poltsi.vempain.tools.LocalFileTools.removeDirectory;
 
@@ -142,6 +149,11 @@ public abstract class AbstractITCTest {
 		siteFlyway.clean();
 		siteFlyway.migrate();
 
+		// Every ITC runs as the Flyway-seeded administrator (user_account id 1). There is no test-mode bypass in AccessService:
+		// permissions are evaluated against real ACL rows, and TestITCTools grants the administrator the same privileges it grants the
+		// generated owner of each entity. Use authenticateAs(...) to run as another user, e.g. for negative tests.
+		authenticateAs(ADMIN_ID);
+
 		// Files and paths
 		log.info("=============================================================");
 		log.info("Cleaning up directories");
@@ -152,5 +164,22 @@ public abstract class AbstractITCTest {
 		removeDirectory("/var/tmp/vempain-www");
 		createAndVerifyDirectory(Path.of("/var/tmp/vempain-www"));
 		log.info("=============================================================");
+	}
+
+	@AfterEach
+	void clearSecurityContext() {
+		SecurityContextHolder.clearContext();
+	}
+
+	/**
+	 * Replaces the security context with the given existing user so that AccessService evaluates ACLs for that user.
+	 */
+	protected void authenticateAs(long userId) {
+		var account = userAccountRepository.findById(userId)
+										   .orElseThrow(() -> new IllegalStateException("No user account with id " + userId));
+		var principal = new UserDetailsImpl(account.getId(), account.getLoginName(), account.getNick(), account.getEmail(), account.getPassword(),
+											account.getUnits() == null ? Set.of() : account.getUnits(), List.of());
+		SecurityContextHolder.getContext()
+							 .setAuthentication(new UsernamePasswordAuthenticationToken(principal, principal.getPassword(), principal.getAuthorities()));
 	}
 }

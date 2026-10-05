@@ -124,9 +124,29 @@ public class TestITCTools {
 	}
 
 	/// //////////////// Acls start
+
+	/**
+	 * Creates an ACL for the given user or unit and, unless the user already is the administrator, a second row with the same
+	 * privileges for the administrator (user 1), because the ITCs run authenticated as the administrator without any test-mode bypass.
+	 * Use {@link #generateAclForOwnerOnly} for negative tests where the administrator must not have access.
+	 */
 	public Long generateAcl(Long userId, Long unitId, boolean read, boolean modify, boolean create, boolean delete) {
+		var aclId = generateAclForOwnerOnly(userId, unitId, read, modify, create, delete);
+
+		if (aclId != null && !ADMIN_ID.equals(userId)) {
+			generateAclWithId(aclId, ADMIN_ID, null, read, modify, create, delete);
+		}
+
+		return aclId;
+	}
+
+	/**
+	 * Creates an ACL that grants privileges only to the given user or unit; the administrator gets no row.
+	 */
+	public Long generateAclForOwnerOnly(Long userId, Long unitId, boolean read, boolean modify, boolean create, boolean delete) {
 		try {
-			return aclService.createNewAcl(userId, unitId, read, modify, create, delete);
+			// AclService.createNewAcl takes (read, create, modify, delete)
+			return aclService.createNewAcl(userId, unitId, read, create, modify, delete);
 		} catch (VempainAclException e) {
 			log.error("Failed to create Acl for testing: {}", e.getMessage());
 			fail("Unable to create Acl");
@@ -608,6 +628,7 @@ public class TestITCTools {
 	/////////////////// Unit end
 
 	/// //////////////// Gallery start
+	@Transactional(propagation = Propagation.REQUIRED)
 	public Long generateGalleryFromDirectory(long userId) {
 		var randomImagePath = RandomStringUtils.secure()
 											   .nextAlphanumeric(8);
@@ -649,6 +670,15 @@ public class TestITCTools {
 			if (storedSiteFile != null) {
 				gallery.getSiteFiles()
 					   .add(storedSiteFile);
+				entityManager.createNativeQuery("""
+														INSERT INTO gallery_file (gallery_id, site_file_id, sort_order)
+														VALUES (:galleryId, :siteFileId, :sortOrder)
+														""")
+							 .setParameter("galleryId", gallery.getId())
+							 .setParameter("siteFileId", storedSiteFile.getId())
+							 .setParameter("sortOrder", (long) gallery.getSiteFiles()
+				                                                      .size() - 1)
+							 .executeUpdate();
 			}
 		}
 

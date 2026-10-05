@@ -173,13 +173,13 @@ public class GalleryService {
 		var fileCommons = new ArrayList<SiteFile>();
 
 		for (var galleryFile : galleryFiles) {
-			if (withMetadata) {
-				siteFileRepository.findById(galleryFile.getSiteFileId())
-				                  .ifPresent(fileCommons::add);
-			} else {
-				siteFileRepository.findByIdWithoutMetadata(galleryFile.getSiteFileId())
-				                  .ifPresent(fileCommons::add);
-			}
+			var siteFile = withMetadata
+						   ? siteFileRepository.findById(galleryFile.getSiteFileId())
+						   : siteFileRepository.findByIdWithoutMetadata(galleryFile.getSiteFileId());
+
+			// Site files carry their own ACL: a gallery the user may read can still contain files the user may not see
+			siteFile.filter(file -> accessService.hasReadPermission(file.getAclId()))
+					.ifPresent(fileCommons::add);
 		}
 
 		gallery.setSiteFiles(fileCommons);
