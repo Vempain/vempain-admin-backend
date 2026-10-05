@@ -65,3 +65,8 @@
 - `AbstractITCTest` is the integration-test backbone: it starts two Postgres containers, runs **Flyway clean+migrate before each test**, and recreates filesystem directories under `/var/tmp`.
 - If you change schema, repository behavior, or filesystem/publish logic, add/update both a focused `UTC` and the relevant `ITC` when feasible.
 - GPS data-set listing behavior is integration-tested in `service/src/test/java/fi/poltsi/vempain/admin/service/DataServiceITC.java`; keep selector-query changes covered there.
+
+## Tag ACL rule
+
+Tags are metadata, not ACL-bearing resources. Tag entities have no ACL information, so tag list, search, and mutation endpoints must not perform ACL checks on
+tags. ACL checks apply only to resources that explicitly carry an ACL.
