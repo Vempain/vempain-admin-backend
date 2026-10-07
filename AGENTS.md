@@ -94,7 +94,17 @@
 - After every code modification, run the relevant tests for the touched modules and report the results in the response.
 - GPS data-set listing behavior is integration-tested in `service/src/test/java/fi/poltsi/vempain/admin/service/DataServiceITC.java`; keep selector-query changes covered there.
 
+- Every `LIKE` pattern built from request text goes through `fi.poltsi.vempain.tools.LikePatterns` (`contains`/`containsIgnoreCase`/`prefix`: escapes
+  `%`, `_` and `\\`, truncates to 200 characters; `limitTokens` caps a search at 10 tokens) and declares the escape character,
+  as in `GalleryRepositoryImpl` (native SQL, `ESCAPE_CLAUSE`) and `SiteFileSpecifications` (Criteria API, `ESCAPE_CHAR`). Request text never acts as wildcard
+  syntax (OWASP A05).
+
 ## Tag ACL rule
 
 Tags are metadata, not ACL-bearing resources. Tag entities have no ACL information, so tag list, search, and mutation endpoints must not perform ACL checks on
 tags. ACL checks apply only to resources that explicitly carry an ACL.
+
+- Service-to-service undo endpoints used by the file backend to revert cancelled background tasks: `DELETE /content-management/file/site-file/{id}`
+  (`FileIngestService.deleteIngestedSiteFile`: stored file, gallery links, subjects, thumbnail row, ACL and the `SiteFile`) and
+  `DELETE /content-management/data/{identifier}` (`DataService.delete`: drops the published site table and the data set). Both require the
+  administrator ACL like the ingest endpoint.

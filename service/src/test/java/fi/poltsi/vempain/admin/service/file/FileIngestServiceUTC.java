@@ -11,6 +11,7 @@ import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.SubjectService;
 import fi.poltsi.vempain.auth.service.AclService;
+import fi.poltsi.vempain.file.api.FileTypeEnum;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,12 +23,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -35,6 +38,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -480,4 +485,65 @@ class FileIngestServiceUTC {
 		assertThrows(VempainIngestException.class, () -> fileIngestService.ingestInternal(request, multipartFile));
 	}
 
+
+	// ─── deleteIngestedSiteFile ─────────────────────────────────────────────────
+
+	@Test
+	void deleteIngestedSiteFile_removesStoredFileLinksSubjectsThumbAndAcl() throws Exception {
+		var imageDir = Files.createDirectories(tempDir.resolve("images/trip"));
+		var stored = Files.write(imageDir.resolve("photo.jpg"), FILE_CONTENT);
+		when(storageDirectoryConfiguration.storageLocations()).thenReturn(Map.of("image", tempDir.resolve("images")
+																								 .toString()));
+		var siteFile = SiteFile.builder()
+							   .fileName("photo.jpg")
+							   .filePath("trip")
+							   .fileType(FileTypeEnum.IMAGE)
+							   .build();
+		siteFile.setId(42L);
+		siteFile.setAclId(10L);
+		var thumb = new fi.poltsi.vempain.admin.entity.file.FileThumb();
+		when(fileService.findSiteFileById(42L)).thenReturn(Optional.of(siteFile));
+		when(fileService.findAllFileThumbsBySiteFileList(List.of(siteFile))).thenReturn(List.of(thumb));
+
+		fileIngestService.deleteIngestedSiteFile(42L);
+
+		assertFalse(Files.exists(stored));
+		verify(fileService).deleteFileThumb(thumb);
+		verify(galleryFileService).deleteGalleryFilesBySiteFileId(42L);
+		verify(subjectService).removeAllSubjectsFromFile(42L);
+		verify(siteFileRepository).delete(siteFile);
+		verify(aclService).deleteByAclId(10L);
+	}
+
+	@Test
+	void deleteIngestedSiteFile_toleratesMissingStoredFileAndMissingAcl() throws Exception {
+		when(storageDirectoryConfiguration.storageLocations()).thenReturn(Map.of("image", tempDir.toString()));
+		var siteFile = SiteFile.builder()
+							   .fileName("gone.jpg")
+							   .filePath("trip")
+							   .fileType(FileTypeEnum.IMAGE)
+							   .build();
+		siteFile.setId(43L);
+		siteFile.setAclId(11L);
+		when(fileService.findSiteFileById(43L)).thenReturn(Optional.of(siteFile));
+		when(fileService.findAllFileThumbsBySiteFileList(List.of(siteFile))).thenReturn(List.of());
+		doThrow(new fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException())
+				.when(aclService)
+				.deleteByAclId(11L);
+
+		fileIngestService.deleteIngestedSiteFile(43L);
+
+		verify(siteFileRepository).delete(siteFile);
+	}
+
+	@Test
+	void deleteIngestedSiteFile_unknownIdIsNotFound() {
+		when(fileService.findSiteFileById(99L)).thenReturn(Optional.empty());
+
+		var exception = assertThrows(org.springframework.web.server.ResponseStatusException.class,
+									 () -> fileIngestService.deleteIngestedSiteFile(99L));
+
+		assertEquals(org.springframework.http.HttpStatus.NOT_FOUND, exception.getStatusCode());
+		verify(siteFileRepository, never()).delete(any(SiteFile.class));
+	}
 }

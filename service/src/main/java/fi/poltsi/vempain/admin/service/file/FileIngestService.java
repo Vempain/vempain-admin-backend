@@ -10,6 +10,7 @@ import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
 import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.SubjectService;
+import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.AclService;
 import fi.poltsi.vempain.file.api.FileTypeEnum;
 import fi.poltsi.vempain.tools.LocalFileTools;
@@ -17,9 +18,11 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.nio.file.FileSystemNotFoundException;
@@ -240,6 +243,58 @@ public class FileIngestService {
 			                         .build();
 		} catch (Exception e) {
 			throw new VempainIngestException("Ingest failed", e, storedFile);
+		}
+	}
+
+	/**
+	 * Reverts an ingest: removes the stored file, the gallery links, the subjects, the thumbnail row, the ACL and the site file itself.
+	 * Used by the file backend when a publish task is cancelled.
+	 *
+	 * @throws ResponseStatusException 404 when the site file does not exist
+	 */
+	@Transactional
+	public void deleteIngestedSiteFile(long siteFileId) {
+		var siteFile = fileService.findSiteFileById(siteFileId)
+								  .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Site file not found"));
+
+		deleteStoredFile(siteFile);
+		fileService.findAllFileThumbsBySiteFileList(java.util.List.of(siteFile))
+				   .forEach(fileService::deleteFileThumb);
+		galleryFileService.deleteGalleryFilesBySiteFileId(siteFileId);
+		subjectService.removeAllSubjectsFromFile(siteFileId);
+		siteFileRepository.delete(siteFile);
+
+		if (siteFile.getAclId() > 0) {
+			try {
+				aclService.deleteByAclId(siteFile.getAclId());
+			} catch (VempainEntityNotFoundException e) {
+				log.warn("ACL {} of deleted site file {} was already missing", siteFile.getAclId(), siteFileId);
+			}
+		}
+
+		log.info("Deleted ingested site file {} ({}/{})", siteFileId, siteFile.getFilePath(), siteFile.getFileName());
+	}
+
+	private void deleteStoredFile(SiteFile siteFile) {
+		if (siteFile.getFileType() == null || siteFile.getFileName() == null) {
+			return;
+		}
+
+		try {
+			var basePath = Paths.get(resolveBaseDir(siteFile.getFileType()))
+								.toAbsolutePath()
+								.normalize();
+			var target = basePath.resolve(Optional.ofNullable(siteFile.getFilePath())
+												  .orElse(""))
+								 .resolve(siteFile.getFileName())
+								 .normalize();
+			ensureWithinBase(target.getParent(), basePath);
+
+			if (Files.deleteIfExists(target)) {
+				log.debug("Deleted stored site file {}", target);
+			}
+		} catch (IOException | IllegalArgumentException e) {
+			log.warn("Could not delete the stored file of site file {}: {}", siteFile.getId(), e.getMessage());
 		}
 	}
 

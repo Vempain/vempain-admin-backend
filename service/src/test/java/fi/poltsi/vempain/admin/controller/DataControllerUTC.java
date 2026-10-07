@@ -23,6 +23,8 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -229,6 +231,30 @@ class DataControllerUTC {
 			fail("Should have thrown ResponseStatusException");
 		} catch (ResponseStatusException e) {
 			assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, e.getStatusCode());
+		}
+	}
+
+	// DELETE
+
+	@Test
+	void deleteDataSetOk() {
+		ResponseEntity<Void> response = dataController.deleteDataSet(TEST_IDENTIFIER);
+
+		assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+		verify(accessService).checkAdminAccess();
+		verify(dataService).delete(TEST_IDENTIFIER);
+	}
+
+	@Test
+	void deleteDataSetNotFoundFail() {
+		doThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND)).when(dataService)
+																									.delete(TEST_IDENTIFIER);
+
+		try {
+			dataController.deleteDataSet(TEST_IDENTIFIER);
+			fail("Should have thrown ResponseStatusException");
+		} catch (ResponseStatusException e) {
+			assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
 		}
 	}
 

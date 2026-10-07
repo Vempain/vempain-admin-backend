@@ -35,6 +35,13 @@ public class GalleryFileService {
 		query.executeUpdate();
 	}
 
+	@Transactional(propagation = Propagation.REQUIRED)
+	public void deleteGalleryFilesBySiteFileId(Long siteFileId) {
+		var query = entityManager.createNativeQuery("DELETE FROM gallery_file WHERE site_file_id = :fileId");
+		query.setParameter("fileId", siteFileId);
+		query.executeUpdate();
+	}
+
 	public List<GalleryFile> findGalleryFileByGalleryId(Long galleryId) {
 		var query = entityManager.createNativeQuery("SELECT gf.gallery_id, gf.site_file_id, gf.sort_order " +
 		                                            "FROM gallery_file gf " +

@@ -2,11 +2,11 @@ package fi.poltsi.vempain.admin.repository.file;
 
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.tools.LikePatterns;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.Instant;
 import java.util.Collection;
-import java.util.Locale;
 
 /**
  * Reusable JPA specifications for {@link SiteFile} listings. They are combined with {@code AccessService.readableSpecification()} so
@@ -52,7 +52,7 @@ public final class SiteFileSpecifications {
 	}
 
 	private static Specification<SiteFile> containsIgnoreCase(String attribute, String text) {
-		var pattern = "%" + text.toLowerCase(Locale.ROOT) + "%";
-		return (root, query, criteriaBuilder) -> criteriaBuilder.like(criteriaBuilder.lower(root.get(attribute)), pattern);
+		var pattern = LikePatterns.containsIgnoreCase(text);
+		return (root, query, criteriaBuilder) -> criteriaBuilder.like(criteriaBuilder.lower(root.get(attribute)), pattern, LikePatterns.ESCAPE_CHAR);
 	}
 }
