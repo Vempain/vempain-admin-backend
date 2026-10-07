@@ -59,4 +59,13 @@ public class DataController implements DataAPI {
 		var response = dataService.publish(identifier);
 		return ResponseEntity.ok(response);
 	}
+
+	@Override
+	public ResponseEntity<Void> deleteDataSet(String identifier) {
+		accessService.checkAdminAccess();
+		log.debug("Received request to delete data set with identifier '{}'", identifier);
+		dataService.delete(identifier);
+		return ResponseEntity.noContent()
+							 .build();
+	}
 }

@@ -200,6 +200,33 @@ public class DataService {
 		return entity.toDataResponse();
 	}
 
+	/**
+	 * Deletes a data set and drops its published table from the site database, if any.
+	 */
+	@Transactional
+	public void delete(String identifier) {
+		var optional = dataRepository.findByIdentifier(identifier);
+
+		if (optional.isEmpty()) {
+			log.error("Data set with identifier '{}' not found for deletion", identifier);
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND);
+		}
+
+		var entity = optional.get();
+		var quotedTableName = "\"" + TABLE_PREFIX + entity.getIdentifier() + "\"";
+
+		try {
+			siteJdbcTemplate.execute("DROP TABLE IF EXISTS " + quotedTableName);
+			log.info("Dropped table '{}' if it existed", quotedTableName);
+		} catch (Exception e) {
+			log.error("Failed to drop site table '{}' while deleting data set '{}'", quotedTableName, identifier, e);
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, VempainMessages.INTERNAL_ERROR);
+		}
+
+		dataRepository.delete(entity);
+		log.info("Deleted data set with identifier '{}'", identifier);
+	}
+
 	private String buildCreateSqlForTable(String createSql, String quotedTableName) {
 		validateCreateSql(createSql);
 

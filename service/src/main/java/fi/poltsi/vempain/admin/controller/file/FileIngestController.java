@@ -55,4 +55,13 @@ public class FileIngestController implements FileIngestAPI {
 			                     .build();
 		}
 	}
+
+	@Override
+	public ResponseEntity<Void> deleteSiteFile(long siteFileId) {
+		accessService.checkAdminAccess();
+		log.debug("Received request to delete ingested site file {}", siteFileId);
+		fileIngestService.deleteIngestedSiteFile(siteFileId);
+		return ResponseEntity.noContent()
+							 .build();
+	}
 }

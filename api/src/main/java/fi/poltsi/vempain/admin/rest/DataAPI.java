@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -99,4 +100,16 @@ public interface DataAPI {
 	@SecurityRequirement(name = "Bearer Authentication")
 	@PostMapping(value = MAIN_PATH + "/{identifier}/publish", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<DataResponse> publishDataSet(@PathVariable(name = "identifier") String identifier);
+
+	@Operation(summary = "Delete a data set",
+			   description = "Removes the stored data set and drops its table from the site database. Used by the file backend to revert a cancelled "
+							 + "data set publication.", tags = "DataAPI")
+	@Parameter(name = "identifier", example = "cd_collection", description = "Unique identifier of the data set to delete", required = true)
+	@ApiResponses(value = {@ApiResponse(responseCode = "204", description = "Data set deleted", content = @Content),
+						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+						   @ApiResponse(responseCode = "404", description = "Data set not found", content = @Content),
+						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
+	@SecurityRequirement(name = "Bearer Authentication")
+	@DeleteMapping(value = MAIN_PATH + "/{identifier}")
+	ResponseEntity<Void> deleteDataSet(@PathVariable(name = "identifier") String identifier);
 }

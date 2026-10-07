@@ -27,6 +27,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -435,5 +436,47 @@ class DataServiceUTC {
 								   .build());
 		}
 		return entities;
+	}
+
+	// delete
+
+	@Test
+	void deleteDropsSiteTableAndRemovesTheEntityOk() {
+		var entity = buildEntity(1L);
+		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+
+		dataService.delete(TEST_IDENTIFIER);
+
+		verify(mockJdbcTemplate).execute("DROP TABLE IF EXISTS \"website_data__" + TEST_IDENTIFIER + "\"");
+		verify(dataRepository).delete(entity);
+	}
+
+	@Test
+	void deleteNotFoundFail() {
+		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.empty());
+
+		try {
+			dataService.delete(TEST_IDENTIFIER);
+			fail("Should have thrown ResponseStatusException");
+		} catch (ResponseStatusException e) {
+			assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
+		}
+		verify(dataRepository, never()).delete(any());
+	}
+
+	@Test
+	void deleteFailsWhenTheSiteTableCannotBeDropped() {
+		var entity = buildEntity(1L);
+		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+		doThrow(new RuntimeException("db down")).when(mockJdbcTemplate)
+												.execute(anyString());
+
+		try {
+			dataService.delete(TEST_IDENTIFIER);
+			fail("Should have thrown ResponseStatusException");
+		} catch (ResponseStatusException e) {
+			assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, e.getStatusCode());
+		}
+		verify(dataRepository, never()).delete(any());
 	}
 }
