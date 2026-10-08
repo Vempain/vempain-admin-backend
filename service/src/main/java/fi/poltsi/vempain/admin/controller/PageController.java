@@ -141,22 +141,16 @@ public class PageController implements PageAPI {
 			                          .timestamp(Instant.now())
 			                          .build();
 		} else {
-			try {
-				publishService.publishAllPages();
-				response = PublishResponse.builder()
-				                          .result(PublishResultEnum.OK)
-				                          .message("Successfully published all pages")
-				                          .timestamp(Instant.now())
-				                          .build();
-			} catch (VempainEntityNotFoundException e) {
-				response = PublishResponse.builder()
-				                          .result(PublishResultEnum.FAIL)
-				                          .message("Could not find any pages")
-				                          .timestamp(Instant.now())
-				                          .build();
-				return ResponseEntity.status(HttpStatus.NOT_FOUND)
-				                     .body(response);
-			}
+			// Publishing is long running: it is started as a background task that the client follows through the task API
+			var task = publishService.publishAllPagesAsTask();
+			response = PublishResponse.builder()
+									  .result(PublishResultEnum.OK)
+									  .message("Publishing of all pages started")
+									  .timestamp(Instant.now())
+									  .task(task)
+									  .build();
+			return ResponseEntity.accepted()
+								 .body(response);
 		}
 
 		return ResponseEntity.ok(response);
@@ -178,11 +172,12 @@ public class PageController implements PageAPI {
 				return createPagePublishSchedule(publishRequest.getPublishDateTime(), publishRequest.getId(), publishRequest.getPublishMessage());
 			}
 
-			publishService.publishPage(publishRequest.getId());
+			var task = publishService.publishPageAsTask(publishRequest.getId());
 			response = PublishResponse.builder()
 			                          .result(PublishResultEnum.OK)
-			                          .message("Successfully published page")
+									  .message("Publishing of the page started")
 			                          .timestamp(Instant.now())
+									  .task(task)
 			                          .build();
 		} catch (VempainEntityNotFoundException e) {
 			response = PublishResponse.builder()
@@ -194,7 +189,8 @@ public class PageController implements PageAPI {
 			                     .body(response);
 		}
 
-		return ResponseEntity.ok(response);
+		return ResponseEntity.accepted()
+							 .body(response);
 	}
 
 	private ResponseEntity<PublishResponse> createPagePublishSchedule(Instant publishDateTime, long pageId, String message) {

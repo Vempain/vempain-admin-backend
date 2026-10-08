@@ -1,6 +1,7 @@
 package fi.poltsi.vempain.admin.service.file;
 
 import fi.poltsi.vempain.admin.api.PublishResultEnum;
+import fi.poltsi.vempain.admin.api.TaskTypeEnum;
 import fi.poltsi.vempain.admin.api.request.file.SiteFilePagedRequest;
 import fi.poltsi.vempain.admin.api.response.RefreshDetailResponse;
 import fi.poltsi.vempain.admin.api.response.RefreshResponse;
@@ -20,11 +21,15 @@ import fi.poltsi.vempain.admin.service.SubjectService;
 import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.service.AclService;
+import fi.poltsi.vempain.common.api.response.TaskAcceptedResponse;
+import fi.poltsi.vempain.common.task.TaskProgress;
+import fi.poltsi.vempain.common.task.TaskRunner;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -49,6 +54,8 @@ import java.util.Set;
 @RequiredArgsConstructor
 @Service
 public class FileService {
+	private final TaskRunner         taskRunner;
+	private final ApplicationContext applicationContext;
 
 	private static final String RESPONSE_STATUS_EXCEPTION_MESSAGE = "Unknown error";
 
@@ -340,6 +347,50 @@ public class FileService {
 	// Subject
 	public Subject saveSubject(Subject subject) {
 		return subjectRepository.save(subject);
+	}
+
+	/**
+	 * Starts a background task that refreshes the files of every gallery, one step per gallery. The caller must hold the administrator
+	 * ACL (checked by the controller); the refresh itself runs through the transactional proxy on a worker thread.
+	 */
+	public TaskAcceptedResponse refreshAllGalleryFilesAsTask() {
+		var galleryIds = List.copyOf(galleryRepository.getAllGalleryIds());
+		var progress = taskRunner.submitDurable(TaskTypeEnum.REFRESH_ALL_GALLERY_FILES.name(), "Refresh the files of all galleries", galleryIds.size(),
+												java.util.Map.of("gallery_ids", galleryIds), task -> refreshAllGalleryFilesNow(galleryIds, task));
+		return progress.toAcceptedResponse();
+	}
+
+	/**
+	 * Task body of {@link TaskTypeEnum#REFRESH_ALL_GALLERY_FILES}; the aggregated {@link RefreshResponse} becomes the task result.
+	 */
+	public RefreshResponse refreshAllGalleryFilesNow(List<Long> galleryIds, TaskProgress progress) {
+		var refreshResponse = RefreshResponse.builder()
+											 .details(new ArrayList<>())
+											 .build();
+		var successCount = 0L;
+		var failedCount = 0L;
+
+		for (Long galleryId : galleryIds) {
+			progress.checkpoint();
+			var galleryResponse = applicationContext.getBean(FileService.class)
+													.refreshGalleryFiles(galleryId);
+			log.debug("Gallery {} refresh result: {}", galleryId, galleryResponse);
+			successCount = successCount + galleryResponse.getRefreshedItems();
+			failedCount = failedCount + galleryResponse.getFailedItems();
+			refreshResponse.getDetails()
+						   .addAll(galleryResponse.getDetails());
+
+			if (galleryResponse.getFailedItems() == 0) {
+				progress.advance("Refreshed the files of gallery " + galleryId);
+			} else {
+				progress.advanceFailed(galleryResponse.getFailedItems() + " files of gallery " + galleryId + " could not be refreshed");
+			}
+		}
+
+		refreshResponse.setRefreshedItems(successCount);
+		refreshResponse.setFailedItems(failedCount);
+		refreshResponse.setResult(failedCount == 0 ? PublishResultEnum.OK : PublishResultEnum.FAIL);
+		return refreshResponse;
 	}
 
 	@Transactional(propagation = Propagation.REQUIRED)

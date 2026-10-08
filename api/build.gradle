@@ -39,7 +39,9 @@ dependencies {
 	api "org.springframework.boot:spring-boot-starter-webmvc:${libs.versions.spring.boot.get()}"
 	// This needs to be built first in vempain-auth
 	api "fi.poltsi.vempain:vempain-auth-api:${libs.versions.vempain.auth.get()}"
-	api "fi.poltsi.vempain:vempain-file-backend-api:${libs.versions.vempain.file.get()}"
+	// Types shared with the file backend (FileTypeEnum, tag/copyright/location DTOs) come from the common library;
+	// the admin API must never depend on vempain-file-backend-api, because that artifact depends on this one.
+	api "fi.poltsi.vempain:vempain-common-api:${libs.versions.vempain.common.get()}"
 	implementation "io.swagger.core.v3:swagger-annotations:${libs.versions.swagger.get()}"
 	implementation "jakarta.validation:jakarta.validation-api:${libs.versions.jakarta.validation.api.get()}"
 	testImplementation "org.mockito:mockito-junit-jupiter:${libs.versions.mockito.get()}"

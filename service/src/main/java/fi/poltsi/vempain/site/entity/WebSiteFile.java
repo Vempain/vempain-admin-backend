@@ -1,7 +1,7 @@
 package fi.poltsi.vempain.site.entity;
 
 import fi.poltsi.vempain.common.DurationToLongConverter;
-import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.common.api.FileTypeEnum;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;

@@ -22,4 +22,5 @@ jobs:
       install_exiftool: true
       run_test_setup: true
     secrets:
+      VEMPAIN_ACTION_TOKEN: ${{ secrets.VEMPAIN_ACTION_TOKEN }}
       COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}

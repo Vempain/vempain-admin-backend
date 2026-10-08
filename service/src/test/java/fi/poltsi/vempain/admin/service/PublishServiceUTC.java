@@ -16,6 +16,9 @@ import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.admin.service.file.GalleryFileService;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.UserService;
+import fi.poltsi.vempain.common.api.TaskStatusEnum;
+import fi.poltsi.vempain.common.task.TaskProgressStore;
+import fi.poltsi.vempain.common.task.TaskRunner;
 import fi.poltsi.vempain.site.repository.WebGpsLocationRepository;
 import fi.poltsi.vempain.site.repository.WebSiteFileRepository;
 import fi.poltsi.vempain.site.repository.WebSiteGalleryRepository;
@@ -29,10 +32,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationContext;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -85,6 +92,13 @@ class PublishServiceUTC {
 	private WebSiteResourceService   webSiteResourceService;
 	@Mock
 	private AccessService            accessService;
+	@Mock
+	private ApplicationContext applicationContext;
+
+	// A synchronous task runner: submitted work runs on the calling thread, so the task state can be asserted right away
+	private final TaskProgressStore taskStore  = new TaskProgressStore();
+	@Spy
+	private       TaskRunner        taskRunner = new TaskRunner(taskStore, Runnable::run);
 
 	@InjectMocks
 	private PublishService publishService;
@@ -372,5 +386,152 @@ class PublishServiceUTC {
 
 		verify(publishServiceSpy).publishGalleryAsSystem(1L);
 		verify(publishServiceSpy, never()).publishGalleryAsSystem(2L);
+	}
+
+	// ---------------------------------------------------------------- background tasks
+
+	@Test
+	void publishPageAsTaskIsDeniedBeforeAnyTaskIsSubmitted() {
+		var page = Page.builder()
+					   .id(1L)
+					   .aclId(10L)
+					   .formId(2L)
+					   .build();
+		when(pageService.findById(1L)).thenReturn(page);
+		when(accessService.hasModifyPermission(10L)).thenReturn(false);
+
+		assertThrows(AccessDeniedException.class, () -> publishService.publishPageAsTask(1L));
+
+		verify(taskRunner, never()).submitDurable(any(), any(), anyLong(), any(), any());
+		assertEquals(0, taskStore.size());
+	}
+
+	@Test
+	void publishPageAsTaskRunsThePublishThroughTheTransactionalProxy() throws Exception {
+		var page = Page.builder()
+					   .id(1L)
+					   .aclId(10L)
+					   .formId(2L)
+					   .title("Front page")
+					   .build();
+		when(pageService.findById(1L)).thenReturn(page);
+		doReturn(true).when(publishServiceSpy)
+					  .canPublishPage(page);
+		doReturn(77L).when(publishServiceSpy)
+					 .publishPageAsSystem(1L);
+		when(applicationContext.getBean(PublishService.class)).thenReturn(publishServiceSpy);
+
+		var accepted = publishServiceSpy.publishPageAsTask(1L);
+
+		assertEquals("PUBLISH_PAGE", accepted.getType());
+		assertEquals("Publish page Front page", accepted.getTitle());
+		var task = taskStore.find(accepted.getTaskId())
+							.orElseThrow();
+		assertEquals(TaskStatusEnum.COMPLETED, task.getStatus());
+		assertEquals(Map.of("site_page_id", 77L), task.getResult());
+		assertEquals(100, task.percent());
+		verify(publishServiceSpy).publishPageAsSystem(1L);
+	}
+
+	@Test
+	void publishAllPagesAsTaskSkipsPagesTheUserMayNotPublish() throws Exception {
+		var allowed = Page.builder()
+						  .id(1L)
+						  .aclId(10L)
+						  .formId(2L)
+						  .build();
+		var denied = Page.builder()
+						 .id(2L)
+						 .aclId(20L)
+						 .formId(2L)
+						 .build();
+		when(pageService.findAllByUser()).thenReturn(List.of(allowed, denied));
+		doReturn(true).when(publishServiceSpy)
+					  .canPublishPage(allowed);
+		doReturn(false).when(publishServiceSpy)
+					   .canPublishPage(denied);
+		doReturn(1L).when(publishServiceSpy)
+					.publishPageAsSystem(1L);
+		when(applicationContext.getBean(PublishService.class)).thenReturn(publishServiceSpy);
+
+		var accepted = publishServiceSpy.publishAllPagesAsTask();
+
+		assertEquals(1, accepted.getTotalSteps());
+		var task = taskStore.find(accepted.getTaskId())
+							.orElseThrow();
+		assertEquals(TaskStatusEnum.COMPLETED, task.getStatus());
+		assertEquals(Map.of("published", 1L, "skipped", 0L), task.getResult());
+		verify(publishServiceSpy).publishPageAsSystem(1L);
+		verify(publishServiceSpy, never()).publishPageAsSystem(2L);
+		verify(webSitePageRepository).resetCache();
+	}
+
+	@Test
+	void publishPagesNowCountsAMissingPageAsAFailedStepWithoutFailingTheTask() throws Exception {
+		doReturn(1L).when(publishServiceSpy)
+					.publishPageAsSystem(1L);
+		Mockito.doThrow(new VempainEntityNotFoundException("Page not found by id: 2", "page"))
+			   .when(publishServiceSpy)
+			   .publishPageAsSystem(2L);
+		when(applicationContext.getBean(PublishService.class)).thenReturn(publishServiceSpy);
+		var progress = taskStore.create("PUBLISH_ALL_PAGES", "Publish all pages", 1L, 2);
+
+		var result = publishServiceSpy.publishPagesNow(List.of(1L, 2L), progress);
+
+		assertEquals(Map.of("published", 1L, "skipped", 1L), result);
+		assertEquals(1, progress.getFailedSteps()
+								.get());
+		assertEquals(2, progress.getCompletedSteps()
+								.get());
+	}
+
+	@Test
+	void publishSelectedGalleriesAsTaskSkipsUnpublishableGalleriesAtSubmitTime() throws Exception {
+		var allowed = Gallery.builder()
+							 .id(1L)
+							 .aclId(101L)
+							 .build();
+		var denied = Gallery.builder()
+							.id(3L)
+							.aclId(103L)
+							.build();
+		when(fileService.findGalleryById(1L)).thenReturn(allowed);
+		when(fileService.findGalleryById(2L)).thenReturn(null);
+		when(fileService.findGalleryById(3L)).thenReturn(denied);
+		when(accessService.hasModifyPermission(101L)).thenReturn(true);
+		when(accessService.hasModifyPermission(103L)).thenReturn(false);
+		doNothing().when(publishServiceSpy)
+				   .publishGalleryAsSystem(1L);
+		when(applicationContext.getBean(PublishService.class)).thenReturn(publishServiceSpy);
+
+		var accepted = publishServiceSpy.publishSelectedGalleriesAsTask(List.of(1L, 2L, 3L, 0L));
+
+		assertEquals("PUBLISH_SELECTED_GALLERIES", accepted.getType());
+		assertEquals(1, accepted.getTotalSteps());
+		var task = taskStore.find(accepted.getTaskId())
+							.orElseThrow();
+		assertEquals(TaskStatusEnum.COMPLETED, task.getStatus());
+		assertEquals(Map.of("published", 1L, "skipped", 3L), task.getResult());
+		verify(publishServiceSpy).publishGalleryAsSystem(1L);
+		verify(publishServiceSpy, never()).publishGalleryAsSystem(3L);
+	}
+
+	@Test
+	void publishSelectedGalleriesAsTaskRejectsAnEmptyList() {
+		assertThrows(ResponseStatusException.class, () -> publishService.publishSelectedGalleriesAsTask(List.of()));
+		assertEquals(0, taskStore.size());
+	}
+
+	@Test
+	void publishGalleryAsTaskVerifiesThePrivilegesBeforeSubmitting() {
+		var gallery = Gallery.builder()
+							 .id(4L)
+							 .aclId(104L)
+							 .build();
+		when(fileService.findGalleryById(4L)).thenReturn(gallery);
+		when(accessService.hasModifyPermission(104L)).thenReturn(false);
+
+		assertThrows(AccessDeniedException.class, () -> publishService.publishGalleryAsTask(4L));
+		assertEquals(0, taskStore.size());
 	}
 }

@@ -1,13 +1,18 @@
 package fi.poltsi.vempain.admin.service;
 
 import fi.poltsi.vempain.admin.VempainMessages;
+import fi.poltsi.vempain.admin.api.TaskTypeEnum;
 import fi.poltsi.vempain.admin.api.request.DataRequest;
 import fi.poltsi.vempain.admin.api.response.DataResponse;
 import fi.poltsi.vempain.admin.api.response.DataSummaryResponse;
 import fi.poltsi.vempain.admin.entity.DataEntity;
 import fi.poltsi.vempain.admin.repository.DataRepository;
+import fi.poltsi.vempain.common.api.response.TaskAcceptedResponse;
+import fi.poltsi.vempain.common.task.TaskProgress;
+import fi.poltsi.vempain.common.task.TaskRunner;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -40,12 +45,44 @@ public class DataService {
 	private static final String  TABLE_PREFIX       = "website_data__";
 	private static final String  COLUMN_NAME_REGEX  = "^[a-zA-Z_][a-zA-Z0-9_]*$";
 
-	private final DataRepository dataRepository;
-	private final JdbcTemplate   siteJdbcTemplate;
+	private final DataRepository     dataRepository;
+	private final JdbcTemplate       siteJdbcTemplate;
+	private final TaskRunner         taskRunner;
+	private final ApplicationContext applicationContext;
 
-	public DataService(DataRepository dataRepository, @Qualifier("siteDataSource") DataSource siteDataSource) {
+	public DataService(DataRepository dataRepository, @Qualifier("siteDataSource") DataSource siteDataSource, TaskRunner taskRunner,
+					   ApplicationContext applicationContext) {
 		this.dataRepository = dataRepository;
 		this.siteJdbcTemplate = new JdbcTemplate(siteDataSource);
+		this.taskRunner = taskRunner;
+		this.applicationContext = applicationContext;
+	}
+
+	/**
+	 * Starts a background task that publishes the data set to the site database. The data set must exist; the publish itself runs
+	 * through the transactional proxy on a worker thread and the finished task carries the {@link DataResponse}.
+	 */
+	public TaskAcceptedResponse publishAsTask(String identifier) {
+		if (dataRepository.findByIdentifier(identifier)
+						  .isEmpty()) {
+			log.error("Data set with identifier '{}' not found for publishing", identifier);
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND);
+		}
+
+		var progress = taskRunner.submitDurable(TaskTypeEnum.PUBLISH_DATA_SET.name(), "Publish data set " + identifier, 1, Map.of("identifier", identifier),
+												task -> publishNow(identifier, task));
+		return progress.toAcceptedResponse();
+	}
+
+	/**
+	 * Task body of {@link TaskTypeEnum#PUBLISH_DATA_SET}.
+	 */
+	public DataResponse publishNow(String identifier, TaskProgress progress) {
+		progress.checkpoint();
+		var response = applicationContext.getBean(DataService.class)
+										 .publish(identifier);
+		progress.advance("Published data set " + identifier);
+		return response;
 	}
 
 	public List<DataSummaryResponse> findAll(String type, String identifierPrefix, String search) {

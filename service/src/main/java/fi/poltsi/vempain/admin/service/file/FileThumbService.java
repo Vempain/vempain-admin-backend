@@ -3,7 +3,7 @@ package fi.poltsi.vempain.admin.service.file;
 import fi.poltsi.vempain.admin.entity.file.FileThumb;
 import fi.poltsi.vempain.admin.repository.file.FileThumbPageableRepository;
 import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
-import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.common.api.FileTypeEnum;
 import fi.poltsi.vempain.tools.ImageTools;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -68,7 +68,7 @@ public class FileThumbService {
 	@Transactional(propagation = Propagation.REQUIRED)
 	protected void generateThumbFile(long commonId, Path sourceFile, Path destination, FileTypeEnum FileTypeEnum) {
 		// We add the thumb class to the beginning of the relative path
-		var relativeDestinationPath = Path.of(fi.poltsi.vempain.file.api.FileTypeEnum.THUMB.shortName + File.separator + FileTypeEnum.shortName + File.separator + destination);
+		var relativeDestinationPath = Path.of(fi.poltsi.vempain.common.api.FileTypeEnum.THUMB.shortName + File.separator + FileTypeEnum.shortName + File.separator + destination);
 		var absoluteDestinationPath = Path.of(siteFileDirectory + File.separator + relativeDestinationPath);
 		log.debug("Relative thumb path: {}", relativeDestinationPath);
 		log.debug("Absolute thumb path: {}", absoluteDestinationPath);
@@ -91,7 +91,7 @@ public class FileThumbService {
 		}
 
 		// Generate thumb, for now we only handle images
-		if (FileTypeEnum.equals(fi.poltsi.vempain.file.api.FileTypeEnum.IMAGE)) {
+		if (FileTypeEnum.equals(fi.poltsi.vempain.common.api.FileTypeEnum.IMAGE)) {
 			imageTools.resizeImage(sourceFile, destinationFile, (thumbnailSize != 0 ? thumbnailSize : 250), 0.5F);
 		} else {
 			log.info("Unsupported file class {}", FileTypeEnum.shortName);

@@ -1,7 +1,7 @@
 package fi.poltsi.vempain.admin.api.response.file;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.common.api.FileTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

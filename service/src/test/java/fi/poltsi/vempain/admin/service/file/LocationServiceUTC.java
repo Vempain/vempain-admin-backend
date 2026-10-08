@@ -2,7 +2,7 @@ package fi.poltsi.vempain.admin.service.file;
 
 import fi.poltsi.vempain.admin.entity.file.GpsLocation;
 import fi.poltsi.vempain.admin.repository.GpsLocationRepository;
-import fi.poltsi.vempain.file.api.response.LocationResponse;
+import fi.poltsi.vempain.common.api.response.LocationResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

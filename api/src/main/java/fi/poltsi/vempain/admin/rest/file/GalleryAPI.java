@@ -169,7 +169,11 @@ public interface GalleryAPI {
 	@Operation(summary = "Publish all galleries", description = "Publish a new version of all galleries", tags = "GalleryAPI")
 	@Parameter(name = "publish_date", description = "Date when the all the galleries should be published, in YYYY-MM-DDTHH:mm:ss format",
 	           example = "2027-12-31T23:59:59")
-	@ApiResponses(value = {@ApiResponse(responseCode = "200",
+	@ApiResponses(value = {@ApiResponse(responseCode = "202",
+										description = "Publishing started as a background task carried in the response; 200 when the galleries were scheduled instead",
+										content = {@Content(schema = @Schema(implementation = PublishResponse.class),
+															mediaType = MediaType.APPLICATION_JSON_VALUE)}),
+						   @ApiResponse(responseCode = "200",
 	                                    description = "Galleries published",
 	                                    content = {@Content(array = @ArraySchema(schema = @Schema(implementation = PublishResponse.class)),
 	                                                        mediaType = MediaType.APPLICATION_JSON_VALUE)}),
@@ -183,7 +187,11 @@ public interface GalleryAPI {
 
 	@Operation(summary = "Publish gallery", description = "Publish a new version of a gallery", tags = "GalleryAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Publish request with page ID and optional delay in seconds", required = true)
-	@ApiResponses(value = {@ApiResponse(responseCode = "200",
+	@ApiResponses(value = {@ApiResponse(responseCode = "202",
+										description = "Publishing started as a background task carried in the response; 200 when the gallery was scheduled instead",
+										content = {@Content(schema = @Schema(implementation = PublishResponse.class),
+															mediaType = MediaType.APPLICATION_JSON_VALUE)}),
+						   @ApiResponse(responseCode = "200",
 	                                    description = "Gallery published",
 	                                    content = {@Content(array = @ArraySchema(schema = @Schema(implementation = PublishResponse.class)),
 	                                                        mediaType = MediaType.APPLICATION_JSON_VALUE)}),
@@ -247,8 +255,8 @@ public interface GalleryAPI {
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "List of gallery IDs to publish", required = true,
 	                                                      content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 	                                                                         schema = @Schema(implementation = GalleryPublishRequest.class)))
-	@ApiResponses(value = {@ApiResponse(responseCode = "200",
-	                                    description = "Selected galleries publishing triggered",
+	@ApiResponses(value = {@ApiResponse(responseCode = "202",
+										description = "Publishing started as a background task carried in the response",
 	                                    content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
 	                                                        schema = @Schema(implementation = PublishResponse.class))}),
 	                       @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),

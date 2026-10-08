@@ -44,7 +44,7 @@ class DataServiceUTC {
 	@BeforeEach
 	void setUp() {
 		var mockDataSource = mock(DataSource.class);
-		dataService = new DataService(dataRepository, mockDataSource);
+		dataService = new DataService(dataRepository, mockDataSource, null, null);
 
 		mockJdbcTemplate = mock(JdbcTemplate.class);
 		// Inject the mock JdbcTemplate via reflection to control site DB interaction

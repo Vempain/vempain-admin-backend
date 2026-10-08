@@ -62,11 +62,39 @@
 - ITCs run authenticated as the Flyway-seeded administrator (`AbstractITCTest.setUp`, `authenticateAs(userId)` to switch user) and
   `TestITCTools.generateAcl` grants the administrator on every generated entity; use `generateAclForOwnerOnly` for negative cases. Every
   ACL-dependent path needs both a granted and a denied test (`AccessServiceITC`, `AccessServiceUTC`, `PublishServiceITC/UTC`).
+- Service-to-service undo endpoints used by the file backend to revert cancelled background tasks: `DELETE /content-management/file/site-file/{id}`
+  (`FileIngestService.deleteIngestedSiteFile`: stored file, gallery links, subjects, thumbnail row, ACL and the `SiteFile`) and
+  `DELETE /content-management/data/{identifier}` (`DataService.delete`: drops the published site table and the data set). Both require the
+  administrator ACL like the ingest endpoint.
+- Long-running actions run as background tasks of the shared durable task facility (`vempain-common-core`, `fi.poltsi.vempain.common.task`:
+  `TaskRunner`, `TaskProgressStore`, `TaskController` = `TaskAPI` at `/api/tasks`, `202 TaskAcceptedResponse` + polled
+  `TaskProgressResponse`, cooperative cancel). This service hosts it with `fi.poltsi.vempain.admin.task.AdminTaskCommandExecutor` and
+  `fi.poltsi.vempain.admin.api.TaskTypeEnum`: `PUBLISH_PAGE`, `PUBLISH_ALL_PAGES`, `PUBLISH_GALLERY`, `PUBLISH_ALL_GALLERIES`,
+  `PUBLISH_SELECTED_GALLERIES` (`PublishService.*AsTask` submit, `publishPageNow`/`publishPagesNow`/`publishGalleriesNow` run through the
+  transactional proxy, result `{"published", "skipped"}` or `{"site_page_id"}`), `REFRESH_ALL_GALLERY_FILES`
+  (`FileService.refreshAllGalleryFilesAsTask`, result `RefreshResponse`) and `PUBLISH_DATA_SET` (`DataService.publishAsTask`, result
+  `DataResponse`). The immediate publish endpoints answer `202` with the task inside `PublishResponse.task` (`RefreshResponse.task` for the
+  refresh, a bare `TaskAcceptedResponse` for data sets); scheduling a publish still answers `200` without a task, and the synchronous
+  `publish*`/`*AsSystem` methods remain for `PublishItemSchedule`. Authorization (`canPublishPage`/`canPublishGallery`) is evaluated
+  synchronously before a task is submitted and unauthorized items are skipped at submit time. Publishing has no compensations: a cancelled
+  publish stops between items and leaves the published ones on the site. Task tables live in the admin datasource (`V1004__task_tables.sql`, reference schema in
+  `vempain-common-core`); `AdminDatabaseConfiguration` scans
+  `fi.poltsi.vempain.common.task.{entity,repository}`, `WebSecurityConfig` permits `/tasks/**` for authenticated users and `vempain.tasks.*`
+  configures workers, polling, leases and retention. Tests: `TaskCTC` (hosted `/tasks` API), `AdminTaskCommandExecutorUTC`,
+  the task cases of `PublishServiceUTC` (synchronous `TaskRunner` + mocked `ApplicationContext` proxy) and `DataCTC` (end to end task).
+- Security findings and their mitigations are recorded in `security/OWASP-2025-audit-report.md`; keep it current when changing authorization,
+  query building, SSH/filesystem publishing or input handling.
 - `lombok.config` sets `lombok.addLombokGeneratedAnnotation = true` so generated code is excluded from JaCoCo; keep it when touching coverage settings.
 - The repo uses **tabs** for Java indentation and a 160-char line length (`.editorconfig`). Avoid mass reformatting.
 
 ## External integrations
-- GitHub Packages dependencies are required for builds: `vempain-auth-*` and `vempain-file-backend-api`. Build/publish uses `gpr.user` / `gpr.token` or `GITHUB_ACTOR` / `GITHUB_TOKEN`.
+
+- GitHub Packages dependencies are required for builds: `vempain-auth-*` and `vempain-common-api`. Build/publish uses `gpr.user` / `gpr.token` or
+  `GITHUB_ACTOR` / `GITHUB_TOKEN`.
+  This repository must never depend on `vempain-file-backend-api`: the file backend depends on this API (it calls the admin backend), so a
+  dependency in the other direction is a cycle. Types both backends need (`FileTypeEnum`, `TagRequest`, `CopyrightRequest`,
+  `LocationRequest`/`LocationResponse`) come from `vempain-common` (`fi.poltsi.vempain.common.api.*`); add new shared types there, release it and
+  bump `vempain-common` in `gradle/libs.versions.toml`. A release of this API is consumed by the file backend, so release this repository before it.
 - File publishing is a core feature, not an afterthought:
   - `PublishService` orchestrates site-side publishing.
   - `JschClient` pushes converted files + thumbs over SFTP to the remote site root.
@@ -103,8 +131,3 @@
 
 Tags are metadata, not ACL-bearing resources. Tag entities have no ACL information, so tag list, search, and mutation endpoints must not perform ACL checks on
 tags. ACL checks apply only to resources that explicitly carry an ACL.
-
-- Service-to-service undo endpoints used by the file backend to revert cancelled background tasks: `DELETE /content-management/file/site-file/{id}`
-  (`FileIngestService.deleteIngestedSiteFile`: stored file, gallery links, subjects, thumbnail row, ACL and the `SiteFile`) and
-  `DELETE /content-management/data/{identifier}` (`DataService.delete`: drops the published site table and the data set). Both require the
-  administrator ACL like the ingest endpoint.

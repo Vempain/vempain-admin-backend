@@ -124,7 +124,11 @@ public interface PageAPI {
 	@Operation(summary = "Publish all pages", description = "Publish a new version of all pages", tags = "PageAPI")
 	@Parameter(name = "publish_date", description = "Date when the all the pages should be published, in YYYY-MM-DDTHH:mm:ss format",
 	           example = "2027-12-31T23:59:59")
-	@ApiResponses(value = {@ApiResponse(responseCode = "200",
+	@ApiResponses(value = {@ApiResponse(responseCode = "202",
+										description = "Publishing started as a background task carried in the response; 200 when the pages were scheduled instead",
+										content = {@Content(schema = @Schema(implementation = PublishResponse.class),
+															mediaType = MediaType.APPLICATION_JSON_VALUE)}),
+						   @ApiResponse(responseCode = "200",
 	                                    description = "All pages published",
 	                                    content = {@Content(array = @ArraySchema(schema = @Schema(implementation = PublishResponse.class)),
 	                                                        mediaType = MediaType.APPLICATION_JSON_VALUE)}),
@@ -138,7 +142,11 @@ public interface PageAPI {
 
 	@Operation(summary = "Publish page", description = "Publish a new version of a page", tags = "PageAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Publish request with page ID and optional delay in seconds", required = true)
-	@ApiResponses(value = {@ApiResponse(responseCode = "200",
+	@ApiResponses(value = {@ApiResponse(responseCode = "202",
+										description = "Publishing started as a background task carried in the response; 200 when the page was scheduled instead",
+										content = {@Content(schema = @Schema(implementation = PublishResponse.class),
+															mediaType = MediaType.APPLICATION_JSON_VALUE)}),
+						   @ApiResponse(responseCode = "200",
 	                                    description = "Page published, or will be published",
 	                                    content = {@Content(array = @ArraySchema(schema = @Schema(implementation = PublishResponse.class)),
 	                                                        mediaType = MediaType.APPLICATION_JSON_VALUE)}),

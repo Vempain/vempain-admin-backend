@@ -3,6 +3,7 @@ package fi.poltsi.vempain.admin.service;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
 import fi.poltsi.vempain.admin.api.PublishResultEnum;
+import fi.poltsi.vempain.admin.api.TaskTypeEnum;
 import fi.poltsi.vempain.admin.api.response.PublishResponse;
 import fi.poltsi.vempain.admin.entity.FormComponent;
 import fi.poltsi.vempain.admin.entity.Page;
@@ -13,7 +14,10 @@ import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.admin.service.file.GalleryFileService;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.UserService;
-import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.common.api.FileTypeEnum;
+import fi.poltsi.vempain.common.api.response.TaskAcceptedResponse;
+import fi.poltsi.vempain.common.task.TaskProgress;
+import fi.poltsi.vempain.common.task.TaskRunner;
 import fi.poltsi.vempain.site.entity.WebGpsLocation;
 import fi.poltsi.vempain.site.entity.WebSitePage;
 import fi.poltsi.vempain.site.repository.WebGpsLocationRepository;
@@ -26,6 +30,7 @@ import fi.poltsi.vempain.tools.JschClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -35,7 +40,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.File;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static fi.poltsi.vempain.auth.tools.JsonTools.toJson;
@@ -63,6 +70,8 @@ public class PublishService {
 	private final JschClient            jschClient;
 	private final WebSiteResourceService webSiteResourceService;
 	private final AccessService accessService;
+	private final TaskRunner         taskRunner;
+	private final ApplicationContext applicationContext;
 
 	@Value("${vempain.site.ssh.address}")
 	private String siteSshAddress;
@@ -512,5 +521,186 @@ public class PublishService {
 		                      .message(message)
 		                      .timestamp(Instant.now())
 		                      .build();
+	}
+
+	/// ///////// Background tasks (shared task facility)
+
+	/**
+	 * Starts a background task that publishes one page and its galleries. The caller's privileges are verified synchronously before
+	 * the task is submitted, exactly as {@link #publishPage(Long)} would.
+	 *
+	 * @throws AccessDeniedException          when the current user may not publish the page or one of its linked entities
+	 * @throws VempainEntityNotFoundException when the page does not exist
+	 */
+	public TaskAcceptedResponse publishPageAsTask(long pageId) throws VempainEntityNotFoundException {
+		authorizePagePublish(pageId);
+		var page = pageService.findById(pageId);
+		var progress = taskRunner.submitDurable(TaskTypeEnum.PUBLISH_PAGE.name(), "Publish page " + page.getTitle(), 1, Map.of("page_id", pageId),
+												task -> publishPageNow(pageId, task));
+		return progress.toAcceptedResponse();
+	}
+
+	/**
+	 * Task body of {@link TaskTypeEnum#PUBLISH_PAGE}; the publish itself runs through the Spring proxy so that it is transactional.
+	 */
+	public Map<String, Object> publishPageNow(long pageId, TaskProgress progress) throws VempainEntityNotFoundException {
+		progress.checkpoint();
+		var sitePageId = publishServiceProxy().publishPageAsSystem(pageId);
+		progress.advance("Published page " + pageId);
+		return Map.of("site_page_id", sitePageId);
+	}
+
+	/**
+	 * Starts a background task that publishes every page the current user may publish. Pages the user may not publish are skipped
+	 * when the task is submitted, so the task only contains authorized work.
+	 */
+	public TaskAcceptedResponse publishAllPagesAsTask() {
+		var pageIds = new ArrayList<Long>();
+
+		for (var page : pageService.findAllByUser()) {
+			if (canPublishPage(page)) {
+				pageIds.add(page.getId());
+			} else {
+				log.warn("Skipping publish for page {} because the user lacks permission on the page or one of its linked entities", page.getId());
+			}
+		}
+
+		var ids = List.copyOf(pageIds);
+		var progress = taskRunner.submitDurable(TaskTypeEnum.PUBLISH_ALL_PAGES.name(), "Publish all pages", ids.size(), Map.of("page_ids", ids),
+												task -> publishPagesNow(ids, task));
+		return progress.toAcceptedResponse();
+	}
+
+	/**
+	 * Task body of {@link TaskTypeEnum#PUBLISH_ALL_PAGES}: one step per page, a missing page fails its step without failing the task.
+	 */
+	public Map<String, Object> publishPagesNow(List<Long> pageIds, TaskProgress progress) {
+		var published = 0L;
+
+		for (var pageId : pageIds) {
+			progress.checkpoint();
+
+			try {
+				publishServiceProxy().publishPageAsSystem(pageId);
+				published++;
+				progress.advance("Published page " + pageId);
+			} catch (VempainEntityNotFoundException e) {
+				log.warn("Failed to publish page {}: {}", pageId, e.getMessage());
+				progress.advanceFailed("Page " + pageId + " could not be published: " + e.getMessage());
+			}
+		}
+
+		// Reset the site cache
+		webSitePageRepository.resetCache();
+		return publishCounts(published, pageIds.size() - published);
+	}
+
+	/**
+	 * Starts a background task that publishes one gallery; the privileges are verified synchronously like in {@link #publishGallery(Long)}.
+	 */
+	public TaskAcceptedResponse publishGalleryAsTask(long galleryId) throws VempainEntityNotFoundException {
+		authorizeGalleryPublish(galleryId);
+		var gallery = fileService.findGalleryById(galleryId);
+		var ids = List.of(galleryId);
+		var progress = taskRunner.submitDurable(TaskTypeEnum.PUBLISH_GALLERY.name(), "Publish gallery " + gallery.getShortname(), 1,
+												Map.of("gallery_ids", ids, "skipped", 0), task -> publishGalleriesNow(ids, 0, task));
+		return progress.toAcceptedResponse();
+	}
+
+	/**
+	 * Starts a background task that publishes every gallery the current user may publish; the others are skipped at submit time.
+	 */
+	public TaskAcceptedResponse publishAllGalleriesAsTask() {
+		var galleryIds = new ArrayList<Long>();
+		var skipped = 0;
+
+		for (var gallery : fileService.findAllGalleries()) {
+			if (canPublishGallery(gallery.getId())) {
+				galleryIds.add(gallery.getId());
+			} else {
+				log.warn("Skipping publish for gallery {} because the user lacks permission on the gallery or its files", gallery.getId());
+				skipped++;
+			}
+		}
+
+		return submitGalleryPublish(TaskTypeEnum.PUBLISH_ALL_GALLERIES, "Publish all galleries", List.copyOf(galleryIds), skipped);
+	}
+
+	/**
+	 * Starts a background task that publishes the selected galleries the current user may publish. Invalid, missing and
+	 * unauthorized galleries are skipped at submit time and counted in the task result.
+	 */
+	public TaskAcceptedResponse publishSelectedGalleriesAsTask(List<Long> requestedIds) {
+		if (requestedIds == null || requestedIds.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Gallery ID list cannot be empty");
+		}
+
+		var galleryIds = new ArrayList<Long>();
+
+		for (var galleryId : requestedIds) {
+			if (galleryId == null || galleryId < 1) {
+				log.warn("Skipping invalid gallery ID in publishSelectedGalleriesAsTask: {}", galleryId);
+				continue;
+			}
+
+			var gallery = fileService.findGalleryById(galleryId);
+
+			if (gallery == null) {
+				log.warn("Skipping publish for gallery {} because it does not exist", galleryId);
+				continue;
+			}
+
+			if (!canPublishGallery(gallery)) {
+				log.warn("Skipping publish for gallery {} because user lacks modify permission on it or read permission on its files", galleryId);
+				continue;
+			}
+
+			galleryIds.add(galleryId);
+		}
+
+		return submitGalleryPublish(TaskTypeEnum.PUBLISH_SELECTED_GALLERIES, "Publish " + galleryIds.size() + " selected galleries",
+									List.copyOf(galleryIds), requestedIds.size() - galleryIds.size());
+	}
+
+	private TaskAcceptedResponse submitGalleryPublish(TaskTypeEnum type, String title, List<Long> galleryIds, int skipped) {
+		var progress = taskRunner.submitDurable(type.name(), title, galleryIds.size(), Map.of("gallery_ids", galleryIds, "skipped", skipped),
+												task -> publishGalleriesNow(galleryIds, skipped, task));
+		return progress.toAcceptedResponse();
+	}
+
+	/**
+	 * Task body of the gallery publish tasks: one step per gallery, a missing gallery fails its step without failing the task.
+	 *
+	 * @param skippedBeforeStart galleries that were left out when the task was submitted, reported in the result
+	 */
+	public Map<String, Object> publishGalleriesNow(List<Long> galleryIds, int skippedBeforeStart, TaskProgress progress) {
+		var published = 0L;
+
+		for (var galleryId : galleryIds) {
+			progress.checkpoint();
+
+			try {
+				publishServiceProxy().publishGalleryAsSystem(galleryId);
+				published++;
+				progress.advance("Published gallery " + galleryId);
+			} catch (VempainEntityNotFoundException e) {
+				log.warn("Failed to publish gallery {}: {}", galleryId, e.getMessage());
+				progress.advanceFailed("Gallery " + galleryId + " could not be published: " + e.getMessage());
+			}
+		}
+
+		return publishCounts(published, galleryIds.size() - published + skippedBeforeStart);
+	}
+
+	private static Map<String, Object> publishCounts(long published, long skipped) {
+		return Map.of("published", published, "skipped", skipped);
+	}
+
+	/**
+	 * The transactional proxy of this service; task bodies run on worker threads outside the request and must call the publish
+	 * methods through it so that each item gets its own transaction.
+	 */
+	private PublishService publishServiceProxy() {
+		return applicationContext.getBean(PublishService.class);
 	}
 }

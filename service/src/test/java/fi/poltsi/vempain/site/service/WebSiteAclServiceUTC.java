@@ -1,9 +1,8 @@
 package fi.poltsi.vempain.site.service;
 
 import fi.poltsi.vempain.admin.api.site.request.WebSiteAclRequest;
-import fi.poltsi.vempain.admin.api.site.response.WebSiteAclResponse;
 import fi.poltsi.vempain.admin.service.AccessService;
-import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.common.api.FileTypeEnum;
 import fi.poltsi.vempain.site.entity.WebSiteAcl;
 import fi.poltsi.vempain.site.entity.WebSiteFile;
 import fi.poltsi.vempain.site.entity.WebSiteGallery;

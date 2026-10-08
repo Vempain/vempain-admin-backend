@@ -3,7 +3,7 @@ package fi.poltsi.vempain.admin.entity.file;
 import fi.poltsi.vempain.admin.api.response.file.SiteFileResponse;
 import fi.poltsi.vempain.auth.entity.AbstractVempainEntity;
 import fi.poltsi.vempain.common.DurationToLongConverter;
-import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.common.api.FileTypeEnum;
 import fi.poltsi.vempain.site.entity.WebSiteFile;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;

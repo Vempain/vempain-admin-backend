@@ -1,7 +1,7 @@
 package fi.poltsi.vempain.admin.repository.file;
 
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
-import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.common.api.FileTypeEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

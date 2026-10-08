@@ -32,15 +32,22 @@ class FileControllerUTC {
 		var refresh = RefreshResponse.builder()
 		                             .build();
 		when(fileService.findAllSiteFilesAsPageableResponseFiltered(request)).thenReturn(paged);
+		var accepted = fi.poltsi.vempain.common.api.response.TaskAcceptedResponse.builder()
+																				 .taskId("task-1")
+																				 .type("REFRESH_ALL_GALLERY_FILES")
+																				 .build();
 		when(fileService.refreshGalleryFiles(3L)).thenReturn(refresh);
-		when(fileService.refreshAllGalleryFiles()).thenReturn(refresh);
+		when(fileService.refreshAllGalleryFilesAsTask()).thenReturn(accepted);
 
 		assertSame(paged, controller.getPageableSiteFiles(request)
 		                            .getBody());
 		assertSame(refresh, controller.refreshGalleryFiles(3L)
 		                              .getBody());
-		assertSame(refresh, controller.refreshAllGalleryFiles()
-		                              .getBody());
+		var refreshAll = controller.refreshAllGalleryFiles();
+		org.junit.jupiter.api.Assertions.assertEquals(202, refreshAll.getStatusCode()
+																	 .value());
+		assertSame(accepted, refreshAll.getBody()
+									   .getTask());
 		org.mockito.Mockito.verify(galleryService)
 		                   .requireModify(3L);
 		org.mockito.Mockito.verify(accessService)

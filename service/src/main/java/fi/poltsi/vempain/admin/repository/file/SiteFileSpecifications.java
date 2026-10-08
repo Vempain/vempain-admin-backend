@@ -1,7 +1,7 @@
 package fi.poltsi.vempain.admin.repository.file;
 
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
-import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.common.api.FileTypeEnum;
 import fi.poltsi.vempain.tools.LikePatterns;
 import org.springframework.data.jpa.domain.Specification;
 

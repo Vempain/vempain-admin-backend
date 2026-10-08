@@ -94,6 +94,14 @@ logging:
 vempain:
   scheduling:
     enabled: ${VEMPAIN_SCHEDULING_ENABLED:true}
+  tasks:
+    # Shared durable background task facility (page/gallery publishing, gallery refresh, data set publishing)
+    worker-count: ${VEMPAIN_TASK_WORKER_COUNT:2}
+    retention-minutes: 120
+    cleanup-interval-ms: 60000
+    poll-interval-ms: ${VEMPAIN_TASK_POLL_INTERVAL_MS:1000}
+    heartbeat-interval-ms: ${VEMPAIN_TASK_HEARTBEAT_INTERVAL_MS:10000}
+    lease-seconds: ${VEMPAIN_TASK_LEASE_SECONDS:60}
   developer:
     name: "Paul-Erik Törrönen"
     url: "https://poltsi.fi/"

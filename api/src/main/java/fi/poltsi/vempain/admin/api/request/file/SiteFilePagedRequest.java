@@ -1,7 +1,7 @@
 package fi.poltsi.vempain.admin.api.request.file;
 
 import fi.poltsi.vempain.auth.api.request.PagedRequest;
-import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.common.api.FileTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;

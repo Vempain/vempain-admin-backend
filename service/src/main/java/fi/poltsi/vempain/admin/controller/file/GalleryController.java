@@ -190,22 +190,16 @@ public class GalleryController implements GalleryAPI {
 			                          .timestamp(Instant.now())
 			                          .build();
 		} else {
-			try {
-				publishService.publishAllGalleries();
-				response = PublishResponse.builder()
-				                          .result(PublishResultEnum.OK)
-				                          .message("Successfully published all galleries")
-				                          .timestamp(Instant.now())
-				                          .build();
-			} catch (VempainEntityNotFoundException e) {
-				response = PublishResponse.builder()
-				                          .result(PublishResultEnum.FAIL)
-				                          .message("Could not find any galleries")
-				                          .timestamp(Instant.now())
-				                          .build();
-				return ResponseEntity.status(HttpStatus.NOT_FOUND)
-				                     .body(response);
-			}
+			// Publishing transfers files to the site server: it is started as a background task that the client follows through the task API
+			var task = publishService.publishAllGalleriesAsTask();
+			response = PublishResponse.builder()
+									  .result(PublishResultEnum.OK)
+									  .message("Publishing of all galleries started")
+									  .timestamp(Instant.now())
+									  .task(task)
+									  .build();
+			return ResponseEntity.accepted()
+								 .body(response);
 		}
 
 		return ResponseEntity.ok(response);
@@ -227,11 +221,12 @@ public class GalleryController implements GalleryAPI {
 				return createGalleryPublishSchedule(publishRequest.getPublishDateTime(), publishRequest.getId(), publishRequest.getPublishMessage());
 			}
 
-			publishService.publishGallery(publishRequest.getId());
+			var task = publishService.publishGalleryAsTask(publishRequest.getId());
 			response = PublishResponse.builder()
 			                          .result(PublishResultEnum.OK)
-			                          .message("Successfully published gallery")
+									  .message("Publishing of the gallery started")
 			                          .timestamp(Instant.now())
+									  .task(task)
 			                          .build();
 		} catch (VempainEntityNotFoundException e) {
 			response = PublishResponse.builder()
@@ -243,13 +238,21 @@ public class GalleryController implements GalleryAPI {
 			                     .body(response);
 		}
 
-		return ResponseEntity.ok(response);
+		return ResponseEntity.accepted()
+							 .body(response);
 	}
 
 	@Override
 	public ResponseEntity<PublishResponse> publishSelectedGalleries(GalleryPublishRequest request) {
-		var response = publishService.publishSelectedGalleries(request.getGalleryIds());
-		return ResponseEntity.ok(response);
+		var task = publishService.publishSelectedGalleriesAsTask(request.getGalleryIds());
+		var response = PublishResponse.builder()
+									  .result(PublishResultEnum.OK)
+									  .message("Publishing of the selected galleries started")
+									  .timestamp(Instant.now())
+									  .task(task)
+									  .build();
+		return ResponseEntity.accepted()
+							 .body(response);
 	}
 
 	private ResponseEntity<PublishResponse> createGalleryPublishSchedule(Instant publishDateTime, Long galleryId, String message) {

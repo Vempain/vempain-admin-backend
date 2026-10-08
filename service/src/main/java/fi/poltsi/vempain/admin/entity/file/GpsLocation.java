@@ -1,6 +1,6 @@
 package fi.poltsi.vempain.admin.entity.file;
 
-import fi.poltsi.vempain.file.api.response.LocationResponse;
+import fi.poltsi.vempain.common.api.response.LocationResponse;
 import fi.poltsi.vempain.site.entity.WebGpsLocation;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
