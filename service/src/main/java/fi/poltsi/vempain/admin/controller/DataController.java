@@ -6,6 +6,7 @@ import fi.poltsi.vempain.admin.api.response.DataSummaryResponse;
 import fi.poltsi.vempain.admin.rest.DataAPI;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.DataService;
+import fi.poltsi.vempain.common.api.response.TaskAcceptedResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -53,11 +54,12 @@ public class DataController implements DataAPI {
 	}
 
 	@Override
-	public ResponseEntity<DataResponse> publishDataSet(String identifier) {
+	public ResponseEntity<TaskAcceptedResponse> publishDataSet(String identifier) {
 		accessService.checkAdminAccess();
 		log.debug("Received request to publish data set with identifier '{}'", identifier);
-		var response = dataService.publish(identifier);
-		return ResponseEntity.ok(response);
+		var task = dataService.publishAsTask(identifier);
+		return ResponseEntity.accepted()
+							 .body(task);
 	}
 
 	@Override

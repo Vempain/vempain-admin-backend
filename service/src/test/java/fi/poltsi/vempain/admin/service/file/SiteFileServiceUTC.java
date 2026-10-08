@@ -2,7 +2,7 @@ package fi.poltsi.vempain.admin.service.file;
 
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
-import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.common.api.FileTypeEnum;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

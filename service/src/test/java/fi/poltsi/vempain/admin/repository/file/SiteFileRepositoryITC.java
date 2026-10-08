@@ -5,7 +5,7 @@ import fi.poltsi.vempain.admin.entity.Subject;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.service.SubjectService;
 import fi.poltsi.vempain.admin.service.file.SiteFileService;
-import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.common.api.FileTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

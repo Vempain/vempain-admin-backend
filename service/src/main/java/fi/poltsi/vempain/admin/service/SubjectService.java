@@ -2,7 +2,7 @@ package fi.poltsi.vempain.admin.service;
 
 import fi.poltsi.vempain.admin.entity.Subject;
 import fi.poltsi.vempain.admin.repository.file.SubjectRepository;
-import fi.poltsi.vempain.file.api.request.TagRequest;
+import fi.poltsi.vempain.common.api.request.TagRequest;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

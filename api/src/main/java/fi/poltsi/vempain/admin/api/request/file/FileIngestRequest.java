@@ -1,9 +1,9 @@
 package fi.poltsi.vempain.admin.api.request.file;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import fi.poltsi.vempain.file.api.request.CopyrightRequest;
-import fi.poltsi.vempain.file.api.request.TagRequest;
-import fi.poltsi.vempain.file.api.response.LocationResponse;
+import fi.poltsi.vempain.common.api.request.CopyrightRequest;
+import fi.poltsi.vempain.common.api.request.TagRequest;
+import fi.poltsi.vempain.common.api.response.LocationResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

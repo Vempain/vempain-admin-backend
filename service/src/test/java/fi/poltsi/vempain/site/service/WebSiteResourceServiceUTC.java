@@ -4,7 +4,7 @@ import fi.poltsi.vempain.admin.api.site.WebSiteResourceEnum;
 import fi.poltsi.vempain.admin.api.site.request.WebSiteResourcePagedRequest;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteResourceResponse;
 import fi.poltsi.vempain.admin.service.AccessService;
-import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.common.api.FileTypeEnum;
 import fi.poltsi.vempain.site.entity.WebSiteFile;
 import fi.poltsi.vempain.site.entity.WebSiteGallery;
 import fi.poltsi.vempain.site.entity.WebSitePage;

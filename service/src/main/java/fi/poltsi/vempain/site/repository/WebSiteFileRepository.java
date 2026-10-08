@@ -1,6 +1,6 @@
 package fi.poltsi.vempain.site.repository;
 
-import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.common.api.FileTypeEnum;
 import fi.poltsi.vempain.site.entity.WebSiteFile;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;

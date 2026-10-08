@@ -22,6 +22,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
@@ -198,32 +199,35 @@ class DataControllerUTC {
 
 	@Test
 	void publishDataSetOk() {
-		when(dataService.publish(TEST_IDENTIFIER)).thenReturn(dataResponse);
+		var accepted = fi.poltsi.vempain.common.api.response.TaskAcceptedResponse.builder()
+																				 .taskId("task-1")
+																				 .type("PUBLISH_DATA_SET")
+																				 .title("Publish data set " + TEST_IDENTIFIER)
+																				 .status(fi.poltsi.vempain.common.api.TaskStatusEnum.QUEUED)
+																				 .totalSteps(1)
+																				 .build();
+		when(dataService.publishAsTask(TEST_IDENTIFIER)).thenReturn(accepted);
 
-		ResponseEntity<DataResponse> response = dataController.publishDataSet(TEST_IDENTIFIER);
+		var response = dataController.publishDataSet(TEST_IDENTIFIER);
 
 		assertNotNull(response);
-		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
 		assertNotNull(response.getBody());
-		assertEquals(TEST_IDENTIFIER, response.getBody().getIdentifier());
+		assertEquals("task-1", response.getBody()
+									   .getTaskId());
 	}
 
 	@Test
 	void publishDataSetNotFoundFail() {
-		when(dataService.publish(TEST_IDENTIFIER))
-				.thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND));
+		when(dataService.publishAsTask(TEST_IDENTIFIER))
+				.thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found"));
 
-		try {
-			dataController.publishDataSet(TEST_IDENTIFIER);
-			fail("Should have thrown ResponseStatusException");
-		} catch (ResponseStatusException e) {
-			assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
-		}
+		assertThrows(ResponseStatusException.class, () -> dataController.publishDataSet(TEST_IDENTIFIER));
 	}
 
 	@Test
 	void publishDataSetInternalErrorFail() {
-		when(dataService.publish(TEST_IDENTIFIER))
+		when(dataService.publishAsTask(TEST_IDENTIFIER))
 				.thenThrow(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, VempainMessages.INTERNAL_ERROR));
 
 		try {

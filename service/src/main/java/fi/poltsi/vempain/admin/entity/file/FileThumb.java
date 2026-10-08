@@ -1,7 +1,7 @@
 package fi.poltsi.vempain.admin.entity.file;
 
 import fi.poltsi.vempain.admin.api.response.file.FileThumbResponse;
-import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.common.api.FileTypeEnum;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

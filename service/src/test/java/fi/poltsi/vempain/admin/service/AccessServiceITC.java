@@ -3,7 +3,7 @@ package fi.poltsi.vempain.admin.service;
 import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.api.request.file.SiteFilePagedRequest;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
-import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.common.api.FileTypeEnum;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

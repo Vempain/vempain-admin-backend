@@ -12,7 +12,7 @@ import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.SubjectService;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.AclService;
-import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.common.api.FileTypeEnum;
 import fi.poltsi.vempain.tools.LocalFileTools;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;

@@ -129,17 +129,17 @@ class GalleryControllerUTC {
 		assertEquals(200, galleryController.deleteGallery(7L)
 		                                   .getStatusCode()
 		                                   .value());
-		assertEquals(200, galleryController.publishAll(null)
+		assertEquals(202, galleryController.publishAll(null)
 		                                   .getStatusCode()
 		                                   .value());
-		assertEquals(200, galleryController.publishGallery(PublishRequest.builder()
+		assertEquals(202, galleryController.publishGallery(PublishRequest.builder()
 		                                                                 .id(7L)
 		                                                                 .build())
 		                                   .getStatusCode()
 		                                   .value());
 		var publishRequest = new GalleryPublishRequest();
 		publishRequest.setGalleryIds(java.util.List.of(7L));
-		assertEquals(200, galleryController.publishSelectedGalleries(publishRequest)
+		assertEquals(202, galleryController.publishSelectedGalleries(publishRequest)
 		                                   .getStatusCode()
 		                                   .value());
 	}

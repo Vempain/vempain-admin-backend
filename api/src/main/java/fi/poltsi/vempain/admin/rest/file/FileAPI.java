@@ -55,10 +55,10 @@ public interface FileAPI {
 
 	@Operation(summary = "Refresh the file information of all galleries", description = "Reload all the file data of the files belonging any gallery",
 	           tags = "FileAPI")
-	@ApiResponses(value = {@ApiResponse(responseCode = "200",
-	                                    description = "All gallery files refreshed",
+	@ApiResponses(value = {@ApiResponse(responseCode = "202",
+										description = "Refresh started as a background task carried in the response",
 	                                    content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-	                                                        schema = @Schema(implementation = GalleryRequest.class))}),
+															schema = @Schema(implementation = RefreshResponse.class))}),
 	                       @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
 	                       @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
 	                       @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})

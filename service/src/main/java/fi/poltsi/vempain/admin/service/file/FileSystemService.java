@@ -1,7 +1,7 @@
 package fi.poltsi.vempain.admin.service.file;
 
 import fi.poltsi.vempain.admin.api.response.file.DirectoryNodeResponse;
-import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.common.api.FileTypeEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

@@ -2,6 +2,7 @@ package fi.poltsi.vempain.admin.api.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import fi.poltsi.vempain.admin.api.PublishResultEnum;
+import fi.poltsi.vempain.common.api.response.TaskAcceptedResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
@@ -24,4 +25,7 @@ public class RefreshResponse {
 	private long failedItems;
 	@Schema(description = "List of refresh details", example = "List<RefreshDetailResponse>", requiredMode = Schema.RequiredMode.REQUIRED)
 	private List<RefreshDetailResponse> details;
+	@Schema(description = "Background task that performs the refresh; absent when the refresh ran synchronously",
+	        requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+	private TaskAcceptedResponse task;
 }

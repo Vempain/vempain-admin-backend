@@ -1,5 +1,6 @@
 package fi.poltsi.vempain.admin.controller.file;
 
+import fi.poltsi.vempain.admin.api.PublishResultEnum;
 import fi.poltsi.vempain.admin.api.request.file.SiteFilePagedRequest;
 import fi.poltsi.vempain.admin.api.response.RefreshResponse;
 import fi.poltsi.vempain.admin.api.response.file.SiteFileResponse;
@@ -12,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -41,9 +44,17 @@ public class FileController implements FileAPI {
 		log.debug("Received request to refresh all gallery files");
 		// Touches every gallery regardless of ownership, therefore reserved to the administrator ACL
 		accessService.checkAdminAccess();
-		var refreshResponse = fileService.refreshAllGalleryFiles();
+		var task = fileService.refreshAllGalleryFilesAsTask();
+		var refreshResponse = RefreshResponse.builder()
+											 .result(PublishResultEnum.OK)
+											 .refreshedItems(0)
+											 .failedItems(0)
+											 .details(List.of())
+											 .task(task)
+											 .build();
 
-		return ResponseEntity.ok(refreshResponse);
+		return ResponseEntity.accepted()
+							 .body(refreshResponse);
 	}
 
 }

@@ -3,6 +3,7 @@ package fi.poltsi.vempain.admin.rest;
 import fi.poltsi.vempain.admin.entity.DataEntity;
 import fi.poltsi.vempain.admin.repository.DataRepository;
 import fi.poltsi.vempain.auth.security.jwt.JwtUtils;
+import fi.poltsi.vempain.common.task.TaskProgressStore;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,8 @@ import javax.sql.DataSource;
 import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -33,6 +36,8 @@ class DataCTC {
 	private DataRepository dataRepository;
 	@Autowired
 	private JwtUtils       jwtUtils;
+	@Autowired
+	private TaskProgressStore taskProgressStore;
 	@Autowired
 	@Qualifier("siteDataSource")
 	private DataSource     siteDataSource;
@@ -66,12 +71,25 @@ class DataCTC {
 	}
 
 	@Test
-	void publishEndpointCreatesAndPopulatesSiteTableOk() throws Exception {
-		mockMvc.perform(post("/content-management/data/{identifier}/publish", IDENTIFIER)
-								.header("Authorization", adminBearerToken()))
+	void publishEndpointStartsATaskThatCreatesAndPopulatesTheSiteTable() throws Exception {
+		var result = mockMvc.perform(post("/content-management/data/{identifier}/publish", IDENTIFIER)
+											 .header("Authorization", adminBearerToken()))
+							.andExpect(status().isAccepted())
+							.andExpect(jsonPath("$.type").value("PUBLISH_DATA_SET"))
+							.andExpect(jsonPath("$.total_steps").value(1))
+							.andReturn();
+		var taskId = tools.jackson.databind.json.JsonMapper.shared()
+														   .readTree(result.getResponse()
+																		   .getContentAsString())
+														   .get("task_id")
+														   .asString();
+		awaitTaskCompletion(taskId);
+
+		mockMvc.perform(get("/tasks/{taskId}", taskId).header("Authorization", adminBearerToken()))
 			   .andExpect(status().isOk())
-			   .andExpect(jsonPath("$.identifier").value(IDENTIFIER))
-			   .andExpect(jsonPath("$.type").value("tabulated"));
+			   .andExpect(jsonPath("$.status").value("COMPLETED"))
+			   .andExpect(jsonPath("$.result.identifier").value(IDENTIFIER))
+			   .andExpect(jsonPath("$.result.type").value("tabulated"));
 
 		var tableExists = siteJdbcTemplate.queryForObject(
 				"SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = ?",
@@ -83,9 +101,33 @@ class DataCTC {
 		assertEquals(2, rowCount);
 	}
 
+	@Test
+	void publishEndpointRejectsAnUnknownDataSetBeforeStartingATask() throws Exception {
+		mockMvc.perform(post("/content-management/data/{identifier}/publish", "no_such_data_set")
+								.header("Authorization", adminBearerToken()))
+			   .andExpect(status().isNotFound());
+	}
+
+	/**
+	 * Waits until the background task has finished and asserts that it completed; the task runs on a worker thread of the task runner.
+	 */
+	private void awaitTaskCompletion(String taskId) throws InterruptedException {
+		var deadline = Instant.now()
+							  .plusSeconds(15);
+		var task = taskProgressStore.find(taskId)
+									.orElseThrow();
+		while (!task.isFinished() && Instant.now()
+											.isBefore(deadline)) {
+			Thread.sleep(50);
+			task = taskProgressStore.find(taskId)
+									.orElseThrow();
+		}
+		assertTrue(task.isFinished(), "Task did not finish in time");
+		assertEquals(fi.poltsi.vempain.common.api.TaskStatusEnum.COMPLETED, task.getStatus(), task.getErrorMessage());
+	}
+
 	private String adminBearerToken() {
 		return "Bearer " + jwtUtils.generateJwtTokenForUser("Vempain Administrator", "admin", "admin@nohost.nodomain")
 								   .getTokenString();
 	}
 }
-

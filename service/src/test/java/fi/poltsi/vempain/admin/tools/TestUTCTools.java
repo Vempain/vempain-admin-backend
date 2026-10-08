@@ -17,7 +17,7 @@ import fi.poltsi.vempain.auth.entity.Unit;
 import fi.poltsi.vempain.auth.entity.UserAccount;
 import fi.poltsi.vempain.auth.entity.UserUnit;
 import fi.poltsi.vempain.auth.entity.UserUnitId;
-import fi.poltsi.vempain.file.api.FileTypeEnum;
+import fi.poltsi.vempain.common.api.FileTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import tools.jackson.databind.ObjectMapper;

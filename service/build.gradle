@@ -31,7 +31,7 @@ repositories {
 		}
 	}
 	maven {
-		url = "https://maven.pkg.github.com/Vempain/vempain-file-backend-api"
+		url = "https://maven.pkg.github.com/Vempain/vempain-common"
 		credentials {
 			username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
 			password = project.findProperty("gpr.token") ?: System.getenv("GITHUB_TOKEN")
@@ -47,7 +47,9 @@ dependencies {
 	// This needs to be built first in vempain-auth
 	implementation "fi.poltsi.vempain:vempain-auth-core:${libs.versions.vempain.auth.get()}"
 	implementation "fi.poltsi.vempain:vempain-auth-api:${libs.versions.vempain.auth.get()}"
-	implementation "fi.poltsi.vempain:vempain-file-backend-api:${libs.versions.vempain.file.get()}"
+	implementation "fi.poltsi.vempain:vempain-common-api:${libs.versions.vempain.common.get()}"
+	// Shared durable background task facility (TaskRunner, TaskProgressStore, TaskController)
+	implementation "fi.poltsi.vempain:vempain-common-core:${libs.versions.vempain.common.get()}"
 	implementation "org.springframework.boot:spring-boot:${libs.versions.spring.boot.get()}"
 	implementation "org.springframework.boot:spring-boot-starter-security:${libs.versions.spring.boot.get()}"
 	implementation "org.springframework.boot:spring-boot-starter-actuator:${libs.versions.spring.boot.get()}"

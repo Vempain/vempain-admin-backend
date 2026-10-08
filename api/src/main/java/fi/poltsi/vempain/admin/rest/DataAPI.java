@@ -3,6 +3,7 @@ package fi.poltsi.vempain.admin.rest;
 import fi.poltsi.vempain.admin.api.request.DataRequest;
 import fi.poltsi.vempain.admin.api.response.DataResponse;
 import fi.poltsi.vempain.admin.api.response.DataSummaryResponse;
+import fi.poltsi.vempain.common.api.response.TaskAcceptedResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -87,19 +88,20 @@ public interface DataAPI {
 	ResponseEntity<DataResponse> updateDataSet(@Valid @RequestBody DataRequest dataRequest);
 
 	@Operation(summary = "Publish a data set to the site database",
-	           description = "Creates or replaces the table in the site database and imports the CSV data", tags = "DataAPI")
+			   description = "Starts a background task that creates or replaces the table in the site database and imports the CSV data; "
+							 + "follow it through the task API, the finished task carries the DataResponse as result", tags = "DataAPI")
 	@Parameter(name = "identifier", example = "cd_collection", description = "Unique identifier of the data set to publish", required = true)
-	@ApiResponses(value = {@ApiResponse(responseCode = "200",
-	                                    description = "Data set published successfully",
+	@ApiResponses(value = {@ApiResponse(responseCode = "202",
+										description = "Publishing started",
 	                                    content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-	                                                        schema = @Schema(implementation = DataResponse.class))}),
+															schema = @Schema(implementation = TaskAcceptedResponse.class))}),
 	                       @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
 	                       @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
 	                       @ApiResponse(responseCode = "404", description = "Data set not found", content = @Content),
 	                       @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
 	@SecurityRequirement(name = "Bearer Authentication")
 	@PostMapping(value = MAIN_PATH + "/{identifier}/publish", produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<DataResponse> publishDataSet(@PathVariable(name = "identifier") String identifier);
+	ResponseEntity<TaskAcceptedResponse> publishDataSet(@PathVariable(name = "identifier") String identifier);
 
 	@Operation(summary = "Delete a data set",
 			   description = "Removes the stored data set and drops its table from the site database. Used by the file backend to revert a cancelled "
