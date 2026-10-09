@@ -5,6 +5,7 @@ import fi.poltsi.vempain.common.api.request.CopyrightRequest;
 import fi.poltsi.vempain.common.api.request.TagRequest;
 import fi.poltsi.vempain.common.api.response.LocationResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -98,4 +99,11 @@ public class FileIngestRequest {
 
 	@Schema(description = "Copyright information associated with the file", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
 	private CopyrightRequest copyright;
+
+	@Schema(description = "Additional admin users granted privileges on the ingested site file and its gallery, next to the ingesting account "
+						  + "which always gets every privilege. Validated (existing active users, no duplicates, at least one privilege each) "
+						  + "before the file is stored.",
+			requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+	@Valid
+	private List<FileIngestAclRequest> acls;
 }

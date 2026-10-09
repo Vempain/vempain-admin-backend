@@ -327,4 +327,19 @@ class PageControllerUTC {
 			fail("Should not have received any other exception: " + e);
 		}
 	}
+
+	@Test
+	void suggestPagePathDelegatesToTheService() {
+		var suggestion = fi.poltsi.vempain.admin.api.response.PagePathSuggestionResponse.builder()
+																						.prefix("so")
+																						.suggestion("some/path")
+																						.matches(2)
+																						.build();
+		when(pageService.suggestPath("so")).thenReturn(suggestion);
+
+		var response = pageController.suggestPagePath("so");
+
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+		assertEquals(suggestion, response.getBody());
+	}
 }

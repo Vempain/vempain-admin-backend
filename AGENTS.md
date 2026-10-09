@@ -62,6 +62,26 @@
 - ITCs run authenticated as the Flyway-seeded administrator (`AbstractITCTest.setUp`, `authenticateAs(userId)` to switch user) and
   `TestITCTools.generateAcl` grants the administrator on every generated entity; use `generateAclForOwnerOnly` for negative cases. Every
   ACL-dependent path needs both a granted and a denied test (`AccessServiceITC`, `AccessServiceUTC`, `PublishServiceITC/UTC`).
+- User, unit and ACL management (`/content-management/users|units|acls`) is not implemented here: the REST contracts (`UserAPI`,
+  `UnitAPI`, `AclAPI` in `vempain-auth-api`) and the controllers (`fi.poltsi.vempain.auth.controller.{User,Unit,Acl}Controller` in
+  `vempain-auth-core`) are hosted through component scanning and guarded by `AdministrationGuard` (modify on the administrator ACL).
+  Units nest (`unit_unit`, auth migration `V2__unit_members.sql`); `UnitService.updateMembers` rejects circular nesting and
+  `UserDetailsServiceImpl` expands a principal's units to every containing unit, which `AccessService` relies on. Do not add local
+  copies of these endpoints; `HostedManagementITC` checks that the shared controllers work on the admin datasource.
+- File ingest (`POST /content-management/file/site-file`, `FileIngestService`) can grant additional admin users privileges on the site file
+  and gallery it creates or updates: `FileIngestRequest.acls` (`FileIngestAclRequest`: `user_id` + the four `*_privilege` flags).
+  `validateAcls` runs inside the request validation before anything is written (every entry names an existing, `ACTIVE`, unlocked
+  user exactly once and grants at least one privilege; an invalid list answers `400`), and `grantAdditionalAcls` adds the rows to the
+  ACL of the site file and of the gallery right after the owner row is created (new resource) or merges them into the existing ACL (re-ingest: an existing row
+  of the same user gets the requested privileges, the ingesting account is skipped because it already holds
+  everything). The grantable users are served by `GET /content-management/file/site-file/users` (`FileIngestUserResponse`: id, login
+  name, name, nick only; `ACTIVE` and unlocked accounts) for the file backend, whose own user base is separate; both endpoints need the
+  administrator ACL like the ingest itself. Tests: `FileIngestServiceUTC`, `FileIngestServiceITC` (real ACL rows), `FileIngestCTC`,
+  `FileIngestAclContractJTC` (api module).
+- `GET /content-management/pages/path-suggestion?prefix=` (`PageService.suggestPath`) backs the path auto-completion of the page editor:
+  it matches readable pages with `PageRepository.findByPagePathPrefix(LikePatterns.prefix(prefix))` (escaped LIKE, explicit `ESCAPE`),
+  drops the last part of every matching path and answers the common leading parts (`commonParentPath`, null when none). Tests:
+  `PageServiceUTC`, `PageServiceITC` (ACL-denied pages excluded, wildcards literal), `PageControllerUTC`.
 - Service-to-service undo endpoints used by the file backend to revert cancelled background tasks: `DELETE /content-management/file/site-file/{id}`
   (`FileIngestService.deleteIngestedSiteFile`: stored file, gallery links, subjects, thumbnail row, ACL and the `SiteFile`) and
   `DELETE /content-management/data/{identifier}` (`DataService.delete`: drops the published site table and the data set). Both require the
@@ -82,6 +102,21 @@
   `fi.poltsi.vempain.common.task.{entity,repository}`, `WebSecurityConfig` permits `/tasks/**` for authenticated users and `vempain.tasks.*`
   configures workers, polling, leases and retention. Tests: `TaskCTC` (hosted `/tasks` API), `AdminTaskCommandExecutorUTC`,
   the task cases of `PublishServiceUTC` (synchronous `TaskRunner` + mocked `ApplicationContext` proxy) and `DataCTC` (end to end task).
+- Service-to-service calls from the file backend authenticate with an API token, not a login: `ApiTokenAPI`
+  (`/admin-management/api-tokens`, administrator ACL, list/create/delete) and `ApiTokenService` generate a 256-bit `vat_...` token
+  whose SHA-256 hash alone is stored (`api_token`, `V1005__api_tokens.sql`); each token carries a description, a mandatory future
+  expiry and an IPv4/IPv6 network (`fi.poltsi.vempain.tools.NetworkMatcher`, a plain address is /32 or /128) and is bound to the
+  administrator who created it. `ApiTokenAuthenticationFilter` (registered through the auth library's `additionalAuthenticationFilters`
+  hook, before the JWT filter) reads `Constants.API_TOKEN_HEADER` (`X-Vempain-Api-Token`), checks hash, expiry and the request's
+  remote address against the network (Tomcat's `forward-headers-strategy: native` resolves it behind Traefik), authenticates the
+  request as the owner with the extra `API_TOKEN` authority, and only for the service endpoints in its `ALLOWED` list (site file
+  ingest/delete/users, paged site files, data set CRUD); anything else answers 403, an invalid token 401. The network of a new token is
+  proposed by `GET /admin-management/api-tokens/default-network` (`ApiTokenService.defaultNetwork`): with
+  `vempain.admin.api-token.private-network=true` (compose/swarm `ENV_VEMPAIN_PRIVATE_NETWORK`) `PrivateNetworkDetector` lists the
+  private networks of this process's own interfaces (the shared bridge/overlay networks) and the first one is pre-filled, every one is
+  offered; `vempain.admin.api-token.default-network` overrides it for deployments spanning hosts; otherwise the administrator enters
+  it. Tests: `ApiTokenCTC`, `ApiTokenServiceUTC`, `NetworkMatcherUTC`, `PrivateNetworkDetectorUTC`, `ApiTokenContractJTC`. Never read the
+  token from `Authorization`.
 - Security findings and their mitigations are recorded in `security/OWASP-2025-audit-report.md`; keep it current when changing authorization,
   query building, SSH/filesystem publishing or input handling.
 - `lombok.config` sets `lombok.addLombokGeneratedAnnotation = true` so generated code is excluded from JaCoCo; keep it when touching coverage settings.

@@ -1,5 +1,6 @@
 package fi.poltsi.vempain.admin.service.file;
 
+import fi.poltsi.vempain.admin.api.request.file.FileIngestAclRequest;
 import fi.poltsi.vempain.admin.api.request.file.FileIngestRequest;
 import fi.poltsi.vempain.admin.configuration.StorageDirectoryConfiguration;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
@@ -10,13 +11,18 @@ import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
 import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.SubjectService;
+import fi.poltsi.vempain.auth.api.AccountStatus;
+import fi.poltsi.vempain.auth.entity.Acl;
+import fi.poltsi.vempain.auth.entity.UserAccount;
 import fi.poltsi.vempain.auth.service.AclService;
+import fi.poltsi.vempain.auth.service.UserService;
 import fi.poltsi.vempain.common.api.FileTypeEnum;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -31,15 +37,18 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -67,6 +76,8 @@ class FileIngestServiceUTC {
 	private FileService                   fileService;
 	@Mock
 	private LocationService               locationService;
+	@Mock
+	private UserService userService;
 
 	@InjectMocks
 	private FileIngestService fileIngestService;
@@ -545,5 +556,240 @@ class FileIngestServiceUTC {
 
 		assertEquals(org.springframework.http.HttpStatus.NOT_FOUND, exception.getStatusCode());
 		verify(siteFileRepository, never()).delete(any(SiteFile.class));
+	}
+	// ─── additional ACL grantees ────────────────────────────────────────────────
+
+	private static UserAccount activeUser(long id, String name) {
+		return UserAccount.builder()
+						  .id(id)
+						  .name(name)
+						  .loginName(name.toLowerCase())
+						  .nick(name)
+						  .status(AccountStatus.ACTIVE)
+						  .locked(false)
+						  .build();
+	}
+
+	private static FileIngestAclRequest aclFor(long userId, boolean read, boolean create, boolean modify, boolean delete) {
+		return FileIngestAclRequest.builder()
+								   .userId(userId)
+								   .readPrivilege(read)
+								   .createPrivilege(create)
+								   .modifyPrivilege(modify)
+								   .deletePrivilege(delete)
+								   .build();
+	}
+
+	@Test
+	void ingestInternal_withAcls_grantsThemOnTheNewSiteFileAndTheNewGallery() throws Exception {
+		when(storageDirectoryConfiguration.storageLocations())
+				.thenReturn(Map.of("image", tempDir.toString()));
+		when(siteFileRepository.findByFilePathAndFileName(any(), any()))
+				.thenReturn(Optional.empty());
+		when(accessService.getUserId()).thenReturn(1L);
+		when(userService.findById(5L)).thenReturn(Optional.of(activeUser(5L, "Five")));
+		// First call creates the site file ACL, second the gallery ACL
+		when(aclService.createNewAcl(anyLong(), isNull(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean()))
+				.thenReturn(10L, 20L);
+		when(aclService.findAclByAclId(anyLong())).thenReturn(List.of());
+		when(aclService.save(any(Acl.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		when(locationService.upsertAndGet(any())).thenReturn(null);
+
+		var savedFile = SiteFile.builder()
+		                        .build();
+		savedFile.setId(42L);
+		when(fileService.saveSiteFile(any(SiteFile.class))).thenReturn(savedFile);
+		when(galleryRepository.findByShortname("NewGallery")).thenReturn(Optional.empty());
+		var savedGallery = Gallery.builder()
+		                          .id(99L)
+		                          .aclId(20L)
+		                          .shortname("NewGallery")
+		                          .build();
+		when(galleryRepository.save(any(Gallery.class))).thenReturn(savedGallery);
+		when(galleryFileService.findGalleryFileByGalleryId(99L)).thenReturn(List.of());
+
+		var multipartFile = new MockMultipartFile("file", "test.jpg", "image/jpeg", FILE_CONTENT);
+		var request = FileIngestRequest.builder()
+									   .fileName("test.jpg")
+									   .mimeType("image/jpeg")
+									   .sha256sum(SHA256_SUM)
+									   .comment("")
+									   .metadata("{}")
+									   .tags(List.of())
+									   .galleryName("NewGallery")
+									   .acls(List.of(aclFor(5L, true, false, true, false)))
+									   .build();
+
+		var response = fileIngestService.ingestInternal(request, multipartFile);
+
+		assertEquals(42L, response.getSiteFileId());
+		assertEquals(99L, response.getGalleryId());
+
+		var captor = ArgumentCaptor.forClass(Acl.class);
+		verify(aclService, times(2)).save(captor.capture());
+		var rows = captor.getAllValues();
+		assertEquals(List.of(10L, 20L), rows.stream()
+		                                    .map(Acl::getAclId)
+		                                    .toList());
+		for (var row : rows) {
+			assertEquals(5L, row.getUserId());
+			assertNull(row.getUnitId());
+			assertTrue(row.isReadPrivilege());
+			assertFalse(row.isCreatePrivilege());
+			assertTrue(row.isModifyPrivilege());
+			assertFalse(row.isDeletePrivilege());
+		}
+		verify(aclService, never()).update(any());
+	}
+
+	@Test
+	void ingestInternal_existingFile_mergesAclsIntoTheExistingAcl() throws Exception {
+		when(storageDirectoryConfiguration.storageLocations())
+				.thenReturn(Map.of("image", tempDir.toString()));
+		var existingFile = SiteFile.builder()
+		                           .build();
+		existingFile.setId(7L);
+		existingFile.setAclId(33L);
+		when(siteFileRepository.findByFilePathAndFileName(any(), any()))
+				.thenReturn(Optional.of(existingFile));
+		when(accessService.getUserId()).thenReturn(1L);
+		when(userService.findById(5L)).thenReturn(Optional.of(activeUser(5L, "Five")));
+		when(userService.findById(6L)).thenReturn(Optional.of(activeUser(6L, "Six")));
+		var existingRow = Acl.builder()
+		                     .id(500L)
+		                     .aclId(33L)
+		                     .userId(5L)
+		                     .readPrivilege(true)
+		                     .build();
+		var ownerRow = Acl.builder()
+		                  .id(499L)
+		                  .aclId(33L)
+		                  .userId(1L)
+		                  .readPrivilege(true)
+		                  .createPrivilege(true)
+		                  .modifyPrivilege(true)
+						  .deletePrivilege(true)
+		                  .build();
+		when(aclService.findAclByAclId(33L)).thenReturn(List.of(ownerRow, existingRow));
+		when(aclService.save(any(Acl.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		when(locationService.upsertAndGet(any())).thenReturn(null);
+		when(fileService.saveSiteFile(any(SiteFile.class))).thenReturn(existingFile);
+
+		var multipartFile = new MockMultipartFile("file", "test.jpg", "image/jpeg", FILE_CONTENT);
+		var request = FileIngestRequest.builder()
+									   .fileName("test.jpg")
+									   .mimeType("image/jpeg")
+									   .sha256sum(SHA256_SUM)
+									   .comment("")
+									   .metadata("{}")
+									   .tags(List.of())
+									   .acls(List.of(aclFor(5L, true, false, true, false), aclFor(6L, true, false, false, false)))
+									   .build();
+
+		fileIngestService.ingestInternal(request, multipartFile);
+
+		// User 5 already had a row: it is updated in place with the requested privileges
+		verify(aclService).update(existingRow);
+		assertTrue(existingRow.isModifyPrivilege());
+		assertFalse(existingRow.isDeletePrivilege());
+		// User 6 is new on the ACL
+		var captor = ArgumentCaptor.forClass(Acl.class);
+		verify(aclService).save(captor.capture());
+		assertEquals(33L, captor.getValue()
+		                        .getAclId());
+		assertEquals(6L, captor.getValue()
+		                       .getUserId());
+		assertTrue(captor.getValue()
+		                 .isReadPrivilege());
+		// The owner row is left alone
+		assertTrue(ownerRow.isDeletePrivilege());
+		verify(aclService, never()).createNewAcl(anyLong(), any(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean());
+	}
+
+	@Test
+	void ingestInternal_unknownAclUser_isRejectedBeforeTheFileIsStored() throws Exception {
+		when(userService.findById(404L)).thenReturn(Optional.empty());
+
+		var multipartFile = new MockMultipartFile("file", "test.jpg", "image/jpeg", FILE_CONTENT);
+		var request = FileIngestRequest.builder()
+									   .fileName("test.jpg")
+									   .mimeType("image/jpeg")
+									   .sha256sum(SHA256_SUM)
+									   .comment("")
+									   .metadata("{}")
+									   .tags(List.of())
+									   .acls(List.of(aclFor(404L, true, false, false, false)))
+									   .build();
+
+		var exception = assertThrows(VempainIngestException.class, () -> fileIngestService.ingestInternal(request, multipartFile));
+
+		assertInstanceOf(IllegalArgumentException.class, exception.getCause());
+		assertNull(exception.getStoredFile());
+		try (var stored = Files.list(tempDir)) {
+			assertEquals(0L, stored.count(), "nothing may be written before the ACL list is validated");
+		}
+		verify(storageDirectoryConfiguration, never()).storageLocations();
+		verify(fileService, never()).saveSiteFile(any());
+		verify(aclService, never()).save(any());
+	}
+
+	@Test
+	void validateAcls_inactiveLockedDuplicateAndPrivilegelessEntriesAreRejected() {
+		var disabled = activeUser(8L, "Eight");
+		disabled.setStatus(AccountStatus.DISABLED);
+		when(userService.findById(8L)).thenReturn(Optional.of(disabled));
+		assertThrows(IllegalArgumentException.class, () -> fileIngestService.validateAcls(List.of(aclFor(8L, true, false, false, false))));
+
+		var locked = activeUser(9L, "Nine");
+		locked.setLocked(true);
+		when(userService.findById(9L)).thenReturn(Optional.of(locked));
+		assertThrows(IllegalArgumentException.class, () -> fileIngestService.validateAcls(List.of(aclFor(9L, true, false, false, false))));
+
+		when(userService.findById(5L)).thenReturn(Optional.of(activeUser(5L, "Five")));
+		assertThrows(IllegalArgumentException.class,
+					 () -> fileIngestService.validateAcls(List.of(aclFor(5L, true, false, false, false), aclFor(5L, false, true, false, false))));
+
+		assertThrows(IllegalArgumentException.class, () -> fileIngestService.validateAcls(List.of(aclFor(5L, false, false, false, false))));
+		assertThrows(IllegalArgumentException.class, () -> fileIngestService.validateAcls(List.of(aclFor(0L, true, false, false, false))));
+		assertThrows(IllegalArgumentException.class, () -> fileIngestService.validateAcls(java.util.Arrays.asList((FileIngestAclRequest) null)));
+
+		// Valid lists pass without touching anything else
+		fileIngestService.validateAcls(List.of(aclFor(5L, true, false, false, false)));
+		fileIngestService.validateAcls(List.of());
+		fileIngestService.validateAcls(null);
+	}
+
+	@Test
+	void grantAdditionalAcls_skipsTheIngestingAccountAndEmptyInput() throws Exception {
+		fileIngestService.grantAdditionalAcls(10L, List.of(aclFor(1L, true, true, true, true)), 1L);
+		fileIngestService.grantAdditionalAcls(10L, List.of(), 1L);
+		fileIngestService.grantAdditionalAcls(0L, List.of(aclFor(5L, true, false, false, false)), 1L);
+
+		verify(aclService, never()).save(any());
+		verify(aclService, never()).update(any());
+	}
+
+	@Test
+	void listIngestUsers_returnsActiveUnlockedUsersSortedByNameWithReducedFields() {
+		var zed = activeUser(3L, "Zed");
+		zed.setEmail("zed@nohost.nodomain");
+		var amy = activeUser(4L, "amy");
+		var disabled = activeUser(5L, "Disabled");
+		disabled.setStatus(AccountStatus.DISABLED);
+		var locked = activeUser(6L, "Locked");
+		locked.setLocked(true);
+		when(userService.findAll()).thenReturn(List.of(zed, disabled, amy, locked));
+
+		var users = fileIngestService.listIngestUsers();
+
+		assertEquals(List.of(4L, 3L), users.stream()
+		                                   .map(fi.poltsi.vempain.admin.api.response.file.FileIngestUserResponse::getId)
+		                                   .toList());
+		assertEquals("zed", users.get(1)
+		                         .getLoginName());
+		assertEquals("Zed", users.get(1)
+		                         .getName());
+		assertEquals("Zed", users.get(1)
+		                         .getNick());
 	}
 }

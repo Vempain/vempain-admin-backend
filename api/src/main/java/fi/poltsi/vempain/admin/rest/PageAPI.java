@@ -5,6 +5,7 @@ import fi.poltsi.vempain.admin.api.request.PagePagedRequest;
 import fi.poltsi.vempain.admin.api.request.PageRequest;
 import fi.poltsi.vempain.admin.api.request.PublishRequest;
 import fi.poltsi.vempain.admin.api.response.DeleteResponse;
+import fi.poltsi.vempain.admin.api.response.PagePathSuggestionResponse;
 import fi.poltsi.vempain.admin.api.response.PageResponse;
 import fi.poltsi.vempain.admin.api.response.PublishResponse;
 import fi.poltsi.vempain.auth.api.response.PagedResponse;
@@ -76,6 +77,22 @@ public interface PageAPI {
 	@SecurityRequirement(name = "Bearer Authentication")
 	@GetMapping(value = MAIN_PATH + "/{page_id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<PageResponse> getPageById(@PathVariable(name = "page_id") long pageId);
+
+	@Operation(summary = "Suggest a page path",
+			   description = "Auto-completion for the page path field. Looks up the pages the caller may read whose path starts with the typed "
+							 + "prefix, drops the last part of every matching path (paths are unique, so a full path is never a useful "
+							 + "suggestion) and returns the part those parent paths have in common: for pages some/path/to/page and "
+							 + "some/path/also/page the prefix \"so\" yields some/path, a single match some/path/to/page yields some/path/to.",
+			   tags = "PageAPI")
+	@Parameter(name = "prefix", example = "so", description = "Text typed so far", required = true)
+	@ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Suggestion computed (suggestion is null when nothing matches)",
+										content = @Content(schema = @Schema(implementation = PagePathSuggestionResponse.class),
+														   mediaType = MediaType.APPLICATION_JSON_VALUE)),
+						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
+	@SecurityRequirement(name = "Bearer Authentication")
+	@GetMapping(value = MAIN_PATH + "/path-suggestion", produces = MediaType.APPLICATION_JSON_VALUE)
+	ResponseEntity<PagePathSuggestionResponse> suggestPagePath(@RequestParam(name = "prefix", required = false) String prefix);
 
 	@Operation(summary = "Add a new page", description = "Inserts a new page", tags = "PageAPI")
 	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Page to be added, the title or header can not be empty nor null",

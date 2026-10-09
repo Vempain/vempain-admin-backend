@@ -12,6 +12,7 @@ import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.AclService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -25,6 +26,7 @@ import java.util.stream.StreamSupport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -689,5 +691,55 @@ class PageServiceUTC {
 		} catch (Exception e) {
 			fail("Should not have received any other exception: " + e);
 		}
+	}
+	// ─── page path suggestion ───────────────────────────────────────────────────
+
+	private static Page pageWithPath(long id, long aclId, String path) {
+		var page = new Page();
+		page.setId(id);
+		page.setAclId(aclId);
+		page.setPagePath(path);
+		return page;
+	}
+
+	@Test
+	void commonParentPathDropsTheLastPartAndKeepsOnlyTheSharedStart() {
+		assertEquals("some/path/to", PageService.commonParentPath(List.of("some/path/to/page")));
+		assertEquals("some/path", PageService.commonParentPath(List.of("some/path/to/page", "some/path/also/page")));
+		assertEquals("/some/path", PageService.commonParentPath(List.of("/some/path/to/page", "/some/path/also/page")));
+		assertEquals("some", PageService.commonParentPath(List.of("some/path/to/page", "some/other/page", "some/path/x")));
+		assertNull(PageService.commonParentPath(List.of("some/path/to/page", "other/path/page")));
+		assertNull(PageService.commonParentPath(List.of("top-level-page")));
+		assertNull(PageService.commonParentPath(List.of()));
+		assertNull(PageService.commonParentPath(List.of("/page", "/other")));
+	}
+
+	@Test
+	void suggestPathUsesAnEscapedPrefixPatternAndOnlyReadablePages() {
+		var patternCaptor = ArgumentCaptor.forClass(String.class);
+		when(pageRepository.findByPagePathPrefix(patternCaptor.capture()))
+				.thenReturn(List.of(pageWithPath(1L, 11L, "some/path/to/page"), pageWithPath(2L, 12L, "some/path/also/page"),
+									pageWithPath(3L, 13L, "some/secret/page")));
+		when(accessService.hasReadPermission(11L)).thenReturn(true);
+		when(accessService.hasReadPermission(12L)).thenReturn(true);
+		when(accessService.hasReadPermission(13L)).thenReturn(false);
+
+		var response = pageService.suggestPath("so%_");
+
+		assertEquals("so\\%\\_%", patternCaptor.getValue(), "request text is escaped before it becomes a LIKE pattern");
+		assertEquals("so%_", response.getPrefix());
+		assertEquals(2, response.getMatches(), "the page the caller may not read is not counted");
+		assertEquals("some/path", response.getSuggestion());
+	}
+
+	@Test
+	void suggestPathWithoutMatchesOrPrefixAnswersNull() {
+		when(pageRepository.findByPagePathPrefix("%")).thenReturn(List.of());
+
+		var response = pageService.suggestPath(null);
+
+		assertEquals("", response.getPrefix());
+		assertEquals(0, response.getMatches());
+		assertNull(response.getSuggestion());
 	}
 }

@@ -9,6 +9,10 @@ public class Constants {
 	public static final String REST_ADMIN_PREFIX   = "/admin-management";
 	public static final String LOGIN_PATH          = "/login";
 	public static final String TEST_PATH_PREFIX    = "/test";
+	/**
+	 * Header carrying a service-to-service API token (managed under {@code /admin-management/api-tokens}); never a JWT bearer token.
+	 */
+	public static final String API_TOKEN_HEADER = "X-Vempain-Api-Token";
 
 	private Constants() {
 		throw new IllegalStateException("Constants class");
