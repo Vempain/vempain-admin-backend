@@ -181,3 +181,29 @@ File-backend ingestion/publishing, Website runtime authorization, shared-auth JW
 verification, server-side page HTML sanitization, and CI dependency/SBOM scanning remain outside these repository changes
 and must be addressed before a production security sign-off. Frontend injection sinks and reusable-workflow pinning are
 covered by the companion frontend report.
+
+## Addendum 2026-10-09 — additional ACL grantees on file ingest
+
+* `POST /content-management/file/site-file` accepts an optional `acls` list that grants named admin users privileges on the ingested
+  site file and gallery (A01). The list is validated in `FileIngestService.validateAcls` before the multipart file is written or any row
+  is touched: every entry must name an existing, `ACTIVE`, unlocked account exactly once and grant at least one privilege; a bad list
+  answers `400` and leaves no trace. Grants only ever add rows next to the owner row created for the ingesting account; the ingesting
+  account's own privileges can not be reduced through this path.
+* `GET /content-management/file/site-file/users` exposes only `id`, `login_name`, `name` and `nick` of grantable accounts (A02, data
+  minimisation): no e-mail, address, birthday or password hash leaves the service, and the endpoint needs the administrator ACL like the
+  ingest itself.
+* Tests: `FileIngestServiceUTC`, `FileIngestServiceITC`, `FileIngestCTC`, `FileIngestAclContractJTC`.
+
+## Addendum 2026-10-09 — service-to-service API tokens
+
+* The file backend no longer logs in with a service user's password. It presents an API token in `X-Vempain-Api-Token`
+  (`ApiTokenAuthenticationFilter`, `ApiTokenService`). Tokens are 256 random bits, stored only as a SHA-256 hash (A02, A04): a database
+  leak yields nothing usable and the token string is shown once at creation. Each token has a mandatory expiry, an IPv4/IPv6 network it
+  may be used from (checked against the resolved remote address) and is bound to the administrator who created it; a token can only call
+  the service-to-service endpoints (allowlist in the filter) and never the token management or the rest of the API (A01, least privilege).
+  Deleting a token revokes it immediately; the last use is recorded for auditing (A09). Unknown, expired or out-of-network tokens answer
+  401 with a generic message and are logged with the token prefix only.
+* Tests: `ApiTokenCTC` (management, network restriction, allowlist, revocation, IPv6), `ApiTokenServiceUTC`, `NetworkMatcherUTC`.
+* The network restriction stays mandatory also on Docker/Swarm networks: with `vempain.admin.api-token.private-network=true` the
+  backend proposes the private overlay/bridge network it is attached to (`PrivateNetworkDetector`, private ranges only), so operators
+  do not fall back to `0.0.0.0/0`.

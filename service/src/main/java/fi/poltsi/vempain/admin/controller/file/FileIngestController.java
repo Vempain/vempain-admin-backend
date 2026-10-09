@@ -2,6 +2,7 @@ package fi.poltsi.vempain.admin.controller.file;
 
 import fi.poltsi.vempain.admin.api.request.file.FileIngestRequest;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestResponse;
+import fi.poltsi.vempain.admin.api.response.file.FileIngestUserResponse;
 import fi.poltsi.vempain.admin.rest.file.FileIngestAPI;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.file.FileIngestService;
@@ -12,6 +13,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import tools.jackson.databind.ObjectMapper;
+
+import java.util.List;
 
 import static fi.poltsi.vempain.auth.tools.JsonTools.toJson;
 
@@ -54,6 +57,12 @@ public class FileIngestController implements FileIngestAPI {
 			return ResponseEntity.internalServerError()
 			                     .build();
 		}
+	}
+
+	@Override
+	public ResponseEntity<List<FileIngestUserResponse>> listIngestUsers() {
+		accessService.checkAdminAccess();
+		return ResponseEntity.ok(fileIngestService.listIngestUsers());
 	}
 
 	@Override

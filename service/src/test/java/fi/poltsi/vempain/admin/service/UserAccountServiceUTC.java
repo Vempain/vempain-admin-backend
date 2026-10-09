@@ -27,12 +27,14 @@ class UserAccountServiceUTC {
 	private UserAccountRepository userAccountRepository;
 	@Mock
 	private AclRepository         aclRepository;
+	@Mock
+	private fi.poltsi.vempain.auth.repository.UnitRepository unitRepository;
 	private UserService           userService;
 
 	@BeforeEach
 	void setUp() {
 		MockitoAnnotations.openMocks(this);
-		userService = new UserService(userAccountRepository, aclRepository);
+		userService = new UserService(userAccountRepository, aclRepository, unitRepository);
 	}
 
 	@Test

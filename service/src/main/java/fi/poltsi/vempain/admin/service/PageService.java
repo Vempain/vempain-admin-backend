@@ -3,6 +3,7 @@ package fi.poltsi.vempain.admin.service;
 import fi.poltsi.vempain.admin.VempainMessages;
 import fi.poltsi.vempain.admin.api.request.PagePagedRequest;
 import fi.poltsi.vempain.admin.api.request.PageRequest;
+import fi.poltsi.vempain.admin.api.response.PagePathSuggestionResponse;
 import fi.poltsi.vempain.admin.api.response.PageResponse;
 import fi.poltsi.vempain.admin.entity.Page;
 import fi.poltsi.vempain.admin.exception.ProcessingFailedException;
@@ -11,6 +12,7 @@ import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.AclService;
+import fi.poltsi.vempain.tools.LikePatterns;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -24,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -59,6 +62,66 @@ public class PageService {
 		}
 
 		return accessiblePages;
+	}
+
+	/**
+	 * Auto-completion of a page path: the parent path (the path without its last part) shared by every page the caller may read whose
+	 * path starts with {@code prefix}. Page paths are unique, so a full existing path is never suggested; with several matches only the
+	 * part their parent paths have in common is returned, e.g. "some/path" for some/path/to/page and some/path/also/page.
+	 */
+	public PagePathSuggestionResponse suggestPath(String prefix) {
+		var typed = prefix == null ? "" : prefix;
+		var matching = pageRepository.findByPagePathPrefix(LikePatterns.prefix(typed))
+									 .stream()
+									 .filter(page -> accessService.hasReadPermission(page.getAclId()))
+									 .map(Page::getPagePath)
+									 .filter(Objects::nonNull)
+									 .toList();
+
+		return PagePathSuggestionResponse.builder()
+										 .prefix(typed)
+										 .suggestion(commonParentPath(matching))
+										 .matches(matching.size())
+										 .build();
+	}
+
+	/**
+	 * The longest leading run of path parts shared by the parent paths of the given page paths; null when there is none.
+	 */
+	static String commonParentPath(List<String> pagePaths) {
+		List<String> common = null;
+		boolean leadingSlash = false;
+
+		for (var pagePath : pagePaths) {
+			leadingSlash = leadingSlash || pagePath.startsWith("/");
+			var parts = new ArrayList<>(java.util.Arrays.asList(pagePath.split("/")));
+			parts.removeIf(String::isEmpty);
+			if (!parts.isEmpty()) {
+				parts.removeLast();
+			}
+
+			if (common == null) {
+				common = parts;
+				continue;
+			}
+
+			int shared = 0;
+			while (shared < common.size() && shared < parts.size() && common.get(shared)
+																			.equals(parts.get(shared))) {
+				shared++;
+			}
+			common = new ArrayList<>(common.subList(0, shared));
+
+			if (common.isEmpty()) {
+				return null;
+			}
+		}
+
+		if (common == null || common.isEmpty()) {
+			return null;
+		}
+
+		return (leadingSlash ? "/" : "") + String.join("/", common);
 	}
 
 	public PagedResponse<PageResponse> findPagedByUser(PagePagedRequest request) {
