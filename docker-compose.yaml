@@ -7,10 +7,10 @@ services:
     restart: always
     environment:
       - spring.profiles.active=prod
-      - spring.admin-datasource.url=jdbc:postgresql://pg-admin:3306/${ENV_VEMPAIN_ADMIN_DB_NAME}?useSSL=false
+      - spring.admin-datasource.url=jdbc:postgresql://pg-admin:5432/${ENV_VEMPAIN_ADMIN_DB_NAME}?useSSL=false
       - spring.admin-datasource.username=${ENV_VEMPAIN_ADMIN_DB_NAME}
       - spring.admin-datasource.password=${ENV_VEMPAIN_ADMIN_DB_PASSWORD}
-      - spring.site-datasource.url=jdbc:postgresql://${ENV_VEMPAIN_SITE_DB_ADDRESS}:3306/${ENV_VEMPAIN_SITE_DB_NAME}?useSSL=false
+      - spring.site-datasource.url=jdbc:postgresql://${ENV_VEMPAIN_SITE_DB_ADDRESS}:5432/${ENV_VEMPAIN_SITE_DB_NAME}?useSSL=false
       - spring.site-datasource.username=${ENV_VEMPAIN_SITE_DB_USER}
       - spring.site-datasource.password=${ENV_VEMPAIN_SITE_DB_PASSWORD}
       - vempain.app.jwt-secret=${ENV_VEMPAIN_JWT_SECRET:?ENV_VEMPAIN_JWT_SECRET must be set}

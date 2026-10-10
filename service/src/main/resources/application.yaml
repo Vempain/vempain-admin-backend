@@ -31,6 +31,8 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+  flyway:
+    out-of-order: true
   lifecycle:
     timeout-per-shutdown-phase: 30s
 
