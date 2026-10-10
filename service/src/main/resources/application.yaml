@@ -31,6 +31,8 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+  flyway:
+    out-of-order: true
   lifecycle:
     timeout-per-shutdown-phase: 30s
 
@@ -116,6 +118,12 @@ vempain:
     jwt-secret: override-me
     jwt-expiration-ms: override-me
   admin:
+    api-token:
+      # true when the services share a private Docker/Swarm network: the network of a new API token is then pre-filled with the
+      # private network the admin backend is attached to (ENV_VEMPAIN_PRIVATE_NETWORK in compose/swarm)
+      private-network: false
+      # Explicit default network (CIDR) for deployments spanning hosts; empty = none
+      default-network: ""
     file:
       image-format: "jpeg"
       thumbnail-size: 250

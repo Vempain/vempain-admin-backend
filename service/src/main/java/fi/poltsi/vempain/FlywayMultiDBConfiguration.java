@@ -20,6 +20,9 @@ public class FlywayMultiDBConfiguration {
 	@Value("${spring.flyway.site.clean-disabled:true}")
 	private boolean siteCleanDisabled;
 
+	@Value("${spring.flyway.out-of-order:false}")
+	private boolean flywayOutOfOrder;
+
 	@Bean(initMethod = "migrate")
 	@FlywayDataSource
 	public Flyway adminFlyway(@Qualifier("adminDataSource") DataSource dataSource) {
@@ -28,6 +31,7 @@ public class FlywayMultiDBConfiguration {
 						.locations("db/migration/admin", "db/migration/auth")
 						.dataSource(dataSource)
 						.cleanDisabled(adminCleanDisabled)
+						.outOfOrder(flywayOutOfOrder)
 						.baselineOnMigrate(true)
 		);
 
@@ -45,6 +49,7 @@ public class FlywayMultiDBConfiguration {
 						.locations("db/migration/site")
 						.dataSource(dataSource)
 						.cleanDisabled(siteCleanDisabled)
+						.outOfOrder(flywayOutOfOrder)
 						.baselineOnMigrate(true)
 		);
 

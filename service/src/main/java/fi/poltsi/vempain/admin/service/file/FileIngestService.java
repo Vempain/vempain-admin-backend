@@ -1,7 +1,9 @@
 package fi.poltsi.vempain.admin.service.file;
 
+import fi.poltsi.vempain.admin.api.request.file.FileIngestAclRequest;
 import fi.poltsi.vempain.admin.api.request.file.FileIngestRequest;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestResponse;
+import fi.poltsi.vempain.admin.api.response.file.FileIngestUserResponse;
 import fi.poltsi.vempain.admin.configuration.StorageDirectoryConfiguration;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
@@ -10,8 +12,13 @@ import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
 import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.SubjectService;
+import fi.poltsi.vempain.auth.api.AccountStatus;
+import fi.poltsi.vempain.auth.entity.Acl;
+import fi.poltsi.vempain.auth.entity.UserAccount;
+import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.AclService;
+import fi.poltsi.vempain.auth.service.UserService;
 import fi.poltsi.vempain.common.api.FileTypeEnum;
 import fi.poltsi.vempain.tools.LocalFileTools;
 import jakarta.annotation.PostConstruct;
@@ -30,8 +37,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.StreamSupport;
 
 import static fi.poltsi.vempain.auth.tools.JsonTools.toJson;
 import static fi.poltsi.vempain.tools.LocalFileTools.createAndVerifyDirectory;
@@ -44,6 +56,7 @@ public class FileIngestService {
 	private final GalleryRepository  galleryRepository;
 	private final AclService    aclService;
 	private final AccessService accessService;
+	private final UserService userService;
 
 	private final GalleryFileService galleryFileService;
 
@@ -214,6 +227,8 @@ public class FileIngestService {
 				siteFile.setModified(now);
 			}
 
+			grantAdditionalAcls(siteFile.getAclId(), fileIngestRequest.getAcls(), userId);
+
 			log.debug("Storing new SiteFile: {}", siteFile);
 			siteFile = fileService.saveSiteFile(siteFile);
 
@@ -317,6 +332,109 @@ public class FileIngestService {
 		                                                                 .isBlank()) {
 			throw new IllegalArgumentException("Missing SHA-256 checksum");
 		}
+
+		validateAcls(fileIngestRequest.getAcls());
+	}
+
+	/**
+	 * Validates the additional ACL grantees of an ingest before anything is stored: every entry must name an existing, active and unlocked
+	 * user account exactly once and grant at least one privilege.
+	 *
+	 * @throws IllegalArgumentException when the list is invalid (answered as 400 by the controller)
+	 */
+	void validateAcls(List<FileIngestAclRequest> acls) {
+		if (acls == null || acls.isEmpty()) {
+			return;
+		}
+
+		var seenUserIds = new HashSet<Long>();
+
+		for (var acl : acls) {
+			if (acl == null || acl.getUserId() == null || acl.getUserId() < 1) {
+				throw new IllegalArgumentException("ACL entry without a valid user ID");
+			}
+
+			if (!acl.isReadPrivilege() && !acl.isCreatePrivilege() && !acl.isModifyPrivilege() && !acl.isDeletePrivilege()) {
+				throw new IllegalArgumentException("ACL entry for user " + acl.getUserId() + " grants no privilege");
+			}
+
+			if (!seenUserIds.add(acl.getUserId())) {
+				throw new IllegalArgumentException("ACL entry for user " + acl.getUserId() + " is listed more than once");
+			}
+
+			var user = userService.findById(acl.getUserId());
+
+			if (user.isEmpty() || !isGrantable(user.get())) {
+				throw new IllegalArgumentException("ACL entry refers to an unknown or inactive user " + acl.getUserId());
+			}
+		}
+	}
+
+	/**
+	 * The admin user accounts another service may offer as ACL grantees of ingested resources, reduced to the fields needed to pick one.
+	 */
+	public List<FileIngestUserResponse> listIngestUsers() {
+		return StreamSupport.stream(userService.findAll()
+											   .spliterator(), false)
+							.filter(FileIngestService::isGrantable)
+							.sorted(Comparator.comparing(UserAccount::getName, String.CASE_INSENSITIVE_ORDER))
+							.map(user -> FileIngestUserResponse.builder()
+															   .id(user.getId())
+															   .loginName(user.getLoginName())
+															   .name(user.getName())
+															   .nick(user.getNick())
+															   .build())
+							.toList();
+	}
+
+	private static boolean isGrantable(UserAccount user) {
+		return user.getStatus() == AccountStatus.ACTIVE && !user.isLocked();
+	}
+
+	/**
+	 * Adds the additional grantees of the ingest request to an existing ACL. A grantee that already has a row on the ACL gets its
+	 * privileges replaced by the requested ones; the ingesting account itself is skipped because it already holds every privilege.
+	 * The entries have been validated by {@link #validateAcls} before anything was stored.
+	 */
+	void grantAdditionalAcls(long aclId, List<FileIngestAclRequest> acls, long ingestingUserId) {
+		if (aclId < 1 || acls == null || acls.isEmpty()) {
+			return;
+		}
+
+		var existingRows = new ArrayList<>(aclService.findAclByAclId(aclId));
+
+		for (var request : acls) {
+			if (request.getUserId() == ingestingUserId) {
+				continue;
+			}
+
+			var existing = existingRows.stream()
+									   .filter(row -> Objects.equals(row.getUserId(), request.getUserId()))
+									   .findFirst();
+
+			try {
+				if (existing.isPresent()) {
+					var row = existing.get();
+					row.setReadPrivilege(request.isReadPrivilege());
+					row.setCreatePrivilege(request.isCreatePrivilege());
+					row.setModifyPrivilege(request.isModifyPrivilege());
+					row.setDeletePrivilege(request.isDeletePrivilege());
+					aclService.update(row);
+				} else {
+					var row = aclService.save(Acl.builder()
+												 .aclId(aclId)
+												 .userId(request.getUserId())
+												 .readPrivilege(request.isReadPrivilege())
+												 .createPrivilege(request.isCreatePrivilege())
+												 .modifyPrivilege(request.isModifyPrivilege())
+												 .deletePrivilege(request.isDeletePrivilege())
+												 .build());
+					existingRows.add(row);
+				}
+			} catch (VempainAclException e) {
+				throw new IllegalStateException("Failed to grant user " + request.getUserId() + " privileges on ACL " + aclId, e);
+			}
+		}
 	}
 
 	private String resolveBaseDir(FileTypeEnum fileTypeEnum) {
@@ -393,6 +511,7 @@ public class FileIngestService {
 			gallery.setModifier(userId);
 
 			gallery = galleryRepository.save(gallery);
+			grantAdditionalAcls(gallery.getAclId(), fileIngestRequest.getAcls(), userId);
 
 			return gallery;
 		}
@@ -423,7 +542,8 @@ public class FileIngestService {
 			                     .creator(userId)
 			                     .locked(false)
 			                     .created(Instant.now())
-			                     .build();
+								 .build();
+			grantAdditionalAcls(aclId, fileIngestRequest.getAcls(), userId);
 			return galleryRepository.save(gallery);
 		}
 

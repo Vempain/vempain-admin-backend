@@ -7,6 +7,7 @@ import fi.poltsi.vempain.admin.api.request.PagePagedRequest;
 import fi.poltsi.vempain.admin.api.request.PageRequest;
 import fi.poltsi.vempain.admin.api.request.PublishRequest;
 import fi.poltsi.vempain.admin.api.response.DeleteResponse;
+import fi.poltsi.vempain.admin.api.response.PagePathSuggestionResponse;
 import fi.poltsi.vempain.admin.api.response.PageResponse;
 import fi.poltsi.vempain.admin.api.response.PublishResponse;
 import fi.poltsi.vempain.admin.entity.Page;
@@ -70,6 +71,11 @@ public class PageController implements PageAPI {
 		var pageResponse = pageService.populateResponse(page);
 		log.debug("Returning page response: {}", pageResponse);
 		return ResponseEntity.ok(pageResponse);
+	}
+
+	@Override
+	public ResponseEntity<PagePathSuggestionResponse> suggestPagePath(String prefix) {
+		return ResponseEntity.ok(pageService.suggestPath(prefix));
 	}
 
 	@Override

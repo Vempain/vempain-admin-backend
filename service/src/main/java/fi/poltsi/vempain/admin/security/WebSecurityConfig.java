@@ -16,9 +16,20 @@ import static fi.poltsi.vempain.admin.api.Constants.REST_SCHEDULE_PREFIX;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class WebSecurityConfig extends fi.poltsi.vempain.auth.security.WebSecurityConfig {
+	private final ApiTokenAuthenticationFilter apiTokenAuthenticationFilter;
 
-	public WebSecurityConfig(UserDetailsServiceImpl userDetailsServiceImpl, AuthEntryPointJwt authEntryPointJwt, Environment environment) {
+	public WebSecurityConfig(UserDetailsServiceImpl userDetailsServiceImpl, AuthEntryPointJwt authEntryPointJwt, Environment environment,
+							 ApiTokenAuthenticationFilter apiTokenAuthenticationFilter) {
 		super(userDetailsServiceImpl, authEntryPointJwt, environment);
+		this.apiTokenAuthenticationFilter = apiTokenAuthenticationFilter;
+	}
+
+	/**
+	 * Service-to-service API tokens ({@code X-Vempain-Api-Token}) are checked before the JWT filter; see {@link ApiTokenAuthenticationFilter}.
+	 */
+	@Override
+	protected java.util.List<jakarta.servlet.Filter> additionalAuthenticationFilters() {
+		return java.util.List.of(apiTokenAuthenticationFilter);
 	}
 
 	@Override
