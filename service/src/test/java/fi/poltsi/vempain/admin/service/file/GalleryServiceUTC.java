@@ -514,4 +514,35 @@ class GalleryServiceUTC {
 		verify(galleryFileService).findGalleryFileByGalleryId(1L);
 	}
 
+	@Test
+	void findPagedGalleryListByUserFiltersAclBeforePagination() {
+		var request = request(1, "id", "asc", null, false);
+		var inaccessibleGallery = Gallery.builder()
+										 .id(2L)
+										 .shortname("inaccessible")
+										 .description("Not readable")
+										 .aclId(20L)
+										 .creator(1L)
+										 .created(Instant.now())
+										 .build();
+		when(galleryRepository.searchGalleriesForList(any(), anyBoolean(), any(Pageable.class)))
+				.thenReturn(new PageImpl<>(List.of(inaccessibleGallery, sampleGallery)));
+		when(accessService.hasReadPermission(20L)).thenReturn(false);
+		when(accessService.hasReadPermission(10L)).thenReturn(true);
+		when(aclService.findAclByAclId(10L)).thenReturn(List.of(Acl.builder()
+																   .aclId(10L)
+																   .build()));
+		when(galleryFileService.findGalleryFileByGalleryId(1L)).thenReturn(Collections.emptyList());
+
+		PagedResponse<FileGroupListResponse> result = galleryService.findPagedGalleryListByUser(request);
+
+		assertEquals(1, result.getTotalElements());
+		assertEquals(1, result.getTotalPages());
+		assertEquals(1, result.getContent()
+		                      .size());
+		assertEquals("test-gallery", result.getContent()
+		                                   .getFirst()
+		                                   .getShortName());
+	}
+
 }

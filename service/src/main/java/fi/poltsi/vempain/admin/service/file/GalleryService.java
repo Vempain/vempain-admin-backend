@@ -204,21 +204,30 @@ public class GalleryService {
 		int safePage = request.getPage();
 		int safeSize = Math.min(request.getSize(), 200);
 		Sort sortSpec = buildSort(request.getSortBy(), request.getDirection());
-		Pageable pageable = PageRequest.of(safePage, safeSize, sortSpec);
+		Pageable pageable = Pageable.unpaged(sortSpec);
 		var pageResult = galleryRepository.searchGalleriesForList(request.getSearch(), Boolean.TRUE.equals(request.getCaseSensitive()), pageable);
-		var items = new ArrayList<FileGroupListResponse>();
+		var accessibleGalleries = new ArrayList<Gallery>();
 
 		for (var gallery : pageResult.getContent()) {
 			if (accessService.hasReadPermission(gallery.getAclId())) {
-				populateGalleryWithAcls(gallery);
-				var fileCount = galleryFileService.findGalleryFileByGalleryId(gallery.getId())
-				                                  .size();
-				items.add(gallery.getListResponse(fileCount));
+				accessibleGalleries.add(gallery);
 			}
 		}
 
-		return PagedResponse.of(items, pageResult.getNumber(), pageResult.getSize(), pageResult.getTotalElements(),
-								pageResult.getTotalPages(), pageResult.isFirst(), pageResult.isLast());
+		int totalElements = accessibleGalleries.size();
+		int totalPages = (int) Math.ceil((double) totalElements / safeSize);
+		int fromIndex = Math.min(safePage * safeSize, totalElements);
+		int toIndex = Math.min(fromIndex + safeSize, totalElements);
+		var items = new ArrayList<FileGroupListResponse>();
+
+		for (var gallery : accessibleGalleries.subList(fromIndex, toIndex)) {
+			populateGalleryWithAcls(gallery);
+			var fileCount = galleryFileService.findGalleryFileByGalleryId(gallery.getId())
+											  .size();
+			items.add(gallery.getListResponse(fileCount));
+		}
+
+		return PagedResponse.of(items, safePage, safeSize, totalElements, totalPages, safePage == 0, totalPages == 0 || safePage + 1 >= totalPages);
 	}
 
 	@Transactional(readOnly = true)

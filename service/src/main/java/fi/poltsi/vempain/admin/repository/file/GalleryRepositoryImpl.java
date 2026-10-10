@@ -51,13 +51,17 @@ public class GalleryRepositoryImpl implements GalleryRepositoryCustom {
 		String whereClause = buildWhereClause(tokens, caseSensitive, includeFiles);
 		String orderClause = buildOrderClause(pageable);
 
-		String selectSql = "SELECT DISTINCT g.* " + base + whereClause + orderClause +
-		                   " OFFSET :offset LIMIT :limit";
+		String selectSql = "SELECT DISTINCT g.* " + base + whereClause + orderClause;
+		if (pageable.isPaged()) {
+			selectSql += " OFFSET :offset LIMIT :limit";
+		}
 		log.debug("Gallery search SQL: {}", selectSql);
 		Query dataQuery = entityManager.createNativeQuery(selectSql, Gallery.class);
 		bindParameters(dataQuery, tokens, caseSensitive);
-		dataQuery.setParameter("offset", (int) pageable.getOffset());
-		dataQuery.setParameter("limit", pageable.getPageSize());
+		if (pageable.isPaged()) {
+			dataQuery.setParameter("offset", (int) pageable.getOffset());
+			dataQuery.setParameter("limit", pageable.getPageSize());
+		}
 		@SuppressWarnings("unchecked")
 		List<Gallery> galleries = dataQuery.getResultList();
 
