@@ -4,6 +4,7 @@ import fi.poltsi.vempain.admin.tools.TestUTCTools;
 import fi.poltsi.vempain.auth.entity.UserAccount;
 import fi.poltsi.vempain.auth.repository.AclRepository;
 import fi.poltsi.vempain.auth.repository.UserAccountRepository;
+import fi.poltsi.vempain.auth.security.AclAuthorizationService;
 import fi.poltsi.vempain.auth.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,12 +30,14 @@ class UserAccountServiceUTC {
 	private AclRepository         aclRepository;
 	@Mock
 	private fi.poltsi.vempain.auth.repository.UnitRepository unitRepository;
+	@Mock
+	private AclAuthorizationService aclAuthorizationService;
 	private UserService           userService;
 
 	@BeforeEach
 	void setUp() {
 		MockitoAnnotations.openMocks(this);
-		userService = new UserService(userAccountRepository, aclRepository, unitRepository);
+		userService = new UserService(userAccountRepository, aclRepository, unitRepository, aclAuthorizationService);
 	}
 
 	@Test
