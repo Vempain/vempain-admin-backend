@@ -14,6 +14,7 @@ import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.admin.service.file.GalleryFileService;
+import fi.poltsi.vempain.auth.api.response.UserResponse;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.UserService;
 import fi.poltsi.vempain.common.api.TaskStatusEnum;
@@ -48,6 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
@@ -315,6 +317,43 @@ class PublishServiceUTC {
 
 		when(formService.findById(2L)).thenThrow(new VempainEntityNotFoundException("gone", "form"));
 		assertFalse(publishService.canPublishPage(page));
+	}
+
+	@Test
+	void publishPageDoesNotAddLegacyPhpWrapper() throws Exception {
+		var page = Page.builder()
+					   .id(1L)
+					   .formId(2L)
+					   .body("Page body")
+					   .pagePath("/page")
+					   .title("Page")
+					   .header("Header")
+					   .creator(7L)
+					   .aclId(1L)
+					   .build();
+		var form = Form.builder()
+					   .id(2L)
+					   .layoutId(3L)
+					   .build();
+		var layout = Layout.builder()
+						   .id(3L)
+						   .structure("<main><!--page--></main>")
+						   .build();
+
+		when(pageService.findById(1L)).thenReturn(page);
+		when(formService.findById(2L)).thenReturn(form);
+		when(formService.findAllFormComponentsByFormId(2L)).thenReturn(List.of());
+		when(layoutService.findById(3L)).thenReturn(layout);
+		when(userService.findUserResponseById(7L)).thenReturn(UserResponse.builder()
+		                                                                  .nick("creator")
+		                                                                  .build());
+		when(pageGalleryService.findPageGalleryByPageId(1L)).thenReturn(List.of());
+		when(webSitePageRepository.findByPageId(1L)).thenReturn(java.util.Optional.empty());
+		when(webSitePageRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+		publishService.publishPageAsSystem(1L);
+
+		verify(webSitePageRepository).save(argThat(sitePage -> "<main>Page body</main>".equals(sitePage.getBody())));
 	}
 
 	@Test
