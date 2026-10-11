@@ -59,7 +59,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: [ health, info ]
+        include: [ health, info, openapi, swagger-ui ]
     access:
       default: none
   endpoint:
@@ -72,6 +72,10 @@ management:
           include: readinessState,db
         liveness:
           include: livenessState
+    openapi:
+      access: read-only
+    swagger-ui:
+      access: read-only
   metrics:
     tags:
       application: vempain-admin-backend
