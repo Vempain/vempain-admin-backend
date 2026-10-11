@@ -1,5 +1,10 @@
 # AGENTS.md
 
+## CLI contract synchronization
+
+Any REST API change in this repository—endpoint, path, method, request/response DTO, JSON field, status code, or behavior—requires a corresponding
+review and update of `vempain-cli`. Keep the CLI's commands and tests aligned with the published API contract before considering the backend change complete.
+
 ## Quick orientation
 - This is a **Gradle multi-project** backend: `api/` contains public REST contracts + DTOs, `service/` contains the Spring Boot implementation. Start in `settings.gradle`, `api/build.gradle`, and `service/build.gradle`.
 - The runtime app is `service/src/main/java/fi/poltsi/vempain/VempainAdminApplication.java`; all REST paths are served under `/api`
