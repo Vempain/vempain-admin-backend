@@ -203,9 +203,6 @@ public class PublishService {
 
 		var pageBody = layout.getStructure();
 		pageBody = pageBody.replace("<!--page-->", page.getBody());
-		// Add PHP-tags to the beginning and end of body as the default content for layout is HTML
-		// See this why there is a space at the end: http://php.net/manual/en/function.eval.php#97063
-		pageBody = "?>" + pageBody + "<?php ";
 		var i = 0;
 
 		for (FormComponent formComponent : formComponents) {
