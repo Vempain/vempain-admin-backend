@@ -84,6 +84,7 @@ class FileIngestServiceUTC {
 
 	private static final byte[] FILE_CONTENT = "test-file-content".getBytes();
 	private static final String SHA256_SUM    = DigestUtils.sha256Hex(FILE_CONTENT);
+	private static final String METADATA_JSON = "[{\"IFD0\":{\"Make\":\"NIKON CORPORATION\",\"Model\":\"NIKON D750\"}}]";
 
 	@BeforeEach
 	void setUp() {
@@ -114,7 +115,7 @@ class FileIngestServiceUTC {
 									   .mimeType("image/jpeg")
 									   .sha256sum(SHA256_SUM)
 									   .comment("")
-									   .metadata("{}")
+									   .metadata(METADATA_JSON)
 									   .tags(List.of())
 									   .build();
 
@@ -123,6 +124,10 @@ class FileIngestServiceUTC {
 		assertNotNull(response);
 		assertEquals(42L, response.getSiteFileId());
 		assertNull(response.getGalleryId());
+		var savedCaptor = ArgumentCaptor.forClass(SiteFile.class);
+		verify(fileService).saveSiteFile(savedCaptor.capture());
+		assertEquals(METADATA_JSON, savedCaptor.getValue()
+		                                       .getMetadata());
 	}
 
 	@Test
