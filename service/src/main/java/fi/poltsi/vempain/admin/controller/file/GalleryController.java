@@ -158,14 +158,6 @@ public class GalleryController implements GalleryAPI {
 		return ResponseEntity.ok(galleryResponse);
 	}
 
-	@Override
-	public ResponseEntity<List<GalleryResponse>> setPageGalleries(long pageId, List<Long> galleryIdList) {
-
-		var galleryResponses = pageGalleryService.setPageGalleries(pageId, galleryIdList);
-
-		return ResponseEntity.ok(galleryResponses);
-	}
-
 	// //////////////////// Publishing actions
 
 	@Override

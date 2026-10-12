@@ -64,10 +64,6 @@ class FileServiceUTC {
 	@Mock
 	private SubjectService              subjectService;
 	@Mock
-	private PageService                 pageService;
-	@Mock
-	private PageGalleryService          pageGalleryService;
-	@Mock
 	private SiteFileRepository          siteFileRepository;
 
 	@InjectMocks

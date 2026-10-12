@@ -146,24 +146,6 @@ public interface GalleryAPI {
 	@PutMapping(value = MAIN_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	ResponseEntity<GalleryResponse> updateGallery(@Valid @RequestBody GalleryRequest galleryRequest);
 
-	@Operation(summary = "Set galleries to page", description = "Set the list of galleries belonging to a page", tags = "GalleryAPI")
-	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "List of gallery ID",
-	                                                      required = true,
-	                                                      content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-	                                                                         schema = @Schema(implementation = List.class)))
-	@ApiResponses(value = {@ApiResponse(responseCode = "200",
-	                                    description = "List updated",
-	                                    content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-	                                                        schema = @Schema(implementation = List.class))}),
-	                       @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
-	                       @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
-	                       @ApiResponse(responseCode = "404", description = "No page found", content = @Content),
-	                       @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
-	@SecurityRequirement(name = "Bearer Authentication")
-	@PostMapping(value = MAIN_PATH + "/page/{pageId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<List<GalleryResponse>> setPageGalleries(@PathVariable(name = "pageId") long pageId,
-	                                                       @RequestBody @NotNull List<Long> galleryIdList);
-
 	// /////////////////////////// Publishing actions
 
 	@Operation(summary = "Publish all galleries", description = "Publish a new version of all galleries", tags = "GalleryAPI")

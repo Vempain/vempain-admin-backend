@@ -164,6 +164,30 @@ class PageGalleryServiceUTC {
 	}
 
 	@Test
+	void setPageGalleriesDropsDuplicatesAndNullsButKeepsTheOrder() {
+		when(query.executeUpdate()).thenReturn(1);
+		when(galleryService.findById(20L)).thenReturn(GalleryResponse.builder()
+		                                                             .id(20L)
+		                                                             .build());
+		when(galleryService.findById(7L)).thenReturn(GalleryResponse.builder()
+		                                                            .id(7L)
+		                                                            .build());
+
+		var ids = new java.util.ArrayList<Long>();
+		ids.add(20L);
+		ids.add(null);
+		ids.add(7L);
+		ids.add(20L);
+		List<GalleryResponse> responses = pageGalleryService.setPageGalleries(1L, ids);
+
+		assertEquals(List.of(20L, 7L), responses.stream()
+		                                        .map(GalleryResponse::getId)
+		                                        .toList());
+		verify(galleryService, org.mockito.Mockito.times(1)).findById(20L);
+		verify(galleryService, org.mockito.Mockito.times(2)).findById(org.mockito.ArgumentMatchers.anyLong());
+	}
+
+	@Test
 	void setPageGalleriesEmptyListOk() {
 		when(query.executeUpdate()).thenReturn(0);
 
