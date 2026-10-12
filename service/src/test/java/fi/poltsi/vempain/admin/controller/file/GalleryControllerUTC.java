@@ -95,7 +95,6 @@ class GalleryControllerUTC {
 		when(galleryService.findById(7L)).thenReturn(gallery);
 		when(galleryService.createGallery(request)).thenReturn(gallery);
 		when(galleryService.updateGallery(request)).thenReturn(gallery);
-		when(pageGalleryService.setPageGalleries(3L, java.util.List.of(7L))).thenReturn(java.util.List.of(gallery));
 
 		assertEquals(gallery, galleryController.getGalleries(null)
 		                                       .getBody()
@@ -112,9 +111,6 @@ class GalleryControllerUTC {
 		request.setId(7L);
 		assertSame(gallery, galleryController.updateGallery(request)
 		                                     .getBody());
-		assertSame(gallery, galleryController.setPageGalleries(3L, java.util.List.of(7L))
-		                                     .getBody()
-		                                     .getFirst());
 		verify(galleryService).findPagedByUser(pagedRequest);
 	}
 

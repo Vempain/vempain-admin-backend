@@ -59,6 +59,12 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
   no ACL rows is denied. `AclConsistencySchedule` repairs such entities by creating an ACL with all privileges for the entity's `creator`.
 - `SiteFile` has its own ACL: site-file listings use `AccessService.readableSpecification()` and `GalleryService` attaches only the files the
   user may read, even inside a readable gallery.
+- Page-gallery links (`page_gallery`, `PageGalleryService`) are derived data, not edited by hand: the admin frontend takes the `gallery`
+  and hero `carousel` embeds the rich-text editor reports and sends their gallery IDs as `PageRequest.gallery_ids` (body order; null keeps
+  the existing links, an empty list clears them). `PageService.saveFromPageRequest`/`updateFromRequest` store them in the same transaction
+  through `PageGalleryService.setPageGalleries`, which needs modify on the page and on every gallery (a denied gallery fails the page save
+  with 403). `V1006__page_gallery_from_embeds.sql` rebuilt the links of existing pages from their bodies once. There is no separate
+  endpoint for setting page galleries any more; the GET `galleries/page/{id}[/list]` endpoints remain for the publish screen.
 - Publishing is authorized as a whole: `PublishService.publishPage` needs modify on the page, read on its form, layout and components, and
   the right to publish every attached gallery (modify on the gallery, read on each of its files); `publishGallery` needs modify on the gallery
   and read on each file. `publishAll*`/`publishSelectedGalleries` skip items the user may not publish. The `*AsSystem` variants skip the
@@ -139,6 +145,11 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
   - `PublishService` orchestrates site-side publishing.
   - `JschClient` pushes converted files + thumbs over SFTP to the remote site root.
   - `exiftool` must exist; startup will fail fast in `SetupVerification` if required paths/files are missing.
+- `prod` is the default profile (`spring.profiles.default`). In it `SetupVerification.verifyProductionDatasources` refuses to start unless both
+  `spring.admin-datasource.url` and `spring.site-datasource.url` require TLS (`sslmode=require`, `verify-ca` or `verify-full`, or `ssl` without an
+  `sslmode`). The tests set `spring.profiles.default=test` in `src/test/resources/application.properties` so Testcontainers URLs are not checked.
+  The compose files start PostgreSQL through `postgres-ssl-entrypoint.sh` (a copy of the `vempain-cluster` script; keep them identical), which
+  rejects plaintext connections.
 
 ## Workflows agents should actually use
 - Local DB bootstrap for dev: `docker_db.sh` starts **two** Postgres containers on ports **5433** and **5434** matching `start.sh`.

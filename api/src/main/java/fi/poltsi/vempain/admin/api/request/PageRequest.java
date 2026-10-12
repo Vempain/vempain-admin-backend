@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+import java.util.List;
+
 @EqualsAndHashCode(callSuper = true)
 @Getter
 @Setter
@@ -32,4 +34,7 @@ public class PageRequest extends BaseRequest {
 	private String  header;
 	@Schema(description = "The body text of the page", example = "<H1>Hello world!</H1>")
 	private String  body;
+	@Schema(description = "IDs of the galleries the page links to, in the order they appear in the body (the gallery and hero carousel embeds)."
+						  + " Omitted or null leaves the existing links untouched, an empty list removes them", example = "[7, 12]")
+	private List<Long> galleryIds;
 }

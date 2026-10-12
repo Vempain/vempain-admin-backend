@@ -32,9 +32,10 @@ import java.util.Objects;
 @RequiredArgsConstructor
 @Service
 public class PageService {
-	private final PageRepository pageRepository;
-	private final AclService     aclService;
-	private final AccessService  accessService;
+	private final PageRepository     pageRepository;
+	private final AclService         aclService;
+	private final AccessService      accessService;
+	private final PageGalleryService pageGalleryService;
 
 	public Iterable<Page> findAll() {
 		return pageRepository.findAll();
@@ -252,7 +253,25 @@ public class PageService {
 		               .modified(null)
 		               .build();
 
-		return save(page);
+		var savedPage = save(page);
+		linkGalleries(savedPage.getId(), request.getGalleryIds());
+		return savedPage;
+	}
+
+	/**
+	 * Replaces the page's gallery links with the given list, which the admin frontend derives from the gallery and hero carousel embeds of
+	 * the body. A null list means the client did not send any and the existing links are kept; an empty list removes them. The links are
+	 * what {@link PublishService} publishes together with the page, so every gallery needs the modify privilege of the current user.
+	 *
+	 * @throws org.springframework.security.access.AccessDeniedException when the user may not modify one of the galleries
+	 */
+	private void linkGalleries(long pageId, List<Long> galleryIds) {
+		if (galleryIds == null) {
+			return;
+		}
+
+		log.debug("Linking galleries {} to page {}", galleryIds, pageId);
+		pageGalleryService.setPageGalleries(pageId, galleryIds);
 	}
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -348,12 +367,15 @@ public class PageService {
 			page.setModifier(userId);
 			page.setModified(Instant.now());
 
-			return save(page);
+			page = save(page);
 		} catch (Exception e) {
 			log.error("Failed to update page to database: {}", request);
 			log.error("Exception message: {}", e.getMessage());
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, VempainMessages.INTERNAL_ERROR);
 		}
+
+		linkGalleries(page.getId(), request.getGalleryIds());
+		return page;
 	}
 
 	public void deleteByUser(long pageId) {

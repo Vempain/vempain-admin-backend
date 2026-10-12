@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
@@ -27,11 +28,14 @@ import java.util.stream.StreamSupport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,9 +46,76 @@ class PageServiceUTC {
 	AclService     aclService;
 	@Mock
 	AccessService  accessService;
+	@Mock
+	PageGalleryService pageGalleryService;
 
 	@InjectMocks
 	private PageService pageService;
+
+	// ---- gallery links derived from the body embeds ----
+
+	@Test
+	void saveFromPageRequestLinksTheRequestedGalleries() {
+		Page page = TestUTCTools.generatePage(1L);
+		PageRequest request = TestUTCTools.generatePageRequestFromPage(page);
+		request.setGalleryIds(List.of(7L, 12L));
+		when(accessService.getValidUserId()).thenReturn(1L);
+		when(pageRepository.findByPagePath(request.getPagePath())).thenReturn(null);
+		when(aclService.saveNewAclForObject(request.getAcls())).thenReturn(1L);
+		when(pageRepository.save(any())).thenReturn(page);
+
+		pageService.saveFromPageRequest(request);
+
+		verify(pageGalleryService).setPageGalleries(1L, List.of(7L, 12L));
+	}
+
+	@Test
+	void saveFromPageRequestWithoutGalleryListLeavesTheLinksAlone() {
+		Page page = TestUTCTools.generatePage(1L);
+		PageRequest request = TestUTCTools.generatePageRequestFromPage(page);
+		when(accessService.getValidUserId()).thenReturn(1L);
+		when(pageRepository.findByPagePath(request.getPagePath())).thenReturn(null);
+		when(aclService.saveNewAclForObject(request.getAcls())).thenReturn(1L);
+		when(pageRepository.save(any())).thenReturn(page);
+
+		pageService.saveFromPageRequest(request);
+
+		verifyNoInteractions(pageGalleryService);
+	}
+
+	@Test
+	void updateFromRequestReplacesTheGalleryLinks() throws VempainAclException {
+		Page page = TestUTCTools.generatePage(1L);
+		PageRequest request = TestUTCTools.generatePageRequestFromPage(page);
+		request.setGalleryIds(List.of());
+		when(accessService.getValidUserId()).thenReturn(1L);
+		when(pageRepository.findById(request.getId())).thenReturn(page);
+		when(accessService.hasModifyPermission(page.getAclId())).thenReturn(true);
+		doNothing().when(aclService)
+				   .updateFromRequestList(request.getAcls());
+		when(pageRepository.save(any())).thenReturn(page);
+
+		pageService.updateFromRequest(request);
+
+		verify(pageGalleryService).setPageGalleries(1L, List.of());
+	}
+
+	@Test
+	void updateFromRequestFailsWhenAGalleryMayNotBeModified() throws VempainAclException {
+		Page page = TestUTCTools.generatePage(1L);
+		PageRequest request = TestUTCTools.generatePageRequestFromPage(page);
+		request.setGalleryIds(List.of(7L));
+		when(accessService.getValidUserId()).thenReturn(1L);
+		when(pageRepository.findById(request.getId())).thenReturn(page);
+		when(accessService.hasModifyPermission(page.getAclId())).thenReturn(true);
+		doNothing().when(aclService)
+				   .updateFromRequestList(request.getAcls());
+		when(pageRepository.save(any())).thenReturn(page);
+		doThrow(new AccessDeniedException("User does not have permission to modify gallery")).when(pageGalleryService)
+																							 .setPageGalleries(1L, List.of(7L));
+
+		assertThrows(AccessDeniedException.class, () -> pageService.updateFromRequest(request));
+	}
 
 	@Test
 	void findAllOk() {

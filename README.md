@@ -22,6 +22,10 @@ Gallery dropdowns use `POST /content-management/galleries/paged-list`, which ret
 `GET /content-management/galleries/page/{pageId}/list` with the same lightweight response shape. Use `/paged` when full gallery file details are required. The
 legacy `/paged-without-files` endpoint remains available for compatibility.
 
+The galleries linked to a page are derived from its body: the page create/update request carries `gallery_ids`, the ids of the gallery and hero carousel
+embeds in body order, and the backend replaces the links with that list (null keeps the existing links, an empty list clears them). The linked galleries
+are published together with the page.
+
 ## Running in Docker
 
 ### Building the docker image
@@ -71,55 +75,31 @@ chown vempain: /var/www/sites
 
 ## Running locally
 
-## Add vempain admin and database user to MariaDB
+### Set up the databases
 
-We use the same database for both admin as well as site.
+Vempain Admin uses two PostgreSQL databases: the admin database with the schema `vempain_admin`, and the site database with the schema
+`vempain_site`, which Vempain Website reads. For development, `docker_db.sh` starts both as `postgres:18-alpine` containers (admin on port
+5433, site on port 5434) and creates the users, schemas and search paths.
+
+To create them by hand instead, run the following with `psql` as the `postgres` superuser:
 
 ```sql
-CREATE USER 'vempain_admin'@'localhost' IDENTIFIED BY 'ADMIN_PASSWORD';
-CREATE USER 'vempain_site'@'localhost' IDENTIFIED BY 'SITE_PASSWORD';
+-- Admin database
+CREATE USER vempain_admin WITH ENCRYPTED PASSWORD 'ADMIN_PASSWORD';
+CREATE DATABASE vempain_admin OWNER vempain_admin;
+\c vempain_admin
+CREATE SCHEMA vempain_admin AUTHORIZATION vempain_admin;
+ALTER ROLE vempain_admin SET search_path TO vempain_admin;
 
-CREATE DATABASE vempain_admin DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-CREATE DATABASE vempain_site DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
-GRANT Alter ON vempain_admin.* TO 'vempain_admin'@'%';
-GRANT Create ON vempain_admin.* TO 'vempain_admin'@'%';
-GRANT Create view ON vempain_admin.* TO 'vempain_admin'@'%';
-GRANT Delete ON vempain_admin.* TO 'vempain_admin'@'%';
-GRANT Drop ON vempain_admin.* TO 'vempain_admin'@'%';
-GRANT Index ON vempain_admin.* TO 'vempain_admin'@'%';
-GRANT Insert ON vempain_admin.* TO 'vempain_admin'@'%';
-GRANT References ON vempain_admin.* TO 'vempain_admin'@'%';
-GRANT Select ON vempain_admin.* TO 'vempain_admin'@'%';
-GRANT Trigger ON vempain_admin.* TO 'vempain_admin'@'%';
-GRANT Show view ON vempain_admin.* TO 'vempain_admin'@'%';
-GRANT Alter routine ON vempain_admin.* TO 'vempain_admin'@'%';
-GRANT Create routine ON vempain_admin.* TO 'vempain_admin'@'%';
-GRANT Create temporary tables ON vempain_admin.* TO 'vempain_admin'@'%';
-GRANT Execute ON vempain_admin.* TO 'vempain_admin'@'%';
-GRANT Lock tables ON vempain_admin.* TO 'vempain_admin'@'%';
-GRANT Update ON vempain_admin.* TO 'vempain_admin'@'%';
-
-GRANT Alter ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Create ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Create view ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Delete ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Drop ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Index ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Insert ON vempain_site.* TO 'vempain_site'@'%';
-GRANT References ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Select ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Trigger ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Show view ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Alter routine ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Create routine ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Create temporary tables ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Execute ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Lock tables ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Update ON vempain_site.* TO 'vempain_site'@'%';
-
-FLUSH PRIVILEGES;
+-- Site database
+CREATE USER vempain_site WITH ENCRYPTED PASSWORD 'SITE_PASSWORD';
+CREATE DATABASE vempain_site OWNER vempain_site;
+\c vempain_site
+CREATE SCHEMA vempain_site AUTHORIZATION vempain_site;
+ALTER ROLE vempain_site SET search_path TO vempain_site;
 ```
+
+The tables are created by Flyway when the service starts.
 
 ### Create admin user for UI
 
@@ -184,67 +164,62 @@ website root. The user should also have a passwordless SSH access to the remote 
 
 #### Set up remote database
 
-Create the database and the related user on the remote server. The following commands should be run on the remote server:
+Create the site database and its user on the remote server. Run the following with `psql` as the `postgres` superuser on the remote server:
 
-```shell
-CREATE USER 'vempain_site'@'localhost' IDENTIFIED BY 'password';
-CREATE DATABASE `vempain_site` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-
-GRANT Alter ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Create ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Create view ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Delete ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Drop ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Index ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Insert ON vempain_site.* TO 'vempain_site'@'%';
-GRANT References ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Select ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Trigger ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Show view ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Alter routine ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Create routine ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Create temporary tables ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Execute ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Lock tables ON vempain_site.* TO 'vempain_site'@'%';
-GRANT Update ON vempain_site.* TO 'vempain_site'@'%';
-
-FLUSH PRIVILEGES;
+```sql
+CREATE USER vempain_site WITH ENCRYPTED PASSWORD 'password';
+CREATE DATABASE vempain_site OWNER vempain_site;
+\c vempain_site
+CREATE SCHEMA vempain_site AUTHORIZATION vempain_site;
+ALTER ROLE vempain_site SET search_path TO vempain_site;
 ```
+
+The admin backend connects to this database over the network and requires TLS (`sslmode=require`). Enable `ssl` in `postgresql.conf` with the
+server certificate and key, and allow the admin backend's host in `pg_hba.conf` with a `hostssl` entry only.
+
+Instead of a manually installed server you can run the site database with `docker-compose-site.yaml`. Copy it together with
+`postgres-ssl-entrypoint.sh` to the site host and set `ENV_VEMPAIN_TYPE`, `ENV_VEMPAIN_SITE_DB_EXT_PORT`, `ENV_VEMPAIN_SITE_DB_NAME`,
+`ENV_VEMPAIN_SITE_DB_USER`, `ENV_VEMPAIN_SITE_DB_PASSWORD`, and `ENV_VEMPAIN_SITE_DB_CERTIFICATE` / `ENV_VEMPAIN_SITE_DB_PRIVATE_KEY` (host paths of
+the server certificate and its private key). The entrypoint enables TLS and rejects every plaintext network connection.
 
 ### Starting up the service and database
 
 For production the service as well as the admin database is running in a docker container. For this purpose there's a `docker-compose.yaml` file in the root
-directory. First you should create a separate directory, e.g. prod to which you copy the `docker-compose.yaml`. The script takes several environment variables,
+directory. First you should create a separate directory, e.g. prod to which you copy the `docker-compose.yaml` and `postgres-ssl-entrypoint.sh`. The database
+accepts only TLS connections: the entrypoint enables SSL with the given certificate and rejects plaintext network connections, and the service connects with
+`sslmode=require` (in the `prod` profile it refuses to start with a datasource URL that does not require TLS). The script takes several environment variables,
 prefixed with ENV_, which you can set from the command line. The following variables should be set:
 
-| Variable                           | Description                                                                                              | Example         |
-|------------------------------------|----------------------------------------------------------------------------------------------------------|-----------------|
-| ENV_VEMPAIN_TYPE                   | The type of the vempain service, can be e.g. `prod` or `stg`. Prefix to container name                   | prod            |
-| ENV_VEMPAIN_ADMIN_VERSION          | The build version of the vempain-admin docker image, should be in form of major.minor.patch.             | 1.2.3           |
-| ENV_VEMPAIN_ADMIN_HOSTNAME         | The hostname part of the vempain admin service URL.                                                      | va.domain.tld   |
-| ENV_VEMPAIN_ADMIN_SSH_CONFIG_DIR   | The directory where the ssh configuration is stored. This is used to copy the ssh keys to the container. | /home/user/.ssh |
-| ENV_VEMPAIN_ADMIN_CONVERTED_DIR    | Main directory of all converted files                                                                    | /converted      |
-| ENV_VEMPAIN_ADMIN_DB_ROOT_PASSWORD | The root password of the vempain admin database.                                                         | password        |
-| ENV_VEMPAIN_ADMIN_DB_NAME          | The name of the vempain admin database.                                                                  | vempain_admin   |
-| ENV_VEMPAIN_ADMIN_DB_USER          | The user name of the vempain admin database.                                                             | vempain         |
-| ENV_VEMPAIN_ADMIN_DB_PASSWORD      | The user password of the vempain admin database.                                                         | password        |
-| ENV_VEMPAIN_SITE_DB_ADDRESS        | The address of the vempain site database.                                                                | remote.tld      |
-| ENV_VEMPAIN_SITE_DB_USER           | The username of the vempain site database.                                                               | vempain_site    |
-| ENV_VEMPAIN_SITE_DB_NAME           | The name of the vempain site database.                                                                   | vempain_site    |
-| ENV_VEMPAIN_SITE_DB_PASSWORD       | The password of the vempain site database.                                                               | password        |
-| ENV_VEMPAIN_SITE_SSH_ADDRESS       | The address of the vempain site.                                                                         | remote.tld      |
-| ENV_VEMPAIN_SITE_SSH_PORT          | The port of the vempain site.                                                                            | 22              |
-| ENV_VEMPAIN_SITE_SSH_USER          | The user to connect to the vempain site.                                                                 | vempain         |
-| ENV_VEMPAIN_SITE_WWW_ROOT          | Remote path on the site where the web root is.                                                           | /var/www/site   |
+| Variable                         | Description                                                                                              | Example             |
+|----------------------------------|----------------------------------------------------------------------------------------------------------|---------------------|
+| ENV_VEMPAIN_TYPE                 | The type of the vempain service, can be e.g. `prod` or `stg`. Prefix to container name                   | prod                |
+| ENV_VEMPAIN_ADMIN_VERSION        | The build version of the vempain-admin docker image, should be in form of major.minor.patch.             | 1.2.3               |
+| ENV_VEMPAIN_ADMIN_HOSTNAME       | The hostname part of the vempain admin service URL.                                                      | va.domain.tld       |
+| ENV_VEMPAIN_ADMIN_SSH_CONFIG_DIR | The directory where the ssh configuration is stored. This is used to copy the ssh keys to the container. | /home/user/.ssh     |
+| ENV_VEMPAIN_ADMIN_CONVERTED_DIR  | Main directory of all converted files                                                                    | /converted          |
+| ENV_VEMPAIN_ADMIN_DB_NAME        | The name of the vempain admin database.                                                                  | vempain_admin       |
+| ENV_VEMPAIN_ADMIN_DB_USER        | The user name of the vempain admin database.                                                             | vempain             |
+| ENV_VEMPAIN_ADMIN_DB_PASSWORD    | The user password of the vempain admin database.                                                         | password            |
+| ENV_VEMPAIN_ADMIN_DB_CERTIFICATE | Host path of the TLS certificate (PEM) of the admin database server.                                     | /etc/vempain/db.crt |
+| ENV_VEMPAIN_ADMIN_DB_PRIVATE_KEY | Host path of the private key (PEM) of that certificate.                                                  | /etc/vempain/db.key |
+| ENV_VEMPAIN_SITE_DB_ADDRESS      | The address of the vempain site database.                                                                | remote.tld          |
+| ENV_VEMPAIN_SITE_DB_USER         | The username of the vempain site database.                                                               | vempain_site        |
+| ENV_VEMPAIN_SITE_DB_NAME         | The name of the vempain site database.                                                                   | vempain_site        |
+| ENV_VEMPAIN_SITE_DB_PASSWORD     | The password of the vempain site database.                                                               | password            |
+| ENV_VEMPAIN_SITE_SSH_ADDRESS     | The address of the vempain site.                                                                         | remote.tld          |
+| ENV_VEMPAIN_SITE_SSH_PORT        | The port of the vempain site.                                                                            | 22                  |
+| ENV_VEMPAIN_SITE_SSH_USER        | The user to connect to the vempain site.                                                                 | vempain             |
+| ENV_VEMPAIN_SITE_WWW_ROOT        | Remote path on the site where the web root is.                                                           | /var/www/site       |
 
 Using all these variables, the docker compose can be started with the following command:
 
 ```shell
 ENV_VEMPAIN_ADMIN_VERSION=1.2.3 \
-ENV_VEMPAIN_ADMIN_DB_ROOT_PASSWORD=password \
 ENV_VEMPAIN_ADMIN_DB_NAME=vempain_admin \
 ENV_VEMPAIN_ADMIN_DB_USER=vempain_admin \
 ENV_VEMPAIN_ADMIN_DB_PASSWORD=password \
+ENV_VEMPAIN_ADMIN_DB_CERTIFICATE=/etc/vempain/db.crt \
+ENV_VEMPAIN_ADMIN_DB_PRIVATE_KEY=/etc/vempain/db.key \
 ENV_VEMPAIN_ADMIN_HOSTNAME=va.domain.tld \
 ENV_VEMPAIN_ADMIN_SSH_CONFIG_DIR=/home/user/.ssh \
 ENV_VEMPAIN_ADMIN_CONVERTED_DIR=/converted \
@@ -264,7 +239,7 @@ docker compose up -d
 
 #### Site database
 
-The site database should ideally be accessed through a VPN or a private network such as Wireguard. If this is not possible, the database should be secured
-with a strong password and the database should be regularly backed up.
+The site database should ideally be accessed through a VPN or a private network such as Wireguard. In every case the connection is encrypted with TLS
+(`sslmode=require`), the database should be secured with a strong password and it should be regularly backed up.
 
 [AGENTS.md](AGENTS.md) has more detailed orientation and workflow guidance for agents working in this codebase.

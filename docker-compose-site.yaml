@@ -2,15 +2,21 @@ services:
   pg:
     image: postgres:16
     container_name: "${ENV_VEMPAIN_TYPE}_vempain_site_db"
+    # TLS only: the entrypoint enables SSL and rejects plaintext network connections.
+    entrypoint: [ "/bin/sh", "/usr/local/bin/postgres-ssl-entrypoint.sh" ]
+    command: [ "/certs/server.crt", "/certs/server.key" ]
     ports:
       - "${ENV_VEMPAIN_SITE_DB_EXT_PORT}:5432"
     restart: always
     environment:
-      - POSTGRES_DB: ${ENV_VEMPAIN_SITE_DB_NAME}
-      - POSTGRES_USER: ${ENV_VEMPAIN_SITE_DB_USER}
-      - POSTGRES_PASSWORD: ${ENV_VEMPAIN_SITE_DB_PASSWORD}
+      - POSTGRES_DB=${ENV_VEMPAIN_SITE_DB_NAME}
+      - POSTGRES_USER=${ENV_VEMPAIN_SITE_DB_USER}
+      - POSTGRES_PASSWORD=${ENV_VEMPAIN_SITE_DB_PASSWORD}
     volumes:
-      - postgresdb_data:/var/lib/mysql
+      - ${ENV_VEMPAIN_SITE_DB_CERTIFICATE:?ENV_VEMPAIN_SITE_DB_CERTIFICATE must be set}:/certs/server.crt:ro
+      - ${ENV_VEMPAIN_SITE_DB_PRIVATE_KEY:?ENV_VEMPAIN_SITE_DB_PRIVATE_KEY must be set}:/certs/server.key:ro
+      - ./postgres-ssl-entrypoint.sh:/usr/local/bin/postgres-ssl-entrypoint.sh:ro
+      - postgresdb_data:/var/lib/postgresql/data
 
 volumes:
   postgresdb_data:

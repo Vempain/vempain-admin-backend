@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @AllArgsConstructor
@@ -63,9 +64,18 @@ public class PageGalleryService {
 		return mapPageGalleryResults(pgObjects);
 	}
 
+	/**
+	 * Replaces the galleries linked to the page with the given ones, in the given order (duplicates and nulls are dropped). The caller needs the
+	 * modify privilege on the page and on every gallery.
+	 */
 	@Transactional(propagation = Propagation.REQUIRED)
-	public List<GalleryResponse> setPageGalleries(long pageId, List<Long> galleryIdList) {
+	public List<GalleryResponse> setPageGalleries(long pageId, List<Long> requestedGalleryIds) {
 		requirePageModify(pageId);
+		var galleryIdList = requestedGalleryIds.stream()
+											   .filter(Objects::nonNull)
+											   .distinct()
+											   .toList();
+
 		for (var galleryId : galleryIdList) {
 			galleryService.requireModify(galleryId);
 		}

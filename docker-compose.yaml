@@ -7,10 +7,10 @@ services:
     restart: always
     environment:
       - spring.profiles.active=prod
-      - spring.admin-datasource.url=jdbc:postgresql://pg-admin:5432/${ENV_VEMPAIN_ADMIN_DB_NAME}?useSSL=false
-      - spring.admin-datasource.username=${ENV_VEMPAIN_ADMIN_DB_NAME}
+      - spring.admin-datasource.url=jdbc:postgresql://pg-admin:5432/${ENV_VEMPAIN_ADMIN_DB_NAME}?currentSchema=vempain_admin&sslmode=require
+      - spring.admin-datasource.username=${ENV_VEMPAIN_ADMIN_DB_USER}
       - spring.admin-datasource.password=${ENV_VEMPAIN_ADMIN_DB_PASSWORD}
-      - spring.site-datasource.url=jdbc:postgresql://${ENV_VEMPAIN_SITE_DB_ADDRESS}:5432/${ENV_VEMPAIN_SITE_DB_NAME}?useSSL=false
+      - spring.site-datasource.url=jdbc:postgresql://${ENV_VEMPAIN_SITE_DB_ADDRESS}:5432/${ENV_VEMPAIN_SITE_DB_NAME}?currentSchema=vempain_site&sslmode=require
       - spring.site-datasource.username=${ENV_VEMPAIN_SITE_DB_USER}
       - spring.site-datasource.password=${ENV_VEMPAIN_SITE_DB_PASSWORD}
       - vempain.app.jwt-secret=${ENV_VEMPAIN_JWT_SECRET:?ENV_VEMPAIN_JWT_SECRET must be set}
@@ -30,17 +30,23 @@ services:
       - ${ENV_VEMPAIN_ADMIN_SSH_CONFIG_DIR}:/vempain_admin/vempain/.ssh
 
   pg-admin:
-    image: postgresql:18-alpine
+    image: postgres:18-alpine
     container_name: "${ENV_VEMPAIN_TYPE}_vempain_admin_db"
+    # TLS only: the entrypoint enables SSL and rejects plaintext network connections.
+    entrypoint: [ "/bin/sh", "/usr/local/bin/postgres-ssl-entrypoint.sh" ]
+    command: [ "/certs/server.crt", "/certs/server.key" ]
     ports:
       - "5432:5432"
     restart: always
     environment:
-      - POSTGRES_DB: ${ENV_VEMPAIN_ADMIN_DB_NAME}
-      - POSTGRES_USER: ${ENV_VEMPAIN_ADMIN_DB_USER}
-      - POSTGRES_PASSWORD: ${ENV_VEMPAIN_ADMIN_DB_PASSWORD}
+      - POSTGRES_DB=${ENV_VEMPAIN_ADMIN_DB_NAME}
+      - POSTGRES_USER=${ENV_VEMPAIN_ADMIN_DB_USER}
+      - POSTGRES_PASSWORD=${ENV_VEMPAIN_ADMIN_DB_PASSWORD}
     volumes:
-      - postgresdb_data:/var/lib/mysql
+      - ${ENV_VEMPAIN_ADMIN_DB_CERTIFICATE:?ENV_VEMPAIN_ADMIN_DB_CERTIFICATE must be set}:/certs/server.crt:ro
+      - ${ENV_VEMPAIN_ADMIN_DB_PRIVATE_KEY:?ENV_VEMPAIN_ADMIN_DB_PRIVATE_KEY must be set}:/certs/server.key:ro
+      - ./postgres-ssl-entrypoint.sh:/usr/local/bin/postgres-ssl-entrypoint.sh:ro
+      - postgresdb_data:/var/lib/postgresql
 
 volumes:
   postgresdb_data:

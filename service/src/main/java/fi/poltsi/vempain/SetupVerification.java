@@ -14,11 +14,17 @@ import org.springframework.core.env.AbstractEnvironment;
 import org.springframework.core.env.EnumerablePropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.MutablePropertySources;
+import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Component;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.stream.StreamSupport;
 
 @Slf4j
@@ -51,6 +57,9 @@ class SetupVerification implements ApplicationContextAware {
 			{"spring.admin-datasource.username", TYPE_STRING},
 			{"spring.site-datasource.url", TYPE_STRING},
 			{"spring.site-datasource.username", TYPE_STRING}};
+
+	private static final Set<String>  TLS_SSL_MODES                  = Set.of("require", "verify-ca", "verify-full");
+	private static final List<String> PRODUCTION_DATASOURCE_URL_KEYS = List.of("spring.admin-datasource.url", "spring.site-datasource.url");
 
 	private ApplicationContext applicationContext;
 
@@ -103,6 +112,53 @@ class SetupVerification implements ApplicationContextAware {
 				}
 			}
 		}
+	}
+
+	@EventListener
+	public void verifyProductionDatasources(ContextRefreshedEvent event) {
+		final Environment env = event.getApplicationContext()
+									 .getEnvironment();
+		if (!env.acceptsProfiles(Profiles.of("prod"))) {
+			return;
+		}
+
+		for (var key : PRODUCTION_DATASOURCE_URL_KEYS) {
+			if (!requiresTls(env.getProperty(key, ""))) {
+				closeApplication("Production datasource " + key + " must require TLS: set sslmode=require, verify-ca or verify-full");
+				return;
+			}
+		}
+	}
+
+	/**
+	 * Tells whether a PostgreSQL JDBC URL makes the driver insist on TLS: {@code sslmode} is require, verify-ca or verify-full, or {@code ssl} is
+	 * given without an {@code sslmode} (the driver then verifies the full certificate). Weaker modes such as prefer or allow fall back to
+	 * plaintext when the server offers no TLS, so they do not count.
+	 */
+	static boolean requiresTls(String jdbcUrl) {
+		var queryStart = jdbcUrl == null ? -1 : jdbcUrl.indexOf('?');
+		if (queryStart < 0) {
+			return false;
+		}
+
+		String sslMode = null;
+		var ssl = false;
+		for (var parameter : jdbcUrl.substring(queryStart + 1)
+									.split("&")) {
+			var separator = parameter.indexOf('=');
+			var name = (separator < 0 ? parameter : parameter.substring(0, separator)).trim()
+																					  .toLowerCase(Locale.ROOT);
+			var value = separator < 0 ? "" : URLDecoder.decode(parameter.substring(separator + 1), StandardCharsets.UTF_8)
+													   .trim()
+													   .toLowerCase(Locale.ROOT);
+			if ("sslmode".equals(name)) {
+				sslMode = value;
+			} else if ("ssl".equals(name)) {
+				ssl = !"false".equals(value);
+			}
+		}
+
+		return sslMode == null ? ssl : TLS_SSL_MODES.contains(sslMode);
 	}
 
 	private void closeApplication(String message) {
