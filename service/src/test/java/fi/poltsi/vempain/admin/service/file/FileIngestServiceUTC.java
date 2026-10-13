@@ -14,9 +14,11 @@ import fi.poltsi.vempain.admin.service.SubjectService;
 import fi.poltsi.vempain.auth.api.AccountStatus;
 import fi.poltsi.vempain.auth.entity.Acl;
 import fi.poltsi.vempain.auth.entity.UserAccount;
+import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.service.AclService;
 import fi.poltsi.vempain.auth.service.UserService;
 import fi.poltsi.vempain.common.api.FileTypeEnum;
+import fi.poltsi.vempain.common.api.request.CopyrightRequest;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,8 +31,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -796,5 +800,140 @@ class FileIngestServiceUTC {
 		                         .getName());
 		assertEquals("Zed", users.get(1)
 		                         .getNick());
+	}
+
+	// ─── storage setup, copyright fields, stored file removal, ACL grant failures, description-only galleries ───────
+
+	@Test
+	void setupEnvCreatesTheStorageDirectoryWhenMissingAndAcceptsAnExistingOne() {
+		var storage = tempDir.resolve("storage");
+		ReflectionTestUtils.setField(fileIngestService, "siteFileDirectory", storage.toString());
+
+		fileIngestService.setupEnv();
+		assertTrue(Files.isDirectory(storage));
+
+		fileIngestService.setupEnv();
+		assertTrue(Files.isDirectory(storage));
+	}
+
+	@Test
+	void setupEnvFailsWhenTheStorageCannotBeCreatedOrRead() throws Exception {
+		var regular = tempDir.resolve("regular.txt");
+		Files.writeString(regular, "not a directory");
+		ReflectionTestUtils.setField(fileIngestService, "siteFileDirectory", regular.resolve("storage")
+																					.toString());
+		assertThrows(FileSystemNotFoundException.class, () -> fileIngestService.setupEnv());
+
+		org.junit.jupiter.api.Assumptions.assumeFalse("root".equals(System.getProperty("user.name")), "root ignores directory permissions");
+		var unreadable = Files.createDirectory(tempDir.resolve("unreadable"));
+		Files.setPosixFilePermissions(unreadable, PosixFilePermissions.fromString("---------"));
+		ReflectionTestUtils.setField(fileIngestService, "siteFileDirectory", unreadable.toString());
+		try {
+			assertThrows(FileSystemNotFoundException.class, () -> fileIngestService.setupEnv());
+		} finally {
+			Files.setPosixFilePermissions(unreadable, PosixFilePermissions.fromString("rwxr-xr-x"));
+		}
+	}
+
+	@Test
+	void ingestInternal_copiesTheCopyrightFieldsToTheSiteFile() throws Exception {
+		when(storageDirectoryConfiguration.storageLocations()).thenReturn(Map.of("image", tempDir.toString()));
+		when(siteFileRepository.findByFilePathAndFileName(any(), any())).thenReturn(Optional.empty());
+		when(accessService.getUserId()).thenReturn(1L);
+		when(aclService.createNewAcl(anyLong(), isNull(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean())).thenReturn(10L);
+		when(locationService.upsertAndGet(any())).thenReturn(null);
+		var savedFile = SiteFile.builder()
+								.build();
+		savedFile.setId(42L);
+		when(fileService.saveSiteFile(any(SiteFile.class))).thenReturn(savedFile);
+		var request = FileIngestRequest.builder()
+									   .fileName("test.jpg")
+									   .mimeType("image/jpeg")
+									   .sha256sum(SHA256_SUM)
+									   .comment("")
+									   .metadata(METADATA_JSON)
+									   .tags(List.of())
+									   .copyright(CopyrightRequest.builder()
+																  .rightsHolder("Holder")
+																  .rightsTerms("CC BY")
+																  .rightsUrl("https://example.org/rights")
+																  .creatorName("Creator")
+																  .creatorEmail("creator@example.org")
+																  .creatorCountry("FI")
+																  .creatorUrl("https://example.org")
+																  .build())
+									   .build();
+
+		fileIngestService.ingestInternal(request, new MockMultipartFile("file", "test.jpg", "image/jpeg", FILE_CONTENT));
+
+		var saved = ArgumentCaptor.forClass(SiteFile.class);
+		verify(fileService).saveSiteFile(saved.capture());
+		assertEquals("Holder", saved.getValue()
+									.getRightsHolder());
+		assertEquals("CC BY", saved.getValue()
+								   .getRightsTerms());
+		assertEquals("https://example.org/rights", saved.getValue()
+														.getRightsUrl());
+		assertEquals("Creator", saved.getValue()
+									 .getCreatorName());
+		assertEquals("creator@example.org", saved.getValue()
+												 .getCreatorEmail());
+		assertEquals("FI", saved.getValue()
+								.getCreatorCountry());
+		assertEquals("https://example.org", saved.getValue()
+												 .getCreatorUrl());
+	}
+
+	@Test
+	void deleteIngestedSiteFile_skipsTheStoredFileWhenTheTypeIsUnknownOrThePathEscapesTheStorage() {
+		var untyped = SiteFile.builder()
+							  .fileName("photo.jpg")
+							  .filePath("trip")
+							  .build();
+		untyped.setId(44L);
+		when(fileService.findSiteFileById(44L)).thenReturn(Optional.of(untyped));
+		when(fileService.findAllFileThumbsBySiteFileList(List.of(untyped))).thenReturn(List.of());
+		fileIngestService.deleteIngestedSiteFile(44L);
+		verify(siteFileRepository).delete(untyped);
+
+		when(storageDirectoryConfiguration.storageLocations()).thenReturn(Map.of("image", tempDir.resolve("images")
+																								 .toString()));
+		var escaping = SiteFile.builder()
+							   .fileName("photo.jpg")
+							   .filePath("../outside")
+							   .fileType(FileTypeEnum.IMAGE)
+							   .build();
+		escaping.setId(45L);
+		when(fileService.findSiteFileById(45L)).thenReturn(Optional.of(escaping));
+		when(fileService.findAllFileThumbsBySiteFileList(List.of(escaping))).thenReturn(List.of());
+		fileIngestService.deleteIngestedSiteFile(45L);
+		verify(siteFileRepository).delete(escaping);
+	}
+
+	@Test
+	void grantAdditionalAcls_reportsAnAclRowThatCannotBeStored() throws Exception {
+		when(aclService.findAclByAclId(10L)).thenReturn(List.of());
+		when(aclService.save(any())).thenThrow(new VempainAclException("cannot save"));
+
+		assertThrows(IllegalStateException.class, () -> fileIngestService.grantAdditionalAcls(10L, List.of(aclFor(5L, true, false, false, false)), 1L));
+	}
+
+	@Test
+	void upsertGallery_descriptionOnly_createsANewGallery() throws Exception {
+		when(aclService.createNewAcl(anyLong(), isNull(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean())).thenReturn(20L);
+		var saved = Gallery.builder()
+						   .id(98L)
+						   .build();
+		when(galleryRepository.save(any(Gallery.class))).thenReturn(saved);
+		var request = FileIngestRequest.builder()
+									   .galleryName("   ")
+									   .galleryDescription("Only a description")
+									   .build();
+
+		var result = fileIngestService.upsertGallery(request, 1L);
+
+		assertNotNull(result);
+		assertEquals(98L, result.getId());
+		verify(galleryRepository, never()).findByShortname(any());
 	}
 }

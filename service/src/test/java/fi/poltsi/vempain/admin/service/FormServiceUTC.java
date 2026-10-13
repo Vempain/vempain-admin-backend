@@ -14,6 +14,7 @@ import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.repository.FormRepository;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
 import fi.poltsi.vempain.auth.api.request.AclRequest;
+import fi.poltsi.vempain.auth.api.request.PagedRequest;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.AclService;
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.server.ResponseStatusException;
@@ -35,12 +37,17 @@ import java.util.stream.StreamSupport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -557,5 +564,231 @@ class FormServiceUTC {
 		} catch (Exception e) {
 			fail("Saving form component with non-existing component should have failed with InvalidRequestException");
 		}
+	}
+
+	// ---- paged listing, update and lookups by component / layout ----
+
+	private List<Form> namedForms() {
+		var alpha = TestUTCTools.generateForm(1L, 1L);
+		alpha.setFormName("Alpha");
+		var beta = TestUTCTools.generateForm(2L, 2L);
+		beta.setFormName("beta");
+		var gamma = TestUTCTools.generateForm(3L, 3L);
+		gamma.setFormName("Gamma");
+		return List.of(alpha, beta, gamma);
+	}
+
+	private static PagedRequest paged(String search, Boolean caseSensitive, String sortBy, Sort.Direction direction) {
+		var request = new PagedRequest();
+		request.setPage(0);
+		request.setSize(10);
+		request.setSearch(search);
+		request.setCaseSensitive(caseSensitive);
+		request.setSortBy(sortBy);
+		request.setDirection(direction);
+		return request;
+	}
+
+	private void stubReadableForms(List<Form> forms) {
+		when(formRepository.findAll()).thenReturn(forms);
+		when(accessService.hasReadPermission(anyLong())).thenReturn(true);
+		when(formComponentService.findFormComponentByFormId(anyLong())).thenReturn(List.of());
+	}
+
+	@Test
+	void findPagedAsResponsesForUserSortsByIdByDefault() throws Exception {
+		stubReadableForms(namedForms());
+
+		var response = formService.findPagedAsResponsesForUser(paged(null, null, null, null));
+
+		assertEquals(List.of(1L, 2L, 3L), response.getContent()
+												  .stream()
+												  .map(FormResponse::getId)
+												  .toList());
+		assertEquals(3, response.getTotalElements());
+	}
+
+	@Test
+	void findPagedAsResponsesForUserFiltersCaseInsensitivelyAndSortsByNameDescending() throws Exception {
+		stubReadableForms(namedForms());
+
+		var response = formService.findPagedAsResponsesForUser(paged("A", false, "name", Sort.Direction.DESC));
+
+		assertEquals(List.of("Gamma", "beta", "Alpha"), response.getContent()
+																.stream()
+																.map(FormResponse::getName)
+																.toList());
+	}
+
+	@Test
+	void findPagedAsResponsesForUserFiltersCaseSensitively() throws Exception {
+		stubReadableForms(namedForms());
+
+		var response = formService.findPagedAsResponsesForUser(paged("G", true, null, null));
+
+		assertEquals(List.of("Gamma"), response.getContent()
+											   .stream()
+											   .map(FormResponse::getName)
+											   .toList());
+	}
+
+	@Test
+	void getFormResponseByIdLoadsTheFormWithItsComponentsAndAcls() throws Exception {
+		var form = TestUTCTools.generateForm(1L, 1L);
+		var component = TestUTCTools.generateComponent(5L, 55L);
+		when(formRepository.findById(1L)).thenReturn(Optional.of(form));
+		when(formComponentService.findFormComponentByFormId(1L)).thenReturn(List.of(TestUTCTools.generateFormComponent(1L, 0L)));
+		when(componentService.findById(anyLong())).thenReturn(component);
+		when(aclService.findAclByAclId(55L)).thenReturn(TestUTCTools.generateAclList(55L, 1L));
+
+		var response = formService.getFormResponseById(1L);
+
+		assertEquals(1L, response.getId());
+		assertEquals(1, response.getComponents()
+								.size());
+		assertEquals(2, response.getComponents()
+								.getFirst()
+								.getAcls()
+								.size());
+	}
+
+	@Test
+	void deleteSurvivesAnAclThatCannotBeRemovedAndDeletesTheComponentsAndTheForm() throws Exception {
+		var form = TestUTCTools.generateForm(1L, 1L);
+		when(formRepository.findById(1L)).thenReturn(Optional.of(form));
+		when(accessService.hasDeletePermission(1L)).thenReturn(true);
+		doThrow(new VempainEntityNotFoundException("No ACL", "acl")).when(aclService)
+																	.deleteByAclId(1L);
+		when(formComponentService.findFormComponentByFormId(1L)).thenReturn(List.of(TestUTCTools.generateFormComponent(1L, 0L),
+																					TestUTCTools.generateFormComponent(1L, 1L)));
+
+		formService.delete(1L);
+
+		verify(formComponentService).deleteFormComponent(1L, 0L, 0L);
+		verify(formComponentService).deleteFormComponent(1L, 1L, 1L);
+		verify(formRepository).deleteById(1L);
+	}
+
+	private FormRequest updateRequest(String name, List<ComponentRequest> components) {
+		return FormRequest.builder()
+						  .id(1L)
+						  .name(name)
+						  .layoutId(2L)
+						  .components(components)
+						  .acls(TestUTCTools.generateAclRequestList(1L, 1L))
+						  .build();
+	}
+
+	@Test
+	void updateFormRenamesTheFormAndReplacesItsComponents() throws Exception {
+		var form = TestUTCTools.generateForm(1L, 1L);
+		var component = TestUTCTools.generateComponent(5L, 55L);
+		when(formRepository.findById(1L)).thenReturn(Optional.of(form));
+		when(accessService.hasModifyPermission(1L)).thenReturn(true);
+		when(formRepository.findByFormName("Renamed")).thenReturn(null);
+		when(accessService.getUserId()).thenReturn(1L);
+		when(formRepository.save(form)).thenReturn(form);
+		when(formComponentService.findFormComponentByFormId(1L)).thenReturn(List.of(TestUTCTools.generateFormComponent(1L, 0L)), List.of(), List.of());
+		when(componentService.findById(5L)).thenReturn(component);
+		var request = updateRequest("Renamed", List.of(TestUTCTools.generateComponentRequest(5L, 55L)));
+
+		var response = formService.updateForm(request);
+
+		assertEquals("Renamed", response.getName());
+		assertEquals(2L, form.getLayoutId());
+		verify(aclService).saveAclRequests(1L, request.getAcls());
+		verify(formComponentService).deleteFormComponent(1L, 0L, 0L);
+		verify(formComponentService).addFormComponent(1L, 5L, 0L);
+	}
+
+	@Test
+	void updateFormIsRejectedForAMissingFormAMissingPrivilegeOrAnEmptyComponentList() throws Exception {
+		when(formRepository.findById(1L)).thenReturn(Optional.empty());
+		assertThrows(VempainEntityNotFoundException.class, () -> formService.updateForm(updateRequest("Renamed", List.of())));
+
+		var form = TestUTCTools.generateForm(1L, 1L);
+		when(formRepository.findById(1L)).thenReturn(Optional.of(form));
+		when(accessService.hasModifyPermission(1L)).thenReturn(false);
+		assertThrows(AccessDeniedException.class, () -> formService.updateForm(updateRequest("Renamed", List.of())));
+
+		when(accessService.hasModifyPermission(1L)).thenReturn(true);
+		assertThrows(InvalidRequestException.class, () -> formService.updateForm(updateRequest("Renamed", null)));
+		assertThrows(InvalidRequestException.class, () -> formService.updateForm(updateRequest("Renamed", List.of())));
+		verify(formRepository, never()).save(any());
+	}
+
+	@Test
+	void updateFormIsRejectedWhenTheNewNameIsTakenOrTheAclsCannotBeSaved() throws Exception {
+		var form = TestUTCTools.generateForm(1L, 1L);
+		when(formRepository.findById(1L)).thenReturn(Optional.of(form));
+		when(accessService.hasModifyPermission(1L)).thenReturn(true);
+		var components = List.of(TestUTCTools.generateComponentRequest(5L, 55L));
+
+		when(formRepository.findByFormName("Taken")).thenReturn(TestUTCTools.generateForm(9L, 9L));
+		assertThrows(EntityAlreadyExistsException.class, () -> formService.updateForm(updateRequest("Taken", components)));
+
+		doThrow(new VempainAclException("bad acl")).when(aclService)
+												   .saveAclRequests(eq(1L), any());
+		assertThrows(InvalidRequestException.class, () -> formService.updateForm(updateRequest(form.getFormName(), components)));
+		verify(formRepository, never()).save(any());
+	}
+
+	@Test
+	void updateFormReportsAFormWhoseComponentsCannotBeLoadedAfterSaving() throws Exception {
+		var form = TestUTCTools.generateForm(1L, 1L);
+		when(formRepository.findById(1L)).thenReturn(Optional.of(form));
+		when(accessService.hasModifyPermission(1L)).thenReturn(true);
+		when(accessService.getUserId()).thenReturn(1L);
+		when(formRepository.save(form)).thenReturn(form);
+		when(formComponentService.findFormComponentByFormId(1L)).thenReturn(List.of(), List.of(TestUTCTools.generateFormComponent(1L, 0L)));
+		when(componentService.findById(5L)).thenReturn(TestUTCTools.generateComponent(5L, 55L));
+		when(componentService.findById(0L)).thenThrow(new VempainComponentException("gone"));
+
+		assertThrows(ProcessingFailedException.class,
+					 () -> formService.updateForm(updateRequest(form.getFormName(), List.of(TestUTCTools.generateComponentRequest(5L, 55L)))));
+	}
+
+	@Test
+	void findFormsByComponentIdAnswersTheFormsThatExistAndSkipsTheOnesThatCannotBeLoaded() throws Exception {
+		when(formComponentService.findFormComponentByComponentId(5L)).thenReturn(List.of(TestUTCTools.generateFormComponent(1L, 0L),
+																						 TestUTCTools.generateFormComponent(2L, 0L),
+																						 TestUTCTools.generateFormComponent(3L, 0L)));
+		when(formRepository.findById(1L)).thenReturn(Optional.of(TestUTCTools.generateForm(1L, 1L)));
+		when(formRepository.findById(2L)).thenReturn(Optional.empty());
+		when(formRepository.findById(3L)).thenReturn(Optional.of(TestUTCTools.generateForm(3L, 3L)));
+		when(formComponentService.findFormComponentByFormId(1L)).thenReturn(List.of());
+		when(formComponentService.findFormComponentByFormId(3L)).thenReturn(List.of(TestUTCTools.generateFormComponent(3L, 0L)));
+		when(componentService.findById(anyLong())).thenThrow(new VempainComponentException("gone"));
+
+		var responses = formService.findFormsByComponentId(5L);
+
+		assertEquals(1, responses.size());
+		assertEquals(1L, responses.getFirst()
+								  .getId());
+	}
+
+	@Test
+	void findFormsByLayoutIdAnswersTheFormsOfTheLayoutAndSkipsTheOnesThatCannotBeLoaded() throws Exception {
+		when(formRepository.findByLayoutId(7L)).thenReturn(List.of(TestUTCTools.generateForm(1L, 1L), TestUTCTools.generateForm(3L, 3L)));
+		when(formComponentService.findFormComponentByFormId(1L)).thenReturn(List.of());
+		when(formComponentService.findFormComponentByFormId(3L)).thenReturn(List.of(TestUTCTools.generateFormComponent(3L, 0L)));
+		when(componentService.findById(anyLong())).thenThrow(new VempainComponentException("gone"));
+
+		var responses = formService.findFormsByLayoutId(7L);
+
+		assertEquals(1, responses.size());
+		assertEquals(1L, responses.getFirst()
+								  .getId());
+		assertTrue(responses.getFirst()
+							.getComponents()
+							.isEmpty());
+	}
+
+	@Test
+	void findAllFormComponentsByFormIdDelegates() {
+		var components = List.of(TestUTCTools.generateFormComponent(1L, 0L));
+		when(formComponentService.findFormComponentByFormId(1L)).thenReturn(components);
+
+		assertEquals(components, formService.findAllFormComponentsByFormId(1L));
 	}
 }

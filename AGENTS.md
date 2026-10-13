@@ -102,7 +102,13 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
   `TaskProgressResponse`, cooperative cancel). This service hosts it with `fi.poltsi.vempain.admin.task.AdminTaskCommandExecutor` and
   `fi.poltsi.vempain.admin.api.TaskTypeEnum`: `PUBLISH_PAGE`, `PUBLISH_ALL_PAGES`, `PUBLISH_GALLERY`, `PUBLISH_ALL_GALLERIES`,
   `PUBLISH_SELECTED_GALLERIES` (`PublishService.*AsTask` submit, `publishPageNow`/`publishPagesNow`/`publishGalleriesNow` run through the
-  transactional proxy, result `{"published", "skipped"}` or `{"site_page_id"}`), `REFRESH_ALL_GALLERY_FILES`
+  transactional proxy, result `{"published", "skipped"}` or `{"site_page_id"}`). The publish tasks count the smallest items: one step per
+  file transferred to the site server (`JschClient.transferFilesToSite` sends every site file together with its thumbnails and calls back
+  after each one, `publishGalleryAsSystem(id, progress)` advances there), one step for a gallery without files, and for a page one step
+  for the page itself plus the files of its galleries (`pagePublishSteps`/`galleryPublishSteps`). The totals are computed at submit time
+  so that `total_steps` is right from the first poll, and an item that fails as a whole marks its remaining steps as failed (`failRemainingSteps`). Progress
+  writes commit in their own transaction (`vempain-common` 1.0.4+), so the steps are visible while the
+  gallery's transaction is still open. `REFRESH_ALL_GALLERY_FILES`
   (`FileService.refreshAllGalleryFilesAsTask`, result `RefreshResponse`) and `PUBLISH_DATA_SET` (`DataService.publishAsTask`, result
   `DataResponse`). The immediate publish endpoints answer `202` with the task inside `PublishResponse.task` (`RefreshResponse.task` for the
   refresh, a bare `TaskAcceptedResponse` for data sets); scheduling a publish still answers `200` without a task, and the synchronous

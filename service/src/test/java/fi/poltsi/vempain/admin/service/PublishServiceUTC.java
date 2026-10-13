@@ -1,5 +1,7 @@
 package fi.poltsi.vempain.admin.service;
 
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.SftpException;
 import fi.poltsi.vempain.admin.api.PublishResultEnum;
 import fi.poltsi.vempain.admin.api.response.PublishResponse;
 import fi.poltsi.vempain.admin.entity.Component;
@@ -8,7 +10,11 @@ import fi.poltsi.vempain.admin.entity.FormComponent;
 import fi.poltsi.vempain.admin.entity.Layout;
 import fi.poltsi.vempain.admin.entity.Page;
 import fi.poltsi.vempain.admin.entity.PageGallery;
+import fi.poltsi.vempain.admin.entity.Subject;
+import fi.poltsi.vempain.admin.entity.file.FileThumb;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
+import fi.poltsi.vempain.admin.entity.file.GalleryFile;
+import fi.poltsi.vempain.admin.entity.file.GpsLocation;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
@@ -17,9 +23,16 @@ import fi.poltsi.vempain.admin.service.file.GalleryFileService;
 import fi.poltsi.vempain.auth.api.response.UserResponse;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.UserService;
+import fi.poltsi.vempain.common.api.FileTypeEnum;
 import fi.poltsi.vempain.common.api.TaskStatusEnum;
+import fi.poltsi.vempain.common.task.TaskProgress;
 import fi.poltsi.vempain.common.task.TaskProgressStore;
 import fi.poltsi.vempain.common.task.TaskRunner;
+import fi.poltsi.vempain.site.entity.WebGpsLocation;
+import fi.poltsi.vempain.site.entity.WebSiteFile;
+import fi.poltsi.vempain.site.entity.WebSiteGallery;
+import fi.poltsi.vempain.site.entity.WebSitePage;
+import fi.poltsi.vempain.site.entity.WebSiteSubject;
 import fi.poltsi.vempain.site.repository.WebGpsLocationRepository;
 import fi.poltsi.vempain.site.repository.WebSiteFileRepository;
 import fi.poltsi.vempain.site.repository.WebSiteGalleryRepository;
@@ -36,23 +49,32 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationContext;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -457,7 +479,7 @@ class PublishServiceUTC {
 		doReturn(true).when(publishServiceSpy)
 					  .canPublishPage(page);
 		doReturn(77L).when(publishServiceSpy)
-					 .publishPageAsSystem(1L);
+					 .publishPageAsSystem(org.mockito.ArgumentMatchers.eq(1L), any());
 		when(applicationContext.getBean(PublishService.class)).thenReturn(publishServiceSpy);
 
 		var accepted = publishServiceSpy.publishPageAsTask(1L);
@@ -469,7 +491,7 @@ class PublishServiceUTC {
 		assertEquals(TaskStatusEnum.COMPLETED, task.getStatus());
 		assertEquals(Map.of("site_page_id", 77L), task.getResult());
 		assertEquals(100, task.percent());
-		verify(publishServiceSpy).publishPageAsSystem(1L);
+		verify(publishServiceSpy).publishPageAsSystem(org.mockito.ArgumentMatchers.eq(1L), any());
 	}
 
 	@Test
@@ -490,7 +512,7 @@ class PublishServiceUTC {
 		doReturn(false).when(publishServiceSpy)
 					   .canPublishPage(denied);
 		doReturn(1L).when(publishServiceSpy)
-					.publishPageAsSystem(1L);
+					.publishPageAsSystem(org.mockito.ArgumentMatchers.eq(1L), any());
 		when(applicationContext.getBean(PublishService.class)).thenReturn(publishServiceSpy);
 
 		var accepted = publishServiceSpy.publishAllPagesAsTask();
@@ -500,18 +522,23 @@ class PublishServiceUTC {
 							.orElseThrow();
 		assertEquals(TaskStatusEnum.COMPLETED, task.getStatus());
 		assertEquals(Map.of("published", 1L, "skipped", 0L), task.getResult());
-		verify(publishServiceSpy).publishPageAsSystem(1L);
-		verify(publishServiceSpy, never()).publishPageAsSystem(2L);
+		verify(publishServiceSpy).publishPageAsSystem(org.mockito.ArgumentMatchers.eq(1L), any());
+		verify(publishServiceSpy, never()).publishPageAsSystem(org.mockito.ArgumentMatchers.eq(2L), any());
 		verify(webSitePageRepository).resetCache();
 	}
 
 	@Test
 	void publishPagesNowCountsAMissingPageAsAFailedStepWithoutFailingTheTask() throws Exception {
-		doReturn(1L).when(publishServiceSpy)
-					.publishPageAsSystem(1L);
+		Mockito.doAnswer(invocation -> {
+				   invocation.getArgument(1, TaskProgress.class)
+							 .advance("Published page 1");
+				   return 1L;
+			   })
+			   .when(publishServiceSpy)
+			   .publishPageAsSystem(org.mockito.ArgumentMatchers.eq(1L), any());
 		Mockito.doThrow(new VempainEntityNotFoundException("Page not found by id: 2", "page"))
 			   .when(publishServiceSpy)
-			   .publishPageAsSystem(2L);
+			   .publishPageAsSystem(org.mockito.ArgumentMatchers.eq(2L), any());
 		when(applicationContext.getBean(PublishService.class)).thenReturn(publishServiceSpy);
 		var progress = taskStore.create("PUBLISH_ALL_PAGES", "Publish all pages", 1L, 2);
 
@@ -540,7 +567,7 @@ class PublishServiceUTC {
 		when(accessService.hasModifyPermission(101L)).thenReturn(true);
 		when(accessService.hasModifyPermission(103L)).thenReturn(false);
 		doNothing().when(publishServiceSpy)
-				   .publishGalleryAsSystem(1L);
+				   .publishGalleryAsSystem(org.mockito.ArgumentMatchers.eq(1L), any());
 		when(applicationContext.getBean(PublishService.class)).thenReturn(publishServiceSpy);
 
 		var accepted = publishServiceSpy.publishSelectedGalleriesAsTask(List.of(1L, 2L, 3L, 0L));
@@ -551,8 +578,8 @@ class PublishServiceUTC {
 							.orElseThrow();
 		assertEquals(TaskStatusEnum.COMPLETED, task.getStatus());
 		assertEquals(Map.of("published", 1L, "skipped", 3L), task.getResult());
-		verify(publishServiceSpy).publishGalleryAsSystem(1L);
-		verify(publishServiceSpy, never()).publishGalleryAsSystem(3L);
+		verify(publishServiceSpy).publishGalleryAsSystem(org.mockito.ArgumentMatchers.eq(1L), any());
+		verify(publishServiceSpy, never()).publishGalleryAsSystem(org.mockito.ArgumentMatchers.eq(3L), any());
 	}
 
 	@Test
@@ -572,5 +599,462 @@ class PublishServiceUTC {
 
 		assertThrows(AccessDeniedException.class, () -> publishService.publishGalleryAsTask(4L));
 		assertEquals(0, taskStore.size());
+	}
+
+	@Test
+	void publishGalleryAsTaskCountsOneStepPerTransferredFile() throws Exception {
+		var gallery = Gallery.builder()
+							 .id(1L)
+							 .aclId(101L)
+							 .shortname("trip")
+							 .siteFiles(List.of(SiteFile.builder()
+														.id(11L)
+														.aclId(111L)
+														.fileName("a.jpg")
+														.build(),
+												SiteFile.builder()
+														.id(12L)
+														.aclId(112L)
+														.fileName("b.jpg")
+														.build(),
+												SiteFile.builder()
+														.id(13L)
+														.aclId(113L)
+														.fileName("c.jpg")
+														.build()))
+							 .build();
+		when(fileService.findGalleryById(1L)).thenReturn(gallery);
+		when(accessService.hasModifyPermission(101L)).thenReturn(true);
+		when(accessService.hasReadPermission(anyLong())).thenReturn(true);
+		Mockito.doAnswer(invocation -> {
+				   var progress = invocation.getArgument(1, TaskProgress.class);
+				   gallery.getSiteFiles()
+						  .forEach(file -> progress.advance("Transferred " + file.getFileName()));
+				   return null;
+			   })
+			   .when(publishServiceSpy)
+			   .publishGalleryAsSystem(org.mockito.ArgumentMatchers.eq(1L), any());
+		when(applicationContext.getBean(PublishService.class)).thenReturn(publishServiceSpy);
+
+		var accepted = publishServiceSpy.publishGalleryAsTask(1L);
+
+		assertEquals(3, accepted.getTotalSteps(), "the total is the number of files, known when the task is submitted");
+		var task = taskStore.find(accepted.getTaskId())
+							.orElseThrow();
+		assertEquals(TaskStatusEnum.COMPLETED, task.getStatus());
+		assertEquals(3, task.getCompletedSteps()
+							.get());
+		assertEquals(0, task.getFailedSteps()
+							.get());
+		assertEquals(Map.of("published", 1L, "skipped", 0L), task.getResult());
+	}
+
+	@Test
+	void publishPageAsTaskCountsThePageAndTheFilesOfItsGalleries() throws Exception {
+		var page = Page.builder()
+					   .id(1L)
+					   .aclId(10L)
+					   .formId(2L)
+					   .title("Trip report")
+					   .build();
+		var gallery = Gallery.builder()
+							 .id(5L)
+							 .aclId(50L)
+							 .siteFiles(List.of(SiteFile.builder()
+														.id(51L)
+														.aclId(511L)
+														.build(),
+												SiteFile.builder()
+														.id(52L)
+														.aclId(512L)
+														.build()))
+							 .build();
+		when(pageService.findById(1L)).thenReturn(page);
+		when(pageGalleryService.findPageGalleryByPageId(1L)).thenReturn(List.of(PageGallery.builder()
+																						   .pageId(1L)
+																						   .galleryId(5L)
+																						   .build()));
+		when(fileService.findGalleryById(5L)).thenReturn(gallery);
+		doReturn(true).when(publishServiceSpy)
+					  .canPublishPage(page);
+		doReturn(77L).when(publishServiceSpy)
+					 .publishPageAsSystem(org.mockito.ArgumentMatchers.eq(1L), any());
+		when(applicationContext.getBean(PublishService.class)).thenReturn(publishServiceSpy);
+
+		var accepted = publishServiceSpy.publishPageAsTask(1L);
+
+		assertEquals(3, accepted.getTotalSteps(), "the page itself plus the two gallery files");
+		assertEquals(TaskStatusEnum.COMPLETED, taskStore.find(accepted.getTaskId())
+														.orElseThrow()
+														.getStatus());
+	}
+
+	@Test
+	void publishGalleriesNowFailsTheRemainingFileStepsOfAGalleryThatCannotBePublished() throws Exception {
+		var gallery = Gallery.builder()
+							 .id(1L)
+							 .aclId(101L)
+							 .siteFiles(List.of(SiteFile.builder()
+														.id(11L)
+														.build(),
+												SiteFile.builder()
+														.id(12L)
+														.build()))
+							 .build();
+		when(fileService.findGalleryById(1L)).thenReturn(gallery);
+		when(fileService.findGalleryById(2L)).thenReturn(null);
+		Mockito.doAnswer(invocation -> {
+				   var progress = invocation.getArgument(1, TaskProgress.class);
+				   progress.advance("Transferred a.jpg");
+				   progress.advance("Transferred b.jpg");
+				   return null;
+			   })
+			   .when(publishServiceSpy)
+			   .publishGalleryAsSystem(org.mockito.ArgumentMatchers.eq(1L), any());
+		Mockito.doThrow(new VempainEntityNotFoundException())
+			   .when(publishServiceSpy)
+			   .publishGalleryAsSystem(org.mockito.ArgumentMatchers.eq(2L), any());
+		when(applicationContext.getBean(PublishService.class)).thenReturn(publishServiceSpy);
+		var progress = taskStore.create("PUBLISH_SELECTED_GALLERIES", "Publish 2 selected galleries", 1L, 3);
+
+		var result = publishServiceSpy.publishGalleriesNow(List.of(1L, 2L), 0, progress);
+
+		assertEquals(Map.of("published", 1L, "skipped", 1L), result);
+		assertEquals(3, progress.getCompletedSteps()
+								.get(), "the missing gallery's single step is reported as failed");
+		assertEquals(1, progress.getFailedSteps()
+								.get());
+	}
+
+	// ---- publishPageAsSystem details, the gallery transfer and its site rows, the gallery task submission ----
+
+	@Test
+	void publishPageAsSystemRejectsAMissingPage() {
+		when(pageService.findById(99L)).thenReturn(null);
+
+		assertThrows(VempainEntityNotFoundException.class, () -> publishService.publishPageAsSystem(99L));
+	}
+
+	@Test
+	void publishPageAsSystemSkipsMissingComponentsKeepsTheModifierUpdatesAnExistingSitePageAndPublishesItsGalleries() throws Exception {
+		var page = Page.builder()
+					   .id(1L)
+					   .formId(2L)
+					   .body("Body")
+					   .pagePath("/page")
+					   .title("Page")
+					   .header("Header")
+					   .creator(7L)
+					   .modifier(8L)
+					   .aclId(1L)
+					   .build();
+		var form = Form.builder()
+					   .id(2L)
+					   .layoutId(3L)
+					   .build();
+		var layout = Layout.builder()
+						   .id(3L)
+						   .structure("<!--comp_0--><!--comp_1--><main><!--page--></main>")
+						   .build();
+		when(pageService.findById(1L)).thenReturn(page);
+		when(formService.findById(2L)).thenReturn(form);
+		when(formService.findAllFormComponentsByFormId(2L)).thenReturn(List.of(FormComponent.builder()
+																							.formId(2L)
+																							.componentId(20L)
+																							.sortOrder(0L)
+																							.build(),
+																			   FormComponent.builder()
+																							.formId(2L)
+																							.componentId(21L)
+																							.sortOrder(1L)
+																							.build()));
+		when(componentService.findById(20L)).thenReturn(Component.builder()
+																 .id(20L)
+																 .compData("echo 'hi';")
+																 .build());
+		when(componentService.findById(21L)).thenThrow(new VempainComponentException("gone"));
+		when(layoutService.findById(3L)).thenReturn(layout);
+		when(userService.findUserResponseById(7L)).thenReturn(UserResponse.builder()
+																		  .nick("creator")
+																		  .build());
+		when(userService.findUserResponseById(8L)).thenReturn(UserResponse.builder()
+																		  .nick("modifier")
+																		  .build());
+		var existing = WebSitePage.builder()
+								  .id(55L)
+								  .aclId(66L)
+								  .pageId(1L)
+								  .build();
+		when(webSitePageRepository.findByPageId(1L)).thenReturn(Optional.of(existing));
+		when(webSitePageRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+		when(pageGalleryService.findPageGalleryByPageId(1L)).thenReturn(List.of(PageGallery.builder()
+																						   .pageId(1L)
+																						   .galleryId(5L)
+																						   .build()));
+		var progress = taskStore.create("PUBLISH_PAGE", "Publish page", 1L, 2);
+		doNothing().when(publishServiceSpy)
+				   .publishGalleryAsSystem(5L, progress);
+
+		var sitePageId = publishServiceSpy.publishPageAsSystem(1L, progress);
+
+		assertEquals(55L, sitePageId);
+		assertEquals("modifier", existing.getModifier());
+		assertEquals("<?php\necho 'hi';\n?><!--comp_1--><main>Body</main>", existing.getBody());
+		assertEquals(66L, existing.getAclId(), "an existing site page keeps its ACL");
+		assertEquals(1, progress.getCompletedSteps()
+								.get());
+		verify(publishServiceSpy).publishGalleryAsSystem(5L, progress);
+		verify(webSiteResourceService, never()).getNextWebSiteAcl();
+		verify(webSitePageRepository).resetCacheByPageId(10L);
+	}
+
+	private Gallery galleryWithFiles() {
+		var location = GpsLocation.builder()
+								  .id(900L)
+								  .latitude(new BigDecimal("60.1"))
+								  .latitudeRef('N')
+								  .longitude(new BigDecimal("24.9"))
+								  .longitudeRef('E')
+								  .city("Helsinki")
+								  .build();
+		var image = SiteFile.builder()
+							.id(11L)
+							.aclId(111L)
+							.fileType(FileTypeEnum.IMAGE)
+							.filePath("2024/trip")
+							.fileName("a.jpg")
+							.location(location)
+							.metadata("{}")
+							.creator(1L)
+							.build();
+		var video = SiteFile.builder()
+							.id(12L)
+							.aclId(112L)
+							.fileType(FileTypeEnum.VIDEO)
+							.filePath("2024/trip")
+							.fileName("b.mp4")
+							.creator(1L)
+							.build();
+		return Gallery.builder()
+					  .id(1L)
+					  .aclId(101L)
+					  .shortname("trip")
+					  .description("Trip")
+					  .siteFiles(List.of(image, video))
+					  .build();
+	}
+
+	private List<GalleryFile> galleryFilesOf(Gallery gallery) {
+		var files = new java.util.ArrayList<GalleryFile>();
+		long order = 0;
+		for (var siteFile : gallery.getSiteFiles()) {
+			files.add(GalleryFile.builder()
+								 .galleryId(gallery.getId())
+								 .siteFileId(siteFile.getId())
+								 .sortOrder(order++)
+								 .build());
+		}
+		return files;
+	}
+
+	@Test
+	void publishGalleryAsSystemRejectsAMissingGalleryAndReportsAnEmptyOneAsOneStep() throws Exception {
+		when(fileService.findGalleryById(99L)).thenReturn(null);
+		assertThrows(VempainEntityNotFoundException.class, () -> publishService.publishGalleryAsSystem(99L));
+
+		var empty = Gallery.builder()
+						   .id(2L)
+						   .shortname("empty")
+						   .siteFiles(List.of())
+						   .build();
+		when(fileService.findGalleryById(2L)).thenReturn(empty);
+		when(galleryFileService.findGalleryFileByGalleryId(2L)).thenReturn(List.of());
+		var progress = taskStore.create("PUBLISH_GALLERY", "Publish gallery", 1L, 1);
+
+		publishService.publishGalleryAsSystem(2L, progress);
+
+		assertEquals(1, progress.getCompletedSteps()
+								.get());
+		verify(jschClient, never()).connect(any(), org.mockito.ArgumentMatchers.anyInt(), any(), any(), any());
+	}
+
+	@Test
+	void publishGalleryAsSystemTransfersTheFilesAndRewritesTheSiteRows() throws Exception {
+		var gallery = galleryWithFiles();
+		var image = gallery.getSiteFiles()
+						   .getFirst();
+		var video = gallery.getSiteFiles()
+						   .get(1);
+		var thumb = FileThumb.builder()
+							 .id(5L)
+							 .parentId(11L)
+							 .parentType(FileTypeEnum.IMAGE)
+							 .build();
+		when(fileService.findGalleryById(1L)).thenReturn(gallery);
+		when(galleryFileService.findGalleryFileByGalleryId(1L)).thenReturn(galleryFilesOf(gallery));
+		when(fileService.findAllFileThumbsBySiteFileList(gallery.getSiteFiles())).thenReturn(List.of(thumb));
+		ReflectionTestUtils.setField(publishService, "thumbSubDir", ".thumb");
+		Mockito.doAnswer(invocation -> {
+				   Consumer<SiteFile> callback = invocation.getArgument(2);
+				   gallery.getSiteFiles()
+						  .forEach(callback);
+				   return null;
+			   })
+			   .when(jschClient)
+			   .transferFilesToSite(eq(gallery.getSiteFiles()), eq(List.of(thumb)), any());
+		when(webSiteResourceService.getNextWebSiteAcl()).thenReturn(1000L, 1001L, 1002L);
+		when(webSiteGalleryRepository.save(any(WebSiteGallery.class))).thenAnswer(invocation -> {
+			var saved = invocation.getArgument(0, WebSiteGallery.class);
+			saved.setId(500L);
+			return saved;
+		});
+		when(siteFileRepository.findById(11L)).thenReturn(Optional.of(image));
+		when(siteFileRepository.findById(12L)).thenReturn(Optional.of(video));
+		when(webGpsLocationRepository.findById(900L)).thenReturn(Optional.empty());
+		when(webGpsLocationRepository.save(any(WebGpsLocation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		var savedFiles = new java.util.ArrayList<WebSiteFile>();
+		when(webSiteFileRepository.save(any(WebSiteFile.class))).thenAnswer(invocation -> {
+			var saved = invocation.getArgument(0, WebSiteFile.class);
+			saved.setId(600L + savedFiles.size());
+			savedFiles.add(saved);
+			return saved;
+		});
+		var subjects = List.of(Subject.builder()
+									  .id(1L)
+									  .subjectName("sea")
+									  .build());
+		when(subjectService.getSubjectsByFileId(11L)).thenReturn(subjects);
+		when(subjectService.getSubjectsByFileId(12L)).thenReturn(List.of());
+		var siteSubjects = List.of(WebSiteSubject.builder()
+												 .id(1L)
+												 .build());
+		when(webSiteSubjectService.saveAllFromAdminSubject(subjects)).thenReturn(siteSubjects);
+		when(webSiteSubjectService.saveAllFromAdminSubject(List.of())).thenReturn(List.of());
+		var progress = taskStore.create("PUBLISH_GALLERY", "Publish gallery", 1L, 2);
+
+		publishService.publishGalleryAsSystem(1L, progress);
+
+		assertEquals(image, thumb.getSiteFile());
+		assertEquals(2, progress.getCompletedSteps()
+								.get());
+		verify(jschClient).close();
+		verify(webSiteGalleryRepository).deleteByGalleryId(1L);
+		verify(webSiteFileRepository).deleteByFileId(11L);
+		verify(webSiteFileRepository).deleteByFileId(12L);
+		assertEquals(2, savedFiles.size());
+		var publishedImage = savedFiles.getFirst();
+		assertEquals("image/2024/trip/a.jpg", publishedImage.getFilePath());
+		assertEquals("image/2024/trip/.thumb/a.jpg", publishedImage.getThumbnailPath());
+		assertNotNull(publishedImage.getLocation());
+		assertEquals("Helsinki", publishedImage.getLocation()
+											   .getCity());
+		var publishedVideo = savedFiles.get(1);
+		assertNull(publishedVideo.getThumbnailPath());
+		assertNull(publishedVideo.getLocation());
+		verify(webSiteGalleryRepository).saveGalleryFile(500L, 600L, 0L);
+		verify(webSiteGalleryRepository).saveGalleryFile(500L, 601L, 1L);
+		verify(webSiteSubjectService).saveSiteFileSubject(600L, siteSubjects);
+		verify(webSiteSubjectService).saveSiteFileSubject(601L, List.of());
+	}
+
+	@Test
+	void publishGalleryAsSystemFailsWhenAThumbHasNoSiteFileInTheGallery() throws Exception {
+		var gallery = galleryWithFiles();
+		var orphanThumb = FileThumb.builder()
+								   .id(6L)
+								   .parentId(999L)
+								   .build();
+		when(fileService.findGalleryById(1L)).thenReturn(gallery);
+		when(galleryFileService.findGalleryFileByGalleryId(1L)).thenReturn(galleryFilesOf(gallery));
+		when(fileService.findAllFileThumbsBySiteFileList(gallery.getSiteFiles())).thenReturn(List.of(orphanThumb));
+
+		assertThrows(VempainEntityNotFoundException.class, () -> publishService.publishGalleryAsSystem(1L));
+		verify(jschClient, never()).connect(any(), org.mockito.ArgumentMatchers.anyInt(), any(), any(), any());
+	}
+
+	@Test
+	void sshAndSftpFailuresDuringTheTransferAreInternalErrorsAndTheConnectionIsAlwaysClosed() throws Exception {
+		var gallery = galleryWithFiles();
+		when(fileService.findGalleryById(1L)).thenReturn(gallery);
+		when(galleryFileService.findGalleryFileByGalleryId(1L)).thenReturn(galleryFilesOf(gallery));
+		when(fileService.findAllFileThumbsBySiteFileList(gallery.getSiteFiles())).thenReturn(List.of());
+
+		doThrow(new JSchException("refused")).when(jschClient)
+											 .connect(any(), org.mockito.ArgumentMatchers.anyInt(), any(), any(), any());
+		var ssh = assertThrows(ResponseStatusException.class, () -> publishService.publishGalleryAsSystem(1L));
+		assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ssh.getStatusCode());
+
+		doNothing().when(jschClient)
+				   .connect(any(), org.mockito.ArgumentMatchers.anyInt(), any(), any(), any());
+		doThrow(new SftpException(4, "failure")).when(jschClient)
+												.transferFilesToSite(any(), any(), any());
+		var sftp = assertThrows(ResponseStatusException.class, () -> publishService.publishGalleryAsSystem(1L));
+		assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, sftp.getStatusCode());
+
+		verify(jschClient, times(2)).close();
+		verify(webSiteGalleryRepository, never()).deleteByGalleryId(anyLong());
+	}
+
+	@Test
+	void publishSelectedGalleriesRejectsAnEmptyListAndSkipsInvalidAndVanishedGalleries() throws Exception {
+		assertThrows(ResponseStatusException.class, () -> publishService.publishSelectedGalleries(null));
+		assertThrows(ResponseStatusException.class, () -> publishService.publishSelectedGalleries(List.of()));
+
+		var gallery = Gallery.builder()
+							 .id(1L)
+							 .aclId(101L)
+							 .build();
+		when(fileService.findGalleryById(1L)).thenReturn(gallery);
+		when(accessService.hasModifyPermission(101L)).thenReturn(true);
+		doThrow(new VempainEntityNotFoundException()).when(publishServiceSpy)
+													 .publishGalleryAsSystem(1L);
+		var ids = new java.util.ArrayList<Long>();
+		ids.add(null);
+		ids.add(0L);
+		ids.add(1L);
+
+		var response = publishServiceSpy.publishSelectedGalleries(ids);
+
+		assertEquals(PublishResultEnum.FAIL, response.getResult());
+		assertEquals("Published 0 galleries, skipped 3", response.getMessage());
+	}
+
+	@Test
+	void publishAllGalleriesAsTaskSkipsGalleriesTheUserMayNotPublishAtSubmitTime() throws Exception {
+		var allowed = Gallery.builder()
+							 .id(1L)
+							 .aclId(101L)
+							 .siteFiles(List.of(SiteFile.builder()
+														.id(11L)
+														.aclId(111L)
+														.build()))
+							 .build();
+		var denied = Gallery.builder()
+							.id(2L)
+							.aclId(102L)
+							.build();
+		when(fileService.findAllGalleries()).thenReturn(List.of(allowed, denied));
+		when(fileService.findGalleryById(1L)).thenReturn(allowed);
+		when(fileService.findGalleryById(2L)).thenReturn(denied);
+		when(accessService.hasModifyPermission(101L)).thenReturn(true);
+		when(accessService.hasModifyPermission(102L)).thenReturn(false);
+		when(accessService.hasReadPermission(111L)).thenReturn(true);
+		Mockito.doAnswer(invocation -> {
+				   invocation.getArgument(1, TaskProgress.class)
+							 .advance("Transferred a.jpg");
+				   return null;
+			   })
+			   .when(publishServiceSpy)
+			   .publishGalleryAsSystem(eq(1L), any());
+		when(applicationContext.getBean(PublishService.class)).thenReturn(publishServiceSpy);
+
+		var accepted = publishServiceSpy.publishAllGalleriesAsTask();
+
+		assertEquals(1, accepted.getTotalSteps());
+		var task = taskStore.find(accepted.getTaskId())
+							.orElseThrow();
+		assertEquals(TaskStatusEnum.COMPLETED, task.getStatus());
+		assertEquals(Map.of("published", 1L, "skipped", 1L), task.getResult());
+		verify(publishServiceSpy, never()).publishGalleryAsSystem(eq(2L), any());
 	}
 }

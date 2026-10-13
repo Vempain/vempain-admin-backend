@@ -8,6 +8,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JsonToolsUTC {
@@ -48,5 +49,36 @@ class JsonToolsUTC {
 																					 """)));
 		assertEquals(List.of("keyword"), JsonTools.extractJsonArray(json, Map.of("IPTC", List.of("Keywords"))));
 		assertEquals(List.of(), JsonTools.extractJsonArray(new JSONObject(), Map.of("IPTC", List.of("Keywords"))));
+	}
+
+	@Test
+	void missingValuesAnswerNullZeroOrEmpty() {
+		var empty = new JSONObject();
+
+		assertNull(JsonTools.getDescriptionFromJson(empty));
+		assertNull(JsonTools.extractMimetype(empty));
+		assertNull(JsonTools.getOriginalDateTimeFromJson(empty));
+		assertNull(JsonTools.getOriginalDocumentId(empty));
+		assertEquals(0, JsonTools.getOriginalSecondFraction(empty));
+		assertEquals(List.of(), JsonTools.getSubjects(empty));
+		assertEquals(List.of(), JsonTools.getSubjects(new JSONObject("""
+																			 {"XMP": {"Subject": "  "}}
+																			 """)));
+	}
+
+	@Test
+	void secondFractionsThatAreNotJsonNumbersAreParsedAsTextOrIgnored() {
+		// A leading zero is not a JSON number, the text is parsed instead
+		assertEquals(42, JsonTools.getOriginalSecondFraction(new JSONObject("""
+																					{"ExifIFD": {"SubSecTimeOriginal": "042"}}
+																					""")));
+		// The digitized fraction is the second choice
+		assertEquals(7, JsonTools.getOriginalSecondFraction(new JSONObject("""
+																				   {"ExifIFD": {"SubSecTimeDigitized": 7}}
+																				   """)));
+		// Text that is not a number at all is ignored
+		assertEquals(0, JsonTools.getOriginalSecondFraction(new JSONObject("""
+																				   {"ExifIFD": {"SubSecTimeOriginal": "abc"}}
+																				   """)));
 	}
 }

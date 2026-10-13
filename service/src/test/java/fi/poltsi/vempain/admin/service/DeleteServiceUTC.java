@@ -18,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.util.Collections;
 import java.util.List;
@@ -232,6 +233,37 @@ class DeleteServiceUTC {
 	void deletePageByIdNotFoundFail() {
 		when(pageRepository.findById(99L)).thenReturn(null);
 		assertThrows(VempainEntityNotFoundException.class, () -> deleteService.deletePageById(99L));
+		verify(pageRepository, never()).deletePageById(anyLong());
+	}
+
+	// ---- form components and the delete privilege ----
+
+	@Test
+	void deleteFormByIdRemovesItsComponentLinksFirst() throws VempainEntityNotFoundException {
+		var form = TestUTCTools.generateForm(1L, 10L);
+		when(formRepository.findById(1L)).thenReturn(Optional.of(form));
+		when(pageRepository.findByFormId(1L)).thenReturn(Collections.emptyList());
+		when(formComponentService.findFormComponentByFormId(1L)).thenReturn(List.of(TestUTCTools.generateFormComponent(1L, 0L),
+																					TestUTCTools.generateFormComponent(1L, 1L)));
+
+		deleteService.deleteFormById(1L);
+
+		verify(formComponentService).deleteFormComponent(1L, 0L, 0L);
+		verify(formComponentService).deleteFormComponent(1L, 1L, 1L);
+		verify(aclRepository).deleteAclsByAclId(10L);
+		verify(formRepository).deleteById(1L);
+	}
+
+	@Test
+	void deletionIsDeniedWithoutTheDeletePrivilege() {
+		var page = TestUTCTools.generatePage(1L);
+		page.setAclId(10L);
+		when(pageRepository.findById(1L)).thenReturn(page);
+		when(accessService.hasDeletePermission(10L)).thenReturn(false);
+
+		assertThrows(AccessDeniedException.class, () -> deleteService.deletePageById(1L));
+
+		verify(aclRepository, never()).deleteAclsByAclId(anyLong());
 		verify(pageRepository, never()).deletePageById(anyLong());
 	}
 }

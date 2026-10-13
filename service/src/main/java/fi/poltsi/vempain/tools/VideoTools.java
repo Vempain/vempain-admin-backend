@@ -27,7 +27,7 @@ public class VideoTools {
 		}
 
 		if (jsonObject.has("QuickTime")) {
-			JSONObject quickTime = jsonObject.getJSONObject("Track1");
+			JSONObject quickTime = jsonObject.getJSONObject("QuickTime");
 
 			if (quickTime.has("Duration")) {
 				return detectAndConvertTime(quickTime.getString("Duration"));

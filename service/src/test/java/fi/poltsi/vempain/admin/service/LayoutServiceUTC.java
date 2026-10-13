@@ -9,6 +9,7 @@ import fi.poltsi.vempain.admin.exception.VempainLayoutException;
 import fi.poltsi.vempain.admin.repository.LayoutRepository;
 import fi.poltsi.vempain.admin.tools.MockRepositoryTools;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
+import fi.poltsi.vempain.auth.api.request.PagedRequest;
 import fi.poltsi.vempain.auth.entity.AbstractVempainEntity;
 import fi.poltsi.vempain.auth.exception.VempainAbstractException;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -30,6 +32,7 @@ import java.util.stream.StreamSupport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -826,5 +829,75 @@ class LayoutServiceUTC {
 		} catch (Exception e) {
 			fail("Should not have received any other exception: " + e);
 		}
+	}
+
+	// ---- paged listing and deletion of a missing layout ----
+
+	private void stubReadableLayouts() {
+		var alpha = TestUTCTools.generateLayout(1L);
+		alpha.setLayoutName("Alpha");
+		var beta = TestUTCTools.generateLayout(2L);
+		beta.setLayoutName("beta");
+		var gamma = TestUTCTools.generateLayout(3L);
+		gamma.setLayoutName("Gamma");
+		when(layoutRepository.findAll()).thenReturn(List.of(gamma, alpha, beta));
+		when(accessService.hasReadPermission(anyLong())).thenReturn(true);
+	}
+
+	private static PagedRequest paged(String search, Boolean caseSensitive, String sortBy, Sort.Direction direction) {
+		var request = new PagedRequest();
+		request.setPage(0);
+		request.setSize(10);
+		request.setSearch(search);
+		request.setCaseSensitive(caseSensitive);
+		request.setSortBy(sortBy);
+		request.setDirection(direction);
+		return request;
+	}
+
+	@Test
+	void findPagedByUserSortsByIdByDefault() {
+		stubReadableLayouts();
+
+		var response = layoutService.findPagedByUser(paged(null, null, null, null));
+
+		assertEquals(List.of(1L, 2L, 3L), response.getContent()
+												  .stream()
+												  .map(LayoutResponse::getId)
+												  .toList());
+	}
+
+	@Test
+	void findPagedByUserFiltersCaseInsensitivelyAndSortsByNameDescending() {
+		stubReadableLayouts();
+
+		var response = layoutService.findPagedByUser(paged("A", false, "layout_name", Sort.Direction.DESC));
+
+		assertEquals(List.of("Gamma", "beta", "Alpha"), response.getContent()
+																.stream()
+																.map(LayoutResponse::getLayoutName)
+																.toList());
+	}
+
+	@Test
+	void findPagedByUserFiltersCaseSensitively() {
+		stubReadableLayouts();
+
+		var response = layoutService.findPagedByUser(paged("G", true, null, null));
+
+		assertEquals(List.of("Gamma"), response.getContent()
+											   .stream()
+											   .map(LayoutResponse::getLayoutName)
+											   .toList());
+	}
+
+	@Test
+	void deleteByUserOfAMissingLayoutIsNotFound() {
+		when(accessService.getValidUserId()).thenReturn(1L);
+		when(layoutRepository.findById(99L)).thenReturn(Optional.empty());
+
+		var thrown = assertThrows(ResponseStatusException.class, () -> layoutService.deleteByUser(99L));
+
+		assertEquals(HttpStatus.NOT_FOUND, thrown.getStatusCode());
 	}
 }

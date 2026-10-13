@@ -191,6 +191,17 @@ public class PublishService {
 	 */
 	@Transactional(propagation = Propagation.REQUIRED)
 	public long publishPageAsSystem(Long pageId) throws VempainEntityNotFoundException {
+		return publishPageAsSystem(pageId, null);
+	}
+
+	/**
+	 * Publishes a page and its galleries, reporting the page and every transferred gallery file as one step of {@code progress}
+	 * (see {@link #pagePublishSteps(long)}).
+	 *
+	 * @param progress the task to report to, or null when the publish is not part of a task
+	 */
+	@Transactional(propagation = Propagation.REQUIRED)
+	public long publishPageAsSystem(Long pageId, TaskProgress progress) throws VempainEntityNotFoundException {
 		var page = pageService.findById(pageId);
 
 		if (page == null) {
@@ -264,12 +275,16 @@ public class PublishService {
 		page.setPublished(published);
 		pageService.save(page);
 
+		if (progress != null) {
+			progress.advance("Published page " + page.getTitle());
+		}
+
 		// Check if there are any galleries in the page, if then they should also be published
 		var pageGalleries = pageGalleryService.findPageGalleryByPageId(pageId);
 
 		if (!pageGalleries.isEmpty()) {
 			for (var pageGallery : pageGalleries) {
-				publishGalleryAsSystem(pageGallery.getGalleryId());
+				publishGalleryAsSystem(pageGallery.getGalleryId(), progress);
 			}
 		}
 
@@ -345,6 +360,17 @@ public class PublishService {
 	 */
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void publishGalleryAsSystem(Long galleryId) throws VempainEntityNotFoundException {
+		publishGalleryAsSystem(galleryId, null);
+	}
+
+	/**
+	 * Publishes a gallery, reporting every file transferred to the site server as one step of {@code progress} (a gallery without
+	 * files is one step, see {@link #galleryPublishSteps(Gallery)}).
+	 *
+	 * @param progress the task to report to, or null when the publish is not part of a task
+	 */
+	@Transactional(propagation = Propagation.REQUIRED)
+	public void publishGalleryAsSystem(Long galleryId, TaskProgress progress) throws VempainEntityNotFoundException {
 		var gallery = fileService.findGalleryById(galleryId);
 
 		if (gallery == null) {
@@ -356,6 +382,9 @@ public class PublishService {
 
 		if (galleryFileList.isEmpty()) {
 			log.warn("Gallery {} does not contain any files. There is nothing to publish", galleryId);
+			if (progress != null) {
+				progress.advance("Gallery " + gallery.getShortname() + " has no files to publish");
+			}
 			return;
 		}
 
@@ -378,7 +407,11 @@ public class PublishService {
 			log.debug("Using SSH private key {}", adminSshPrivateKey);
 			jschClient.connect(siteSshAddress, siteSshPort, siteSshUser, adminSshHomeDir, adminSshPrivateKey);
 			log.debug("Transferring thumb files to site-server: {}", toJson(fileThumbList));
-			jschClient.transferFilesToSite(gallery.getSiteFiles(), fileThumbList);
+			jschClient.transferFilesToSite(gallery.getSiteFiles(), fileThumbList, siteFile -> {
+				if (progress != null) {
+					progress.advance("Transferred " + siteFile.getFileName() + " of gallery " + gallery.getShortname());
+				}
+			});
 		} catch (JSchException e) {
 			log.error("Failed to create a SSH connection to site-server {}", siteSshAddress, e);
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to create a SSH connection to site-server: " + siteSshAddress);
@@ -390,6 +423,9 @@ public class PublishService {
 		}
 
 		//** Update the site database
+		if (progress != null) {
+			progress.message("Updating the site database for gallery " + gallery.getShortname());
+		}
 		// Remove any existing gallery data if present, the gallery - file relation is removed by cascade
 		webSiteGalleryRepository.deleteByGalleryId(galleryId);
 
@@ -532,19 +568,51 @@ public class PublishService {
 	public TaskAcceptedResponse publishPageAsTask(long pageId) throws VempainEntityNotFoundException {
 		authorizePagePublish(pageId);
 		var page = pageService.findById(pageId);
-		var progress = taskRunner.submitDurable(TaskTypeEnum.PUBLISH_PAGE.name(), "Publish page " + page.getTitle(), 1, Map.of("page_id", pageId),
-												task -> publishPageNow(pageId, task));
+		var progress = taskRunner.submitDurable(TaskTypeEnum.PUBLISH_PAGE.name(), "Publish page " + page.getTitle(), pagePublishSteps(pageId),
+												Map.of("page_id", pageId), task -> publishPageNow(pageId, task));
 		return progress.toAcceptedResponse();
 	}
 
 	/**
-	 * Task body of {@link TaskTypeEnum#PUBLISH_PAGE}; the publish itself runs through the Spring proxy so that it is transactional.
+	 * Task body of {@link TaskTypeEnum#PUBLISH_PAGE}; the publish itself runs through the Spring proxy so that it is transactional
+	 * and reports the page and every transferred gallery file as a step.
 	 */
 	public Map<String, Object> publishPageNow(long pageId, TaskProgress progress) throws VempainEntityNotFoundException {
 		progress.checkpoint();
-		var sitePageId = publishServiceProxy().publishPageAsSystem(pageId);
-		progress.advance("Published page " + pageId);
+		var sitePageId = publishServiceProxy().publishPageAsSystem(pageId, progress);
 		return Map.of("site_page_id", sitePageId);
+	}
+
+	/**
+	 * Steps a page contributes to a task: the page itself plus the files of every gallery on it.
+	 */
+	long pagePublishSteps(long pageId) {
+		long steps = 1;
+		for (var pageGallery : pageGalleryService.findPageGalleryByPageId(pageId)) {
+			steps += galleryPublishSteps(fileService.findGalleryById(pageGallery.getGalleryId()));
+		}
+		return steps;
+	}
+
+	/**
+	 * Steps a gallery contributes to a task: one per file transferred to the site, and one for a gallery without files (or an
+	 * unknown gallery) so that it is still reported.
+	 */
+	long galleryPublishSteps(Gallery gallery) {
+		var files = gallery == null || gallery.getSiteFiles() == null ? 0 : gallery.getSiteFiles()
+																				   .size();
+		return Math.max(1L, files);
+	}
+
+	/**
+	 * Marks the steps an item was expected to report, but did not because it failed, as failed so that the task still ends at its total.
+	 */
+	private static void failRemainingSteps(TaskProgress progress, long expectedSteps, long completedBefore, String message) {
+		var remaining = expectedSteps - (progress.getCompletedSteps()
+												 .get() - completedBefore);
+		for (long step = 0; step < Math.max(1L, remaining); step++) {
+			progress.advanceFailed(message);
+		}
 	}
 
 	/**
@@ -563,27 +631,34 @@ public class PublishService {
 		}
 
 		var ids = List.copyOf(pageIds);
-		var progress = taskRunner.submitDurable(TaskTypeEnum.PUBLISH_ALL_PAGES.name(), "Publish all pages", ids.size(), Map.of("page_ids", ids),
+		long totalSteps = 0;
+		for (var pageId : ids) {
+			totalSteps += pagePublishSteps(pageId);
+		}
+		var progress = taskRunner.submitDurable(TaskTypeEnum.PUBLISH_ALL_PAGES.name(), "Publish all pages", totalSteps, Map.of("page_ids", ids),
 												task -> publishPagesNow(ids, task));
 		return progress.toAcceptedResponse();
 	}
 
 	/**
-	 * Task body of {@link TaskTypeEnum#PUBLISH_ALL_PAGES}: one step per page, a missing page fails its step without failing the task.
+	 * Task body of {@link TaskTypeEnum#PUBLISH_ALL_PAGES}: one step per page plus one per transferred gallery file; a missing page
+	 * fails its steps without failing the task.
 	 */
 	public Map<String, Object> publishPagesNow(List<Long> pageIds, TaskProgress progress) {
 		var published = 0L;
 
 		for (var pageId : pageIds) {
 			progress.checkpoint();
+			var expectedSteps = pagePublishSteps(pageId);
+			var completedBefore = progress.getCompletedSteps()
+										  .get();
 
 			try {
-				publishServiceProxy().publishPageAsSystem(pageId);
+				publishServiceProxy().publishPageAsSystem(pageId, progress);
 				published++;
-				progress.advance("Published page " + pageId);
 			} catch (VempainEntityNotFoundException e) {
 				log.warn("Failed to publish page {}: {}", pageId, e.getMessage());
-				progress.advanceFailed("Page " + pageId + " could not be published: " + e.getMessage());
+				failRemainingSteps(progress, expectedSteps, completedBefore, "Page " + pageId + " could not be published: " + e.getMessage());
 			}
 		}
 
@@ -599,8 +674,9 @@ public class PublishService {
 		authorizeGalleryPublish(galleryId);
 		var gallery = fileService.findGalleryById(galleryId);
 		var ids = List.of(galleryId);
-		var progress = taskRunner.submitDurable(TaskTypeEnum.PUBLISH_GALLERY.name(), "Publish gallery " + gallery.getShortname(), 1,
-												Map.of("gallery_ids", ids, "skipped", 0), task -> publishGalleriesNow(ids, 0, task));
+		var progress = taskRunner.submitDurable(TaskTypeEnum.PUBLISH_GALLERY.name(), "Publish gallery " + gallery.getShortname(),
+												galleryPublishSteps(gallery), Map.of("gallery_ids", ids, "skipped", 0),
+												task -> publishGalleriesNow(ids, 0, task));
 		return progress.toAcceptedResponse();
 	}
 
@@ -609,18 +685,20 @@ public class PublishService {
 	 */
 	public TaskAcceptedResponse publishAllGalleriesAsTask() {
 		var galleryIds = new ArrayList<Long>();
-		var skipped = 0;
+		var  skipped    = 0;
+		long totalSteps = 0;
 
 		for (var gallery : fileService.findAllGalleries()) {
 			if (canPublishGallery(gallery.getId())) {
 				galleryIds.add(gallery.getId());
+				totalSteps += galleryPublishSteps(gallery);
 			} else {
 				log.warn("Skipping publish for gallery {} because the user lacks permission on the gallery or its files", gallery.getId());
 				skipped++;
 			}
 		}
 
-		return submitGalleryPublish(TaskTypeEnum.PUBLISH_ALL_GALLERIES, "Publish all galleries", List.copyOf(galleryIds), skipped);
+		return submitGalleryPublish(TaskTypeEnum.PUBLISH_ALL_GALLERIES, "Publish all galleries", List.copyOf(galleryIds), skipped, totalSteps);
 	}
 
 	/**
@@ -633,6 +711,7 @@ public class PublishService {
 		}
 
 		var galleryIds = new ArrayList<Long>();
+		long totalSteps = 0;
 
 		for (var galleryId : requestedIds) {
 			if (galleryId == null || galleryId < 1) {
@@ -653,20 +732,26 @@ public class PublishService {
 			}
 
 			galleryIds.add(galleryId);
+			totalSteps += galleryPublishSteps(gallery);
 		}
 
 		return submitGalleryPublish(TaskTypeEnum.PUBLISH_SELECTED_GALLERIES, "Publish " + galleryIds.size() + " selected galleries",
-									List.copyOf(galleryIds), requestedIds.size() - galleryIds.size());
+									List.copyOf(galleryIds), requestedIds.size() - galleryIds.size(), totalSteps);
 	}
 
-	private TaskAcceptedResponse submitGalleryPublish(TaskTypeEnum type, String title, List<Long> galleryIds, int skipped) {
-		var progress = taskRunner.submitDurable(type.name(), title, galleryIds.size(), Map.of("gallery_ids", galleryIds, "skipped", skipped),
+	/**
+	 * @param totalSteps the files of the galleries (one step per transferred file, one for an empty gallery), known at submit time so
+	 *                   that the progress is right from the first poll
+	 */
+	private TaskAcceptedResponse submitGalleryPublish(TaskTypeEnum type, String title, List<Long> galleryIds, int skipped, long totalSteps) {
+		var progress = taskRunner.submitDurable(type.name(), title, totalSteps, Map.of("gallery_ids", galleryIds, "skipped", skipped),
 												task -> publishGalleriesNow(galleryIds, skipped, task));
 		return progress.toAcceptedResponse();
 	}
 
 	/**
-	 * Task body of the gallery publish tasks: one step per gallery, a missing gallery fails its step without failing the task.
+	 * Task body of the gallery publish tasks: one step per file transferred to the site (an empty gallery is one step); a missing
+	 * gallery fails its steps without failing the task.
 	 *
 	 * @param skippedBeforeStart galleries that were left out when the task was submitted, reported in the result
 	 */
@@ -675,14 +760,17 @@ public class PublishService {
 
 		for (var galleryId : galleryIds) {
 			progress.checkpoint();
+			var expectedSteps = galleryPublishSteps(fileService.findGalleryById(galleryId));
+			var completedBefore = progress.getCompletedSteps()
+										  .get();
 
 			try {
-				publishServiceProxy().publishGalleryAsSystem(galleryId);
+				publishServiceProxy().publishGalleryAsSystem(galleryId, progress);
 				published++;
-				progress.advance("Published gallery " + galleryId);
+				progress.message("Published gallery " + galleryId);
 			} catch (VempainEntityNotFoundException e) {
 				log.warn("Failed to publish gallery {}: {}", galleryId, e.getMessage());
-				progress.advanceFailed("Gallery " + galleryId + " could not be published: " + e.getMessage());
+				failRemainingSteps(progress, expectedSteps, completedBefore, "Gallery " + galleryId + " could not be published: " + e.getMessage());
 			}
 		}
 
