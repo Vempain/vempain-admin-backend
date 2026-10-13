@@ -26,8 +26,6 @@ import fi.poltsi.vempain.common.task.TaskProgress;
 import fi.poltsi.vempain.common.task.TaskRunner;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.domain.PageRequest;
@@ -72,17 +70,6 @@ public class FileService {
 	private String siteFileDirectory;
 	@Value("${vempain.admin.file.image-format}")
 	private String imageFormat;
-
-	private static JSONObject metadataToJsonObject(String metadata) {
-		var jsonArray = new JSONArray(metadata);
-
-		if (jsonArray.isEmpty()) {
-			log.error("Failed to parse the metadata JSON from\n{}", metadata);
-			return null;
-		}
-
-		return jsonArray.getJSONObject(0);
-	}
 
 	// FileGallery
 	public List<Gallery> findAllGalleries() {

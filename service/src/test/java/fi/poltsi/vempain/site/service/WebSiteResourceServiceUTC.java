@@ -19,16 +19,19 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -185,5 +188,130 @@ class WebSiteResourceServiceUTC {
 		request.setPage(page);
 		request.setSize(size);
 		return request;
+	}
+
+	// ---- sort field mapping, ACL and query combinations of every type, the merged listing edge cases ----
+
+	private static WebSiteResourcePagedRequest pagedRequest(WebSiteResourceEnum type, FileTypeEnum fileType, String search, Long aclId, String sortBy,
+															Sort.Direction direction, int page, int size) {
+		var request = new WebSiteResourcePagedRequest();
+		request.setType(type);
+		request.setFileType(fileType);
+		request.setSearch(search);
+		request.setAclId(aclId);
+		request.setSortBy(sortBy);
+		request.setDirection(direction);
+		request.setPage(page);
+		request.setSize(size);
+		return request;
+	}
+
+	private static <T> PageImpl<T> pageOf(List<T> content) {
+		return new PageImpl<>(content, PageRequest.of(0, 10), content.size());
+	}
+
+	@Test
+	void theVirtualNameSortMapsToTheNameColumnOfEachType() {
+		when(fileRepo.findAll(any(Pageable.class))).thenReturn(pageOf(List.<WebSiteFile>of()));
+		when(pageRepo.findAll(any(Pageable.class))).thenReturn(pageOf(List.<WebSitePage>of()));
+		when(galleryRepo.findAll(any(Pageable.class))).thenReturn(pageOf(List.<WebSiteGallery>of()));
+
+		service.listResources(pagedRequest(WebSiteResourceEnum.SITE_FILE, null, null, null, "name", null, 0, 10));
+		service.listResources(pagedRequest(WebSiteResourceEnum.PAGE, null, null, null, "name", null, 0, 10));
+		service.listResources(pagedRequest(WebSiteResourceEnum.GALLERY, null, null, null, "name", null, 0, 10));
+		service.listResources(pagedRequest(WebSiteResourceEnum.SITE_FILE, null, null, null, "acl_id", Sort.Direction.DESC, 0, 10));
+		service.listResources(pagedRequest(WebSiteResourceEnum.SITE_FILE, null, null, null, "file_type", null, 0, 10));
+
+		verify(fileRepo).findAll(PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "path")));
+		verify(pageRepo).findAll(PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "title")));
+		verify(galleryRepo).findAll(PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "shortname")));
+		verify(fileRepo).findAll(PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "aclId")));
+		verify(fileRepo).findAll(PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "fileType")));
+	}
+
+	@Test
+	void fileQueriesCombineAclFileTypeAndSearchInEveryWay() {
+		var file = WebSiteFile.builder()
+							  .id(1L)
+							  .aclId(5L)
+							  .filePath("a.jpg")
+							  .build();
+		when(fileRepo.findByAclIdAndFileType(eq(5L), eq(FileTypeEnum.IMAGE), any(Pageable.class))).thenReturn(pageOf(List.of(file)));
+		when(fileRepo.findByAclIdAndFilePathContainingIgnoreCase(eq(5L), eq("trip"), any(Pageable.class))).thenReturn(pageOf(List.of(file)));
+		when(fileRepo.findByFileTypeAndFilePathContainingIgnoreCase(eq(FileTypeEnum.IMAGE), eq("trip"), any(Pageable.class))).thenReturn(pageOf(List.of(file)));
+		when(fileRepo.findByFileType(eq(FileTypeEnum.IMAGE), any(Pageable.class))).thenReturn(pageOf(List.of(file)));
+		when(fileRepo.findByFilePathContainingIgnoreCase(eq("trip"), any(Pageable.class))).thenReturn(pageOf(List.of(file)));
+
+		assertThat(service.listResources(pagedRequest(WebSiteResourceEnum.SITE_FILE, FileTypeEnum.IMAGE, null, 5L, null, null, 0, 10))
+						  .getContent()).hasSize(1);
+		assertThat(service.listResources(pagedRequest(WebSiteResourceEnum.SITE_FILE, null, "trip", 5L, null, null, 0, 10))
+						  .getContent()).hasSize(1);
+		assertThat(service.listResources(pagedRequest(WebSiteResourceEnum.SITE_FILE, FileTypeEnum.IMAGE, "trip", null, null, null, 0, 10))
+						  .getContent()).hasSize(1);
+		assertThat(service.listResources(pagedRequest(WebSiteResourceEnum.SITE_FILE, FileTypeEnum.IMAGE, null, null, null, null, 0, 10))
+						  .getContent()).hasSize(1);
+		var byPath = service.listResources(pagedRequest(WebSiteResourceEnum.SITE_FILE, null, "trip", null, null, null, 0, 10));
+		assertThat(byPath.getContent()).hasSize(1);
+		// A file without a type answers a null file type
+		assertThat(byPath.getContent()
+						 .getFirst()
+						 .getFileType()).isNull();
+	}
+
+	@Test
+	void pageAndGalleryQueriesAreRestrictedToTheAclWhenOneIsGiven() {
+		var page = WebSitePage.builder()
+							  .id(1L)
+							  .aclId(5L)
+							  .title("Trip")
+							  .build();
+		var gallery = WebSiteGallery.builder()
+									.id(2L)
+									.aclId(5L)
+									.shortname("trip")
+									.build();
+		when(pageRepo.findByAclIdAndTitleContainingIgnoreCase(eq(5L), anyString(), any(Pageable.class))).thenReturn(pageOf(List.of(page)));
+		when(pageRepo.findByAclIdAndFilePathContainingIgnoreCase(eq(5L), anyString(), any(Pageable.class))).thenReturn(pageOf(List.<WebSitePage>of()));
+		when(pageRepo.findByAclIdAndBodyContainingIgnoreCase(eq(5L), anyString(), any(Pageable.class))).thenReturn(pageOf(List.<WebSitePage>of()));
+		when(pageRepo.findByAclIdAndHeaderContainingIgnoreCase(eq(5L), anyString(), any(Pageable.class))).thenReturn(null);
+		when(galleryRepo.findByAclIdAndShortnameContainingIgnoreCase(eq(5L), anyString(), any(Pageable.class))).thenReturn(pageOf(List.of(gallery)));
+		when(galleryRepo.findByAclIdAndDescriptionContainingIgnoreCase(eq(5L), anyString(), any(Pageable.class))).thenReturn(pageOf(List.of(gallery)));
+		when(pageRepo.findByAclId(eq(5L), any(Pageable.class))).thenReturn(pageOf(List.of(page)));
+		when(galleryRepo.findByAclId(eq(5L), any(Pageable.class))).thenReturn(pageOf(List.of(gallery)));
+
+		assertThat(service.listResources(pagedRequest(WebSiteResourceEnum.PAGE, null, "\"trip report\" 2024", 5L, null, null, 0, 10))
+						  .getContent()).hasSize(1);
+		assertThat(service.listResources(pagedRequest(WebSiteResourceEnum.GALLERY, null, "trip", 5L, null, null, 0, 10))
+						  .getContent()).hasSize(1);
+		// A blank query lists by ACL only
+		assertThat(service.listResources(pagedRequest(WebSiteResourceEnum.PAGE, null, "   ", 5L, null, null, 0, 10))
+						  .getContent()).hasSize(1);
+		assertThat(service.listResources(pagedRequest(WebSiteResourceEnum.GALLERY, null, null, 5L, null, null, 0, 10))
+						  .getContent()).hasSize(1);
+	}
+
+	@Test
+	void theMergedListingHandlesNoResultsPagesPastTheEndAndOverflowingPages() {
+		when(fileRepo.findAll(any(Pageable.class))).thenReturn(pageOf(List.<WebSiteFile>of()));
+		when(pageRepo.findAll(any(Pageable.class))).thenReturn(pageOf(List.<WebSitePage>of()));
+		when(galleryRepo.findAll(any(Pageable.class))).thenReturn(pageOf(List.<WebSiteGallery>of()));
+
+		var empty = service.listResources(pagedRequest(null, null, null, null, null, null, 0, 10));
+		assertThat(empty.getContent()).isEmpty();
+		assertThat(empty.getTotalElements()).isZero();
+
+		var file = WebSiteFile.builder()
+							  .id(1L)
+							  .aclId(5L)
+							  .filePath("a.jpg")
+							  .build();
+		when(fileRepo.findAll(any(Pageable.class))).thenReturn(pageOf(List.of(file)));
+		var pastTheEnd = service.listResources(pagedRequest(null, null, null, null, null, null, 3, 10));
+		assertThat(pastTheEnd.getContent()).isEmpty();
+		assertThat(pastTheEnd.getTotalElements()).isEqualTo(1);
+		assertThat(pastTheEnd.getTotalPages()).isEqualTo(1);
+		assertThat(pastTheEnd.getContent()).isEmpty();
+
+		assertThrows(IllegalArgumentException.class, () -> service.listResources(pagedRequest(null, null, null, null, null, null, Integer.MAX_VALUE, 200)));
 	}
 }

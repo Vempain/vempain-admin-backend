@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.awt.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class VideoToolsUTC {
 	@Test
@@ -14,6 +15,7 @@ class VideoToolsUTC {
 		assertEquals(3723L, VideoTools.detectAndConvertTime("1:02:03"));
 		assertEquals(12L, VideoTools.detectAndConvertTime("12s"));
 		assertEquals(12L, VideoTools.detectAndConvertTime("12"));
+		assertEquals(0L, VideoTools.detectAndConvertTime(null));
 		assertEquals(0L, VideoTools.convertHMSStringToSeconds(null));
 		assertEquals(0L, VideoTools.convertHMSStringToSeconds("12:34"));
 
@@ -29,6 +31,24 @@ class VideoToolsUTC {
 	}
 
 	@Test
+	void quickTimeDurationIsUsedWhenNoTrackCarriesOne() {
+		assertEquals(15L, VideoTools.getVideoLength(new JSONObject("""
+																		   {"Track1": {"Codec": "avc1"}, "QuickTime": {"Duration": "15s"}}
+																		   """)));
+		assertEquals(16L, VideoTools.getVideoLength(new JSONObject("""
+																		   {"QuickTime": {"Duration": "0:00:16"}}
+																		   """)));
+		// A QuickTime section without a duration falls through to the composite section, and to zero when that is missing too
+		assertEquals(17L, VideoTools.getVideoLength(new JSONObject("""
+																		   {"QuickTime": {"Codec": "avc1"}, "Composite": {"Duration": "17"}}
+																		   """)));
+		assertEquals(0L, VideoTools.getVideoLength(new JSONObject("""
+																		  {"QuickTime": {"Codec": "avc1"}, "Composite": {"ImageSize": "1x1"}}
+																		  """)));
+		assertEquals(0L, VideoTools.getVideoLength(new JSONObject()));
+	}
+
+	@Test
 	void resolvesVideoDimensionsFromMetadataFormats() {
 		assertEquals(new Dimension(1920, 1080), VideoTools.getVideoDimensions(new JSONObject("""
 																									 {"File": {"ImageWidth": 1920, "ImageHeight": 1080}}
@@ -39,7 +59,15 @@ class VideoToolsUTC {
 		assertEquals(new Dimension(640, 480), VideoTools.getVideoDimensions(new JSONObject("""
 																								   {"Composite": {"ImageSize": "640x480"}}
 																								   """)));
+		assertEquals(new Dimension(0, 0), VideoTools.getVideoDimensions(new JSONObject("""
+																							   {"Composite": {"ImageSize": "640"}}
+																							   """)));
 		assertEquals(new Dimension(0, 0), VideoTools.getVideoDimensions(null));
 		assertEquals(new Dimension(0, 0), VideoTools.getVideoDimensions(new JSONObject()));
+	}
+
+	@Test
+	void theUtilityCanBeInstantiated() {
+		assertNotNull(new VideoTools());
 	}
 }

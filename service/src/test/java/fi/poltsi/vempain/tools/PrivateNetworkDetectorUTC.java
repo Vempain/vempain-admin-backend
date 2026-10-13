@@ -3,12 +3,17 @@ package fi.poltsi.vempain.tools;
 import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 
 class PrivateNetworkDetectorUTC {
 
@@ -59,6 +64,28 @@ class PrivateNetworkDetectorUTC {
 			assertTrue(NetworkMatcher.matches(network.network(), network.address()), network.toString());
 			assertTrue(network.network()
 							  .contains("/"));
+		}
+	}
+
+	@Test
+	void anAddressThatIsNeitherIpv4NorIpv6IsNotPrivate() {
+		var exotic = mock(InetAddress.class);
+
+		assertFalse(PrivateNetworkDetector.isPrivate(exotic));
+		assertNull(PrivateNetworkDetector.describe("eth0", exotic, (short) 24));
+		assertNull(PrivateNetworkDetector.describe("eth0", null, (short) 24));
+	}
+
+	@Test
+	void detectionAnswersNothingWhenTheInterfacesCannotBeListed() {
+		try (var interfaces = mockStatic(NetworkInterface.class)) {
+			interfaces.when(NetworkInterface::getNetworkInterfaces)
+					  .thenReturn(null);
+			assertEquals(List.of(), PrivateNetworkDetector.detect());
+
+			interfaces.when(NetworkInterface::getNetworkInterfaces)
+					  .thenThrow(new SocketException("no network"));
+			assertEquals(List.of(), PrivateNetworkDetector.detect());
 		}
 	}
 }

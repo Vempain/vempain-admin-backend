@@ -1,6 +1,8 @@
 package fi.poltsi.vempain.admin.service;
 
+import fi.poltsi.vempain.admin.api.PublishResultEnum;
 import fi.poltsi.vempain.admin.api.request.file.SiteFilePagedRequest;
+import fi.poltsi.vempain.admin.api.response.RefreshResponse;
 import fi.poltsi.vempain.admin.entity.Subject;
 import fi.poltsi.vempain.admin.entity.file.FileThumb;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
@@ -14,18 +16,25 @@ import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.admin.service.file.FileThumbService;
 import fi.poltsi.vempain.admin.service.file.GalleryFileService;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
+import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.service.AclService;
 import fi.poltsi.vempain.common.api.FileTypeEnum;
+import fi.poltsi.vempain.common.api.TaskStatusEnum;
+import fi.poltsi.vempain.common.task.TaskProgressStore;
+import fi.poltsi.vempain.common.task.TaskRunner;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationContext;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -37,11 +46,14 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -557,5 +569,68 @@ class FileServiceUTC {
 			request.setDirection(value.getDirection());
 		});
 		return request;
+	}
+
+	// ---- ACL failures, thumb relations and the refresh task ----
+
+	private final TaskProgressStore  taskStore  = new TaskProgressStore();
+	@Spy
+	private       TaskRunner         taskRunner = new TaskRunner(taskStore, Runnable::run);
+	@Mock
+	private       ApplicationContext applicationContext;
+
+	@Test
+	void createGalleryFailsWhenTheAclCannotBeCreated() throws Exception {
+		when(aclService.createNewAcl(1L, null, true, true, true, true)).thenThrow(new VempainAclException("no acl"));
+
+		assertThrows(ResponseStatusException.class, () -> fileService.createGallery("name", "description", 1L, List.of()));
+		verify(galleryRepository, never()).save(any());
+	}
+
+	@Test
+	void findAllFileThumbsBySiteFileListTouchesTheLocationOfTheThumbsSiteFile() {
+		var siteFile = SiteFile.builder()
+							   .id(1L)
+							   .build();
+		var thumb = FileThumb.builder()
+							 .id(2L)
+							 .parentId(1L)
+							 .build();
+		thumb.setSiteFile(siteFile);
+		when(fileThumbPageableRepository.findFileThumbByParentId(1L)).thenReturn(Optional.of(thumb));
+
+		var thumbs = fileService.findAllFileThumbsBySiteFileList(List.of(siteFile));
+
+		assertEquals(List.of(thumb), thumbs);
+	}
+
+	@Test
+	void refreshAllGalleryFilesAsTaskRefreshesEveryGalleryThroughTheProxyAndCountsTheFailures() {
+		when(galleryRepository.getAllGalleryIds()).thenReturn(List.of(1L, 2L));
+		var proxy = mock(FileService.class);
+		when(proxy.refreshGalleryFiles(1L)).thenReturn(RefreshResponse.builder()
+																	  .refreshedItems(3)
+																	  .failedItems(0)
+																	  .details(new ArrayList<>())
+																	  .build());
+		when(proxy.refreshGalleryFiles(2L)).thenReturn(RefreshResponse.builder()
+																	  .refreshedItems(1)
+																	  .failedItems(2)
+																	  .details(new ArrayList<>())
+																	  .build());
+		when(applicationContext.getBean(FileService.class)).thenReturn(proxy);
+
+		var accepted = fileService.refreshAllGalleryFilesAsTask();
+
+		assertEquals(2, accepted.getTotalSteps());
+		var task = taskStore.find(accepted.getTaskId())
+							.orElseThrow();
+		assertEquals(TaskStatusEnum.COMPLETED, task.getStatus());
+		assertEquals(1, task.getFailedSteps()
+							.get());
+		var result = (RefreshResponse) task.getResult();
+		assertEquals(4, result.getRefreshedItems());
+		assertEquals(2, result.getFailedItems());
+		assertEquals(PublishResultEnum.FAIL, result.getResult());
 	}
 }

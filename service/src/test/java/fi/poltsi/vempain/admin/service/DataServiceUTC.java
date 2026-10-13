@@ -5,29 +5,41 @@ import fi.poltsi.vempain.admin.api.response.DataResponse;
 import fi.poltsi.vempain.admin.api.response.DataSummaryResponse;
 import fi.poltsi.vempain.admin.entity.DataEntity;
 import fi.poltsi.vempain.admin.repository.DataRepository;
+import fi.poltsi.vempain.common.api.TaskStatusEnum;
+import fi.poltsi.vempain.common.task.TaskProgressStore;
+import fi.poltsi.vempain.common.task.TaskRunner;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementSetter;
+import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.sql.DataSource;
+import java.sql.PreparedStatement;
+import java.sql.Types;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -478,5 +490,145 @@ class DataServiceUTC {
 			assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, e.getStatusCode());
 		}
 		verify(dataRepository, never()).delete(any());
+	}
+
+	// ---- filters, the publish task, CSV parsing and type coercion ----
+
+	@Test
+	void findAllFiltersByIdentifierPrefixAndToleratesMissingDescriptionsAndBlankFilters() {
+		var entities = buildEntityList(2);
+		entities.getFirst()
+				.setDescription(null);
+		when(dataRepository.findAll()).thenReturn(entities);
+
+		assertEquals(0, dataService.findAll(null, "other_", null)
+								   .size());
+		assertEquals(2, dataService.findAll("  ", "data_set", "data")
+								   .size());
+		assertEquals(1, dataService.findAll(null, null, "test data set 1")
+								   .size());
+	}
+
+	@Test
+	void publishAsTaskRejectsAnUnknownDataSetAndOtherwisePublishesThroughTheProxy() {
+		var applicationContext = mock(ApplicationContext.class);
+		var taskStore = new TaskProgressStore();
+		var taskService = new DataService(dataRepository, mock(DataSource.class), new TaskRunner(taskStore, Runnable::run), applicationContext);
+		when(dataRepository.findByIdentifier("missing")).thenReturn(Optional.empty());
+		assertThrows(ResponseStatusException.class, () -> taskService.publishAsTask("missing"));
+
+		var entity = buildEntity(1L);
+		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+		var proxy = mock(DataService.class);
+		when(proxy.publish(TEST_IDENTIFIER)).thenReturn(entity.toDataResponse());
+		when(applicationContext.getBean(DataService.class)).thenReturn(proxy);
+
+		var accepted = taskService.publishAsTask(TEST_IDENTIFIER);
+
+		var task = taskStore.find(accepted.getTaskId())
+							.orElseThrow();
+		assertEquals(TaskStatusEnum.COMPLETED, task.getStatus());
+		assertEquals(TEST_IDENTIFIER, ((DataResponse) task.getResult()).getIdentifier());
+		verify(proxy).publish(TEST_IDENTIFIER);
+	}
+
+	@Test
+	void publishRejectsACreateStatementWithoutColumnsAndSkipsEmptyCsvData() {
+		var entity = buildEntity(1L);
+		entity.setCreateSql("CREATE TABLE website_data__test_data");
+		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+		var thrown = assertThrows(ResponseStatusException.class, () -> dataService.publish(TEST_IDENTIFIER));
+		assertEquals(HttpStatus.BAD_REQUEST, thrown.getStatusCode());
+
+		entity.setCreateSql("CREATE TABLE website_data__test_data (id BIGSERIAL PRIMARY KEY, title VARCHAR(255))");
+		entity.setCsvData("   ");
+		dataService.publish(TEST_IDENTIFIER);
+		entity.setCsvData("title");
+		dataService.publish(TEST_IDENTIFIER);
+		verify(mockJdbcTemplate, never()).update(anyString(), any(PreparedStatementSetter.class));
+	}
+
+	@Test
+	void publishRejectsInvalidColumnNamesInTheCsvHeader() {
+		var entity = buildEntity(1L);
+		entity.setCsvData("bad-name\nvalue");
+		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+
+		var thrown = assertThrows(ResponseStatusException.class, () -> dataService.publish(TEST_IDENTIFIER));
+
+		assertEquals(HttpStatus.BAD_REQUEST, thrown.getStatusCode());
+	}
+
+	@SuppressWarnings("unchecked")
+	private void stubColumnTypes(Map<String, Integer> types) {
+		when(mockJdbcTemplate.query(anyString(), any(ResultSetExtractor.class))).thenReturn(types);
+	}
+
+	private PreparedStatement runInsertsAgainst(PreparedStatement statement) {
+		doAnswer(invocation -> {
+			invocation.getArgument(1, PreparedStatementSetter.class)
+					  .setValues(statement);
+			return 1;
+		}).when(mockJdbcTemplate)
+		  .update(anyString(), any(PreparedStatementSetter.class));
+		return statement;
+	}
+
+	@Test
+	void publishCoercesCsvValuesToTheColumnTypesAndBindsNullsForBlanks() throws Exception {
+		var entity = buildEntity(1L);
+		entity.setCsvData("""
+								  small,whole,big,single,dbl,dec,flag,day,moment,stamp,text
+								  1,2,3,1.5,2.5,3.25,yes,2024-06-01,10:15:30,2024-06-01T10:15:30Z,"quoted ""name"", with comma"
+								  
+								  ,,,,,,,,,,
+								  7,8,9,1.5,2.5,3.25,n,2024-06-02,11:00:00,2024-06-02T11:00:00+02:00,plain
+								  7,8,9,1.5,2.5,3.25,0,2024-06-02,11:00:00,2024-06-02T11:00:00,plain
+								  """);
+		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+		stubColumnTypes(Map.ofEntries(Map.entry("small", Types.SMALLINT), Map.entry("whole", Types.INTEGER), Map.entry("big", Types.BIGINT),
+									  Map.entry("single", Types.REAL), Map.entry("dbl", Types.DOUBLE), Map.entry("dec", Types.NUMERIC),
+									  Map.entry("flag", Types.BOOLEAN), Map.entry("day", Types.DATE), Map.entry("moment", Types.TIME),
+									  Map.entry("stamp", Types.TIMESTAMP), Map.entry("text", Types.VARCHAR)));
+		var statement = runInsertsAgainst(mock(PreparedStatement.class));
+
+		dataService.publish(TEST_IDENTIFIER);
+
+		verify(mockJdbcTemplate, times(4)).update(anyString(), any(PreparedStatementSetter.class));
+		verify(statement).setObject(11, "quoted \"name\", with comma");
+		verify(statement).setObject(1, (short) 1, Types.SMALLINT);
+		verify(statement).setObject(2, 2, Types.INTEGER);
+		verify(statement).setObject(3, 3L, Types.BIGINT);
+		verify(statement, times(3)).setObject(4, 1.5f, Types.REAL);
+		verify(statement, times(3)).setObject(5, 2.5d, Types.DOUBLE);
+		verify(statement, times(3)).setObject(6, new java.math.BigDecimal("3.25"), Types.NUMERIC);
+		verify(statement).setObject(7, true, Types.BOOLEAN);
+		verify(statement, times(2)).setObject(7, false, Types.BOOLEAN);
+		verify(statement).setObject(8, java.sql.Date.valueOf("2024-06-01"), Types.DATE);
+		verify(statement).setObject(9, java.sql.Time.valueOf("10:15:30"), Types.TIME);
+		verify(statement, times(3)).setObject(org.mockito.ArgumentMatchers.eq(10), any(java.sql.Timestamp.class), org.mockito.ArgumentMatchers.eq(Types.TIMESTAMP));
+		verify(statement).setNull(1, Types.SMALLINT);
+		verify(statement).setNull(11, Types.VARCHAR);
+	}
+
+	private void assertPublishBadRequest(String header, String value, int sqlType) {
+		var entity = buildEntity(1L);
+		entity.setCsvData(header + "\n" + value);
+		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+		stubColumnTypes(Map.of(header, sqlType));
+		runInsertsAgainst(mock(PreparedStatement.class));
+
+		var thrown = assertThrows(ResponseStatusException.class, () -> dataService.publish(TEST_IDENTIFIER));
+
+		assertEquals(HttpStatus.BAD_REQUEST, thrown.getStatusCode(), header + "=" + value);
+	}
+
+	@Test
+	void publishRejectsValuesThatDoNotFitTheirColumnType() {
+		assertPublishBadRequest("flag", "maybe", Types.BOOLEAN);
+		assertPublishBadRequest("day", "yesterday", Types.DATE);
+		assertPublishBadRequest("moment", "noon", Types.TIME);
+		assertPublishBadRequest("stamp", "2024-06-01 10:15", Types.TIMESTAMP);
+		assertPublishBadRequest("whole", "1.5", Types.INTEGER);
 	}
 }

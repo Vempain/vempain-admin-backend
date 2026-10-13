@@ -6,6 +6,7 @@ import fi.poltsi.vempain.admin.entity.Component;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.repository.ComponentRepository;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
+import fi.poltsi.vempain.auth.api.request.PagedRequest;
 import fi.poltsi.vempain.auth.exception.VempainAbstractException;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -860,5 +862,65 @@ class ComponentServiceUTC {
 		assertNotNull(component.getModified());
 		assertTrue(component.getModified()
 							.isAfter(component.getCreated()));
+	}
+
+	// ---- paged listing ----
+
+	private void stubReadableComponents() {
+		var alpha = TestUTCTools.generateComponent(1L, 1L);
+		alpha.setCompName("Alpha");
+		var beta = TestUTCTools.generateComponent(2L, 2L);
+		beta.setCompName("beta");
+		var gamma = TestUTCTools.generateComponent(3L, 3L);
+		gamma.setCompName("Gamma");
+		when(componentRepository.findAll()).thenReturn(List.of(gamma, alpha, beta));
+		when(accessService.hasReadPermission(anyLong())).thenReturn(true);
+	}
+
+	private static PagedRequest paged(String search, Boolean caseSensitive, String sortBy, Sort.Direction direction) {
+		var request = new PagedRequest();
+		request.setPage(0);
+		request.setSize(10);
+		request.setSearch(search);
+		request.setCaseSensitive(caseSensitive);
+		request.setSortBy(sortBy);
+		request.setDirection(direction);
+		return request;
+	}
+
+	@Test
+	void findPagedByUserSortsByIdByDefault() {
+		stubReadableComponents();
+
+		var response = componentService.findPagedByUser(paged(null, null, null, null));
+
+		assertEquals(List.of(1L, 2L, 3L), response.getContent()
+												  .stream()
+												  .map(Component::getId)
+												  .toList());
+	}
+
+	@Test
+	void findPagedByUserFiltersCaseInsensitivelyAndSortsByNameDescending() {
+		stubReadableComponents();
+
+		var response = componentService.findPagedByUser(paged("A", false, "comp_name", Sort.Direction.DESC));
+
+		assertEquals(List.of("Gamma", "beta", "Alpha"), response.getContent()
+																.stream()
+																.map(Component::getCompName)
+																.toList());
+	}
+
+	@Test
+	void findPagedByUserFiltersCaseSensitively() {
+		stubReadableComponents();
+
+		var response = componentService.findPagedByUser(paged("G", true, "id", null));
+
+		assertEquals(List.of("Gamma"), response.getContent()
+											   .stream()
+											   .map(Component::getCompName)
+											   .toList());
 	}
 }

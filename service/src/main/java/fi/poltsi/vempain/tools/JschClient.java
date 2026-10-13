@@ -17,9 +17,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Consumer;
 
 @Slf4j
 @Setter
@@ -70,10 +72,23 @@ public class JschClient {
 	}
 
 	public void transferFilesToSite(List<SiteFile> siteFiles, List<FileThumb> thumbList) throws SftpException {
+		transferFilesToSite(siteFiles, thumbList, null);
+	}
+
+	/**
+	 * Transfers the site files and their thumbnails to the site server. Every site file is transferred together with its own
+	 * thumbnails, and {@code onFileTransferred} is told after each one, so that a publish task can report one step per file while
+	 * the transfer is running. Thumbnails whose site file is not in the list are transferred last.
+	 *
+	 * @param onFileTransferred called after a site file and its thumbnails have been transferred; may be null
+	 */
+	public void transferFilesToSite(List<SiteFile> siteFiles, List<FileThumb> thumbList, Consumer<SiteFile> onFileTransferred) throws SftpException {
 		if (!siteDirectoryExists(siteWwwRoot)) {
 			log.error("The site main directory {} does not exist, file transfer is aborted", siteWwwRoot);
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Site configuration is not set up correctly");
 		}
+
+		var remainingThumbs = new ArrayList<>(thumbList);
 
 		for (var siteFile : siteFiles) {
 			var absolutePathConvertedFile =
@@ -100,15 +115,31 @@ public class JschClient {
 			}
 
 			channelSftp.put(absolutePathConvertedFile, targetDir + File.separator + siteFile.getFileName());
+
+			for (var iterator = remainingThumbs.iterator(); iterator.hasNext(); ) {
+				var fileThumb = iterator.next();
+				if (fileThumb.getParentId() == siteFile.getId()) {
+					transferThumb(fileThumb);
+					iterator.remove();
+				}
+			}
+
+			if (onFileTransferred != null) {
+				onFileTransferred.accept(siteFile);
+			}
 		}
 
-		for (FileThumb fileThumb : thumbList) {
-			var absolutePathThumbFile = siteFileDirectory + File.separator + fileThumb.getFilepath() + File.separator + fileThumb.getFilename();
-			var targetDir = siteWwwRoot + File.separator + fileThumb.getParentType().shortName + File.separator + fileThumb.getSiteFile()
-			                                                                                                               .getFilePath() + File.separator + thumbSubDir;
-			log.debug("Transferring thumb {} to {}", absolutePathThumbFile, targetDir);
-			channelSftp.put(absolutePathThumbFile, targetDir);
+		for (var fileThumb : remainingThumbs) {
+			transferThumb(fileThumb);
 		}
+	}
+
+	private void transferThumb(FileThumb fileThumb) throws SftpException {
+		var absolutePathThumbFile = siteFileDirectory + File.separator + fileThumb.getFilepath() + File.separator + fileThumb.getFilename();
+		var targetDir = siteWwwRoot + File.separator + fileThumb.getParentType().shortName + File.separator + fileThumb.getSiteFile()
+																													   .getFilePath() + File.separator + thumbSubDir;
+		log.debug("Transferring thumb {} to {}", absolutePathThumbFile, targetDir);
+		channelSftp.put(absolutePathThumbFile, targetDir);
 	}
 
 	private void createRecursivelySiteDirectory(String mainDir, List<String> subDirList) throws SftpException {

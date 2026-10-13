@@ -813,4 +813,109 @@ class PageServiceUTC {
 		assertEquals(0, response.getMatches());
 		assertNull(response.getSuggestion());
 	}
+
+	// ---- form lookups, visibility checks, search and sort variants ----
+
+	@Test
+	void findAllByFormIdForUserKeepsOnlyReadablePages() {
+		var readable = TestUTCTools.generatePage(1L);
+		readable.setAclId(11L);
+		var hidden = TestUTCTools.generatePage(2L);
+		hidden.setAclId(22L);
+		when(pageRepository.findByFormId(5L)).thenReturn(List.of(readable, hidden));
+		when(accessService.hasReadPermission(11L)).thenReturn(true);
+		when(accessService.hasReadPermission(22L)).thenReturn(false);
+
+		assertEquals(List.of(readable), pageService.findAllByFormIdForUser(5L));
+	}
+
+	@Test
+	void findByIdByUserAnswersNullForAMissingPageAndRejectsAnUnreadableOne() {
+		when(pageRepository.findById(1L)).thenReturn(null);
+		assertNull(pageService.findByIdByUser(1L));
+
+		var page = TestUTCTools.generatePage(2L);
+		page.setAclId(22L);
+		when(pageRepository.findById(2L)).thenReturn(page);
+		when(accessService.hasReadPermission(22L)).thenReturn(false);
+		var thrown = assertThrows(ResponseStatusException.class, () -> pageService.findByIdByUser(2L));
+		assertEquals(HttpStatus.UNAUTHORIZED, thrown.getStatusCode());
+
+		when(accessService.hasReadPermission(22L)).thenReturn(true);
+		assertEquals(page, pageService.findByIdByUser(2L));
+	}
+
+	private void stubSearchablePages() {
+		var first = TestUTCTools.generatePage(1L);
+		first.setPagePath("/alpha");
+		first.setTitle("Alpha title");
+		first.setHeader(null);
+		first.setParentId(null);
+		first.setFormId(2L);
+		var second = TestUTCTools.generatePage(2L);
+		second.setPagePath("/beta");
+		second.setTitle("Beta");
+		second.setHeader("ALPHA header");
+		second.setParentId(5L);
+		second.setFormId(1L);
+		when(pageRepository.findAll()).thenReturn(List.of(first, second));
+		when(accessService.hasReadPermission(anyLong())).thenReturn(true);
+	}
+
+	private static PagePagedRequest paged(String search, Boolean caseSensitive, String sortBy, Sort.Direction direction) {
+		var request = new PagePagedRequest();
+		request.setPage(0);
+		request.setSize(10);
+		request.setSearch(search);
+		request.setCaseSensitive(caseSensitive);
+		request.setSortBy(sortBy);
+		request.setDirection(direction);
+		return request;
+	}
+
+	@Test
+	void findPagedByUserSearchesPathTitleAndHeaderCaseSensitively() {
+		stubSearchablePages();
+
+		var response = pageService.findPagedByUser(paged("ALPHA", true, null, null));
+
+		assertEquals(List.of(2L), response.getContent()
+										  .stream()
+										  .map(fi.poltsi.vempain.admin.api.response.PageResponse::getId)
+										  .toList());
+	}
+
+	@Test
+	void findPagedByUserSearchesCaseInsensitivelyAndSortsByEveryColumn() {
+		stubSearchablePages();
+
+		assertEquals(2, pageService.findPagedByUser(paged("alpha", false, null, null))
+								   .getTotalElements());
+		for (var sortBy : List.of("id", "parent_id", "form_id", "page_path", "title", "created", "unknown")) {
+			var response = pageService.findPagedByUser(paged(null, null, sortBy, Sort.Direction.ASC));
+			assertEquals(2, response.getContent()
+									.size(), sortBy);
+		}
+		assertEquals(2L, pageService.findPagedByUser(paged(null, null, "form_id", Sort.Direction.ASC))
+									.getContent()
+									.getFirst()
+									.getId());
+		assertEquals(1L, pageService.findPagedByUser(paged(null, null, "parent_id", Sort.Direction.ASC))
+									.getContent()
+									.getFirst()
+									.getId());
+	}
+
+	@Test
+	void populateResponseAttachesTheAcls() {
+		var page = TestUTCTools.generatePage(1L);
+		page.setAclId(11L);
+		when(aclService.getAclResponses(11L)).thenReturn(TestUTCTools.generateAclResponses(11L, 1L));
+
+		var response = pageService.populateResponse(page);
+
+		assertEquals(1L, response.getId());
+		assertEquals(2, response.getAcls()
+								.size());
+	}
 }

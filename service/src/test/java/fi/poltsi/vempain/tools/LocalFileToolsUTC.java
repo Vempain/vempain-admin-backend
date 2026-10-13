@@ -1,11 +1,15 @@
 package fi.poltsi.vempain.tools;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.file.Files;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LocalFileToolsUTC {
 	@Test
@@ -20,6 +24,31 @@ class LocalFileToolsUTC {
 					 LocalFileTools.computeSha256(file.toFile()));
 		assertNull(LocalFileTools.computeSha256(directory.resolve("missing")
 		                                                 .toFile()));
+		LocalFileTools.removeDirectory(directory.toString());
+	}
+
+	@Test
+	void aDirectoryThatCannotBeCreatedIsAnInternalError() throws Exception {
+		var directory = Files.createTempDirectory("vempain-file-tools");
+		var file = directory.resolve("regular.txt");
+		Files.writeString(file, "a regular file, not a directory");
+
+		// The parent of the requested directory is a regular file, so it can not be created
+		assertThrows(ResponseStatusException.class, () -> LocalFileTools.createAndVerifyDirectory(file.resolve("child")));
+
+		LocalFileTools.removeDirectory(directory.toString());
+		assertFalse(Files.exists(directory));
+	}
+
+	@Test
+	void sizeOfAMissingFileIsZeroAndRemovingAMissingDirectoryIsLogged() throws Exception {
+		var directory = Files.createTempDirectory("vempain-file-tools");
+		var missing = directory.resolve("missing");
+
+		assertEquals(0L, LocalFileTools.getFileSize(missing));
+		LocalFileTools.removeDirectory(missing.toString());
+		assertTrue(Files.exists(directory));
+
 		LocalFileTools.removeDirectory(directory.toString());
 	}
 }

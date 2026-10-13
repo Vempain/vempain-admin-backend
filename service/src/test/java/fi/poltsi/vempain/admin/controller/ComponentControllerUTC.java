@@ -9,7 +9,9 @@ import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.service.ComponentService;
 import fi.poltsi.vempain.admin.service.DeleteService;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
+import fi.poltsi.vempain.auth.api.request.PagedRequest;
 import fi.poltsi.vempain.auth.api.response.AclResponse;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.exception.VempainAbstractException;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
@@ -377,5 +379,31 @@ class ComponentControllerUTC {
 		} catch (Exception e) {
 			fail("Should not have received any other exceptions except ResponseStatusException: " + e);
 		}
+	}
+
+	// ---- paged listing ----
+
+	@Test
+	void getPagedComponentsAnswersResponsesWithAcls() {
+		var request = new PagedRequest();
+		var components = TestUTCTools.generateComponentList(2L);
+		when(componentService.findPagedByUser(request)).thenReturn(PagedResponse.of(components, 0, 10, 2, 1, true, true));
+		when(aclService.getAclResponses(components.getFirst()
+												  .getAclId())).thenReturn(TestUTCTools.generateAclResponses(1L, 1L));
+		when(aclService.getAclResponses(components.get(1)
+												  .getAclId())).thenReturn(List.of());
+
+		var response = componentController.getPagedComponents(request);
+
+		assertEquals(2, response.getBody()
+								.getContent()
+								.size());
+		assertEquals(2, response.getBody()
+								.getTotalElements());
+		assertEquals(2, response.getBody()
+								.getContent()
+								.getFirst()
+								.getAcls()
+								.size());
 	}
 }

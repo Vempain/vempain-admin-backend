@@ -167,4 +167,17 @@ class GalleryFileServiceUTC {
 		verify(query, org.mockito.Mockito.atLeast(1)).executeUpdate();
 		verify(fileThumbService).generateThumbFile(20L);
 	}
+
+	// ---- deleteGalleryFilesBySiteFileId ----
+
+	@Test
+	void deleteGalleryFilesBySiteFileIdRemovesEveryLinkOfTheFile() {
+		when(query.executeUpdate()).thenReturn(2);
+
+		galleryFileService.deleteGalleryFilesBySiteFileId(42L);
+
+		verify(entityManager).createNativeQuery("DELETE FROM gallery_file WHERE site_file_id = :fileId");
+		verify(query).setParameter("fileId", 42L);
+		verify(query).executeUpdate();
+	}
 }

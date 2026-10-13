@@ -6,13 +6,17 @@ import jakarta.persistence.Query;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -56,5 +60,30 @@ class GalleryRepositoryImplUTC {
 		assertThat(sql.getValue()).contains("g.shortname LIKE :term0 ESCAPE '\\'")
 								  .doesNotContain("sf.file_name");
 		verify(dataQuery).setParameter("term0", "%Trip\\_\\%%");
+	}
+
+	@Test
+	void aBlankSearchListsEverythingOrderedByIdWithoutBindingTerms() {
+		repository.searchGalleriesForList("   ", false, Pageable.unpaged());
+
+		var sql = ArgumentCaptor.forClass(String.class);
+		verify(entityManager).createNativeQuery(sql.capture(), eq(Gallery.class));
+		assertThat(sql.getValue()).doesNotContain("WHERE")
+								  .endsWith(" ORDER BY g.id ASC")
+								  .doesNotContain("OFFSET");
+		verify(dataQuery, never()).setParameter(anyString(), anyInt());
+	}
+
+	@Test
+	void sortPropertiesAreMappedToColumnsAndUnknownOnesFallBackToTheId() {
+		var sort = Sort.by(Sort.Order.desc("short_name"), Sort.Order.asc("description"), Sort.Order.asc("creator"), Sort.Order.desc("shortname"));
+
+		repository.searchGalleries(null, false, PageRequest.of(1, 5, sort));
+
+		var sql = ArgumentCaptor.forClass(String.class);
+		verify(entityManager).createNativeQuery(sql.capture(), eq(Gallery.class));
+		assertThat(sql.getValue()).contains(" ORDER BY g.shortname DESC, g.description ASC, g.id ASC, g.shortname DESC OFFSET :offset LIMIT :limit");
+		verify(dataQuery).setParameter("offset", 5);
+		verify(dataQuery).setParameter("limit", 5);
 	}
 }

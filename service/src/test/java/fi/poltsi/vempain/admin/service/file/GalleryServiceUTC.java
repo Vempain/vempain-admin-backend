@@ -5,6 +5,7 @@ import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
 import fi.poltsi.vempain.admin.api.response.file.FileGroupListResponse;
 import fi.poltsi.vempain.admin.api.response.file.GalleryResponse;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
+import fi.poltsi.vempain.admin.entity.file.GalleryFile;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
 import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
@@ -22,6 +23,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -40,6 +43,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -545,4 +549,95 @@ class GalleryServiceUTC {
 		                                   .getShortName());
 	}
 
+
+	// ---- requireModify, denied updates and deletes, the list view of one gallery ----
+
+	@Test
+	void requireModifyRejectsAMissingOrNotModifiableGallery() {
+		when(galleryRepository.findById(1L)).thenReturn(Optional.empty());
+		assertThrows(AccessDeniedException.class, () -> galleryService.requireModify(1L));
+
+		when(galleryRepository.findById(1L)).thenReturn(Optional.of(sampleGallery));
+		when(accessService.hasModifyPermission(10L)).thenReturn(false);
+		assertThrows(AccessDeniedException.class, () -> galleryService.requireModify(1L));
+
+		when(accessService.hasModifyPermission(10L)).thenReturn(true);
+		galleryService.requireModify(1L);
+	}
+
+	@Test
+	void updateGalleryIsDeniedWithoutTheModifyPrivilege() {
+		when(galleryRepository.findById(1L)).thenReturn(Optional.of(sampleGallery));
+		when(accessService.hasModifyPermission(10L)).thenReturn(false);
+		var request = GalleryRequest.builder()
+									.id(1L)
+									.shortName("x")
+									.build();
+
+		assertThrows(AccessDeniedException.class, () -> galleryService.updateGallery(request));
+		verify(galleryRepository, never()).save(any());
+	}
+
+	@Test
+	void deleteGalleryIgnoresAMissingGalleryAndRejectsAMissingDeletePrivilege() {
+		when(galleryRepository.findById(1L)).thenReturn(Optional.empty());
+		galleryService.deleteGallery(1L);
+		verify(galleryRepository, never()).deleteById(anyLong());
+
+		when(galleryRepository.findById(1L)).thenReturn(Optional.of(sampleGallery));
+		when(accessService.hasDeletePermission(10L)).thenReturn(false);
+		assertThrows(AccessDeniedException.class, () -> galleryService.deleteGallery(1L));
+		verify(galleryRepository, never()).deleteById(anyLong());
+	}
+
+	@Test
+	void findGalleryListByIdAnswersTheFileCountOfAReadableGalleryAndNullOtherwise() {
+		when(galleryRepository.findById(1L)).thenReturn(Optional.empty());
+		assertNull(galleryService.findGalleryListById(1L));
+
+		when(galleryRepository.findById(1L)).thenReturn(Optional.of(sampleGallery));
+		when(accessService.hasReadPermission(10L)).thenReturn(false);
+		assertNull(galleryService.findGalleryListById(1L));
+
+		when(accessService.hasReadPermission(10L)).thenReturn(true);
+		when(aclService.findAclByAclId(10L)).thenReturn(List.of(Acl.builder()
+																   .id(1L)
+																   .aclId(10L)
+																   .userId(1L)
+																   .readPrivilege(true)
+																   .build()));
+		when(galleryFileService.findGalleryFileByGalleryId(1L)).thenReturn(List.of(GalleryFile.builder()
+																							  .galleryId(1L)
+																							  .siteFileId(5L)
+																							  .sortOrder(0L)
+																							  .build(),
+																				   GalleryFile.builder()
+																							  .galleryId(1L)
+																							  .siteFileId(6L)
+																							  .sortOrder(1L)
+																							  .build()));
+
+		var response = galleryService.findGalleryListById(1L);
+
+		assertNotNull(response);
+		assertEquals(2L, response.getFileCount());
+		assertEquals("test-gallery", response.getShortName());
+		assertEquals(1, response.getAcls()
+								.size());
+	}
+
+	@Test
+	void galleryListSortsByDescriptionAscendingWhenNoDirectionIsGiven() {
+		var request = new PagedRequest();
+		request.setPage(0);
+		request.setSize(10);
+		request.setSortBy("description");
+		when(galleryRepository.searchGalleriesForList(any(), anyBoolean(), any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
+
+		galleryService.findPagedGalleryListByUser(request);
+
+		verify(galleryRepository).searchGalleriesForList(any(), anyBoolean(),
+														 org.mockito.ArgumentMatchers.argThat(pageable -> pageable.getSort()
+																												  .equals(Sort.by(Sort.Direction.ASC, "description"))));
+	}
 }
