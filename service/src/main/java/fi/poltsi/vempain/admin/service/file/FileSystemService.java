@@ -1,65 +1,69 @@
 package fi.poltsi.vempain.admin.service.file;
 
-import fi.poltsi.vempain.admin.api.response.file.DirectoryNodeResponse;
-import fi.poltsi.vempain.common.api.FileTypeEnum;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import fi.poltsi.vempain.admin.api.response.file.DirectoryNodeResponse;
+import fi.poltsi.vempain.common.api.FileTypeEnum;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class FileSystemService {
-	@Value("${vempain.admin.file.site-file-directory}")
-	private String siteFileDirectory;
 
-	public List<DirectoryNodeResponse> getConvertedDirectoryTree() {
-		File rootDir = new File(siteFileDirectory);
-		if (!rootDir.exists() || !rootDir.isDirectory()) {
-			throw new IllegalArgumentException("Invalid root directory path");
-		}
+    @Value("${vempain.admin.file.site-file-directory}")
+    private String siteFileDirectory;
 
-		var rootList = new ArrayList<DirectoryNodeResponse>();
+    public List<DirectoryNodeResponse> getConvertedDirectoryTree() {
+        File rootDir = new File(siteFileDirectory);
+        if (!rootDir.exists()
+            || !rootDir.isDirectory()) {
+            throw new IllegalArgumentException("Invalid root directory path");
+        }
 
-		// Get list of sub directories in root directory
-		File[] files = rootDir.listFiles();
+        var rootList = new ArrayList<DirectoryNodeResponse>();
 
-		if (files != null) {
-			for (File file : files) {
-				if (file.isDirectory()
-				    && !Objects.equals(file.toString(), siteFileDirectory + File.separator + FileTypeEnum.THUMB.shortName)) {
-					rootList.add(buildDirectoryTree(file));
-				}
-			}
-		}
+        // Get list of sub directories in root directory
+        File[] files = rootDir.listFiles();
 
-		return rootList;
-	}
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()
+                    && !Objects.equals(file.toString(), siteFileDirectory + File.separator + FileTypeEnum.THUMB.shortName)) {
+                    rootList.add(buildDirectoryTree(file));
+                }
+            }
+        }
 
-	private DirectoryNodeResponse buildDirectoryTree(File dir) {
-		var node = DirectoryNodeResponse.builder()
-		                                .directoryName(dir.getName())
-		                                .build();
+        return rootList;
+    }
 
-		File[] files = dir.listFiles();
+    private DirectoryNodeResponse buildDirectoryTree(File dir) {
+        var node = DirectoryNodeResponse.builder()
+            .directoryName(dir.getName())
+            .build();
 
-		if (files != null && files.length > 0) {
-			List<DirectoryNodeResponse> children = new ArrayList<>();
+        File[] files = dir.listFiles();
 
-			for (File file : files) {
-				if (file.isDirectory()) {
-					children.add(buildDirectoryTree(file));
-				}
-			}
+        if (files != null
+            && files.length > 0) {
+            List<DirectoryNodeResponse> children = new ArrayList<>();
 
-			node.setChildren(children);
-		}
-		return node;
-	}
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    children.add(buildDirectoryTree(file));
+                }
+            }
+
+            node.setChildren(children);
+        }
+        return node;
+    }
 }

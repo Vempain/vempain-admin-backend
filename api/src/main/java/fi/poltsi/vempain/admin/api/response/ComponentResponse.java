@@ -14,8 +14,9 @@ import tools.jackson.databind.annotation.JsonNaming;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Schema(description = "Item depicting a reusable component, usually written in PHP")
 public class ComponentResponse extends AbstractResponse {
-	@Schema(description = "Component name", example = "My component")
-	private String compName;
-	@Schema(description = "Component content", example = "<?php print(\"Hello world!\"); ?>")
-	private String compData;
+
+    @Schema(description = "Component name", example = "My component")
+    private String compName;
+    @Schema(description = "Component content", example = "<?php print(\"Hello world!\"); ?>")
+    private String compData;
 }

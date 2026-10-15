@@ -1,5 +1,11 @@
 package fi.poltsi.vempain.admin.service;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
 import fi.poltsi.vempain.admin.api.ContentTypeEnum;
 import fi.poltsi.vempain.admin.api.PublishStatusEnum;
 import fi.poltsi.vempain.admin.api.request.FileProcessRequest;
@@ -11,118 +17,113 @@ import fi.poltsi.vempain.admin.entity.file.ScanQueueSchedule;
 import fi.poltsi.vempain.admin.repository.PublishScheduleRepository;
 import fi.poltsi.vempain.admin.repository.file.ScanQueueScheduleRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
 @RequiredArgsConstructor
 @Service
 public class ScheduleService {
-	private final ScanQueueScheduleRepository scanQueueScheduleRepository;
-	private final PublishScheduleRepository   publishScheduleRepository;
 
-	public void scheduleFileProcessRequest(FileProcessRequest fileProcessRequest, long userId) {
-		var creationInstant = Instant.now();
-		var scanQueueSchedule = ScanQueueSchedule.builder()
-		                                         .sourceDirectory(fileProcessRequest.getSourceDirectory())
-		                                         .destinationDirectory(fileProcessRequest.getDestinationDirectory())
-		                                         .createGallery(fileProcessRequest.isGenerateGallery())
-		                                         .galleryShortname(fileProcessRequest.getGalleryShortname())
-		                                         .galleryDescription(fileProcessRequest.getGalleryDescription())
-		                                         .createPage(fileProcessRequest.isGeneratePage())
-		                                         .pageTitle(fileProcessRequest.getPageTitle())
-		                                         .pagePath(fileProcessRequest.getPagePath())
-		                                         .pageBody(fileProcessRequest.getPageBody())
-		                                         .pageFormId(fileProcessRequest.getPageFormId())
-		                                         .createdBy(userId)
-		                                         .createdAt(creationInstant)
-		                                         .updatedAt(creationInstant)
-		                                         .build();
+    private final ScanQueueScheduleRepository scanQueueScheduleRepository;
+    private final PublishScheduleRepository publishScheduleRepository;
 
-		scanQueueScheduleRepository.save(scanQueueSchedule);
-	}
+    public void scheduleFileProcessRequest(FileProcessRequest fileProcessRequest, long userId) {
+        var creationInstant = Instant.now();
+        var scanQueueSchedule = ScanQueueSchedule.builder()
+            .sourceDirectory(fileProcessRequest.getSourceDirectory())
+            .destinationDirectory(fileProcessRequest.getDestinationDirectory())
+            .createGallery(fileProcessRequest.isGenerateGallery())
+            .galleryShortname(fileProcessRequest.getGalleryShortname())
+            .galleryDescription(fileProcessRequest.getGalleryDescription())
+            .createPage(fileProcessRequest.isGeneratePage())
+            .pageTitle(fileProcessRequest.getPageTitle())
+            .pagePath(fileProcessRequest.getPagePath())
+            .pageBody(fileProcessRequest.getPageBody())
+            .pageFormId(fileProcessRequest.getPageFormId())
+            .createdBy(userId)
+            .createdAt(creationInstant)
+            .updatedAt(creationInstant)
+            .build();
 
-	public List<FileImportScheduleResponse> getUpcomingFileImportSchedules() {
-		var fileImportSchedules = scanQueueScheduleRepository.findAll();
-		var fileImportScheduleResponses = new ArrayList<FileImportScheduleResponse>();
-		for (var fileImportSchedule : fileImportSchedules) {
-			fileImportScheduleResponses.add(fileImportSchedule.toResponse());
-		}
+        scanQueueScheduleRepository.save(scanQueueSchedule);
+    }
 
-		return fileImportScheduleResponses;
-	}
+    public List<FileImportScheduleResponse> getUpcomingFileImportSchedules() {
+        var fileImportSchedules = scanQueueScheduleRepository.findAll();
+        var fileImportScheduleResponses = new ArrayList<FileImportScheduleResponse>();
+        for (var fileImportSchedule : fileImportSchedules) {
+            fileImportScheduleResponses.add(fileImportSchedule.toResponse());
+        }
 
+        return fileImportScheduleResponses;
+    }
 
-	public FileImportScheduleResponse getFileImportScheduleById(long id) {
-		var optionalScanQueueSchedule = scanQueueScheduleRepository.findById(id);
+    public FileImportScheduleResponse getFileImportScheduleById(long id) {
+        var optionalScanQueueSchedule = scanQueueScheduleRepository.findById(id);
 
-		return optionalScanQueueSchedule.map(ScanQueueSchedule::toResponse)
-		                                .orElse(null);
-	}
+        return optionalScanQueueSchedule.map(ScanQueueSchedule::toResponse)
+            .orElse(null);
+    }
 
-	public PublishScheduleResponse schedulePublish(Instant publishTime, long itemId, ContentTypeEnum contentTypeEnum, String publishMessage) {
-		var creationInstant = Instant.now();
-		var publishStatus = PublishStatusEnum.NOT_PUBLISHED;
+    public PublishScheduleResponse schedulePublish(Instant publishTime, long itemId, ContentTypeEnum contentTypeEnum, String publishMessage) {
+        var creationInstant = Instant.now();
+        var publishStatus = PublishStatusEnum.NOT_PUBLISHED;
 
-		var scanQueueSchedule = PublishSchedule.builder()
-		                                       .publishId(itemId)
-		                                       .publishTime(publishTime)
-		                                       .publishType(contentTypeEnum)
-		                                       .publishMessage(publishMessage)
-		                                       .publishStatus(publishStatus)
-		                                       .createdAt(creationInstant)
-		                                       .updatedAt(creationInstant)
-		                                       .build();
+        var scanQueueSchedule = PublishSchedule.builder()
+            .publishId(itemId)
+            .publishTime(publishTime)
+            .publishType(contentTypeEnum)
+            .publishMessage(publishMessage)
+            .publishStatus(publishStatus)
+            .createdAt(creationInstant)
+            .updatedAt(creationInstant)
+            .build();
 
-		var newSchedule = publishScheduleRepository.save(scanQueueSchedule);
-		return newSchedule.toResponse();
-	}
+        var newSchedule = publishScheduleRepository.save(scanQueueSchedule);
+        return newSchedule.toResponse();
+    }
 
-	public List<PublishScheduleResponse> getUpcomingPublishSchedules() {
-		var publishScheduleResponses = new ArrayList<PublishScheduleResponse>();
+    public List<PublishScheduleResponse> getUpcomingPublishSchedules() {
+        var publishScheduleResponses = new ArrayList<PublishScheduleResponse>();
 
-		var notPublishedSchedules = publishScheduleRepository.findAllUpcomingSchedulesByPublishStatus(PublishStatusEnum.NOT_PUBLISHED);
+        var notPublishedSchedules = publishScheduleRepository.findAllUpcomingSchedulesByPublishStatus(PublishStatusEnum.NOT_PUBLISHED);
 
-		for (var notPublishedSchedule : notPublishedSchedules) {
-			publishScheduleResponses.add(notPublishedSchedule.toResponse());
-		}
+        for (var notPublishedSchedule : notPublishedSchedules) {
+            publishScheduleResponses.add(notPublishedSchedule.toResponse());
+        }
 
-		var processingSchedules = publishScheduleRepository.findAllUpcomingSchedulesByPublishStatus(PublishStatusEnum.PROCESSING);
+        var processingSchedules = publishScheduleRepository.findAllUpcomingSchedulesByPublishStatus(PublishStatusEnum.PROCESSING);
 
-		for (var processingSchedule : processingSchedules) {
-			publishScheduleResponses.add(processingSchedule.toResponse());
-		}
+        for (var processingSchedule : processingSchedules) {
+            publishScheduleResponses.add(processingSchedule.toResponse());
+        }
 
-		return publishScheduleResponses;
-	}
+        return publishScheduleResponses;
+    }
 
-	public PublishScheduleResponse getPublishScheduleById(long id) {
-		var publishSchedule = publishScheduleRepository.findById(id);
+    public PublishScheduleResponse getPublishScheduleById(long id) {
+        var publishSchedule = publishScheduleRepository.findById(id);
 
-		return publishSchedule.map(PublishSchedule::toResponse)
-		                      .orElse(null);
-	}
+        return publishSchedule.map(PublishSchedule::toResponse)
+            .orElse(null);
+    }
 
-	public PublishScheduleResponse triggerPublishSchedule(PublishScheduleRequest publishScheduleRequest) {
-		var publishSchedule = publishScheduleRepository.findById(publishScheduleRequest.getPublishId());
+    public PublishScheduleResponse triggerPublishSchedule(PublishScheduleRequest publishScheduleRequest) {
+        var publishSchedule = publishScheduleRepository.findById(publishScheduleRequest.getPublishId());
 
-		if (publishSchedule.isPresent()) {
-			var schedule = publishSchedule.get();
-			schedule.setPublishTime(publishScheduleRequest.getPublishTime());
+        if (publishSchedule.isPresent()) {
+            var schedule = publishSchedule.get();
+            schedule.setPublishTime(publishScheduleRequest.getPublishTime());
 
-			if (!publishScheduleRequest.getPublishTime()
-			                           .isAfter(Instant.now())) {
-				schedule.setPublishStatus(PublishStatusEnum.PROCESSING);
-			} else {
-				schedule.setPublishStatus(PublishStatusEnum.NOT_PUBLISHED);
-			}
+            if (!publishScheduleRequest.getPublishTime()
+                .isAfter(Instant.now())) {
+                schedule.setPublishStatus(PublishStatusEnum.PROCESSING);
+            } else {
+                schedule.setPublishStatus(PublishStatusEnum.NOT_PUBLISHED);
+            }
 
-			var newSchedule = publishScheduleRepository.save(schedule);
-			return newSchedule.toResponse();
-		}
+            var newSchedule = publishScheduleRepository.save(schedule);
+            return newSchedule.toResponse();
+        }
 
-		return null;
-	}
+        return null;
+    }
 }

@@ -1,5 +1,10 @@
 package fi.poltsi.vempain.admin.controller;
 
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RestController;
+
 import fi.poltsi.vempain.admin.api.request.DataRequest;
 import fi.poltsi.vempain.admin.api.response.DataResponse;
 import fi.poltsi.vempain.admin.api.response.DataSummaryResponse;
@@ -9,65 +14,62 @@ import fi.poltsi.vempain.admin.service.DataService;
 import fi.poltsi.vempain.common.api.response.TaskAcceptedResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
 @RestController
 public class DataController implements DataAPI {
-	private final DataService dataService;
-	private final AccessService accessService;
 
-	@Override
-	public ResponseEntity<List<DataSummaryResponse>> getAllDataSets(String type, String identifierPrefix, String search) {
-		accessService.checkAdminAccess();
-		log.debug("Received request to list all data sets with filters type='{}', identifierPrefix='{}', search='{}'", type, identifierPrefix, search);
-		var summaries = dataService.findAll(type, identifierPrefix, search);
-		return ResponseEntity.ok(summaries);
-	}
+    private final DataService dataService;
+    private final AccessService accessService;
 
-	@Override
-	public ResponseEntity<DataResponse> getDataSetByIdentifier(String identifier) {
-		accessService.checkAdminAccess();
-		log.debug("Received request to get data set with identifier '{}'", identifier);
-		var response = dataService.findByIdentifier(identifier);
-		return ResponseEntity.ok(response);
-	}
+    @Override
+    public ResponseEntity<List<DataSummaryResponse>> getAllDataSets(String type, String identifierPrefix, String search) {
+        accessService.checkAdminAccess();
+        log.debug("Received request to list all data sets with filters type='{}', identifierPrefix='{}', search='{}'", type, identifierPrefix, search);
+        var summaries = dataService.findAll(type, identifierPrefix, search);
+        return ResponseEntity.ok(summaries);
+    }
 
-	@Override
-	public ResponseEntity<DataResponse> createDataSet(DataRequest dataRequest) {
-		accessService.checkAdminAccess();
-		log.debug("Received request to create a new data set: {}", dataRequest != null ? dataRequest.getIdentifier() : null);
-		var response = dataService.create(dataRequest);
-		return ResponseEntity.ok(response);
-	}
+    @Override
+    public ResponseEntity<DataResponse> getDataSetByIdentifier(String identifier) {
+        accessService.checkAdminAccess();
+        log.debug("Received request to get data set with identifier '{}'", identifier);
+        var response = dataService.findByIdentifier(identifier);
+        return ResponseEntity.ok(response);
+    }
 
-	@Override
-	public ResponseEntity<DataResponse> updateDataSet(DataRequest dataRequest) {
-		accessService.checkAdminAccess();
-		log.debug("Received request to update data set: {}", dataRequest != null ? dataRequest.getIdentifier() : null);
-		var response = dataService.update(dataRequest);
-		return ResponseEntity.ok(response);
-	}
+    @Override
+    public ResponseEntity<DataResponse> createDataSet(DataRequest dataRequest) {
+        accessService.checkAdminAccess();
+        log.debug("Received request to create a new data set: {}", dataRequest != null ? dataRequest.getIdentifier() : null);
+        var response = dataService.create(dataRequest);
+        return ResponseEntity.ok(response);
+    }
 
-	@Override
-	public ResponseEntity<TaskAcceptedResponse> publishDataSet(String identifier) {
-		accessService.checkAdminAccess();
-		log.debug("Received request to publish data set with identifier '{}'", identifier);
-		var task = dataService.publishAsTask(identifier);
-		return ResponseEntity.accepted()
-							 .body(task);
-	}
+    @Override
+    public ResponseEntity<DataResponse> updateDataSet(DataRequest dataRequest) {
+        accessService.checkAdminAccess();
+        log.debug("Received request to update data set: {}", dataRequest != null ? dataRequest.getIdentifier() : null);
+        var response = dataService.update(dataRequest);
+        return ResponseEntity.ok(response);
+    }
 
-	@Override
-	public ResponseEntity<Void> deleteDataSet(String identifier) {
-		accessService.checkAdminAccess();
-		log.debug("Received request to delete data set with identifier '{}'", identifier);
-		dataService.delete(identifier);
-		return ResponseEntity.noContent()
-							 .build();
-	}
+    @Override
+    public ResponseEntity<TaskAcceptedResponse> publishDataSet(String identifier) {
+        accessService.checkAdminAccess();
+        log.debug("Received request to publish data set with identifier '{}'", identifier);
+        var task = dataService.publishAsTask(identifier);
+        return ResponseEntity.accepted()
+            .body(task);
+    }
+
+    @Override
+    public ResponseEntity<Void> deleteDataSet(String identifier) {
+        accessService.checkAdminAccess();
+        log.debug("Received request to delete data set with identifier '{}'", identifier);
+        dataService.delete(identifier);
+        return ResponseEntity.noContent()
+            .build();
+    }
 }

@@ -1,6 +1,9 @@
 package fi.poltsi.vempain.admin.api.response.file;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import fi.poltsi.vempain.admin.api.response.AbstractPageableResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -9,8 +12,6 @@ import lombok.experimental.SuperBuilder;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
 
-import java.util.List;
-
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 @Data
@@ -18,6 +19,7 @@ import java.util.List;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Schema(description = "Response containing pageable list of image files")
 public class PageableImageResponse extends AbstractPageableResponse {
-	@Schema(description = "List of file image responses", requiredMode = Schema.RequiredMode.REQUIRED)
-	private List<FileImageResponse> imageFiles;
+
+    @Schema(description = "List of file image responses", requiredMode = Schema.RequiredMode.REQUIRED)
+    private List<FileImageResponse> imageFiles;
 }

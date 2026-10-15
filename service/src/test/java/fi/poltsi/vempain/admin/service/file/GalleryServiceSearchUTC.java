@@ -1,12 +1,8 @@
 package fi.poltsi.vempain.admin.service.file;
 
-import fi.poltsi.vempain.admin.entity.file.Gallery;
-import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
-import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
-import fi.poltsi.vempain.admin.service.AccessService;
-import fi.poltsi.vempain.auth.api.request.PagedRequest;
-import fi.poltsi.vempain.auth.entity.Acl;
-import fi.poltsi.vempain.auth.service.AclService;
+import java.time.Instant;
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,8 +13,13 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
-import java.time.Instant;
-import java.util.List;
+import fi.poltsi.vempain.admin.entity.file.Gallery;
+import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
+import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
+import fi.poltsi.vempain.admin.service.AccessService;
+import fi.poltsi.vempain.auth.api.request.PagedRequest;
+import fi.poltsi.vempain.auth.entity.Acl;
+import fi.poltsi.vempain.auth.service.AclService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -28,59 +29,60 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class GalleryServiceSearchUTC {
-	@Mock
-	private GalleryRepository  galleryRepository;
-	@Mock
-	private SiteFileRepository siteFileRepository;
-	@Mock
-	private GalleryFileService galleryFileService;
-	@Mock
-	private AclService         aclService;
-	@Mock
-	private AccessService      accessService;
 
-	@InjectMocks
-	private GalleryService galleryService;
+    @Mock
+    private GalleryRepository galleryRepository;
+    @Mock
+    private SiteFileRepository siteFileRepository;
+    @Mock
+    private GalleryFileService galleryFileService;
+    @Mock
+    private AclService aclService;
+    @Mock
+    private AccessService accessService;
 
-	private Gallery sampleGallery;
+    @InjectMocks
+    private GalleryService galleryService;
 
-	@BeforeEach
-	void setUp() {
-		sampleGallery = Gallery.builder()
-							   .id(1L)
-							   .shortname("Test")
-							   .description("Gallery")
-							   .aclId(10L)
-							   .creator(1L)
-							   .created(Instant.now())
-							   .build();
-	}
+    private Gallery sampleGallery;
 
-	@Test
-	void searchGalleriesReturnsPage() {
-		when(galleryRepository.searchGalleries(eq("foo"), eq(false), any(PageRequest.class)))
-				.thenReturn(new PageImpl<>(List.of(sampleGallery), PageRequest.of(0, 25, Sort.by("id")), 1));
-		when(accessService.hasReadPermission(10L)).thenReturn(true);
-		when(aclService.findAclByAclId(10L)).thenReturn(List.of(Acl.builder()
-																   .aclId(10L)
-																   .build()));
+    @BeforeEach
+    void setUp() {
+        sampleGallery = Gallery.builder()
+            .id(1L)
+            .shortname("Test")
+            .description("Gallery")
+            .aclId(10L)
+            .creator(1L)
+            .created(Instant.now())
+            .build();
+    }
 
-		var resp = galleryService.findPagedByUser(request("foo", "id", false));
+    @Test
+    void searchGalleriesReturnsPage() {
+        when(galleryRepository.searchGalleries(eq("foo"), eq(false), any(PageRequest.class)))
+            .thenReturn(new PageImpl<>(List.of(sampleGallery), PageRequest.of(0, 25, Sort.by("id")), 1));
+        when(accessService.hasReadPermission(10L)).thenReturn(true);
+        when(aclService.findAclByAclId(10L)).thenReturn(List.of(Acl.builder()
+            .aclId(10L)
+            .build()));
 
-		assertNotNull(resp);
-		assertEquals(1, resp.getTotalElements());
-		assertEquals(1, resp.getContent()
-							.size());
-	}
+        var resp = galleryService.findPagedByUser(request("foo", "id", false));
 
-	private PagedRequest request(String search, String sortBy, boolean caseSensitive) {
-		var request = new PagedRequest();
-		request.setPage(0);
-		request.setSize(25);
-		request.setSearch(search);
-		request.setSortBy(sortBy);
-		request.setDirection(org.springframework.data.domain.Sort.Direction.ASC);
-		request.setCaseSensitive(caseSensitive);
-		return request;
-	}
+        assertNotNull(resp);
+        assertEquals(1, resp.getTotalElements());
+        assertEquals(1, resp.getContent()
+            .size());
+    }
+
+    private PagedRequest request(String search, String sortBy, boolean caseSensitive) {
+        var request = new PagedRequest();
+        request.setPage(0);
+        request.setSize(25);
+        request.setSearch(search);
+        request.setSortBy(sortBy);
+        request.setDirection(org.springframework.data.domain.Sort.Direction.ASC);
+        request.setCaseSensitive(caseSensitive);
+        return request;
+    }
 }

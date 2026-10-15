@@ -1,6 +1,5 @@
 package fi.poltsi.vempain;
 
-import fi.poltsi.vempain.auth.service.AclService;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +13,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
+import fi.poltsi.vempain.auth.service.AclService;
+
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest
@@ -21,26 +22,26 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 public class ContainerTestITC {
-	@Container
-	public static PostgreSQLContainer postgresqlContainer = new PostgreSQLContainer("postgres:18-alpine")
-			.withDatabaseName("vempain_admin")
-			.withUsername("test")
-			.withPassword("test");
-	@Autowired
-	protected     AclService          aclService;
-	@Autowired
-	@Qualifier("adminFlyway")
-	private Flyway adminFlyway;
 
-	@BeforeEach
-	public void resetDatabase() {
-		adminFlyway.clean();
-		adminFlyway.migrate();
-	}
+    @Container
+    public static PostgreSQLContainer postgresqlContainer = new PostgreSQLContainer("postgres:18-alpine").withDatabaseName("vempain_admin")
+        .withUsername("test")
+        .withPassword("test");
+    @Autowired
+    protected AclService aclService;
+    @Autowired
+    @Qualifier("adminFlyway")
+    private Flyway adminFlyway;
 
-	@Test
-	void testCase() {
-		var acls = aclService.findAll();
-		assertNotNull(acls);
-	}
+    @BeforeEach
+    public void resetDatabase() {
+        adminFlyway.clean();
+        adminFlyway.migrate();
+    }
+
+    @Test
+    void testCase() {
+        var acls = aclService.findAll();
+        assertNotNull(acls);
+    }
 }

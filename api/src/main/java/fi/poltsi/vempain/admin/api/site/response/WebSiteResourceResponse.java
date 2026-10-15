@@ -16,22 +16,22 @@ import tools.jackson.databind.annotation.JsonNaming;
 @NoArgsConstructor
 @AllArgsConstructor
 public class WebSiteResourceResponse {
-	@Schema(description = "Type of resource", example = "SITE_FILE")
-	WebSiteResourceEnum resourceType;
 
-	@Schema(description = "Identifier of the resource", example = "123")
-	Long resourceId;
+    @Schema(description = "Type of resource", example = "SITE_FILE")
+    WebSiteResourceEnum resourceType;
 
-	@Schema(description = "Primary display name", example = "Talvirenkaat-2014")
-	String name;
+    @Schema(description = "Identifier of the resource", example = "123")
+    Long resourceId;
 
-	@Schema(description = "Optional path or URL", example = "gallery/2025/08/Talvirenkaat-2014")
-	String path;
+    @Schema(description = "Primary display name", example = "Talvirenkaat-2014")
+    String name;
 
-	@Schema(description = "ACL identifier protecting the resource", example = "42")
-	Long aclId;
+    @Schema(description = "Optional path or URL", example = "gallery/2025/08/Talvirenkaat-2014")
+    String path;
 
-	@Schema(description = "Optional file type (short name)", example = "image")
-	String fileType;
+    @Schema(description = "ACL identifier protecting the resource", example = "42")
+    Long aclId;
+
+    @Schema(description = "Optional file type (short name)", example = "image")
+    String fileType;
 }
-

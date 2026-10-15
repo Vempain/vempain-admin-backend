@@ -1,98 +1,101 @@
 package fi.poltsi.vempain.tools;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import net.coobird.thumbnailator.Thumbnails;
+import java.awt.Dimension;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Iterator;
+
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import java.awt.*;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Iterator;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import net.coobird.thumbnailator.Thumbnails;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class ImageTools {
-	private static final String        RESPONSE_STATUS_EXCEPTION_MESSAGE = "Unknown error";
-	@Autowired
-	private              MetadataTools metadataTools;
 
-	public Dimension resizeImage(Path sourceFile, Path destinationFile, int imageMinimumSize, float quality) {
-		// Get the original dimensions of the source file in order to see whether it should be resized
-		var origDimensions = getImageDimensions(sourceFile);
-		var targetDimensions = new Dimension();
-		var imageFormat = destinationFile.toString()
-		                                 .substring(destinationFile.toString()
-		                                                           .lastIndexOf(".") + 1);
+    private static final String RESPONSE_STATUS_EXCEPTION_MESSAGE = "Unknown error";
+    @Autowired
+    private MetadataTools metadataTools;
 
-		// If the original image is smaller than the minimum size, just copy it
-		if (origDimensions.height < imageMinimumSize || origDimensions.width < imageMinimumSize) {
-			targetDimensions.setSize(origDimensions.width, origDimensions.height);
-		} else {
-			// Set the target dimensions so that the smaller dimension is equal to imageMinimumSize
-			if (origDimensions.height > origDimensions.width) {
-				targetDimensions.setSize(imageMinimumSize, (int) (origDimensions.height * ((double) imageMinimumSize / origDimensions.width)));
-			} else {
-				targetDimensions.setSize((int) (origDimensions.width * ((double) imageMinimumSize / origDimensions.height)), imageMinimumSize);
-			}
-		}
+    public Dimension resizeImage(Path sourceFile, Path destinationFile, int imageMinimumSize, float quality) {
+        // Get the original dimensions of the source file in order to see whether it should be resized
+        var origDimensions = getImageDimensions(sourceFile);
+        var targetDimensions = new Dimension();
+        var imageFormat = destinationFile.toString()
+            .substring(destinationFile.toString()
+                .lastIndexOf(".") + 1);
 
-		try {
-			Thumbnails
-					.of(sourceFile.toFile())
-					.size(targetDimensions.width, targetDimensions.height)
-					.outputFormat(imageFormat)
-					.outputQuality(quality)
-					.allowOverwrite(true)
-					.useExifOrientation(true)
-					.toFile(destinationFile.toFile());
+        // If the original image is smaller than the minimum size, just copy it
+        if (origDimensions.height < imageMinimumSize
+            || origDimensions.width < imageMinimumSize) {
+            targetDimensions.setSize(origDimensions.width, origDimensions.height);
+        } else {
+            // Set the target dimensions so that the smaller dimension is equal to imageMinimumSize
+            if (origDimensions.height > origDimensions.width) {
+                targetDimensions.setSize(imageMinimumSize, (int) (origDimensions.height * ((double) imageMinimumSize / origDimensions.width)));
+            } else {
+                targetDimensions.setSize((int) (origDimensions.width * ((double) imageMinimumSize / origDimensions.height)), imageMinimumSize);
+            }
+        }
 
-			metadataTools.copyMetadata(sourceFile.toFile(), destinationFile.toFile());
-		} catch (IOException e) {
-			log.error("Failed to copy/convert {} to {}", sourceFile, destinationFile, e);
-			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, RESPONSE_STATUS_EXCEPTION_MESSAGE);
-		}
+        try {
+            Thumbnails.of(sourceFile.toFile())
+                .size(targetDimensions.width, targetDimensions.height)
+                .outputFormat(imageFormat)
+                .outputQuality(quality)
+                .allowOverwrite(true)
+                .useExifOrientation(true)
+                .toFile(destinationFile.toFile());
 
-		return targetDimensions;
-	}
+            metadataTools.copyMetadata(sourceFile.toFile(), destinationFile.toFile());
+        } catch (IOException e) {
+            log.error("Failed to copy/convert {} to {}", sourceFile, destinationFile, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, RESPONSE_STATUS_EXCEPTION_MESSAGE);
+        }
 
-	public Dimension getImageDimensions(Path imageFile) {
-		if (!imageFile.toFile()
-		              .exists()) {
-			log.error("File does not exist: {}", imageFile);
-			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, RESPONSE_STATUS_EXCEPTION_MESSAGE);
-		}
+        return targetDimensions;
+    }
 
-		try (var in = ImageIO.createImageInputStream(imageFile.toFile())) {
-			if (in == null) {
-				log.error("Failed to create ImageInputStream from {}", imageFile);
-				throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, RESPONSE_STATUS_EXCEPTION_MESSAGE);
-			}
+    public Dimension getImageDimensions(Path imageFile) {
+        if (!imageFile.toFile()
+            .exists()) {
+            log.error("File does not exist: {}", imageFile);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, RESPONSE_STATUS_EXCEPTION_MESSAGE);
+        }
 
-			final Iterator<ImageReader> readers = ImageIO.getImageReaders(in);
+        try (var in = ImageIO.createImageInputStream(imageFile.toFile())) {
+            if (in == null) {
+                log.error("Failed to create ImageInputStream from {}", imageFile);
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, RESPONSE_STATUS_EXCEPTION_MESSAGE);
+            }
 
-			if (readers.hasNext()) {
-				ImageReader reader = readers.next();
+            final Iterator<ImageReader> readers = ImageIO.getImageReaders(in);
 
-				try {
-					reader.setInput(in);
-					return new Dimension(reader.getWidth(0), reader.getHeight(0));
-				} finally {
-					reader.dispose();
-				}
-			}
-		} catch (IOException e) {
-			log.error("Failed to read metadata from thumb file: {}", imageFile);
-			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, RESPONSE_STATUS_EXCEPTION_MESSAGE);
-		}
+            if (readers.hasNext()) {
+                ImageReader reader = readers.next();
 
-		log.error("Unknown error to read metadata from thumb file: {}", imageFile);
-		throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, RESPONSE_STATUS_EXCEPTION_MESSAGE);
-	}
+                try {
+                    reader.setInput(in);
+                    return new Dimension(reader.getWidth(0), reader.getHeight(0));
+                } finally {
+                    reader.dispose();
+                }
+            }
+        } catch (IOException e) {
+            log.error("Failed to read metadata from thumb file: {}", imageFile);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, RESPONSE_STATUS_EXCEPTION_MESSAGE);
+        }
+
+        log.error("Unknown error to read metadata from thumb file: {}", imageFile);
+        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, RESPONSE_STATUS_EXCEPTION_MESSAGE);
+    }
 }

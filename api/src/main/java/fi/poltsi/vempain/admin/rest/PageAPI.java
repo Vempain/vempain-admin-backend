@@ -1,5 +1,21 @@
 package fi.poltsi.vempain.admin.rest;
 
+import java.time.Instant;
+import java.util.List;
+
+import jakarta.validation.Valid;
+
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+
 import fi.poltsi.vempain.admin.api.Constants;
 import fi.poltsi.vempain.admin.api.request.PagePagedRequest;
 import fi.poltsi.vempain.admin.api.request.PageRequest;
@@ -18,174 +34,153 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-
-import java.time.Instant;
-import java.util.List;
 
 // TODO add validation annotation here
 @Tag(name = "PageAPI", description = "Page API for Vempain page objects")
 public interface PageAPI {
-	String MAIN_PATH = Constants.REST_CONTENT_PREFIX + "/pages";
 
-	@Operation(summary = "Fetch a page of pages", description = "Returns a paged list of pages", tags = "PageAPI")
-	@ApiResponses(value = {@ApiResponse(responseCode = "200",
-	                                    description = "Got page of pages",
-	                                    content = @Content(schema = @Schema(implementation = PagedResponse.class),
-	                                                       mediaType = MediaType.APPLICATION_JSON_VALUE)),
-	                       @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
-	                       @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
-	                       @ApiResponse(responseCode = "404", description = "No pages found", content = @Content),
-	                       @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
-	@SecurityRequirement(name = "Bearer Authentication")
-	@PostMapping(value = MAIN_PATH + "/paged", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<PagedResponse<PageResponse>> getPages(@Valid @RequestBody PagePagedRequest request);
+    String MAIN_PATH = Constants.REST_CONTENT_PREFIX + "/pages";
 
-	@Operation(summary = "Fetch list of all pages using a particular form", description = "Returns a list of pages", tags = "PageAPI")
-	@ApiResponses(value = {@ApiResponse(responseCode = "200",
-	                                    description = "Got list of pages",
-	                                    content = {@Content(array = @ArraySchema(schema = @Schema(implementation = PageResponse.class)),
-	                                                        mediaType = MediaType.APPLICATION_JSON_VALUE)}),
-	                       @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
-	                       @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
-	                       @ApiResponse(responseCode = "404", description = "No pages found", content = @Content),
-	                       @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
-	@SecurityRequirement(name = "Bearer Authentication")
-	@GetMapping(value = MAIN_PATH + "/by-form/{form_id}", produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<List<PageResponse>> getPagesByFormId(@PathVariable(name = "form_id") long formId);
+    @Operation(summary = "Fetch a page of pages", description = "Returns a paged list of pages", tags = "PageAPI")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Got page of pages",
+                content = @Content(schema = @Schema(implementation = PagedResponse.class), mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
+        @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+        @ApiResponse(responseCode = "404", description = "No pages found", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content) })
+    @SecurityRequirement(name = "Bearer Authentication")
+    @PostMapping(value = MAIN_PATH + "/paged", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<PagedResponse<PageResponse>> getPages(@Valid @RequestBody PagePagedRequest request);
 
-	@Operation(summary = "Fetch a specific page", description = "Return the requested page", tags = "PageAPI")
-	@Parameter(name = "page_id", example = "123", description = "ID of the page to be retrieved", required = true)
-	@ApiResponses(value = {@ApiResponse(responseCode = "200",
-	                                    description = "Page found and returned",
-	                                    content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-	                                                        schema = @Schema(implementation = PageResponse.class))}),
-	                       @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
-	                       @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
-	                       @ApiResponse(responseCode = "404", description = "No page found", content = @Content),
-	                       @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
-	@SecurityRequirement(name = "Bearer Authentication")
-	@GetMapping(value = MAIN_PATH + "/{page_id}", produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<PageResponse> getPageById(@PathVariable(name = "page_id") long pageId);
+    @Operation(summary = "Fetch list of all pages using a particular form", description = "Returns a list of pages", tags = "PageAPI")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Got list of pages",
+                content = {
+                    @Content(array = @ArraySchema(schema = @Schema(implementation = PageResponse.class)), mediaType = MediaType.APPLICATION_JSON_VALUE) }),
+        @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
+        @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+        @ApiResponse(responseCode = "404", description = "No pages found", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content) })
+    @SecurityRequirement(name = "Bearer Authentication")
+    @GetMapping(value = MAIN_PATH + "/by-form/{form_id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<List<PageResponse>> getPagesByFormId(@PathVariable(name = "form_id") long formId);
 
-	@Operation(summary = "Suggest a page path",
-			   description = "Auto-completion for the page path field. Looks up the pages the caller may read whose path starts with the typed "
-							 + "prefix, drops the last part of every matching path (paths are unique, so a full path is never a useful "
-							 + "suggestion) and returns the part those parent paths have in common: for pages some/path/to/page and "
-							 + "some/path/also/page the prefix \"so\" yields some/path, a single match some/path/to/page yields some/path/to.",
-			   tags = "PageAPI")
-	@Parameter(name = "prefix", example = "so", description = "Text typed so far", required = true)
-	@ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Suggestion computed (suggestion is null when nothing matches)",
-										content = @Content(schema = @Schema(implementation = PagePathSuggestionResponse.class),
-														   mediaType = MediaType.APPLICATION_JSON_VALUE)),
-						   @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
-						   @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
-	@SecurityRequirement(name = "Bearer Authentication")
-	@GetMapping(value = MAIN_PATH + "/path-suggestion", produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<PagePathSuggestionResponse> suggestPagePath(@RequestParam(name = "prefix", required = false) String prefix);
+    @Operation(summary = "Fetch a specific page", description = "Return the requested page", tags = "PageAPI")
+    @Parameter(name = "page_id", example = "123", description = "ID of the page to be retrieved", required = true)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Page found and returned",
+                content = { @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PageResponse.class)) }),
+        @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
+        @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+        @ApiResponse(responseCode = "404", description = "No page found", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content) })
+    @SecurityRequirement(name = "Bearer Authentication")
+    @GetMapping(value = MAIN_PATH + "/{page_id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<PageResponse> getPageById(@PathVariable(name = "page_id") long pageId);
 
-	@Operation(summary = "Add a new page", description = "Inserts a new page", tags = "PageAPI")
-	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Page to be added, the title or header can not be empty nor null",
-	                                                      required = true)
-	@ApiResponses(value = {@ApiResponse(responseCode = "200",
-	                                    description = "Page created",
-	                                    content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-	                                                        schema = @Schema(implementation = PageResponse.class))}),
-	                       @ApiResponse(responseCode = "400", description = "Page with same name already exists", content = @Content),
-	                       @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
-	                       @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
-	@SecurityRequirement(name = "Bearer Authentication")
-	@PostMapping(value = MAIN_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<PageResponse> addPage(@Valid @RequestBody PageRequest pageRequest);
+    @Operation(summary = "Suggest a page path",
+            description = "Auto-completion for the page path field. Looks up the pages the caller may read whose path starts with the typed "
+                    + "prefix, drops the last part of every matching path (paths are unique, so a full path is never a useful "
+                    + "suggestion) and returns the part those parent paths have in common: for pages some/path/to/page and "
+                    + "some/path/also/page the prefix \"so\" yields some/path, a single match some/path/to/page yields some/path/to.",
+            tags = "PageAPI")
+    @Parameter(name = "prefix", example = "so", description = "Text typed so far", required = true)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Suggestion computed (suggestion is null when nothing matches)",
+                content = @Content(schema = @Schema(implementation = PagePathSuggestionResponse.class), mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content) })
+    @SecurityRequirement(name = "Bearer Authentication")
+    @GetMapping(value = MAIN_PATH + "/path-suggestion", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<PagePathSuggestionResponse> suggestPagePath(@RequestParam(name = "prefix", required = false) String prefix);
 
-	@Operation(summary = "Update an existing page", description = "Update an existing page except if the page path, title or header is " +
-	                                                              "empty or null", tags = "PageAPI")
-	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Page to be updated, can not have an empty path, title or header",
-	                                                      required = true)
-	@ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Page updated",
-	                                    content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-	                                                        schema = @Schema(implementation = PageResponse.class))}),
-	                       @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
-	                       @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
-	                       @ApiResponse(responseCode = "404", description = "Page did not exist", content = @Content),
-	                       @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
-	@SecurityRequirement(name = "Bearer Authentication")
-	@PutMapping(value = MAIN_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<PageResponse> updatePage(@Valid @RequestBody PageRequest pageRequest);
+    @Operation(summary = "Add a new page", description = "Inserts a new page", tags = "PageAPI")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Page to be added, the title or header can not be empty nor null", required = true)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Page created",
+                content = { @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PageResponse.class)) }),
+        @ApiResponse(responseCode = "400", description = "Page with same name already exists", content = @Content),
+        @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content) })
+    @SecurityRequirement(name = "Bearer Authentication")
+    @PostMapping(value = MAIN_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<PageResponse> addPage(@Valid @RequestBody PageRequest pageRequest);
 
-	@Operation(summary = "Remove a page by ID", description = "Remove the page given by the ID", tags = "PageAPI")
-	@Parameter(name = "page_id", example = "123", description = "ID of the page to be deleted, can not be empty", required = true)
-	@ApiResponses(value = {@ApiResponse(responseCode = "200",
-	                                    description = "Page removed",
-	                                    content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-	                                                        schema = @Schema(implementation = DeleteResponse.class))}),
-	                       @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
-	                       @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
-	                       @ApiResponse(responseCode = "404", description = "No page with the given id found", content = @Content),
-	                       @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
-	@SecurityRequirement(name = "Bearer Authentication")
-	@DeleteMapping(value = MAIN_PATH + "/{page_id}")
-	ResponseEntity<DeleteResponse> deletePage(@PathVariable(name = "page_id") long pageId);
+    @Operation(summary = "Update an existing page", description = "Update an existing page except if the page path, title or header is " + "empty or null",
+            tags = "PageAPI")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Page to be updated, can not have an empty path, title or header", required = true)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Page updated",
+                content = { @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PageResponse.class)) }),
+        @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
+        @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+        @ApiResponse(responseCode = "404", description = "Page did not exist", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content) })
+    @SecurityRequirement(name = "Bearer Authentication")
+    @PutMapping(value = MAIN_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<PageResponse> updatePage(@Valid @RequestBody PageRequest pageRequest);
 
-	// /////////////////////////// Publishing actions
-	@Operation(summary = "Publish all pages", description = "Publish a new version of all pages", tags = "PageAPI")
-	@Parameter(name = "publish_date", description = "Date when the all the pages should be published, in YYYY-MM-DDTHH:mm:ss format",
-	           example = "2027-12-31T23:59:59")
-	@ApiResponses(value = {@ApiResponse(responseCode = "202",
-										description = "Publishing started as a background task carried in the response; 200 when the pages were scheduled instead",
-										content = {@Content(schema = @Schema(implementation = PublishResponse.class),
-															mediaType = MediaType.APPLICATION_JSON_VALUE)}),
-						   @ApiResponse(responseCode = "200",
-	                                    description = "All pages published",
-	                                    content = {@Content(array = @ArraySchema(schema = @Schema(implementation = PublishResponse.class)),
-	                                                        mediaType = MediaType.APPLICATION_JSON_VALUE)}),
-	                       @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
-	                       @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
-	                       @ApiResponse(responseCode = "404", description = "No pages found", content = @Content),
-	                       @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
-	@SecurityRequirement(name = "Bearer Authentication")
-	@GetMapping(value = MAIN_PATH + "/publish", produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<PublishResponse> publishAll(@RequestParam(name = "publish_date", required = false) Instant publishDate);
+    @Operation(summary = "Remove a page by ID", description = "Remove the page given by the ID", tags = "PageAPI")
+    @Parameter(name = "page_id", example = "123", description = "ID of the page to be deleted, can not be empty", required = true)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Page removed",
+                content = { @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = DeleteResponse.class)) }),
+        @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
+        @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+        @ApiResponse(responseCode = "404", description = "No page with the given id found", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content) })
+    @SecurityRequirement(name = "Bearer Authentication")
+    @DeleteMapping(value = MAIN_PATH + "/{page_id}")
+    ResponseEntity<DeleteResponse> deletePage(@PathVariable(name = "page_id") long pageId);
 
-	@Operation(summary = "Publish page", description = "Publish a new version of a page", tags = "PageAPI")
-	@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Publish request with page ID and optional delay in seconds", required = true)
-	@ApiResponses(value = {@ApiResponse(responseCode = "202",
-										description = "Publishing started as a background task carried in the response; 200 when the page was scheduled instead",
-										content = {@Content(schema = @Schema(implementation = PublishResponse.class),
-															mediaType = MediaType.APPLICATION_JSON_VALUE)}),
-						   @ApiResponse(responseCode = "200",
-	                                    description = "Page published, or will be published",
-	                                    content = {@Content(array = @ArraySchema(schema = @Schema(implementation = PublishResponse.class)),
-	                                                        mediaType = MediaType.APPLICATION_JSON_VALUE)}),
-	                       @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
-	                       @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
-	                       @ApiResponse(responseCode = "404", description = "No page found", content = @Content),
-	                       @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
-	@SecurityRequirement(name = "Bearer Authentication")
-	@PatchMapping(value = MAIN_PATH + "/publish", produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<PublishResponse> publishPage(@Valid @RequestBody PublishRequest publishRequest);
+    // /////////////////////////// Publishing actions
+    @Operation(summary = "Publish all pages", description = "Publish a new version of all pages", tags = "PageAPI")
+    @Parameter(name = "publish_date", description = "Date when the all the pages should be published, in YYYY-MM-DDTHH:mm:ss format",
+            example = "2027-12-31T23:59:59")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "202",
+                description = "Publishing started as a background task carried in the response; 200 when the pages were scheduled instead",
+                content = { @Content(schema = @Schema(implementation = PublishResponse.class), mediaType = MediaType.APPLICATION_JSON_VALUE) }),
+        @ApiResponse(responseCode = "200", description = "All pages published",
+                content = {
+                    @Content(array = @ArraySchema(schema = @Schema(implementation = PublishResponse.class)), mediaType = MediaType.APPLICATION_JSON_VALUE) }),
+        @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
+        @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+        @ApiResponse(responseCode = "404", description = "No pages found", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content) })
+    @SecurityRequirement(name = "Bearer Authentication")
+    @GetMapping(value = MAIN_PATH + "/publish", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<PublishResponse> publishAll(@RequestParam(name = "publish_date", required = false) Instant publishDate);
 
-	@Operation(summary = "Delete", description = "Delete the page from site", tags = "PageAPI")
-	@Parameter(name = "page_id", description = "Page ID", required = true)
-	@ApiResponses(value = {@ApiResponse(responseCode = "200",
-	                                    description = "Page deleted",
-	                                    content = {@Content(array = @ArraySchema(schema = @Schema(implementation = PublishResponse.class)),
-	                                                        mediaType = MediaType.APPLICATION_JSON_VALUE)}),
-	                       @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
-	                       @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
-	                       @ApiResponse(responseCode = "404", description = "No page found", content = @Content),
-	                       @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
-	@SecurityRequirement(name = "Bearer Authentication")
-	@DeleteMapping(value = MAIN_PATH + "/publish/{page_id}", produces = MediaType.APPLICATION_JSON_VALUE)
-	ResponseEntity<PublishResponse> deletePublishedPage(@PathVariable(name = "page_id") long pageId);
+    @Operation(summary = "Publish page", description = "Publish a new version of a page", tags = "PageAPI")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Publish request with page ID and optional delay in seconds", required = true)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "202",
+                description = "Publishing started as a background task carried in the response; 200 when the page was scheduled instead",
+                content = { @Content(schema = @Schema(implementation = PublishResponse.class), mediaType = MediaType.APPLICATION_JSON_VALUE) }),
+        @ApiResponse(responseCode = "200", description = "Page published, or will be published",
+                content = {
+                    @Content(array = @ArraySchema(schema = @Schema(implementation = PublishResponse.class)), mediaType = MediaType.APPLICATION_JSON_VALUE) }),
+        @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
+        @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+        @ApiResponse(responseCode = "404", description = "No page found", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content) })
+    @SecurityRequirement(name = "Bearer Authentication")
+    @PatchMapping(value = MAIN_PATH + "/publish", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<PublishResponse> publishPage(@Valid @RequestBody PublishRequest publishRequest);
+
+    @Operation(summary = "Delete", description = "Delete the page from site", tags = "PageAPI")
+    @Parameter(name = "page_id", description = "Page ID", required = true)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Page deleted",
+                content = {
+                    @Content(array = @ArraySchema(schema = @Schema(implementation = PublishResponse.class)), mediaType = MediaType.APPLICATION_JSON_VALUE) }),
+        @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
+        @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+        @ApiResponse(responseCode = "404", description = "No page found", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content) })
+    @SecurityRequirement(name = "Bearer Authentication")
+    @DeleteMapping(value = MAIN_PATH + "/publish/{page_id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<PublishResponse> deletePublishedPage(@PathVariable(name = "page_id") long pageId);
 }

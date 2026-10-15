@@ -16,15 +16,15 @@ import tools.jackson.databind.annotation.JsonNaming;
 @Schema(description = "Web site configuration response")
 public class WebSiteConfigurationResponse extends WebSiteConfigurationRequest {
 
-	@Schema(description = "Configuration key", example = "site.title")
-	String configKey;
+    @Schema(description = "Configuration key", example = "site.title")
+    String configKey;
 
-	@Schema(description = "Type of the configuration", example = "STRING")
-	WebSiteConfigurationTypeEnum configType;
+    @Schema(description = "Type of the configuration", example = "STRING")
+    WebSiteConfigurationTypeEnum configType;
 
-	@Schema(description = "Default value of the configuration", example = "My Vempain Site")
-	String configDefault;
+    @Schema(description = "Default value of the configuration", example = "My Vempain Site")
+    String configDefault;
 
-	@Schema(description = "Current value of the configuration", example = "Holiday Photos Site")
-	String configValue;
+    @Schema(description = "Current value of the configuration", example = "Holiday Photos Site")
+    String configValue;
 }

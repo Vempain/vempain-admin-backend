@@ -1,12 +1,13 @@
 package fi.poltsi.vempain.admin.repository;
 
+import java.util.Optional;
+import java.util.stream.StreamSupport;
+
+import org.junit.jupiter.api.Test;
+
 import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.entity.Layout;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Test;
-
-import java.util.Optional;
-import java.util.stream.StreamSupport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -15,70 +16,71 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
 class LayoutRepositoryITC extends AbstractITCTest {
-	private final long initCount = 10;
 
-	@Test
-	void findAll() {
-		testITCTools.generateLayouts(initCount);
-		Iterable<Layout> layouts = layoutRepository.findAll();
-		assertNotNull(layouts);
-		assertEquals(initCount, StreamSupport.stream(layouts.spliterator(), false)
-											 .count());
+    private final long initCount = 10;
 
-		for (Layout layout : layouts) {
-			assertLayout(layout);
-		}
-	}
+    @Test
+    void findAll() {
+        testITCTools.generateLayouts(initCount);
+        Iterable<Layout> layouts = layoutRepository.findAll();
+        assertNotNull(layouts);
+        assertEquals(initCount, StreamSupport.stream(layouts.spliterator(), false)
+            .count());
 
-	@Test
-	void findById() {
-		var layoutIds = testITCTools.generateLayouts(initCount);
-		Optional<Layout> optionalLayout = layoutRepository.findById(layoutIds.getFirst());
-		assertTrue(optionalLayout.isPresent());
-		assertLayout(optionalLayout.get());
-	}
+        for (Layout layout : layouts) {
+            assertLayout(layout);
+        }
+    }
 
-	@Test
-	void findByLayoutName() {
-		var layoutIds = testITCTools.generateLayouts(initCount);
-		var layout = layoutRepository.findById(layoutIds.getFirst());
-		assertTrue(layout.isPresent());
-		var layoutName = layout.get()
-							   .getLayoutName();
-		Optional<Layout> optionalLayout = layoutRepository.findByLayoutName(layoutName);
-		assertTrue(optionalLayout.isPresent());
-		assertLayout(optionalLayout.get());
-	}
+    @Test
+    void findById() {
+        var layoutIds = testITCTools.generateLayouts(initCount);
+        Optional<Layout> optionalLayout = layoutRepository.findById(layoutIds.getFirst());
+        assertTrue(optionalLayout.isPresent());
+        assertLayout(optionalLayout.get());
+    }
 
-	@Test
-	void deleteLayoutById() {
-		var layoutIds = testITCTools.generateLayouts(initCount);
-		var layout = layoutRepository.findById(layoutIds.getFirst());
-		assertTrue(layout.isPresent());
-		var layoutName = layout.get()
-							   .getLayoutName();
-		Optional<Layout> optionalLayout = layoutRepository.findByLayoutName(layoutName);
-		assertTrue(optionalLayout.isPresent());
-		layoutRepository.deleteById(optionalLayout.get()
-												  .getId());
-		Optional<Layout> optionalLayout1 = layoutRepository.findByLayoutName(layoutName);
-		assertTrue(optionalLayout1.isEmpty());
-	}
+    @Test
+    void findByLayoutName() {
+        var layoutIds = testITCTools.generateLayouts(initCount);
+        var layout = layoutRepository.findById(layoutIds.getFirst());
+        assertTrue(layout.isPresent());
+        var layoutName = layout.get()
+            .getLayoutName();
+        Optional<Layout> optionalLayout = layoutRepository.findByLayoutName(layoutName);
+        assertTrue(optionalLayout.isPresent());
+        assertLayout(optionalLayout.get());
+    }
 
-	private void assertLayout(Layout layout) {
-		assertNotNull(layout);
-		assertNotNull(layout.getCreator());
-		assertNotNull(layout.getCreated());
+    @Test
+    void deleteLayoutById() {
+        var layoutIds = testITCTools.generateLayouts(initCount);
+        var layout = layoutRepository.findById(layoutIds.getFirst());
+        assertTrue(layout.isPresent());
+        var layoutName = layout.get()
+            .getLayoutName();
+        Optional<Layout> optionalLayout = layoutRepository.findByLayoutName(layoutName);
+        assertTrue(optionalLayout.isPresent());
+        layoutRepository.deleteById(optionalLayout.get()
+            .getId());
+        Optional<Layout> optionalLayout1 = layoutRepository.findByLayoutName(layoutName);
+        assertTrue(optionalLayout1.isEmpty());
+    }
 
-		if (layout.getModifier() != null) {
-			assertNull(layout.getModified());
-			assertTrue(layout.getCreated()
-							 .isBefore(layout.getModified()));
-		}
+    private void assertLayout(Layout layout) {
+        assertNotNull(layout);
+        assertNotNull(layout.getCreator());
+        assertNotNull(layout.getCreated());
 
-		assertTrue(layout.getId() > 0);
-		assertTrue(layout.getLayoutName()
-						 .contains("Test layout "));
-		assertEquals("<!--comp_0--><!--comp_1--><!--page--><!--comp_2-->", layout.getStructure());
-	}
+        if (layout.getModifier() != null) {
+            assertNull(layout.getModified());
+            assertTrue(layout.getCreated()
+                .isBefore(layout.getModified()));
+        }
+
+        assertTrue(layout.getId() > 0);
+        assertTrue(layout.getLayoutName()
+            .contains("Test layout "));
+        assertEquals("<!--comp_0--><!--comp_1--><!--page--><!--comp_2-->", layout.getStructure());
+    }
 }

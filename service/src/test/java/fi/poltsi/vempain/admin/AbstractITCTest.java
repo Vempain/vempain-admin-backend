@@ -1,5 +1,30 @@
 package fi.poltsi.vempain.admin;
 
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.StreamSupport;
+
+import jakarta.persistence.EntityManager;
+
+import org.flywaydb.core.Flyway;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.transaction.annotation.Transactional;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.postgresql.PostgreSQLContainer;
+
 import fi.poltsi.vempain.admin.repository.ComponentRepository;
 import fi.poltsi.vempain.admin.repository.FormRepository;
 import fi.poltsi.vempain.admin.repository.LayoutRepository;
@@ -24,30 +49,7 @@ import fi.poltsi.vempain.auth.service.UserDetailsImpl;
 import fi.poltsi.vempain.auth.service.UserService;
 import fi.poltsi.vempain.site.repository.WebSitePageRepository;
 import fi.poltsi.vempain.tools.JschClient;
-import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
-import org.flywaydb.core.Flyway;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
-
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.StreamSupport;
 
 import static fi.poltsi.vempain.admin.api.Constants.ADMIN_ID;
 import static fi.poltsi.vempain.tools.LocalFileTools.createAndVerifyDirectory;
@@ -62,124 +64,122 @@ import static fi.poltsi.vempain.tools.LocalFileTools.removeDirectory;
 @ExtendWith(MockitoExtension.class)
 public abstract class AbstractITCTest {
 
-	@Container
-	public static PostgreSQLContainer vempainAdminContainer = new PostgreSQLContainer("postgres:18-alpine")
-			.withDatabaseName("vempain_admin")
-			.withUsername("test")
-			.withPassword("test");
+    @Container
+    public static PostgreSQLContainer vempainAdminContainer = new PostgreSQLContainer("postgres:18-alpine").withDatabaseName("vempain_admin")
+        .withUsername("test")
+        .withPassword("test");
 
-	@Container
-	public static PostgreSQLContainer vempainSiteContainer = new PostgreSQLContainer("postgres:18-alpine")
-			.withDatabaseName("vempain_site")
-			.withUsername("test")
-			.withPassword("test");
-	@Autowired
-	protected     TestITCTools                testITCTools;
-	// Services
-	@Autowired
-	protected     AclService                  aclService;
-	@Autowired
-	protected     FormService                 formService;
-	@Autowired
-	protected     ComponentService            componentService;
-	@Autowired
-	protected     LayoutService               layoutService;
-	@Autowired
-	protected     FileService                 fileService;
-	@Autowired
-	protected     PageService                 pageService;
-	@Autowired
-	protected     FormComponentService        formComponentService;
-	@Autowired
-	protected     UnitService                 unitService;
-	@Autowired
-	protected     UserService                 userService;
-	@Autowired
-	protected     PublishService              publishService;
-	// Repositories
-	@Autowired
-	protected     AclRepository               aclRepository;
-	@Autowired
-	protected     FormRepository              formRepository;
-	@Autowired
-	protected     ComponentRepository         componentRepository;
-	@Autowired
-	protected     LayoutRepository            layoutRepository;
-	@Autowired
-	protected     SiteFileRepository          siteFileRepository;
-	@Autowired
-	protected     FileThumbPageableRepository fileThumbPageableRepository;
-	@Autowired
-	protected     PageRepository              pageRepository;
-	@Autowired
-	protected     UnitRepository              unitRepository;
-	@Autowired
-	protected     UserAccountRepository       userAccountRepository;
-	@Autowired
-	protected     GalleryRepository           galleryRepository;
-	@Autowired
-	protected WebSitePageRepository webSitePageRepository;
-	@Autowired
-	protected     JschClient                  jschClient;
-	@Autowired
-	@Qualifier("adminFlyway")
-	private       Flyway                      adminFlyway;
-	@Autowired
-	@Qualifier("siteFlyway")
-	private       Flyway                      siteFlyway;
-	@Autowired
-	private       EntityManager               entityManager;
-	@Value("${vempain.site.www-root}")
-	private       String                      siteWwwRoot;
-	@Value("${vempain.site.ssh.home-dir}")
-	private       String                      siteSshHomeDir;
+    @Container
+    public static PostgreSQLContainer vempainSiteContainer = new PostgreSQLContainer("postgres:18-alpine").withDatabaseName("vempain_site")
+        .withUsername("test")
+        .withPassword("test");
+    @Autowired
+    protected TestITCTools testITCTools;
+    // Services
+    @Autowired
+    protected AclService aclService;
+    @Autowired
+    protected FormService formService;
+    @Autowired
+    protected ComponentService componentService;
+    @Autowired
+    protected LayoutService layoutService;
+    @Autowired
+    protected FileService fileService;
+    @Autowired
+    protected PageService pageService;
+    @Autowired
+    protected FormComponentService formComponentService;
+    @Autowired
+    protected UnitService unitService;
+    @Autowired
+    protected UserService userService;
+    @Autowired
+    protected PublishService publishService;
+    // Repositories
+    @Autowired
+    protected AclRepository aclRepository;
+    @Autowired
+    protected FormRepository formRepository;
+    @Autowired
+    protected ComponentRepository componentRepository;
+    @Autowired
+    protected LayoutRepository layoutRepository;
+    @Autowired
+    protected SiteFileRepository siteFileRepository;
+    @Autowired
+    protected FileThumbPageableRepository fileThumbPageableRepository;
+    @Autowired
+    protected PageRepository pageRepository;
+    @Autowired
+    protected UnitRepository unitRepository;
+    @Autowired
+    protected UserAccountRepository userAccountRepository;
+    @Autowired
+    protected GalleryRepository galleryRepository;
+    @Autowired
+    protected WebSitePageRepository webSitePageRepository;
+    @Autowired
+    protected JschClient jschClient;
+    @Autowired
+    @Qualifier("adminFlyway")
+    private Flyway adminFlyway;
+    @Autowired
+    @Qualifier("siteFlyway")
+    private Flyway siteFlyway;
+    @Autowired
+    private EntityManager entityManager;
+    @Value("${vempain.site.www-root}")
+    private String siteWwwRoot;
+    @Value("${vempain.site.ssh.home-dir}")
+    private String siteSshHomeDir;
 
-	private static <T> boolean hasItems(Iterable<T> iterable) {
-		return StreamSupport.stream(iterable.spliterator(), false)
-							.findAny()
-							.isPresent();
-	}
+    private static <T> boolean hasItems(Iterable<T> iterable) {
+        return StreamSupport.stream(iterable.spliterator(), false)
+            .findAny()
+            .isPresent();
+    }
 
-	@Transactional
-	@BeforeEach
-	void setUp() {
-		adminFlyway.clean();
-		adminFlyway.migrate();
+    @Transactional
+    @BeforeEach
+    void setUp() {
+        adminFlyway.clean();
+        adminFlyway.migrate();
 
-		siteFlyway.clean();
-		siteFlyway.migrate();
+        siteFlyway.clean();
+        siteFlyway.migrate();
 
-		// Every ITC runs as the Flyway-seeded administrator (user_account id 1). There is no test-mode bypass in AccessService:
-		// permissions are evaluated against real ACL rows, and TestITCTools grants the administrator the same privileges it grants the
-		// generated owner of each entity. Use authenticateAs(...) to run as another user, e.g. for negative tests.
-		authenticateAs(ADMIN_ID);
+        // Every ITC runs as the Flyway-seeded administrator (user_account id 1). There is no test-mode bypass in AccessService:
+        // permissions are evaluated against real ACL rows, and TestITCTools grants the administrator the same privileges it grants the
+        // generated owner of each entity. Use authenticateAs(...) to run as another user, e.g. for negative tests.
+        authenticateAs(ADMIN_ID);
 
-		// Files and paths
-		log.info("=============================================================");
-		log.info("Cleaning up directories");
-		removeDirectory("/var/tmp/vempain-converted");
-		createAndVerifyDirectory(Path.of("/var/tmp/vempain-converted"));
-		log.info("Site WWW-root is: {}", siteWwwRoot);
-		log.info("Site SSH home directory is: {}", siteSshHomeDir);
-		removeDirectory("/var/tmp/vempain-www");
-		createAndVerifyDirectory(Path.of("/var/tmp/vempain-www"));
-		log.info("=============================================================");
-	}
+        // Files and paths
+        log.info("=============================================================");
+        log.info("Cleaning up directories");
+        removeDirectory("/var/tmp/vempain-converted");
+        createAndVerifyDirectory(Path.of("/var/tmp/vempain-converted"));
+        log.info("Site WWW-root is: {}", siteWwwRoot);
+        log.info("Site SSH home directory is: {}", siteSshHomeDir);
+        removeDirectory("/var/tmp/vempain-www");
+        createAndVerifyDirectory(Path.of("/var/tmp/vempain-www"));
+        log.info("=============================================================");
+    }
 
-	@AfterEach
-	void clearSecurityContext() {
-		SecurityContextHolder.clearContext();
-	}
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
-	/**
-	 * Replaces the security context with the given existing user so that AccessService evaluates ACLs for that user.
-	 */
-	protected void authenticateAs(long userId) {
-		var account = userAccountRepository.findById(userId)
-										   .orElseThrow(() -> new IllegalStateException("No user account with id " + userId));
-		var principal = new UserDetailsImpl(account.getId(), account.getLoginName(), account.getNick(), account.getEmail(), account.getPassword(),
-											account.getUnits() == null ? Set.of() : account.getUnits(), List.of());
-		SecurityContextHolder.getContext()
-							 .setAuthentication(new UsernamePasswordAuthenticationToken(principal, principal.getPassword(), principal.getAuthorities()));
-	}
+    /**
+     * Replaces the security context with the given existing user so that AccessService evaluates ACLs for that user.
+     */
+    protected void authenticateAs(long userId) {
+        var account = userAccountRepository.findById(userId)
+            .orElseThrow(() -> new IllegalStateException("No user account with id " + userId));
+        var principal = new UserDetailsImpl(account.getId(), account.getLoginName(), account.getNick(), account.getEmail(), account.getPassword(),
+                account.getUnits() == null ? Set.of() : account.getUnits(), List.of());
+        SecurityContextHolder.getContext()
+            .setAuthentication(new UsernamePasswordAuthenticationToken(principal, principal.getPassword(), principal.getAuthorities()));
+    }
 }

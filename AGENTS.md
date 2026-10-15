@@ -6,6 +6,7 @@ Any REST API change in this repository—endpoint, path, method, request/respons
 review and update of `vempain-cli`. Keep the CLI's commands and tests aligned with the published API contract before considering the backend change complete.
 
 ## Quick orientation
+
 - This is a **Gradle multi-project** backend: `api/` contains public REST contracts + DTOs, `service/` contains the Spring Boot implementation. Start in `settings.gradle`, `api/build.gradle`, and `service/build.gradle`.
 - The runtime app is `service/src/main/java/fi/poltsi/vempain/VempainAdminApplication.java`; all REST paths are served under `/api`
   (`service/src/main/resources/application.yaml`, default port `8080`). Swagger/OpenAPI is exposed on the **management port** (`8081`).
@@ -14,6 +15,7 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
 - Existing written guidance is in `README.md` and `docs/`.
 
 ## Architecture that matters
+
 - The codebase is split by domain into `fi.poltsi.vempain.admin.*` and `fi.poltsi.vempain.site.*`.
   - `admin.*` = admin-owned content, auth integration, file ingest/publish orchestration.
   - `site.*` = the separate website-facing data model (`WebSiteUser`, `WebSitePage`, `WebSiteFile`, ACL mappings, site config).
@@ -26,6 +28,7 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
 - Controllers are intentionally thin. Example: `WebSiteManagementController` mostly authenticates, logs, and delegates to `WebSiteUserService`, `WebSiteAclService`, `WebSiteResourceService`, etc.
 
 ## Data and persistence model
+
 - This service talks to **two PostgreSQL datasources/schemas**:
   - admin/auth datasource: configured by `AdminDatabaseConfiguration`, repositories under `fi.poltsi.vempain.admin.repository` and external auth repositories.
   - site datasource: configured by `SiteDatabaseConfiguration`, repositories under `fi.poltsi.vempain.site.repository`.
@@ -39,6 +42,7 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
 - When Admin publishes CSV into the site datasource, column coercion is schema-driven. Timestamp/date/time columns now accept ISO text inputs and fail with `400 BAD_REQUEST` when parsing is invalid; preserve that behavior when changing publish/import logic.
 
 ## Project-specific conventions
+
 - JSON DTOs commonly use **snake_case** via Jackson naming annotations even when Java fields are camelCase. Example: `WebSiteUserRequest` / `WebSiteUserResponse`.
 - JSON API fields are mandatory snake_case across this repo; do not introduce camelCase JSON keys in DTO annotations, request/response payloads, or API docs.
 - Prefer Lombok annotations for applicable Java boilerplate such as constructors, accessors, builders, and logging, unless they obscure behavior or conflict
@@ -79,15 +83,20 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
   Units nest (`unit_unit`, auth migration `V2__unit_members.sql`); `UnitService.updateMembers` rejects circular nesting and
   `UserDetailsServiceImpl` expands a principal's units to every containing unit, which `AccessService` relies on. Do not add local
   copies of these endpoints; `HostedManagementITC` checks that the shared controllers work on the admin datasource.
-- File ingest (`POST /content-management/file/site-file`, `FileIngestService`) can grant additional admin users privileges on the site file
-  and gallery it creates or updates: `FileIngestRequest.acls` (`FileIngestAclRequest`: `user_id` + the four `*_privilege` flags).
-  `validateAcls` runs inside the request validation before anything is written (every entry names an existing, `ACTIVE`, unlocked
-  user exactly once and grants at least one privilege; an invalid list answers `400`), and `grantAdditionalAcls` adds the rows to the
+- File ingest (`POST /content-management/file/site-file`, `FileIngestService`) requires `FileIngestRequest.file_id`, the `files.id` of the
+  source file in the file backend; it is stored as `site_file.file_id` on create and re-ingest so a site file can be traced back to its
+  source (a missing or non-positive ID answers `400`, never fall back to `0`). The ingest can grant additional admin users and units privileges on the site file
+  and gallery it creates or updates: `FileIngestRequest.acls` (`FileIngestAclRequest`: exactly one of `user_id`/`unit_id` + the four `*_privilege` flags).
+  `validateAcls` runs inside the request validation before anything is written (every entry names either an existing, `ACTIVE`, unlocked
+  user or an existing unit, each grantee at most once, and grants at least one privilege; an invalid list answers `400`), and `grantAdditionalAcls` adds the
+  rows to the
   ACL of the site file and of the gallery right after the owner row is created (new resource) or merges them into the existing ACL (re-ingest: an existing row
-  of the same user gets the requested privileges, the ingesting account is skipped because it already holds
+  of the same user or unit gets the requested privileges, the ingesting account is skipped because it already holds
   everything). The grantable users are served by `GET /content-management/file/site-file/users` (`FileIngestUserResponse`: id, login
-  name, name, nick only; `ACTIVE` and unlocked accounts) for the file backend, whose own user base is separate; both endpoints need the
-  administrator ACL like the ingest itself. Tests: `FileIngestServiceUTC`, `FileIngestServiceITC` (real ACL rows), `FileIngestCTC`,
+  name, name, nick only; `ACTIVE` and unlocked accounts) and the grantable units by `GET /content-management/file/site-file/units`
+  (`FileIngestUnitResponse`: id, name, description) for the file backend, whose own user base is separate; the listings are on the API token
+  allowlist (`ApiTokenAuthenticationFilter`) and every endpoint needs the administrator ACL like the ingest itself. Tests: `FileIngestServiceUTC`,
+  `FileIngestServiceITC` (real ACL rows), `FileIngestCTC`,
   `FileIngestAclContractJTC` (api module).
 - `GET /content-management/pages/path-suggestion?prefix=` (`PageService.suggestPath`) backs the path auto-completion of the page editor:
   it matches readable pages with `PageRepository.findByPagePathPrefix(LikePatterns.prefix(prefix))` (escaped LIKE, explicit `ESCAPE`),
@@ -158,6 +167,7 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
   rejects plaintext connections.
 
 ## Workflows agents should actually use
+
 - Local DB bootstrap for dev: `docker_db.sh` starts **two** Postgres containers on ports **5433** and **5434** matching `start.sh`.
 - Fast local start with working ports/args: use `./start.sh` (it runs `bootRun` with `server.port=9090`, `management.server.port=9091`, local DB URLs, SSH/test paths).
 - Standard build/test entry points:
@@ -178,7 +188,6 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
 - If you change schema, repository behavior, or filesystem/publish logic, add/update both a focused `UTC` and the relevant `ITC` when feasible.
 - After every code modification, run the relevant tests for the touched modules and report the results in the response.
 - GPS data-set listing behavior is integration-tested in `service/src/test/java/fi/poltsi/vempain/admin/service/DataServiceITC.java`; keep selector-query changes covered there.
-
 - Every `LIKE` pattern built from request text goes through `fi.poltsi.vempain.tools.LikePatterns` (`contains`/`containsIgnoreCase`/`prefix`: escapes
   `%`, `_` and `\\`, truncates to 200 characters; `limitTokens` caps a search at 10 tokens) and declares the escape character,
   as in `GalleryRepositoryImpl` (native SQL, `ESCAPE_CLAUSE`) and `SiteFileSpecifications` (Criteria API, `ESCAPE_CHAR`). Request text never acts as wildcard

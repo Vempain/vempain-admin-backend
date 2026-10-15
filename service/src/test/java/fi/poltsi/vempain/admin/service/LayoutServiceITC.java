@@ -1,5 +1,13 @@
 package fi.poltsi.vempain.admin.service;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Collections;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.VempainMessages;
 import fi.poltsi.vempain.admin.entity.Layout;
@@ -9,13 +17,6 @@ import fi.poltsi.vempain.auth.exception.VempainAbstractException;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -24,364 +25,365 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @Slf4j
 class LayoutServiceITC extends AbstractITCTest {
-	private final long initCount = 10;
 
-	@Test
-	void getAllLayouts() {
-		var foundLayoutIds = new ArrayList<Long>();
-		var layoutIds = testITCTools.generateLayouts(initCount);
-		Iterable<Layout> layouts = layoutService.findAll();
-		Assertions.assertNotNull(layouts);
+    private final long initCount = 10;
 
-		for (Layout layout : layouts) {
-			assertLayout(layout);
-			foundLayoutIds.add(layout.getId());
-		}
+    @Test
+    void getAllLayouts() {
+        var foundLayoutIds = new ArrayList<Long>();
+        var layoutIds = testITCTools.generateLayouts(initCount);
+        Iterable<Layout> layouts = layoutService.findAll();
+        Assertions.assertNotNull(layouts);
 
-		assertTrue(layoutIds.containsAll(foundLayoutIds));
-	}
+        for (Layout layout : layouts) {
+            assertLayout(layout);
+            foundLayoutIds.add(layout.getId());
+        }
 
-	@Test
-	void findById() throws VempainEntityNotFoundException {
-		var layoutIds = testITCTools.generateLayouts(initCount);
-		log.info("List of layout IDs: {}", layoutIds);
-		Layout layout = layoutService.findById(layoutIds.getFirst());
-		assertNotNull(layout);
-		assertLayout(layout);
-	}
+        assertTrue(layoutIds.containsAll(foundLayoutIds));
+    }
 
-	@Test
-	void findByNonExistingLayoutId() {
-		var layoutIds = testITCTools.generateLayouts(initCount);
+    @Test
+    void findById() throws VempainEntityNotFoundException {
+        var layoutIds = testITCTools.generateLayouts(initCount);
+        log.info("List of layout IDs: {}", layoutIds);
+        Layout layout = layoutService.findById(layoutIds.getFirst());
+        assertNotNull(layout);
+        assertLayout(layout);
+    }
 
-		try {
-			var nonExistId = Collections.max(layoutIds) + 1L;
-			Layout layout = layoutService.findById(nonExistId);
-			fail("A layout should have not been found with id: " + nonExistId + " -> " + layout);
-		} catch (VempainEntityNotFoundException e) {
-			assertEquals("layout", e.getEntityName());
-			assertEquals(VempainMessages.NO_LAYOUT_FOUND_BY_ID, e.getMessage());
-		}
-	}
+    @Test
+    void findByNonExistingLayoutId() {
+        var layoutIds = testITCTools.generateLayouts(initCount);
 
-	@Test
-	void findByLayoutName() throws VempainLayoutException {
-		var userId = testITCTools.generateUser();
-		var aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
-		var layout = Layout.builder()
-						   .layoutName("Test layout 1")
-						   .structure("<!--comp_0--><!--comp_1--><!--page--><!--comp_2-->")
-						   .locked(false)
-						   .aclId(aclId)
-						   .creator(userId)
-						   .created(Instant.now()
-										   .minus(1, ChronoUnit.HOURS))
-						   .modifier(null)
-						   .modified(null)
-						   .build();
-		layoutRepository.save(layout);
-		Layout result = layoutService.findByLayoutName("Test layout 1");
-		assertLayout(result);
-	}
+        try {
+            var nonExistId = Collections.max(layoutIds) + 1L;
+            Layout layout = layoutService.findById(nonExistId);
+            fail("A layout should have not been found with id: " + nonExistId + " -> " + layout);
+        } catch (VempainEntityNotFoundException e) {
+            assertEquals("layout", e.getEntityName());
+            assertEquals(VempainMessages.NO_LAYOUT_FOUND_BY_ID, e.getMessage());
+        }
+    }
 
-	@Test
-	void findByNonExistingLayoutName() {
-		String nonExistName = "ThisDoesNotExist";
+    @Test
+    void findByLayoutName() throws VempainLayoutException {
+        var userId = testITCTools.generateUser();
+        var aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
+        var layout = Layout.builder()
+            .layoutName("Test layout 1")
+            .structure("<!--comp_0--><!--comp_1--><!--page--><!--comp_2-->")
+            .locked(false)
+            .aclId(aclId)
+            .creator(userId)
+            .created(Instant.now()
+                .minus(1, ChronoUnit.HOURS))
+            .modifier(null)
+            .modified(null)
+            .build();
+        layoutRepository.save(layout);
+        Layout result = layoutService.findByLayoutName("Test layout 1");
+        assertLayout(result);
+    }
 
-		try {
-			Layout layout = layoutService.findByLayoutName(nonExistName);
-			fail("A layout should have not been found with name: " + nonExistName + " -> " + layout);
-		} catch (VempainLayoutException e) {
-			assertEquals(VempainMessages.OBJECT_NOT_FOUND, e.getMessage());
-		}
-	}
+    @Test
+    void findByNonExistingLayoutName() {
+        String nonExistName = "ThisDoesNotExist";
 
-	@Test
-	void delete() {
-		var layoutIds = testITCTools.generateLayouts(initCount);
-		long layoutId = layoutIds.getFirst();
+        try {
+            Layout layout = layoutService.findByLayoutName(nonExistName);
+            fail("A layout should have not been found with name: " + nonExistName + " -> " + layout);
+        } catch (VempainLayoutException e) {
+            assertEquals(VempainMessages.OBJECT_NOT_FOUND, e.getMessage());
+        }
+    }
 
-		try {
-			layoutService.delete(layoutId);
-		} catch (Exception e) {
-			fail("Deleting an existing layout should have not produced an exception: " + e.getMessage());
-		}
+    @Test
+    void delete() {
+        var layoutIds = testITCTools.generateLayouts(initCount);
+        long layoutId = layoutIds.getFirst();
 
-		try {
-			Layout layout = layoutService.findById(layoutId);
-			fail("A layout should have not been found with id: " + layoutId + " -> " + layout);
-		} catch (VempainEntityNotFoundException e) {
-			assertEquals("layout", e.getEntityName());
-			assertEquals(VempainMessages.NO_LAYOUT_FOUND_BY_ID, e.getMessage());
-		}
-	}
+        try {
+            layoutService.delete(layoutId);
+        } catch (Exception e) {
+            fail("Deleting an existing layout should have not produced an exception: " + e.getMessage());
+        }
 
-	@Test
-	void deleteNonExisting() {
-		long nonExistingId = 1;
-		var layoutIds = testITCTools.generateLayouts(1);
-		if (!layoutIds.isEmpty()) {
-			nonExistingId = Collections.max(layoutIds) + 1;
-		}
+        try {
+            Layout layout = layoutService.findById(layoutId);
+            fail("A layout should have not been found with id: " + layoutId + " -> " + layout);
+        } catch (VempainEntityNotFoundException e) {
+            assertEquals("layout", e.getEntityName());
+            assertEquals(VempainMessages.NO_LAYOUT_FOUND_BY_ID, e.getMessage());
+        }
+    }
 
-		try {
-			layoutService.delete(nonExistingId);
-			fail("Deleting non-existing layout ID " + nonExistingId + " should have caused an exception");
-		} catch (VempainAclException | ProcessingFailedException e) {
-			fail("We should have received an VempainEntityNotFoundException");
-		} catch (VempainEntityNotFoundException e) {
-			try {
-				Layout layout = layoutService.findById(nonExistingId);
-				fail("A layout should have not been found with id: " + nonExistingId + " -> " + layout);
-			} catch (VempainEntityNotFoundException ex) {
-				assertEquals("layout", ex.getEntityName());
-				assertEquals(VempainMessages.NO_LAYOUT_FOUND_BY_ID, ex.getMessage());
-			}
-		}
-	}
+    @Test
+    void deleteNonExisting() {
+        long nonExistingId = 1;
+        var layoutIds = testITCTools.generateLayouts(1);
+        if (!layoutIds.isEmpty()) {
+            nonExistingId = Collections.max(layoutIds) + 1;
+        }
 
-	@Test
-	void save() {
-		var userId = testITCTools.generateUser();
-		var aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
-		Layout layout = Layout.builder()
-							  .layoutName("Test layout save")
-							  .structure("Test layout structure save")
-							  .locked(false)
-							  .aclId(aclId)
-							  .creator(userId)
-							  .created(Instant.now()
-											  .minus(1, ChronoUnit.HOURS))
-							  .modifier(userId)
-							  .modified(Instant.now())
-							  .build();
-		try {
-			layoutService.save(layout);
-		} catch (Exception e) {
-			fail("Creating a layout should have succeeded");
-		}
-	}
+        try {
+            layoutService.delete(nonExistingId);
+            fail("Deleting non-existing layout ID " + nonExistingId + " should have caused an exception");
+        } catch (VempainAclException | ProcessingFailedException e) {
+            fail("We should have received an VempainEntityNotFoundException");
+        } catch (VempainEntityNotFoundException e) {
+            try {
+                Layout layout = layoutService.findById(nonExistingId);
+                fail("A layout should have not been found with id: " + nonExistingId + " -> " + layout);
+            } catch (VempainEntityNotFoundException ex) {
+                assertEquals("layout", ex.getEntityName());
+                assertEquals(VempainMessages.NO_LAYOUT_FOUND_BY_ID, ex.getMessage());
+            }
+        }
+    }
 
-	@Test
-	void saveWithoutModifyOk() {
-		var userId = testITCTools.generateUser();
-		long aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
-		Layout layout = Layout.builder()
-							  .layoutName("Test layout save")
-							  .structure("Test layout structure save")
-							  .locked(false)
-							  .aclId(aclId)
-							  .creator(userId)
-							  .created(Instant.now()
-											  .minus(1, ChronoUnit.HOURS))
-							  .build();
-		try {
-			layoutService.save(layout);
-		} catch (Exception e) {
-			fail("Creating a layout without modifier information should have succeeded");
-		}
-	}
+    @Test
+    void save() {
+        var userId = testITCTools.generateUser();
+        var aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
+        Layout layout = Layout.builder()
+            .layoutName("Test layout save")
+            .structure("Test layout structure save")
+            .locked(false)
+            .aclId(aclId)
+            .creator(userId)
+            .created(Instant.now()
+                .minus(1, ChronoUnit.HOURS))
+            .modifier(userId)
+            .modified(Instant.now())
+            .build();
+        try {
+            layoutService.save(layout);
+        } catch (Exception e) {
+            fail("Creating a layout should have succeeded");
+        }
+    }
 
-	@Test
-	void saveFailWithNoName() {
-		var userId = testITCTools.generateUser();
-		long aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
-		Layout layout = Layout.builder()
-							  .structure("Test layout structure save")
-							  .locked(false)
-							  .aclId(aclId)
-							  .creator(userId)
-							  .created(Instant.now()
-											  .minus(1, ChronoUnit.HOURS))
-							  .modifier(userId)
-							  .modified(Instant.now())
-							  .build();
+    @Test
+    void saveWithoutModifyOk() {
+        var userId = testITCTools.generateUser();
+        long aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
+        Layout layout = Layout.builder()
+            .layoutName("Test layout save")
+            .structure("Test layout structure save")
+            .locked(false)
+            .aclId(aclId)
+            .creator(userId)
+            .created(Instant.now()
+                .minus(1, ChronoUnit.HOURS))
+            .build();
+        try {
+            layoutService.save(layout);
+        } catch (Exception e) {
+            fail("Creating a layout without modifier information should have succeeded");
+        }
+    }
 
-		try {
-			layoutService.save(layout);
-			fail("Creating layout with no name should have failed");
-		} catch (VempainAbstractException e) {
-			fail("We should have received a VempainAbstractException");
-		} catch (VempainLayoutException e) {
-			assertEquals("Layout name is null or blank", e.getMessage());
-		}
-	}
+    @Test
+    void saveFailWithNoName() {
+        var userId = testITCTools.generateUser();
+        long aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
+        Layout layout = Layout.builder()
+            .structure("Test layout structure save")
+            .locked(false)
+            .aclId(aclId)
+            .creator(userId)
+            .created(Instant.now()
+                .minus(1, ChronoUnit.HOURS))
+            .modifier(userId)
+            .modified(Instant.now())
+            .build();
 
-	@Test
-	void saveFailWithNoAcl() {
-		var userId = testITCTools.generateUser();
-		Layout layout = Layout.builder()
-							  .layoutName("Test layout save")
-							  .structure("Test layout structure save")
-							  .locked(false)
-							  .creator(userId)
-							  .created(Instant.now()
-											  .minus(1, ChronoUnit.HOURS))
-							  .modifier(userId)
-							  .modified(Instant.now())
-							  .build();
+        try {
+            layoutService.save(layout);
+            fail("Creating layout with no name should have failed");
+        } catch (VempainAbstractException e) {
+            fail("We should have received a VempainAbstractException");
+        } catch (VempainLayoutException e) {
+            assertEquals("Layout name is null or blank", e.getMessage());
+        }
+    }
 
-		try {
-			layoutService.save(layout);
-			fail("Creating layout with no Acl should have failed");
-		} catch (VempainLayoutException e) {
-			fail("We should have received a VempainAbstractException");
-		} catch (VempainAbstractException e) {
-			assertTrue(e.getMessage()
-						.contains("ACL ID is invalid"));
-		}
-	}
+    @Test
+    void saveFailWithNoAcl() {
+        var userId = testITCTools.generateUser();
+        Layout layout = Layout.builder()
+            .layoutName("Test layout save")
+            .structure("Test layout structure save")
+            .locked(false)
+            .creator(userId)
+            .created(Instant.now()
+                .minus(1, ChronoUnit.HOURS))
+            .modifier(userId)
+            .modified(Instant.now())
+            .build();
 
-	@Test
-	void saveFailWithNoCreator() {
-		var userId = testITCTools.generateUser();
-		long aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
-		Layout layout = Layout.builder()
-							  .layoutName("Test layout save")
-							  .structure("Test layout structure save")
-							  .locked(false)
-							  .aclId(aclId)
-							  .created(Instant.now()
-											  .minus(1, ChronoUnit.HOURS))
-							  .modifier(userId)
-							  .modified(Instant.now())
-							  .build();
+        try {
+            layoutService.save(layout);
+            fail("Creating layout with no Acl should have failed");
+        } catch (VempainLayoutException e) {
+            fail("We should have received a VempainAbstractException");
+        } catch (VempainAbstractException e) {
+            assertTrue(e.getMessage()
+                .contains("ACL ID is invalid"));
+        }
+    }
 
-		try {
-			layoutService.save(layout);
-			fail("Creating layout with no creator should have failed");
-		} catch (VempainLayoutException e) {
-			fail("We should have received a VempainAbstractException");
-		} catch (VempainAbstractException e) {
-			log.info("Exception message:", e);
-			assertTrue(e.getMessage()
-						.contains("Creator is missing"));
-		}
-	}
+    @Test
+    void saveFailWithNoCreator() {
+        var userId = testITCTools.generateUser();
+        long aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
+        Layout layout = Layout.builder()
+            .layoutName("Test layout save")
+            .structure("Test layout structure save")
+            .locked(false)
+            .aclId(aclId)
+            .created(Instant.now()
+                .minus(1, ChronoUnit.HOURS))
+            .modifier(userId)
+            .modified(Instant.now())
+            .build();
 
-	@Test
-	void saveFailWithNoCreated() {
-		var userId = testITCTools.generateUser();
-		long aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
-		Layout layout = Layout.builder()
-							  .layoutName("Test layout save")
-							  .structure("Test layout structure save")
-							  .locked(false)
-							  .aclId(aclId)
-							  .creator(userId)
-							  .modifier(userId)
-							  .modified(Instant.now())
-							  .build();
+        try {
+            layoutService.save(layout);
+            fail("Creating layout with no creator should have failed");
+        } catch (VempainLayoutException e) {
+            fail("We should have received a VempainAbstractException");
+        } catch (VempainAbstractException e) {
+            log.info("Exception message:", e);
+            assertTrue(e.getMessage()
+                .contains("Creator is missing"));
+        }
+    }
 
-		try {
-			layoutService.save(layout);
-			fail("Creating layout with no created timestamp should have failed");
-		} catch (VempainLayoutException e) {
-			fail("We should have received a VempainAbstractException");
-		} catch (VempainAbstractException e) {
-			assertTrue(e.getMessage()
-						.contains("Created datetime is missing"));
-		}
-	}
+    @Test
+    void saveFailWithNoCreated() {
+        var userId = testITCTools.generateUser();
+        long aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
+        Layout layout = Layout.builder()
+            .layoutName("Test layout save")
+            .structure("Test layout structure save")
+            .locked(false)
+            .aclId(aclId)
+            .creator(userId)
+            .modifier(userId)
+            .modified(Instant.now())
+            .build();
 
-	@Test
-	void saveFailWithNoModifier() {
-		var userId = testITCTools.generateUser();
-		long aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
-		Layout layout = Layout.builder()
-							  .layoutName("Test layout save")
-							  .structure("Test layout structure save")
-							  .locked(false)
-							  .aclId(aclId)
-							  .creator(userId)
-							  .created(Instant.now()
-											  .minus(1, ChronoUnit.HOURS))
-							  .modified(Instant.now())
-							  .build();
+        try {
+            layoutService.save(layout);
+            fail("Creating layout with no created timestamp should have failed");
+        } catch (VempainLayoutException e) {
+            fail("We should have received a VempainAbstractException");
+        } catch (VempainAbstractException e) {
+            assertTrue(e.getMessage()
+                .contains("Created datetime is missing"));
+        }
+    }
 
-		try {
-			layoutService.save(layout);
-			fail("Creating layout with no modifier should have failed");
-		} catch (VempainLayoutException e) {
-			fail("We should have received a VempainAbstractException");
-		} catch (VempainAbstractException e) {
-			assertTrue(e.getMessage()
-						.contains("Modifier is missing"));
-		}
-	}
+    @Test
+    void saveFailWithNoModifier() {
+        var userId = testITCTools.generateUser();
+        long aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
+        Layout layout = Layout.builder()
+            .layoutName("Test layout save")
+            .structure("Test layout structure save")
+            .locked(false)
+            .aclId(aclId)
+            .creator(userId)
+            .created(Instant.now()
+                .minus(1, ChronoUnit.HOURS))
+            .modified(Instant.now())
+            .build();
 
-	@Test
-	void saveFailWithNoModified() {
-		var userId = testITCTools.generateUser();
-		var aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
-		Layout layout = Layout.builder()
-							  .layoutName("Test layout save")
-							  .structure("Test layout structure save")
-							  .locked(false)
-							  .aclId(aclId)
-							  .creator(userId)
-							  .created(Instant.now()
-											  .minus(1, ChronoUnit.HOURS))
-							  .modifier(userId)
-							  .build();
+        try {
+            layoutService.save(layout);
+            fail("Creating layout with no modifier should have failed");
+        } catch (VempainLayoutException e) {
+            fail("We should have received a VempainAbstractException");
+        } catch (VempainAbstractException e) {
+            assertTrue(e.getMessage()
+                .contains("Modifier is missing"));
+        }
+    }
 
-		try {
-			layoutService.save(layout);
-			fail("Creating layout with no modified should have failed");
-		} catch (VempainLayoutException e) {
-			fail("We should have received a VempainAbstractException");
-		} catch (VempainAbstractException e) {
-			assertTrue(e.getMessage()
-						.contains("Modified datetime is missing"));
-		}
-	}
+    @Test
+    void saveFailWithNoModified() {
+        var userId = testITCTools.generateUser();
+        var aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
+        Layout layout = Layout.builder()
+            .layoutName("Test layout save")
+            .structure("Test layout structure save")
+            .locked(false)
+            .aclId(aclId)
+            .creator(userId)
+            .created(Instant.now()
+                .minus(1, ChronoUnit.HOURS))
+            .modifier(userId)
+            .build();
 
-	@Test
-	void saveFailWithCreatedLaterThanModified() {
-		var userId = testITCTools.generateUser();
-		long aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
-		Layout layout = Layout.builder()
-							  .layoutName("Test layout save")
-							  .structure("Test layout structure save")
-							  .locked(false)
-							  .aclId(aclId)
-							  .creator(1L)
-							  .created(Instant.now()
-											  .plus(3, ChronoUnit.HOURS))
-							  .modifier(1L)
-							  .modified(Instant.now())
-							  .build();
+        try {
+            layoutService.save(layout);
+            fail("Creating layout with no modified should have failed");
+        } catch (VempainLayoutException e) {
+            fail("We should have received a VempainAbstractException");
+        } catch (VempainAbstractException e) {
+            assertTrue(e.getMessage()
+                .contains("Modified datetime is missing"));
+        }
+    }
 
-		try {
-			layoutService.save(layout);
-			fail("Creating layout with no created later than modified should have failed");
-		} catch (VempainLayoutException e) {
-			fail("We should have received a VempainAbstractException");
-		} catch (VempainAbstractException e) {
-			assertTrue(e.getMessage()
-						.contains("Created datetime is more recent than modified"));
-		}
-	}
+    @Test
+    void saveFailWithCreatedLaterThanModified() {
+        var userId = testITCTools.generateUser();
+        long aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
+        Layout layout = Layout.builder()
+            .layoutName("Test layout save")
+            .structure("Test layout structure save")
+            .locked(false)
+            .aclId(aclId)
+            .creator(1L)
+            .created(Instant.now()
+                .plus(3, ChronoUnit.HOURS))
+            .modifier(1L)
+            .modified(Instant.now())
+            .build();
 
-	// TODO Save fail with no layout name and other missing data
+        try {
+            layoutService.save(layout);
+            fail("Creating layout with no created later than modified should have failed");
+        } catch (VempainLayoutException e) {
+            fail("We should have received a VempainAbstractException");
+        } catch (VempainAbstractException e) {
+            assertTrue(e.getMessage()
+                .contains("Created datetime is more recent than modified"));
+        }
+    }
 
-	private void assertLayout(Layout layout) {
-		assertNotNull(layout);
-		assertNotNull(layout.getCreator());
-		assertNotNull(layout.getCreated());
+    // TODO Save fail with no layout name and other missing data
 
-		if (layout.getModifier() != null) {
-			assertTrue(layout.getModifier() > 1);
-			assertNotNull(layout.getModified());
-			assertTrue(layout.getModified()
-							 .isAfter(layout.getCreated()));
-		}
+    private void assertLayout(Layout layout) {
+        assertNotNull(layout);
+        assertNotNull(layout.getCreator());
+        assertNotNull(layout.getCreated());
 
-		assertTrue(layout.getId() > 0);
-		assertTrue(layout.getAclId() > 0);
-		assertNotNull(layout.getLayoutName());
-		assertTrue(layout.getLayoutName()
-						 .contains("Test layout "));
-		assertEquals("<!--comp_0--><!--comp_1--><!--page--><!--comp_2-->", layout.getStructure());
-	}
+        if (layout.getModifier() != null) {
+            assertTrue(layout.getModifier() > 1);
+            assertNotNull(layout.getModified());
+            assertTrue(layout.getModified()
+                .isAfter(layout.getCreated()));
+        }
+
+        assertTrue(layout.getId() > 0);
+        assertTrue(layout.getAclId() > 0);
+        assertNotNull(layout.getLayoutName());
+        assertTrue(layout.getLayoutName()
+            .contains("Test layout "));
+        assertEquals("<!--comp_0--><!--comp_1--><!--page--><!--comp_2-->", layout.getStructure());
+    }
 }

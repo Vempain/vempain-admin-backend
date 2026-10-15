@@ -1,5 +1,17 @@
 package fi.poltsi.vempain.admin.controller;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
+
 import fi.poltsi.vempain.admin.VempainMessages;
 import fi.poltsi.vempain.admin.api.request.ComponentRequest;
 import fi.poltsi.vempain.admin.api.response.ComponentResponse;
@@ -16,17 +28,6 @@ import fi.poltsi.vempain.auth.exception.VempainAbstractException;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.AclService;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -37,373 +38,373 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ComponentControllerUTC {
-	final String[] invalidFields = {null, "", " ", "\t", " \t"};
 
-	@Mock
-	private ComponentService componentService;
-	@Mock
-	private AclService       aclService;
-	@Mock
-	private DeleteService    deleteService;
+    final String[] invalidFields = { null, "", " ", "\t", " \t" };
 
-	@InjectMocks
-	private ComponentController componentController;
+    @Mock
+    private ComponentService componentService;
+    @Mock
+    private AclService aclService;
+    @Mock
+    private DeleteService deleteService;
 
-	@Test
-	void getComponentsOk() {
-		List<Component> components = TestUTCTools.generateComponentList(10L);
-		when(componentService.findAllByUser()).thenReturn(components);
+    @InjectMocks
+    private ComponentController componentController;
 
-		try {
-			ResponseEntity<List<ComponentResponse>> response = componentController.getComponents();
-			assertNotNull(response);
-			List<ComponentResponse> componentResponses = response.getBody();
-			assertNotNull(componentResponses);
-			assertEquals(10L, componentResponses.size());
-		} catch (Exception e) {
-			fail("Should not have received any exceptions in a successful call to findAll");
-		}
-	}
+    @Test
+    void getComponentsOk() {
+        List<Component> components = TestUTCTools.generateComponentList(10L);
+        when(componentService.findAllByUser()).thenReturn(components);
 
-	@Test
-	void getComponentsEmptyListFail() {
-		when(componentService.findAllByUser()).thenReturn(new ArrayList<>());
+        try {
+            ResponseEntity<List<ComponentResponse>> response = componentController.getComponents();
+            assertNotNull(response);
+            List<ComponentResponse> componentResponses = response.getBody();
+            assertNotNull(componentResponses);
+            assertEquals(10L, componentResponses.size());
+        } catch (Exception e) {
+            fail("Should not have received any exceptions in a successful call to findAll");
+        }
+    }
 
-		try {
-			ResponseEntity<List<ComponentResponse>> response = componentController.getComponents();
-			assertNotNull(response);
-			List<ComponentResponse> componentResponses = response.getBody();
-			assertNotNull(componentResponses);
-			assertEquals(0L, componentResponses.size());
-		} catch (Exception e) {
-			fail("Should not have received any exceptions in a successful call to findAll even with nothing found");
-		}
-	}
+    @Test
+    void getComponentsEmptyListFail() {
+        when(componentService.findAllByUser()).thenReturn(new ArrayList<>());
 
-	@Test
-	void getComponentByIdOk() {
-		Component component = TestUTCTools.generateComponent(1L, 1L);
-		when(componentService.findByIdByUser(1L)).thenReturn(component);
+        try {
+            ResponseEntity<List<ComponentResponse>> response = componentController.getComponents();
+            assertNotNull(response);
+            List<ComponentResponse> componentResponses = response.getBody();
+            assertNotNull(componentResponses);
+            assertEquals(0L, componentResponses.size());
+        } catch (Exception e) {
+            fail("Should not have received any exceptions in a successful call to findAll even with nothing found");
+        }
+    }
 
-		try {
-			ResponseEntity<ComponentResponse> response = componentController.getComponentById(1L);
-			assertNotNull(response);
-			ComponentResponse componentResponse = response.getBody();
-			assertNotNull(componentResponse);
-		} catch (Exception e) {
-			fail("Should not have received any exceptions in a successful call to getComponentById even with nothing found");
-		}
-	}
+    @Test
+    void getComponentByIdOk() {
+        Component component = TestUTCTools.generateComponent(1L, 1L);
+        when(componentService.findByIdByUser(1L)).thenReturn(component);
 
-	@Test
-	void getComponentByIdNullIdFail() {
-		getComponentFail(null);
-	}
+        try {
+            ResponseEntity<ComponentResponse> response = componentController.getComponentById(1L);
+            assertNotNull(response);
+            ComponentResponse componentResponse = response.getBody();
+            assertNotNull(componentResponse);
+        } catch (Exception e) {
+            fail("Should not have received any exceptions in a successful call to getComponentById even with nothing found");
+        }
+    }
 
-	@Test
-	void getComponentByIdNegativeIdFail() {
-		getComponentFail(-1L);
-	}
+    @Test
+    void getComponentByIdNullIdFail() {
+        getComponentFail(null);
+    }
 
-	private void getComponentFail(Long componentId) {
-		try {
-			componentController.getComponentById(componentId);
-			fail("Invalid component ID should have caused an exception");
-		} catch (ResponseStatusException e) {
-			assertEquals("400 BAD_REQUEST \"" + VempainMessages.MALFORMED_ID_IN_REQUEST + "\"", e.getMessage());
-			assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
-		} catch (Exception e) {
-			fail("No other exception should have been thrown: " + e);
-		}
-	}
+    @Test
+    void getComponentByIdNegativeIdFail() {
+        getComponentFail(-1L);
+    }
 
-	@Test
-	void addComponentOk() throws VempainComponentException {
-		Component component = TestUTCTools.generateComponent(1L, 1L);
-		ComponentRequest componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
-		when(componentService.saveFromRequest(componentRequest)).thenReturn(component);
-		List<AclResponse> aclResponses = TestUTCTools.generateAclResponses(1L, 2L);
-		when(aclService.getAclResponses(component.getAclId())).thenReturn(aclResponses);
+    private void getComponentFail(Long componentId) {
+        try {
+            componentController.getComponentById(componentId);
+            fail("Invalid component ID should have caused an exception");
+        } catch (ResponseStatusException e) {
+            assertEquals("400 BAD_REQUEST \"" + VempainMessages.MALFORMED_ID_IN_REQUEST + "\"", e.getMessage());
+            assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
+        } catch (Exception e) {
+            fail("No other exception should have been thrown: " + e);
+        }
+    }
 
-		try {
-			ResponseEntity<ComponentResponse> response = componentController.addComponent(componentRequest);
-			assertNotNull(response);
-			ComponentResponse componentResponse = response.getBody();
-			assertNotNull(componentResponse);
-			List<AclResponse> responseAcls = componentResponse.getAcls();
-			assertNotNull(responseAcls);
-			assertFalse(responseAcls.isEmpty());
-		} catch (Exception e) {
-			fail("Should not have received any exceptions in a successful call to addComponent: " + e);
-		}
-	}
+    @Test
+    void addComponentOk() throws VempainComponentException {
+        Component component = TestUTCTools.generateComponent(1L, 1L);
+        ComponentRequest componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
+        when(componentService.saveFromRequest(componentRequest)).thenReturn(component);
+        List<AclResponse> aclResponses = TestUTCTools.generateAclResponses(1L, 2L);
+        when(aclService.getAclResponses(component.getAclId())).thenReturn(aclResponses);
 
-	@Test
-	void addComponentMalformedRequestNullFail() {
-		malformedComponentRequest(null);
-	}
+        try {
+            ResponseEntity<ComponentResponse> response = componentController.addComponent(componentRequest);
+            assertNotNull(response);
+            ComponentResponse componentResponse = response.getBody();
+            assertNotNull(componentResponse);
+            List<AclResponse> responseAcls = componentResponse.getAcls();
+            assertNotNull(responseAcls);
+            assertFalse(responseAcls.isEmpty());
+        } catch (Exception e) {
+            fail("Should not have received any exceptions in a successful call to addComponent: " + e);
+        }
+    }
 
-	@Test
-	void addComponentMalformedRequestNameFail() {
-		for (String invalidName : invalidFields) {
-			ComponentRequest componentRequest = TestUTCTools.generateComponentRequest(1L, 1L);
-			componentRequest.setCompName(invalidName);
-			malformedComponentRequest(componentRequest);
-		}
-	}
+    @Test
+    void addComponentMalformedRequestNullFail() {
+        malformedComponentRequest(null);
+    }
 
-	@Test
-	void addComponentMalformedRequestDataFail() {
-		for (String invalidData : invalidFields) {
-			ComponentRequest componentRequest = TestUTCTools.generateComponentRequest(1L, 1L);
-			componentRequest.setCompData(invalidData);
-			malformedComponentRequest(componentRequest);
-		}
-	}
+    @Test
+    void addComponentMalformedRequestNameFail() {
+        for (String invalidName : invalidFields) {
+            ComponentRequest componentRequest = TestUTCTools.generateComponentRequest(1L, 1L);
+            componentRequest.setCompName(invalidName);
+            malformedComponentRequest(componentRequest);
+        }
+    }
 
-	@Test
-	void addComponentMalformedRequestAclsNullFail() {
-		ComponentRequest componentRequest = TestUTCTools.generateComponentRequest(1L, 1L);
-		componentRequest.setAcls(null);
-		malformedComponentRequest(componentRequest);
-	}
+    @Test
+    void addComponentMalformedRequestDataFail() {
+        for (String invalidData : invalidFields) {
+            ComponentRequest componentRequest = TestUTCTools.generateComponentRequest(1L, 1L);
+            componentRequest.setCompData(invalidData);
+            malformedComponentRequest(componentRequest);
+        }
+    }
 
-	@Test
-	void addComponentMalformedRequestAclsEmptyFail() {
-		ComponentRequest componentRequest = TestUTCTools.generateComponentRequest(1L, 1L);
-		componentRequest.setAcls(new ArrayList<>());
-		malformedComponentRequest(componentRequest);
-	}
+    @Test
+    void addComponentMalformedRequestAclsNullFail() {
+        ComponentRequest componentRequest = TestUTCTools.generateComponentRequest(1L, 1L);
+        componentRequest.setAcls(null);
+        malformedComponentRequest(componentRequest);
+    }
 
-	void malformedComponentRequest(ComponentRequest componentRequest) {
-		try {
-			componentController.addComponent(componentRequest);
-			fail("Should have received a ResponseStatusException when saving a malformed component");
-		} catch (ResponseStatusException e) {
-			assertEquals("400 BAD_REQUEST \"" + VempainMessages.MALFORMED_OBJECT_IN_REQUEST + "\"", e.getMessage());
-			assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
-		} catch (Exception e) {
-			fail("Should not have received any other exceptions except ResponseStatusException: " + e);
-		}
-	}
+    @Test
+    void addComponentMalformedRequestAclsEmptyFail() {
+        ComponentRequest componentRequest = TestUTCTools.generateComponentRequest(1L, 1L);
+        componentRequest.setAcls(new ArrayList<>());
+        malformedComponentRequest(componentRequest);
+    }
 
-	@Test
-	void addComponentNameAlreadyExistsFail() {
-		Component component = TestUTCTools.generateComponent(1L, 1L);
-		ComponentRequest componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
-		doThrow(new ResponseStatusException(HttpStatus.CONFLICT, "Test exception")).when(componentService)
-																				   .saveFromRequest(componentRequest);
+    void malformedComponentRequest(ComponentRequest componentRequest) {
+        try {
+            componentController.addComponent(componentRequest);
+            fail("Should have received a ResponseStatusException when saving a malformed component");
+        } catch (ResponseStatusException e) {
+            assertEquals("400 BAD_REQUEST \"" + VempainMessages.MALFORMED_OBJECT_IN_REQUEST + "\"", e.getMessage());
+            assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
+        } catch (Exception e) {
+            fail("Should not have received any other exceptions except ResponseStatusException: " + e);
+        }
+    }
 
-		try {
-			componentController.addComponent(componentRequest);
-			fail("Should have received a ResponseStatusException when saving a component with existing name");
-		} catch (ResponseStatusException e) {
-			assertEquals("409 CONFLICT \"Test exception\"", e.getMessage());
-			assertEquals(HttpStatus.CONFLICT, e.getStatusCode());
-		} catch (Exception e) {
-			fail("Should not have received any other exceptions except ResponseStatusException: " + e);
-		}
-	}
+    @Test
+    void addComponentNameAlreadyExistsFail() {
+        Component component = TestUTCTools.generateComponent(1L, 1L);
+        ComponentRequest componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
+        doThrow(new ResponseStatusException(HttpStatus.CONFLICT, "Test exception")).when(componentService)
+            .saveFromRequest(componentRequest);
 
-	@Test
-	void addComponentResponseStatusExceptionFail() {
-		Component component = TestUTCTools.generateComponent(1L, 1L);
-		ComponentRequest componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
-		doThrow(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, VempainMessages.INTERNAL_ERROR)).when(componentService)
-																											  .saveFromRequest(componentRequest);
+        try {
+            componentController.addComponent(componentRequest);
+            fail("Should have received a ResponseStatusException when saving a component with existing name");
+        } catch (ResponseStatusException e) {
+            assertEquals("409 CONFLICT \"Test exception\"", e.getMessage());
+            assertEquals(HttpStatus.CONFLICT, e.getStatusCode());
+        } catch (Exception e) {
+            fail("Should not have received any other exceptions except ResponseStatusException: " + e);
+        }
+    }
 
-		try {
-			componentController.addComponent(componentRequest);
-			fail("Should have received a ResponseStatusException when saving a component causing VempainComponentException in service");
-		} catch (ResponseStatusException e) {
-			assertEquals("500 INTERNAL_SERVER_ERROR \"" + VempainMessages.INTERNAL_ERROR + "\"", e.getMessage());
-			assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, e.getStatusCode());
-		} catch (Exception e) {
-			fail("Should not have received any other exceptions except ResponseStatusException: " + e);
-		}
-	}
+    @Test
+    void addComponentResponseStatusExceptionFail() {
+        Component component = TestUTCTools.generateComponent(1L, 1L);
+        ComponentRequest componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
+        doThrow(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, VempainMessages.INTERNAL_ERROR)).when(componentService)
+            .saveFromRequest(componentRequest);
 
-	@Test
-	void updateComponentOk() throws VempainAclException, VempainEntityNotFoundException, VempainComponentException, VempainAbstractException {
-		Component component = TestUTCTools.generateComponent(1L, 1L);
-		ComponentRequest componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
-		when(componentService.updateFromRequest(componentRequest)).thenReturn(component);
+        try {
+            componentController.addComponent(componentRequest);
+            fail("Should have received a ResponseStatusException when saving a component causing VempainComponentException in service");
+        } catch (ResponseStatusException e) {
+            assertEquals("500 INTERNAL_SERVER_ERROR \"" + VempainMessages.INTERNAL_ERROR + "\"", e.getMessage());
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, e.getStatusCode());
+        } catch (Exception e) {
+            fail("Should not have received any other exceptions except ResponseStatusException: " + e);
+        }
+    }
 
-		try {
-			ResponseEntity<ComponentResponse> response = componentController.updateComponent(componentRequest);
-			assertNotNull(response);
-			ComponentResponse componentResponse = response.getBody();
-			assertNotNull(componentResponse);
-		} catch (Exception e) {
-			fail("Should not have received any exceptions when updating successfully a component: " + e);
-		}
-	}
+    @Test
+    void updateComponentOk() throws VempainAclException, VempainEntityNotFoundException, VempainComponentException, VempainAbstractException {
+        Component component = TestUTCTools.generateComponent(1L, 1L);
+        ComponentRequest componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
+        when(componentService.updateFromRequest(componentRequest)).thenReturn(component);
 
-	@Test
-	void updateMalformedIdNegativeFail() {
-		updateComponentFailInvalidId(-1L);
-	}
+        try {
+            ResponseEntity<ComponentResponse> response = componentController.updateComponent(componentRequest);
+            assertNotNull(response);
+            ComponentResponse componentResponse = response.getBody();
+            assertNotNull(componentResponse);
+        } catch (Exception e) {
+            fail("Should not have received any exceptions when updating successfully a component: " + e);
+        }
+    }
 
-	private void updateComponentFailInvalidId(Long componentId) {
-		var component = TestUTCTools.generateComponent(1L, 1L);
-		var componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
-		componentRequest.setId(componentId);
+    @Test
+    void updateMalformedIdNegativeFail() {
+        updateComponentFailInvalidId(-1L);
+    }
 
-		try {
-			componentController.updateComponent(componentRequest);
-			fail("Should have received an exception when using malformed number as component ID");
-		} catch (ResponseStatusException e) {
-			assertEquals("400 BAD_REQUEST \"" + VempainMessages.MALFORMED_ID_IN_REQUEST + "\"", e.getMessage());
-			assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
-		} catch (Exception e) {
-			fail("Should not have received any other exceptions when failing to update a component: " + e);
-		}
-	}
+    private void updateComponentFailInvalidId(Long componentId) {
+        var component = TestUTCTools.generateComponent(1L, 1L);
+        var componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
+        componentRequest.setId(componentId);
 
-	@Test
-	void updateAccessDeniedFail() throws VempainAclException, VempainEntityNotFoundException, VempainComponentException, VempainAbstractException {
-		Component component = TestUTCTools.generateComponent(1L, 1L);
-		ComponentRequest componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
-		doThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, VempainMessages.INVALID_USER_SESSION)).when(componentService)
-																										   .updateFromRequest(componentRequest);
+        try {
+            componentController.updateComponent(componentRequest);
+            fail("Should have received an exception when using malformed number as component ID");
+        } catch (ResponseStatusException e) {
+            assertEquals("400 BAD_REQUEST \"" + VempainMessages.MALFORMED_ID_IN_REQUEST + "\"", e.getMessage());
+            assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
+        } catch (Exception e) {
+            fail("Should not have received any other exceptions when failing to update a component: " + e);
+        }
+    }
 
-		try {
-			componentController.updateComponent(componentRequest);
-			fail("Should have received an exception when updating an non-existing component");
-		} catch (ResponseStatusException e) {
-			assertEquals("401 UNAUTHORIZED \"" + VempainMessages.INVALID_USER_SESSION + "\"", e.getMessage());
-			assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
-		} catch (Exception e) {
-			fail("Should not have received any other exceptions except ResponseStatusException: " + e);
-		}
-	}
+    @Test
+    void updateAccessDeniedFail() throws VempainAclException, VempainEntityNotFoundException, VempainComponentException, VempainAbstractException {
+        Component component = TestUTCTools.generateComponent(1L, 1L);
+        ComponentRequest componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
+        doThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, VempainMessages.INVALID_USER_SESSION)).when(componentService)
+            .updateFromRequest(componentRequest);
 
-	@Test
-	void updateComponentVempainComponentExceptionFail() throws VempainAclException, VempainEntityNotFoundException, VempainComponentException,
-															   VempainAbstractException {
-		updateComponentUpdateFails(new VempainComponentException("test exception"));
-	}
+        try {
+            componentController.updateComponent(componentRequest);
+            fail("Should have received an exception when updating an non-existing component");
+        } catch (ResponseStatusException e) {
+            assertEquals("401 UNAUTHORIZED \"" + VempainMessages.INVALID_USER_SESSION + "\"", e.getMessage());
+            assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
+        } catch (Exception e) {
+            fail("Should not have received any other exceptions except ResponseStatusException: " + e);
+        }
+    }
 
-	@Test
-	void updateComponentVempainAclExceptionFail() throws VempainAclException, VempainEntityNotFoundException, VempainComponentException,
-														 VempainAbstractException {
-		updateComponentUpdateFails(new VempainAclException("test exception"));
-	}
+    @Test
+    void updateComponentVempainComponentExceptionFail()
+            throws VempainAclException, VempainEntityNotFoundException, VempainComponentException, VempainAbstractException {
+        updateComponentUpdateFails(new VempainComponentException("test exception"));
+    }
 
-	@Test
-	void updateComponentVempainAbstractExceptionFail() throws VempainAclException, VempainEntityNotFoundException, VempainComponentException,
-															  VempainAbstractException {
-		updateComponentUpdateFails(new VempainAbstractException("test exception"));
-	}
+    @Test
+    void updateComponentVempainAclExceptionFail()
+            throws VempainAclException, VempainEntityNotFoundException, VempainComponentException, VempainAbstractException {
+        updateComponentUpdateFails(new VempainAclException("test exception"));
+    }
 
-	void updateComponentUpdateFails(Exception ex) throws VempainAclException, VempainEntityNotFoundException, VempainComponentException, VempainAbstractException {
-		Component component = TestUTCTools.generateComponent(1L, 1L);
-		ComponentRequest componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
-		doThrow(ex).when(componentService)
-				   .updateFromRequest(componentRequest);
+    @Test
+    void updateComponentVempainAbstractExceptionFail()
+            throws VempainAclException, VempainEntityNotFoundException, VempainComponentException, VempainAbstractException {
+        updateComponentUpdateFails(new VempainAbstractException("test exception"));
+    }
 
-		try {
-			componentController.updateComponent(componentRequest);
-			fail("Should have received an exception when updating an non-existing component");
-		} catch (ResponseStatusException e) {
-			assertEquals("400 BAD_REQUEST \"Component data failed validation\"", e.getMessage());
-			assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
-		} catch (Exception e) {
-			fail("Should not have received any other exceptions except ResponseStatusException: " + e);
-		}
-	}
+    void updateComponentUpdateFails(Exception ex)
+            throws VempainAclException, VempainEntityNotFoundException, VempainComponentException, VempainAbstractException {
+        Component component = TestUTCTools.generateComponent(1L, 1L);
+        ComponentRequest componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
+        doThrow(ex).when(componentService)
+            .updateFromRequest(componentRequest);
 
-	@Test
-	void updateComponentNotFoundFail() throws VempainAclException, VempainEntityNotFoundException, VempainComponentException,
-											  VempainAbstractException {
-		Component component = TestUTCTools.generateComponent(1L, 1L);
-		ComponentRequest componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
-		doThrow(new VempainEntityNotFoundException("test exception", "component"))
-				.when(componentService)
-				.updateFromRequest(componentRequest);
+        try {
+            componentController.updateComponent(componentRequest);
+            fail("Should have received an exception when updating an non-existing component");
+        } catch (ResponseStatusException e) {
+            assertEquals("400 BAD_REQUEST \"Component data failed validation\"", e.getMessage());
+            assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
+        } catch (Exception e) {
+            fail("Should not have received any other exceptions except ResponseStatusException: " + e);
+        }
+    }
 
-		try {
-			componentController.updateComponent(componentRequest);
-			fail("Should have received an exception when updating an non-existing component");
-		} catch (ResponseStatusException e) {
-			assertEquals("404 NOT_FOUND \"" + VempainMessages.OBJECT_NOT_FOUND + "\"", e.getMessage());
-			assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
-		} catch (Exception e) {
-			fail("Should not have received any other exceptions except ResponseStatusException: " + e);
-		}
-	}
+    @Test
+    void updateComponentNotFoundFail() throws VempainAclException, VempainEntityNotFoundException, VempainComponentException, VempainAbstractException {
+        Component component = TestUTCTools.generateComponent(1L, 1L);
+        ComponentRequest componentRequest = TestUTCTools.generateComponentRequestFromComponent(component);
+        doThrow(new VempainEntityNotFoundException("test exception", "component")).when(componentService)
+            .updateFromRequest(componentRequest);
 
-	@Test
-	void removeComponentByIdOk() throws VempainAclException {
-		try {
-			ResponseEntity<DeleteResponse> response = componentController.deleteComponentById(1L);
-			assertNotNull(response);
-			DeleteResponse deleteResponse = response.getBody();
-			assertNotNull(deleteResponse);
-			assertEquals(1L, deleteResponse.getCount());
-			assertEquals(HttpStatus.OK, deleteResponse.getHttpStatus());
-			assertEquals("Component", deleteResponse.getName());
-		} catch (Exception e) {
-			fail("Should not have received any exceptions when deleting successfully a component: " + e);
-		}
-	}
+        try {
+            componentController.updateComponent(componentRequest);
+            fail("Should have received an exception when updating an non-existing component");
+        } catch (ResponseStatusException e) {
+            assertEquals("404 NOT_FOUND \"" + VempainMessages.OBJECT_NOT_FOUND + "\"", e.getMessage());
+            assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
+        } catch (Exception e) {
+            fail("Should not have received any other exceptions except ResponseStatusException: " + e);
+        }
+    }
 
-	@Test
-	void removeComponentMalformedIdNegativeFail() {
-		removeComponentFailInvalidId(-1L);
-	}
+    @Test
+    void removeComponentByIdOk() throws VempainAclException {
+        try {
+            ResponseEntity<DeleteResponse> response = componentController.deleteComponentById(1L);
+            assertNotNull(response);
+            DeleteResponse deleteResponse = response.getBody();
+            assertNotNull(deleteResponse);
+            assertEquals(1L, deleteResponse.getCount());
+            assertEquals(HttpStatus.OK, deleteResponse.getHttpStatus());
+            assertEquals("Component", deleteResponse.getName());
+        } catch (Exception e) {
+            fail("Should not have received any exceptions when deleting successfully a component: " + e);
+        }
+    }
 
-	private void removeComponentFailInvalidId(Long componentId) {
-		try {
-			componentController.deleteComponentById(componentId);
-			fail("Should have received an exception when using malformed value as component ID");
-		} catch (ResponseStatusException e) {
-			assertEquals("400 BAD_REQUEST \"" + VempainMessages.MALFORMED_ID_IN_REQUEST + "\"", e.getMessage());
-			assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
-		} catch (Exception e) {
-			fail("Should not have received any exceptions when updating successfully a component: " + e);
-		}
-	}
+    @Test
+    void removeComponentMalformedIdNegativeFail() {
+        removeComponentFailInvalidId(-1L);
+    }
 
-	@Test
-	void removeComponentByIdVempainAclExceptionFail() throws VempainEntityNotFoundException {
-		doThrow(new VempainEntityNotFoundException("Test fail", "Component")).when(deleteService)
-																			 .deleteComponentById(1L);
+    private void removeComponentFailInvalidId(Long componentId) {
+        try {
+            componentController.deleteComponentById(componentId);
+            fail("Should have received an exception when using malformed value as component ID");
+        } catch (ResponseStatusException e) {
+            assertEquals("400 BAD_REQUEST \"" + VempainMessages.MALFORMED_ID_IN_REQUEST + "\"", e.getMessage());
+            assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
+        } catch (Exception e) {
+            fail("Should not have received any exceptions when updating successfully a component: " + e);
+        }
+    }
 
-		try {
-			componentController.deleteComponentById(1L);
-			fail("Should have received VempainEntityNotFoundException");
-		} catch (ResponseStatusException e) {
-			assertEquals("500 INTERNAL_SERVER_ERROR \"" + VempainMessages.INTERNAL_ERROR + "\"", e.getMessage());
-			assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, e.getStatusCode());
-		} catch (Exception e) {
-			fail("Should not have received any other exceptions except ResponseStatusException: " + e);
-		}
-	}
+    @Test
+    void removeComponentByIdVempainAclExceptionFail() throws VempainEntityNotFoundException {
+        doThrow(new VempainEntityNotFoundException("Test fail", "Component")).when(deleteService)
+            .deleteComponentById(1L);
 
-	// ---- paged listing ----
+        try {
+            componentController.deleteComponentById(1L);
+            fail("Should have received VempainEntityNotFoundException");
+        } catch (ResponseStatusException e) {
+            assertEquals("500 INTERNAL_SERVER_ERROR \"" + VempainMessages.INTERNAL_ERROR + "\"", e.getMessage());
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, e.getStatusCode());
+        } catch (Exception e) {
+            fail("Should not have received any other exceptions except ResponseStatusException: " + e);
+        }
+    }
 
-	@Test
-	void getPagedComponentsAnswersResponsesWithAcls() {
-		var request = new PagedRequest();
-		var components = TestUTCTools.generateComponentList(2L);
-		when(componentService.findPagedByUser(request)).thenReturn(PagedResponse.of(components, 0, 10, 2, 1, true, true));
-		when(aclService.getAclResponses(components.getFirst()
-												  .getAclId())).thenReturn(TestUTCTools.generateAclResponses(1L, 1L));
-		when(aclService.getAclResponses(components.get(1)
-												  .getAclId())).thenReturn(List.of());
+    // ---- paged listing ----
 
-		var response = componentController.getPagedComponents(request);
+    @Test
+    void getPagedComponentsAnswersResponsesWithAcls() {
+        var request = new PagedRequest();
+        var components = TestUTCTools.generateComponentList(2L);
+        when(componentService.findPagedByUser(request)).thenReturn(PagedResponse.of(components, 0, 10, 2, 1, true, true));
+        when(aclService.getAclResponses(components.getFirst()
+            .getAclId())).thenReturn(TestUTCTools.generateAclResponses(1L, 1L));
+        when(aclService.getAclResponses(components.get(1)
+            .getAclId())).thenReturn(List.of());
 
-		assertEquals(2, response.getBody()
-								.getContent()
-								.size());
-		assertEquals(2, response.getBody()
-								.getTotalElements());
-		assertEquals(2, response.getBody()
-								.getContent()
-								.getFirst()
-								.getAcls()
-								.size());
-	}
+        var response = componentController.getPagedComponents(request);
+
+        assertEquals(2, response.getBody()
+            .getContent()
+            .size());
+        assertEquals(2, response.getBody()
+            .getTotalElements());
+        assertEquals(2, response.getBody()
+            .getContent()
+            .getFirst()
+            .getAcls()
+            .size());
+    }
 }

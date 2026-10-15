@@ -1,6 +1,7 @@
 package fi.poltsi.vempain.admin.api.response.file;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -15,6 +16,7 @@ import tools.jackson.databind.annotation.JsonNaming;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Schema(description = "Response containing the audio file data")
 public class FileAudioResponse extends AbstractFileResponse {
-	@Schema(description = "Length of the audio recording in seconds", example = "312", requiredMode = Schema.RequiredMode.REQUIRED)
-	private long length;
+
+    @Schema(description = "Length of the audio recording in seconds", example = "312", requiredMode = Schema.RequiredMode.REQUIRED)
+    private long length;
 }

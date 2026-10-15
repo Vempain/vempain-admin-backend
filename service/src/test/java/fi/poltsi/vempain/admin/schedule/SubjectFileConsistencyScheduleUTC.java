@@ -1,7 +1,9 @@
 package fi.poltsi.vempain.admin.schedule;
 
-import fi.poltsi.vempain.admin.entity.file.SiteFile;
-import fi.poltsi.vempain.admin.service.file.FileService;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -9,9 +11,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import fi.poltsi.vempain.admin.entity.file.SiteFile;
+import fi.poltsi.vempain.admin.service.file.FileService;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -24,46 +25,47 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 class SubjectFileConsistencyScheduleUTC {
-	@Mock
-	private FileService fileService;
 
-	@InjectMocks
-	private SubjectFileConsistencySchedule schedule;
+    @Mock
+    private FileService fileService;
 
-	private static List<SiteFile> siteFiles(long... ids) {
-		return java.util.Arrays.stream(ids)
-							   .mapToObj(id -> (SiteFile) SiteFile.builder()
-																  .id(id)
-																  .build())
-							   .toList();
-	}
+    @InjectMocks
+    private SubjectFileConsistencySchedule schedule;
 
-	@Test
-	void nothingHappensWhenSchedulingIsDisabled() {
-		ReflectionTestUtils.setField(schedule, "schedulingEnabled", false);
+    private static List<SiteFile> siteFiles(long... ids) {
+        return java.util.Arrays.stream(ids)
+            .mapToObj(id -> (SiteFile) SiteFile.builder()
+                .id(id)
+                .build())
+            .toList();
+    }
 
-		schedule.verify();
+    @Test
+    void nothingHappensWhenSchedulingIsDisabled() {
+        ReflectionTestUtils.setField(schedule, "schedulingEnabled", false);
 
-		verifyNoInteractions(fileService);
-	}
+        schedule.verify();
 
-	@Test
-	void nothingIsPurgedWhenEverySubjectLinkHasASiteFile() {
-		when(fileService.findAllSiteFiles()).thenReturn(siteFiles(1L, 2L, 3L));
-		when(fileService.findAllSiteFileIdWithSubject()).thenReturn(new HashSet<>(Set.of(1L, 3L)));
+        verifyNoInteractions(fileService);
+    }
 
-		schedule.verify();
+    @Test
+    void nothingIsPurgedWhenEverySubjectLinkHasASiteFile() {
+        when(fileService.findAllSiteFiles()).thenReturn(siteFiles(1L, 2L, 3L));
+        when(fileService.findAllSiteFileIdWithSubject()).thenReturn(new HashSet<>(Set.of(1L, 3L)));
 
-		verify(fileService, never()).removeFileSubjects(any());
-	}
+        schedule.verify();
 
-	@Test
-	void subjectLinksOfMissingSiteFilesArePurged() {
-		when(fileService.findAllSiteFiles()).thenReturn(siteFiles(1L, 2L));
-		when(fileService.findAllSiteFileIdWithSubject()).thenReturn(new HashSet<>(Set.of(1L, 7L, 8L)));
+        verify(fileService, never()).removeFileSubjects(any());
+    }
 
-		schedule.verify();
+    @Test
+    void subjectLinksOfMissingSiteFilesArePurged() {
+        when(fileService.findAllSiteFiles()).thenReturn(siteFiles(1L, 2L));
+        when(fileService.findAllSiteFileIdWithSubject()).thenReturn(new HashSet<>(Set.of(1L, 7L, 8L)));
 
-		verify(fileService).removeFileSubjects(Set.of(7L, 8L));
-	}
+        schedule.verify();
+
+        verify(fileService).removeFileSubjects(Set.of(7L, 8L));
+    }
 }

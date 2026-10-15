@@ -1,6 +1,7 @@
 package fi.poltsi.vempain.admin.api.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,10 +22,11 @@ import tools.jackson.databind.annotation.JsonNaming;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Schema(description = "Reduced AclUser response")
 public class ReducedAclUser {
-	@Schema(description = "User ID", example = "123")
-	private Long   userId;
-	@Schema(description = "User name", example = "John Doe")
-	private String name;
-	@Schema(description = "Nickname", example = "Johnnie")
-	private String nick;
+
+    @Schema(description = "User ID", example = "123")
+    private Long userId;
+    @Schema(description = "User name", example = "John Doe")
+    private String name;
+    @Schema(description = "Nickname", example = "Johnnie")
+    private String nick;
 }

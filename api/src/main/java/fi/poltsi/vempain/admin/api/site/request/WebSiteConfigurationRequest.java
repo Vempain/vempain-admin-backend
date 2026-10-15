@@ -16,9 +16,9 @@ import tools.jackson.databind.annotation.JsonNaming;
 @AllArgsConstructor
 public class WebSiteConfigurationRequest {
 
-	@Schema(description = "Unique identifier of the configuration", example = "1")
-	long id;
+    @Schema(description = "Unique identifier of the configuration", example = "1")
+    long id;
 
-	@Schema(description = "Current value of the configuration", example = "Holiday Photos Site")
-	String configValue;
+    @Schema(description = "Current value of the configuration", example = "Holiday Photos Site")
+    String configValue;
 }

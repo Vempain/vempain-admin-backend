@@ -1,5 +1,27 @@
 package fi.poltsi.vempain.admin.service.file;
 
+import java.io.File;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
 import fi.poltsi.vempain.admin.api.PublishResultEnum;
 import fi.poltsi.vempain.admin.api.TaskTypeEnum;
 import fi.poltsi.vempain.admin.api.request.file.SiteFilePagedRequest;
@@ -26,409 +48,379 @@ import fi.poltsi.vempain.common.task.TaskProgress;
 import fi.poltsi.vempain.common.task.TaskRunner;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationContext;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.io.File;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-import java.util.Set;
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class FileService {
-	private final TaskRunner         taskRunner;
-	private final ApplicationContext applicationContext;
 
-	private static final String RESPONSE_STATUS_EXCEPTION_MESSAGE = "Unknown error";
+    private final TaskRunner taskRunner;
+    private final ApplicationContext applicationContext;
 
-	private final FileThumbPageableRepository fileThumbPageableRepository;
-	private final GalleryRepository           galleryRepository;
-	private final SubjectRepository           subjectRepository;
-	private final SiteFileRepository siteFileRepository;
-	private final AclService                  aclService;
-	private final AccessService               accessService;
-	private final GalleryFileService          galleryFileService;
-	private final SubjectService              subjectService;
+    private static final String RESPONSE_STATUS_EXCEPTION_MESSAGE = "Unknown error";
 
-	@Value("${vempain.admin.file.site-file-directory}")
-	private String siteFileDirectory;
-	@Value("${vempain.admin.file.image-format}")
-	private String imageFormat;
+    private final FileThumbPageableRepository fileThumbPageableRepository;
+    private final GalleryRepository galleryRepository;
+    private final SubjectRepository subjectRepository;
+    private final SiteFileRepository siteFileRepository;
+    private final AclService aclService;
+    private final AccessService accessService;
+    private final GalleryFileService galleryFileService;
+    private final SubjectService subjectService;
 
-	// FileGallery
-	public List<Gallery> findAllGalleries() {
-		return galleryRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
-	}
+    @Value("${vempain.admin.file.site-file-directory}")
+    private String siteFileDirectory;
+    @Value("${vempain.admin.file.image-format}")
+    private String imageFormat;
 
-	public Gallery findGalleryById(Long galleryId) {
-		var optionalGallery = galleryRepository.findById(galleryId);
+    // FileGallery
+    public List<Gallery> findAllGalleries() {
+        return galleryRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
+    }
 
-		if (optionalGallery.isEmpty()) {
-			return null;
-		}
+    public Gallery findGalleryById(Long galleryId) {
+        var optionalGallery = galleryRepository.findById(galleryId);
 
-		var gallery = optionalGallery.get();
-		var galleryFiles = galleryFileService.findGalleryFileByGalleryId(galleryId);
-		var siteFileIdList = new ArrayList<Long>();
+        if (optionalGallery.isEmpty()) {
+            return null;
+        }
 
-		for (GalleryFile galleryFile : galleryFiles) {
-			siteFileIdList.add(galleryFile.getSiteFileId());
-		}
+        var gallery = optionalGallery.get();
+        var galleryFiles = galleryFileService.findGalleryFileByGalleryId(galleryId);
+        var siteFileIdList = new ArrayList<Long>();
 
-		var siteFiles = siteFileRepository.findByIdIn(siteFileIdList);
+        for (GalleryFile galleryFile : galleryFiles) {
+            siteFileIdList.add(galleryFile.getSiteFileId());
+        }
 
-		gallery.setSiteFiles(siteFiles);
-		return gallery;
-	}
+        var siteFiles = siteFileRepository.findByIdIn(siteFileIdList);
 
-	@Transactional
-	public Gallery createGallery(String shortName, String description, long userId, List<SiteFile> SiteFileList) {
-		long aclId;
+        gallery.setSiteFiles(siteFiles);
+        return gallery;
+    }
 
-		try {
-			aclId = aclService.createNewAcl(userId, null, true, true, true, true);
-		} catch (VempainAclException e) {
-			log.error("Storing ACL list failed for unknown reason: {}", e.getMessage());
-			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, RESPONSE_STATUS_EXCEPTION_MESSAGE);
-		}
+    @Transactional
+    public Gallery createGallery(String shortName, String description, long userId, List<SiteFile> SiteFileList) {
+        long aclId;
 
-		Gallery gallery = Gallery.builder()
-		                         .shortname(shortName)
-		                         .description(description)
-		                         .siteFiles(new ArrayList<>())
-		                         .creator(userId)
-		                         .created(Instant.now())
-		                         .aclId(aclId)
-		                         .locked(false)
-		                         .build();
-		var newGallery = galleryRepository.save(gallery);
+        try {
+            aclId = aclService.createNewAcl(userId, null, true, true, true, true);
+        } catch (VempainAclException e) {
+            log.error("Storing ACL list failed for unknown reason: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, RESPONSE_STATUS_EXCEPTION_MESSAGE);
+        }
 
-		long sortOrder = 0;
+        Gallery gallery = Gallery.builder()
+            .shortname(shortName)
+            .description(description)
+            .siteFiles(new ArrayList<>())
+            .creator(userId)
+            .created(Instant.now())
+            .aclId(aclId)
+            .locked(false)
+            .build();
+        var newGallery = galleryRepository.save(gallery);
 
-		for (var siteFile : SiteFileList) {
-			galleryFileService.addGalleryFile(newGallery.getId(), siteFile.getId(), sortOrder);
-			sortOrder++;
-		}
+        long sortOrder = 0;
 
-		return gallery;
-	}
+        for (var siteFile : SiteFileList) {
+            galleryFileService.addGalleryFile(newGallery.getId(), siteFile.getId(), sortOrder);
+            sortOrder++;
+        }
 
-	@Transactional
-	public Gallery createEmptyGallery(String shortName, String description, Long userId) {
-		return createGallery(shortName, description, userId, new ArrayList<>());
-	}
+        return gallery;
+    }
 
-	@Transactional
-	public void saveGallery(Gallery gallery) {
-		galleryRepository.save(gallery);
-	}
+    @Transactional
+    public Gallery createEmptyGallery(String shortName, String description, Long userId) {
+        return createGallery(shortName, description, userId, new ArrayList<>());
+    }
 
-	// FileCommon
-	@Transactional(readOnly = true)
-	public Iterable<SiteFile> findAllSiteFiles() {
-		return siteFileRepository.findAll();
-	}
+    @Transactional
+    public void saveGallery(Gallery gallery) {
+        galleryRepository.save(gallery);
+    }
 
-	@Transactional(readOnly = true)
-	public Optional<SiteFile> findSiteFileById(long siteFileId) {
-		return siteFileRepository.findById(siteFileId);
-	}
+    // FileCommon
+    @Transactional(readOnly = true)
+    public Iterable<SiteFile> findAllSiteFiles() {
+        return siteFileRepository.findAll();
+    }
 
-	@Transactional
-	public SiteFile saveSiteFile(SiteFile siteFile) {
-		// Ensure the insert is flushed so downstream native queries see the row
-		return siteFileRepository.saveAndFlush(siteFile);
-	}
+    @Transactional(readOnly = true)
+    public Optional<SiteFile> findSiteFileById(long siteFileId) {
+        return siteFileRepository.findById(siteFileId);
+    }
 
-	@Transactional(readOnly = true)
-	public Set<Long> findAllSiteFileIdWithSubject() {
-		var siteFileIdList = siteFileRepository.findAllSiteFileIdWithSubject();
+    @Transactional
+    public SiteFile saveSiteFile(SiteFile siteFile) {
+        // Ensure the insert is flushed so downstream native queries see the row
+        return siteFileRepository.saveAndFlush(siteFile);
+    }
 
-		return new HashSet<>(siteFileIdList);
-	}
+    @Transactional(readOnly = true)
+    public Set<Long> findAllSiteFileIdWithSubject() {
+        var siteFileIdList = siteFileRepository.findAllSiteFileIdWithSubject();
 
-	// FileAudio
-	@Transactional(readOnly = true)
-	/**
-	 * Paged site-file listing for the current user. Site files are ACL-linked, so the result contains only the files the user may read;
-	 * the ACL filter, the optional column filter and the file type are all evaluated in the database query.
-	 */
-	public PagedResponse<SiteFileResponse> findAllSiteFilesAsPageableResponseFiltered(SiteFilePagedRequest request) {
-		log.debug("Fetching pageable site files with filter '{}' on column '{}' for file type {}", request.getSearch(), request.getFilterColumn(), request.getFileType());
-		var sortBy = request.getSortBy() == null || request.getSortBy()
-		                                                   .isBlank() ? "id" : request.getSortBy();
-		var pageRequest = PageRequest.of(request.getPage(), request.getSize(),
-		                                 request.getDirection() == null ? Sort.by(sortBy) : Sort.by(request.getDirection(), sortBy));
-		log.debug("Page request: {}", pageRequest);
-		Pageable pageable = sanitizePageable(pageRequest);
+        return new HashSet<>(siteFileIdList);
+    }
 
-		Specification<SiteFile> specification = accessService.<SiteFile>readableSpecification()
-															 .and(SiteFileSpecifications.hasFileType(request.getFileType()));
+    // FileAudio
+    @Transactional(readOnly = true)
+    /**
+     * Paged site-file listing for the current user. Site files are ACL-linked, so the result contains only the files the user may read; the ACL filter, the
+     * optional column filter and the file type are all evaluated in the database query.
+     */
+    public PagedResponse<SiteFileResponse> findAllSiteFilesAsPageableResponseFiltered(SiteFilePagedRequest request) {
+        log.debug("Fetching pageable site files with filter '{}' on column '{}' for file type {}", request.getSearch(), request.getFilterColumn(),
+                request.getFileType());
+        var sortBy = request.getSortBy() == null
+                     || request.getSortBy()
+                         .isBlank() ? "id" : request.getSortBy();
+        var pageRequest = PageRequest.of(request.getPage(), request.getSize(),
+                request.getDirection() == null ? Sort.by(sortBy) : Sort.by(request.getDirection(), sortBy));
+        log.debug("Page request: {}", pageRequest);
+        Pageable pageable = sanitizePageable(pageRequest);
 
-		var filterSpecification = filterSpecification(request.getSearch(), request.getFilterColumn());
+        Specification<SiteFile> specification = accessService.<SiteFile>readableSpecification()
+            .and(SiteFileSpecifications.hasFileType(request.getFileType()));
 
-		if (filterSpecification != null) {
-			specification = specification.and(filterSpecification);
-		}
+        var filterSpecification = filterSpecification(request.getSearch(), request.getFilterColumn());
 
-		var siteFiles = siteFileRepository.findAll(specification, pageable);
+        if (filterSpecification != null) {
+            specification = specification.and(filterSpecification);
+        }
 
-		return PagedResponse.of(
-				siteFiles.getContent()
-				         .stream()
-				         .map(SiteFile::toResponse)
-				         .toList(),
-				siteFiles.getNumber(),
-				siteFiles.getSize(),
-				siteFiles.getTotalElements(),
-				siteFiles.getTotalPages(),
-				siteFiles.isFirst(),
-				siteFiles.isLast()
-		);
-	}
+        var siteFiles = siteFileRepository.findAll(specification, pageable);
 
-	/**
-	 * @return the column filter as a specification, or {@code null} when the request carries no usable filter (class-only listing)
-	 */
-	private Specification<SiteFile> filterSpecification(String filter, String filterColumn) {
-		if (filter == null || filter.isBlank()
-			|| filterColumn == null || filterColumn.isBlank()) {
-			return null;
-		}
+        return PagedResponse.of(siteFiles.getContent()
+            .stream()
+            .map(SiteFile::toResponse)
+            .toList(), siteFiles.getNumber(), siteFiles.getSize(), siteFiles.getTotalElements(), siteFiles.getTotalPages(), siteFiles.isFirst(),
+                siteFiles.isLast());
+    }
 
-		var normalizedFilterColumn = filterColumn.trim()
-												 .toLowerCase(Locale.ROOT)
-												 .replace("_", "");
+    /**
+     * @return the column filter as a specification, or {@code null} when the request carries no usable filter (class-only listing)
+     */
+    private Specification<SiteFile> filterSpecification(String filter, String filterColumn) {
+        if (filter == null
+            || filter.isBlank()
+            || filterColumn == null
+            || filterColumn.isBlank()) {
+            return null;
+        }
 
-		return switch (normalizedFilterColumn) {
-			case "filename" -> SiteFileSpecifications.fileNameContains(filter);
-			case "filepath" -> SiteFileSpecifications.filePathContains(filter);
-			case "mimetype" -> SiteFileSpecifications.mimeTypeContains(filter);
-			case "created" -> SiteFileSpecifications.createdAfter(Instant.parse(filter));
-			case "modified" -> SiteFileSpecifications.modifiedAfter(Instant.parse(filter));
-			case "subject" -> SiteFileSpecifications.idIn(siteFileRepository.findSiteFileIdsBySubjectNameContaining(filter));
-			case "size" -> {
-				try {
-					yield SiteFileSpecifications.sizeAtLeast(Long.parseLong(filter));
-				} catch (NumberFormatException nfe) {
-					log.warn("Invalid size filter '{}', falling back to class-only listing", filter);
-					yield null;
-				}
-			}
-			default -> null;
-		};
-	}
+        var normalizedFilterColumn = filterColumn.trim()
+            .toLowerCase(Locale.ROOT)
+            .replace("_", "");
 
-	private Pageable sanitizePageable(PageRequest pageRequest) {
-		var remappedOrders = pageRequest.getSort()
-		                                .stream()
-		                                .map(order -> {
-											var javaPropertyName = toJavaPropertyName(order.getProperty());
-											var property = switch (javaPropertyName) {
-												case "createdAt" -> "created";
-												case "modifiedAt" -> "modified";
-												default -> javaPropertyName;
-											};
-											return order.withProperty(property);
-										})
-		                                .toList();
-		var sort = remappedOrders.isEmpty() ? Sort.unsorted() : Sort.by(remappedOrders);
-		return PageRequest.of(pageRequest.getPageNumber(), pageRequest.getPageSize(), sort);
-	}
+        return switch (normalizedFilterColumn) {
+            case "filename" -> SiteFileSpecifications.fileNameContains(filter);
+            case "filepath" -> SiteFileSpecifications.filePathContains(filter);
+            case "mimetype" -> SiteFileSpecifications.mimeTypeContains(filter);
+            case "created" -> SiteFileSpecifications.createdAfter(Instant.parse(filter));
+            case "modified" -> SiteFileSpecifications.modifiedAfter(Instant.parse(filter));
+            case "subject" -> SiteFileSpecifications.idIn(siteFileRepository.findSiteFileIdsBySubjectNameContaining(filter));
+            case "size" -> {
+                try {
+                    yield SiteFileSpecifications.sizeAtLeast(Long.parseLong(filter));
+                } catch (NumberFormatException nfe) {
+                    log.warn("Invalid size filter '{}', falling back to class-only listing", filter);
+                    yield null;
+                }
+            }
+            default -> null;
+        };
+    }
 
-	private String toJavaPropertyName(String property) {
-		var result = new StringBuilder(property.length());
-		var capitalizeNext = false;
-		for (char character : property.toCharArray()) {
-			if (character == '_') {
-				capitalizeNext = true;
-			} else if (capitalizeNext) {
-				result.append(Character.toUpperCase(character));
-				capitalizeNext = false;
-			} else {
-				result.append(character);
-			}
-		}
-		return result.toString();
-	}
+    private Pageable sanitizePageable(PageRequest pageRequest) {
+        var remappedOrders = pageRequest.getSort()
+            .stream()
+            .map(order -> {
+                var javaPropertyName = toJavaPropertyName(order.getProperty());
+                var property = switch (javaPropertyName) {
+                    case "createdAt" -> "created";
+                    case "modifiedAt" -> "modified";
+                    default -> javaPropertyName;
+                };
+                return order.withProperty(property);
+            })
+            .toList();
+        var sort = remappedOrders.isEmpty() ? Sort.unsorted() : Sort.by(remappedOrders);
+        return PageRequest.of(pageRequest.getPageNumber(), pageRequest.getPageSize(), sort);
+    }
 
-	// FileSubject
-	public void removeFileSubjects(Set<Long> fileSubjectIdSet) {
-		// fileCommonPageableRepository.deleteAllBySubjectId(fileSubjectIdSet);
-	}
+    private String toJavaPropertyName(String property) {
+        var result = new StringBuilder(property.length());
+        var capitalizeNext = false;
+        for (char character : property.toCharArray()) {
+            if (character == '_') {
+                capitalizeNext = true;
+            } else if (capitalizeNext) {
+                result.append(Character.toUpperCase(character));
+                capitalizeNext = false;
+            } else {
+                result.append(character);
+            }
+        }
+        return result.toString();
+    }
 
-	// ThumbFiles
-	public Iterable<FileThumb> findAllFileThumbs() {
-		return fileThumbPageableRepository.findAll();
-	}
+    // FileSubject
+    public void removeFileSubjects(Set<Long> fileSubjectIdSet) {
+        // fileCommonPageableRepository.deleteAllBySubjectId(fileSubjectIdSet);
+    }
 
-	public Iterable<FileThumb> findAllFileThumbsByFilepathFilename(String filepath, String filename) {
-		return fileThumbPageableRepository.findAllByFilepathAndFilename(filepath, filename);
-	}
+    // ThumbFiles
+    public Iterable<FileThumb> findAllFileThumbs() {
+        return fileThumbPageableRepository.findAll();
+    }
 
-	public List<FileThumb> getDuplicateThumbFiles() {
-		var thumbFiles = fileThumbPageableRepository.findAll();
+    public Iterable<FileThumb> findAllFileThumbsByFilepathFilename(String filepath, String filename) {
+        return fileThumbPageableRepository.findAllByFilepathAndFilename(filepath, filename);
+    }
 
-		var thumbFileMap = new HashMap<String, FileThumb>();
-		var duplicates = new ArrayList<FileThumb>();
+    public List<FileThumb> getDuplicateThumbFiles() {
+        var thumbFiles = fileThumbPageableRepository.findAll();
 
-		for (FileThumb thumbFile : thumbFiles) {
-			var key = thumbFile.getFilepath() + File.separator + thumbFile.getFilename();
+        var thumbFileMap = new HashMap<String, FileThumb>();
+        var duplicates = new ArrayList<FileThumb>();
 
-			if (thumbFileMap.containsKey(key)) {
-				log.info("Duplicate thumb file: {}", thumbFile);
-				duplicates.add(thumbFile);
-				duplicates.add(thumbFileMap.get(key));
-			} else {
-				thumbFileMap.put(key, thumbFile);
-			}
-		}
+        for (FileThumb thumbFile : thumbFiles) {
+            var key = thumbFile.getFilepath() + File.separator + thumbFile.getFilename();
 
-		return duplicates;
-	}
+            if (thumbFileMap.containsKey(key)) {
+                log.info("Duplicate thumb file: {}", thumbFile);
+                duplicates.add(thumbFile);
+                duplicates.add(thumbFileMap.get(key));
+            } else {
+                thumbFileMap.put(key, thumbFile);
+            }
+        }
 
-	public void deleteFileThumb(FileThumb fileThumb) {
-		fileThumbPageableRepository.delete(fileThumb);
-	}
+        return duplicates;
+    }
 
-	@Transactional(readOnly = true)
-	public List<FileThumb> findAllFileThumbsBySiteFileList(List<SiteFile> siteFiles) {
-		var thumbList = new ArrayList<FileThumb>();
+    public void deleteFileThumb(FileThumb fileThumb) {
+        fileThumbPageableRepository.delete(fileThumb);
+    }
 
-		for (var siteFile : siteFiles) {
-			var optionalFileThumb = fileThumbPageableRepository.findFileThumbByParentId(siteFile.getId());
+    @Transactional(readOnly = true)
+    public List<FileThumb> findAllFileThumbsBySiteFileList(List<SiteFile> siteFiles) {
+        var thumbList = new ArrayList<FileThumb>();
 
-			if (optionalFileThumb.isEmpty()) {
-				log.error("SiteFile ID {} is missing a thumb file", siteFile.getId());
-			} else {
-				var fileThumb = optionalFileThumb.get();
+        for (var siteFile : siteFiles) {
+            var optionalFileThumb = fileThumbPageableRepository.findFileThumbByParentId(siteFile.getId());
 
-				if (fileThumb.getSiteFile() != null) {
-					fileThumb.getSiteFile()
-					         .getLocation(); // Force loading the lazy relation
-				}
+            if (optionalFileThumb.isEmpty()) {
+                log.error("SiteFile ID {} is missing a thumb file", siteFile.getId());
+            } else {
+                var fileThumb = optionalFileThumb.get();
 
-				thumbList.add(fileThumb);
-			}
-		}
+                if (fileThumb.getSiteFile() != null) {
+                    fileThumb.getSiteFile()
+                        .getLocation(); // Force loading the lazy relation
+                }
 
-		return thumbList;
-	}
+                thumbList.add(fileThumb);
+            }
+        }
 
-	// Subject
-	public Subject saveSubject(Subject subject) {
-		return subjectRepository.save(subject);
-	}
+        return thumbList;
+    }
 
-	/**
-	 * Starts a background task that refreshes the files of every gallery, one step per gallery. The caller must hold the administrator
-	 * ACL (checked by the controller); the refresh itself runs through the transactional proxy on a worker thread.
-	 */
-	public TaskAcceptedResponse refreshAllGalleryFilesAsTask() {
-		var galleryIds = List.copyOf(galleryRepository.getAllGalleryIds());
-		var progress = taskRunner.submitDurable(TaskTypeEnum.REFRESH_ALL_GALLERY_FILES.name(), "Refresh the files of all galleries", galleryIds.size(),
-												java.util.Map.of("gallery_ids", galleryIds), task -> refreshAllGalleryFilesNow(galleryIds, task));
-		return progress.toAcceptedResponse();
-	}
+    // Subject
+    public Subject saveSubject(Subject subject) {
+        return subjectRepository.save(subject);
+    }
 
-	/**
-	 * Task body of {@link TaskTypeEnum#REFRESH_ALL_GALLERY_FILES}; the aggregated {@link RefreshResponse} becomes the task result.
-	 */
-	public RefreshResponse refreshAllGalleryFilesNow(List<Long> galleryIds, TaskProgress progress) {
-		var refreshResponse = RefreshResponse.builder()
-											 .details(new ArrayList<>())
-											 .build();
-		var successCount = 0L;
-		var failedCount = 0L;
+    /**
+     * Starts a background task that refreshes the files of every gallery, one step per gallery. The caller must hold the administrator ACL (checked by the
+     * controller); the refresh itself runs through the transactional proxy on a worker thread.
+     */
+    public TaskAcceptedResponse refreshAllGalleryFilesAsTask() {
+        var galleryIds = List.copyOf(galleryRepository.getAllGalleryIds());
+        var progress = taskRunner.submitDurable(TaskTypeEnum.REFRESH_ALL_GALLERY_FILES.name(), "Refresh the files of all galleries", galleryIds.size(),
+                java.util.Map.of("gallery_ids", galleryIds), task -> refreshAllGalleryFilesNow(galleryIds, task));
+        return progress.toAcceptedResponse();
+    }
 
-		for (Long galleryId : galleryIds) {
-			progress.checkpoint();
-			var galleryResponse = applicationContext.getBean(FileService.class)
-													.refreshGalleryFiles(galleryId);
-			log.debug("Gallery {} refresh result: {}", galleryId, galleryResponse);
-			successCount = successCount + galleryResponse.getRefreshedItems();
-			failedCount = failedCount + galleryResponse.getFailedItems();
-			refreshResponse.getDetails()
-						   .addAll(galleryResponse.getDetails());
+    /**
+     * Task body of {@link TaskTypeEnum#REFRESH_ALL_GALLERY_FILES}; the aggregated {@link RefreshResponse} becomes the task result.
+     */
+    public RefreshResponse refreshAllGalleryFilesNow(List<Long> galleryIds, TaskProgress progress) {
+        var refreshResponse = RefreshResponse.builder()
+            .details(new ArrayList<>())
+            .build();
+        var successCount = 0L;
+        var failedCount = 0L;
 
-			if (galleryResponse.getFailedItems() == 0) {
-				progress.advance("Refreshed the files of gallery " + galleryId);
-			} else {
-				progress.advanceFailed(galleryResponse.getFailedItems() + " files of gallery " + galleryId + " could not be refreshed");
-			}
-		}
+        for (Long galleryId : galleryIds) {
+            progress.checkpoint();
+            var galleryResponse = applicationContext.getBean(FileService.class)
+                .refreshGalleryFiles(galleryId);
+            log.debug("Gallery {} refresh result: {}", galleryId, galleryResponse);
+            successCount = successCount + galleryResponse.getRefreshedItems();
+            failedCount = failedCount + galleryResponse.getFailedItems();
+            refreshResponse.getDetails()
+                .addAll(galleryResponse.getDetails());
 
-		refreshResponse.setRefreshedItems(successCount);
-		refreshResponse.setFailedItems(failedCount);
-		refreshResponse.setResult(failedCount == 0 ? PublishResultEnum.OK : PublishResultEnum.FAIL);
-		return refreshResponse;
-	}
+            if (galleryResponse.getFailedItems() == 0) {
+                progress.advance("Refreshed the files of gallery " + galleryId);
+            } else {
+                progress.advanceFailed(galleryResponse.getFailedItems() + " files of gallery " + galleryId + " could not be refreshed");
+            }
+        }
 
-	@Transactional(propagation = Propagation.REQUIRED)
-	public RefreshResponse refreshAllGalleryFiles() {
-		var refreshResponse = RefreshResponse.builder()
-		                                     .details(new ArrayList<>())
-		                                     .build();
-		var successCount = 0L;
-		var failedCount = 0L;
-		// First get all the gallery IDs
-		var galleryIds = galleryRepository.getAllGalleryIds();
-		for (Long galleryId : galleryIds) {
-			var galleryResponse = refreshGalleryFiles(galleryId);
-			log.debug("Gallery {} refresh result: {}", galleryId, galleryResponse);
+        refreshResponse.setRefreshedItems(successCount);
+        refreshResponse.setFailedItems(failedCount);
+        refreshResponse.setResult(failedCount == 0 ? PublishResultEnum.OK : PublishResultEnum.FAIL);
+        return refreshResponse;
+    }
 
-			successCount = successCount + galleryResponse.getRefreshedItems();
-			failedCount = failedCount + galleryResponse.getFailedItems();
-			refreshResponse.getDetails()
-			               .addAll(galleryResponse.getDetails());
-		}
+    @Transactional(propagation = Propagation.REQUIRED)
+    public RefreshResponse refreshAllGalleryFiles() {
+        var refreshResponse = RefreshResponse.builder()
+            .details(new ArrayList<>())
+            .build();
+        var successCount = 0L;
+        var failedCount = 0L;
+        // First get all the gallery IDs
+        var galleryIds = galleryRepository.getAllGalleryIds();
+        for (Long galleryId : galleryIds) {
+            var galleryResponse = refreshGalleryFiles(galleryId);
+            log.debug("Gallery {} refresh result: {}", galleryId, galleryResponse);
 
-		refreshResponse.setRefreshedItems(successCount);
-		refreshResponse.setFailedItems(failedCount);
-		refreshResponse.setResult(failedCount == 0 ? PublishResultEnum.OK : PublishResultEnum.FAIL);
-		return refreshResponse;
-	}
+            successCount = successCount + galleryResponse.getRefreshedItems();
+            failedCount = failedCount + galleryResponse.getFailedItems();
+            refreshResponse.getDetails()
+                .addAll(galleryResponse.getDetails());
+        }
 
-	@Transactional(propagation = Propagation.REQUIRED)
-	public RefreshResponse refreshGalleryFiles(long galleryId) {
-		var galleryFiles = galleryFileService.findGalleryFileByGalleryId(galleryId);
-		var refreshDetails = new ArrayList<RefreshDetailResponse>();
-		var successCount = 0;
-		var failedCount = 0;
-/* TODO fix this later
-		for (var galleryFile : galleryFiles) {
-			log.debug("Refreshing gallery file: {}", galleryFile);
-			var refreshDetail = refreshFile(galleryFile.getSiteFileId());
-			refreshDetails.add(refreshDetail);
+        refreshResponse.setRefreshedItems(successCount);
+        refreshResponse.setFailedItems(failedCount);
+        refreshResponse.setResult(failedCount == 0 ? PublishResultEnum.OK : PublishResultEnum.FAIL);
+        return refreshResponse;
+    }
 
-			if (refreshDetail != null && refreshDetail.getResult() == PublishResultEnum.OK) {
-				successCount++;
-			} else {
-				failedCount++;
-			}
-		}
-*/
-		return RefreshResponse.builder()
-		                      .refreshedItems(successCount)
-		                      .failedItems(failedCount)
-		                      .result(failedCount == 0 ? PublishResultEnum.OK : PublishResultEnum.FAIL)
-		                      .details(refreshDetails)
-		                      .build();
-	}
+    @Transactional(propagation = Propagation.REQUIRED)
+    public RefreshResponse refreshGalleryFiles(long galleryId) {
+        var galleryFiles = galleryFileService.findGalleryFileByGalleryId(galleryId);
+        var refreshDetails = new ArrayList<RefreshDetailResponse>();
+        var successCount = 0;
+        var failedCount = 0;
+        /*
+         * TODO fix this later for (var galleryFile : galleryFiles) { log.debug("Refreshing gallery file: {}", galleryFile); var refreshDetail =
+         * refreshFile(galleryFile.getSiteFileId()); refreshDetails.add(refreshDetail);
+         *
+         * if (refreshDetail != null && refreshDetail.getResult() == PublishResultEnum.OK) { successCount++; } else { failedCount++; } }
+         */
+        return RefreshResponse.builder()
+            .refreshedItems(successCount)
+            .failedItems(failedCount)
+            .result(failedCount == 0 ? PublishResultEnum.OK : PublishResultEnum.FAIL)
+            .details(refreshDetails)
+            .build();
+    }
 }

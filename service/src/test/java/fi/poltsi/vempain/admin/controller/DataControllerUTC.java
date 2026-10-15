@@ -1,11 +1,9 @@
 package fi.poltsi.vempain.admin.controller;
 
-import fi.poltsi.vempain.admin.VempainMessages;
-import fi.poltsi.vempain.admin.api.request.DataRequest;
-import fi.poltsi.vempain.admin.api.response.DataResponse;
-import fi.poltsi.vempain.admin.api.response.DataSummaryResponse;
-import fi.poltsi.vempain.admin.service.AccessService;
-import fi.poltsi.vempain.admin.service.DataService;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,9 +14,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+import fi.poltsi.vempain.admin.VempainMessages;
+import fi.poltsi.vempain.admin.api.request.DataRequest;
+import fi.poltsi.vempain.admin.api.response.DataResponse;
+import fi.poltsi.vempain.admin.api.response.DataSummaryResponse;
+import fi.poltsi.vempain.admin.service.AccessService;
+import fi.poltsi.vempain.admin.service.DataService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -30,284 +31,285 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class DataControllerUTC {
-	private static final String TEST_IDENTIFIER = "test_data";
 
-	@Mock
-	private DataService dataService;
-	@Mock
-	private AccessService accessService;
+    private static final String TEST_IDENTIFIER = "test_data";
 
-	@InjectMocks
-	private DataController dataController;
+    @Mock
+    private DataService dataService;
+    @Mock
+    private AccessService accessService;
 
-	private DataRequest validRequest;
-	private DataResponse dataResponse;
-	private DataSummaryResponse summaryResponse;
+    @InjectMocks
+    private DataController dataController;
 
-	@BeforeEach
-	void setUp() {
-		validRequest = buildValidRequest();
-		dataResponse = buildDataResponse();
-		summaryResponse = buildSummaryResponse();
-	}
+    private DataRequest validRequest;
+    private DataResponse dataResponse;
+    private DataSummaryResponse summaryResponse;
 
-	// GET all
+    @BeforeEach
+    void setUp() {
+        validRequest = buildValidRequest();
+        dataResponse = buildDataResponse();
+        summaryResponse = buildSummaryResponse();
+    }
 
-	@Test
-	void getAllDataSetsOk() {
-		when(dataService.findAll(null, null, null)).thenReturn(List.of(summaryResponse));
+    // GET all
 
-		ResponseEntity<List<DataSummaryResponse>> response = dataController.getAllDataSets(null, null, null);
+    @Test
+    void getAllDataSetsOk() {
+        when(dataService.findAll(null, null, null)).thenReturn(List.of(summaryResponse));
 
-		assertNotNull(response);
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertNotNull(response.getBody());
-		assertEquals(1, response.getBody().size());
-	}
+        ResponseEntity<List<DataSummaryResponse>> response = dataController.getAllDataSets(null, null, null);
 
-	@Test
-	void getAllDataSetsEmptyOk() {
-		when(dataService.findAll(null, null, null)).thenReturn(new ArrayList<>());
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(1, response.getBody()
+            .size());
+    }
 
-		ResponseEntity<List<DataSummaryResponse>> response = dataController.getAllDataSets(null, null, null);
+    @Test
+    void getAllDataSetsEmptyOk() {
+        when(dataService.findAll(null, null, null)).thenReturn(new ArrayList<>());
 
-		assertNotNull(response);
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertNotNull(response.getBody());
-		assertEquals(0, response.getBody().size());
-	}
+        ResponseEntity<List<DataSummaryResponse>> response = dataController.getAllDataSets(null, null, null);
 
-	@Test
-	void getAllDataSetsFilteredOk() {
-		when(dataService.findAll("time_series", "gps_timeseries_", "trip")).thenReturn(List.of(summaryResponse));
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(0, response.getBody()
+            .size());
+    }
 
-		ResponseEntity<List<DataSummaryResponse>> response = dataController.getAllDataSets("time_series", "gps_timeseries_", "trip");
+    @Test
+    void getAllDataSetsFilteredOk() {
+        when(dataService.findAll("time_series", "gps_timeseries_", "trip")).thenReturn(List.of(summaryResponse));
 
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertNotNull(response.getBody());
-		assertEquals(1, response.getBody().size());
-	}
+        ResponseEntity<List<DataSummaryResponse>> response = dataController.getAllDataSets("time_series", "gps_timeseries_", "trip");
 
-	// GET by identifier
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(1, response.getBody()
+            .size());
+    }
 
-	@Test
-	void getDataSetByIdentifierOk() {
-		when(dataService.findByIdentifier(TEST_IDENTIFIER)).thenReturn(dataResponse);
+    // GET by identifier
 
-		ResponseEntity<DataResponse> response = dataController.getDataSetByIdentifier(TEST_IDENTIFIER);
+    @Test
+    void getDataSetByIdentifierOk() {
+        when(dataService.findByIdentifier(TEST_IDENTIFIER)).thenReturn(dataResponse);
 
-		assertNotNull(response);
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertNotNull(response.getBody());
-		assertEquals(TEST_IDENTIFIER, response.getBody().getIdentifier());
-	}
+        ResponseEntity<DataResponse> response = dataController.getDataSetByIdentifier(TEST_IDENTIFIER);
 
-	@Test
-	void getDataSetByIdentifierNotFoundFail() {
-		when(dataService.findByIdentifier(TEST_IDENTIFIER))
-				.thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND));
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(TEST_IDENTIFIER, response.getBody()
+            .getIdentifier());
+    }
 
-		try {
-			dataController.getDataSetByIdentifier(TEST_IDENTIFIER);
-			fail("Should have thrown ResponseStatusException");
-		} catch (ResponseStatusException e) {
-			assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
-		}
-	}
+    @Test
+    void getDataSetByIdentifierNotFoundFail() {
+        when(dataService.findByIdentifier(TEST_IDENTIFIER)).thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND));
 
-	// POST create
+        try {
+            dataController.getDataSetByIdentifier(TEST_IDENTIFIER);
+            fail("Should have thrown ResponseStatusException");
+        } catch (ResponseStatusException e) {
+            assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
+        }
+    }
 
-	@Test
-	void createDataSetOk() {
-		when(dataService.create(validRequest)).thenReturn(dataResponse);
+    // POST create
 
-		ResponseEntity<DataResponse> response = dataController.createDataSet(validRequest);
+    @Test
+    void createDataSetOk() {
+        when(dataService.create(validRequest)).thenReturn(dataResponse);
 
-		assertNotNull(response);
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertNotNull(response.getBody());
-		assertEquals(TEST_IDENTIFIER, response.getBody().getIdentifier());
-	}
+        ResponseEntity<DataResponse> response = dataController.createDataSet(validRequest);
 
-	@Test
-	void createDataSetConflictFail() {
-		when(dataService.create(validRequest))
-				.thenThrow(new ResponseStatusException(HttpStatus.CONFLICT, VempainMessages.OBJECT_NAME_ALREADY_EXISTS));
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(TEST_IDENTIFIER, response.getBody()
+            .getIdentifier());
+    }
 
-		try {
-			dataController.createDataSet(validRequest);
-			fail("Should have thrown ResponseStatusException");
-		} catch (ResponseStatusException e) {
-			assertEquals(HttpStatus.CONFLICT, e.getStatusCode());
-		}
-	}
+    @Test
+    void createDataSetConflictFail() {
+        when(dataService.create(validRequest)).thenThrow(new ResponseStatusException(HttpStatus.CONFLICT, VempainMessages.OBJECT_NAME_ALREADY_EXISTS));
 
-	@Test
-	void createDataSetBadRequestFail() {
-		when(dataService.create(validRequest))
-				.thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST));
+        try {
+            dataController.createDataSet(validRequest);
+            fail("Should have thrown ResponseStatusException");
+        } catch (ResponseStatusException e) {
+            assertEquals(HttpStatus.CONFLICT, e.getStatusCode());
+        }
+    }
 
-		try {
-			dataController.createDataSet(validRequest);
-			fail("Should have thrown ResponseStatusException");
-		} catch (ResponseStatusException e) {
-			assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
-		}
-	}
+    @Test
+    void createDataSetBadRequestFail() {
+        when(dataService.create(validRequest)).thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST));
 
-	// PUT update
+        try {
+            dataController.createDataSet(validRequest);
+            fail("Should have thrown ResponseStatusException");
+        } catch (ResponseStatusException e) {
+            assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
+        }
+    }
 
-	@Test
-	void updateDataSetOk() {
-		when(dataService.update(validRequest)).thenReturn(dataResponse);
+    // PUT update
 
-		ResponseEntity<DataResponse> response = dataController.updateDataSet(validRequest);
+    @Test
+    void updateDataSetOk() {
+        when(dataService.update(validRequest)).thenReturn(dataResponse);
 
-		assertNotNull(response);
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertNotNull(response.getBody());
-		assertEquals(TEST_IDENTIFIER, response.getBody().getIdentifier());
-	}
+        ResponseEntity<DataResponse> response = dataController.updateDataSet(validRequest);
 
-	@Test
-	void updateDataSetNotFoundFail() {
-		when(dataService.update(validRequest))
-				.thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND));
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(TEST_IDENTIFIER, response.getBody()
+            .getIdentifier());
+    }
 
-		try {
-			dataController.updateDataSet(validRequest);
-			fail("Should have thrown ResponseStatusException");
-		} catch (ResponseStatusException e) {
-			assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
-		}
-	}
+    @Test
+    void updateDataSetNotFoundFail() {
+        when(dataService.update(validRequest)).thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND));
 
-	@Test
-	void updateDataSetBadRequestFail() {
-		when(dataService.update(validRequest))
-				.thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST));
+        try {
+            dataController.updateDataSet(validRequest);
+            fail("Should have thrown ResponseStatusException");
+        } catch (ResponseStatusException e) {
+            assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
+        }
+    }
 
-		try {
-			dataController.updateDataSet(validRequest);
-			fail("Should have thrown ResponseStatusException");
-		} catch (ResponseStatusException e) {
-			assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
-		}
-	}
+    @Test
+    void updateDataSetBadRequestFail() {
+        when(dataService.update(validRequest)).thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST));
 
-	// POST publish
+        try {
+            dataController.updateDataSet(validRequest);
+            fail("Should have thrown ResponseStatusException");
+        } catch (ResponseStatusException e) {
+            assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
+        }
+    }
 
-	@Test
-	void publishDataSetOk() {
-		var accepted = fi.poltsi.vempain.common.api.response.TaskAcceptedResponse.builder()
-																				 .taskId("task-1")
-																				 .type("PUBLISH_DATA_SET")
-																				 .title("Publish data set " + TEST_IDENTIFIER)
-																				 .status(fi.poltsi.vempain.common.api.TaskStatusEnum.QUEUED)
-																				 .totalSteps(1)
-																				 .build();
-		when(dataService.publishAsTask(TEST_IDENTIFIER)).thenReturn(accepted);
+    // POST publish
 
-		var response = dataController.publishDataSet(TEST_IDENTIFIER);
+    @Test
+    void publishDataSetOk() {
+        var accepted = fi.poltsi.vempain.common.api.response.TaskAcceptedResponse.builder()
+            .taskId("task-1")
+            .type("PUBLISH_DATA_SET")
+            .title("Publish data set " + TEST_IDENTIFIER)
+            .status(fi.poltsi.vempain.common.api.TaskStatusEnum.QUEUED)
+            .totalSteps(1)
+            .build();
+        when(dataService.publishAsTask(TEST_IDENTIFIER)).thenReturn(accepted);
 
-		assertNotNull(response);
-		assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
-		assertNotNull(response.getBody());
-		assertEquals("task-1", response.getBody()
-									   .getTaskId());
-	}
+        var response = dataController.publishDataSet(TEST_IDENTIFIER);
 
-	@Test
-	void publishDataSetNotFoundFail() {
-		when(dataService.publishAsTask(TEST_IDENTIFIER))
-				.thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found"));
+        assertNotNull(response);
+        assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("task-1", response.getBody()
+            .getTaskId());
+    }
 
-		assertThrows(ResponseStatusException.class, () -> dataController.publishDataSet(TEST_IDENTIFIER));
-	}
+    @Test
+    void publishDataSetNotFoundFail() {
+        when(dataService.publishAsTask(TEST_IDENTIFIER)).thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found"));
 
-	@Test
-	void publishDataSetInternalErrorFail() {
-		when(dataService.publishAsTask(TEST_IDENTIFIER))
-				.thenThrow(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, VempainMessages.INTERNAL_ERROR));
+        assertThrows(ResponseStatusException.class, () -> dataController.publishDataSet(TEST_IDENTIFIER));
+    }
 
-		try {
-			dataController.publishDataSet(TEST_IDENTIFIER);
-			fail("Should have thrown ResponseStatusException");
-		} catch (ResponseStatusException e) {
-			assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, e.getStatusCode());
-		}
-	}
+    @Test
+    void publishDataSetInternalErrorFail() {
+        when(dataService.publishAsTask(TEST_IDENTIFIER))
+            .thenThrow(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, VempainMessages.INTERNAL_ERROR));
 
-	// DELETE
+        try {
+            dataController.publishDataSet(TEST_IDENTIFIER);
+            fail("Should have thrown ResponseStatusException");
+        } catch (ResponseStatusException e) {
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, e.getStatusCode());
+        }
+    }
 
-	@Test
-	void deleteDataSetOk() {
-		ResponseEntity<Void> response = dataController.deleteDataSet(TEST_IDENTIFIER);
+    // DELETE
 
-		assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-		verify(accessService).checkAdminAccess();
-		verify(dataService).delete(TEST_IDENTIFIER);
-	}
+    @Test
+    void deleteDataSetOk() {
+        ResponseEntity<Void> response = dataController.deleteDataSet(TEST_IDENTIFIER);
 
-	@Test
-	void deleteDataSetNotFoundFail() {
-		doThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND)).when(dataService)
-																									.delete(TEST_IDENTIFIER);
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        verify(accessService).checkAdminAccess();
+        verify(dataService).delete(TEST_IDENTIFIER);
+    }
 
-		try {
-			dataController.deleteDataSet(TEST_IDENTIFIER);
-			fail("Should have thrown ResponseStatusException");
-		} catch (ResponseStatusException e) {
-			assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
-		}
-	}
+    @Test
+    void deleteDataSetNotFoundFail() {
+        doThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND)).when(dataService)
+            .delete(TEST_IDENTIFIER);
 
-	// Helpers
+        try {
+            dataController.deleteDataSet(TEST_IDENTIFIER);
+            fail("Should have thrown ResponseStatusException");
+        } catch (ResponseStatusException e) {
+            assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
+        }
+    }
 
-	private DataRequest buildValidRequest() {
-		return DataRequest.builder()
-						  .identifier(TEST_IDENTIFIER)
-						  .type("tabulated")
-						  .description("Test data set")
-						  .columnDefinitions("[{\"name\":\"title\",\"type\":\"string\"},{\"name\":\"year\",\"type\":\"integer\"}]")
-						  .createSql("CREATE TABLE website_data__test_data (id BIGSERIAL PRIMARY KEY, title VARCHAR(255), year INTEGER)")
-						  .fetchAllSql("SELECT * FROM website_data__test_data")
-						  .fetchSubsetSql("SELECT * FROM website_data__test_data WHERE year = :year")
-						  .generated(Instant.now())
-						  .csvData("title,year\nTest Album,2024")
-						  .build();
-	}
+    // Helpers
 
-	private DataResponse buildDataResponse() {
-		return DataResponse.builder()
-						   .id(1L)
-						   .identifier(TEST_IDENTIFIER)
-						   .type("tabulated")
-						   .description("Test data set")
-						   .columnDefinitions("[{\"name\":\"title\",\"type\":\"string\"},{\"name\":\"year\",\"type\":\"integer\"}]")
-						   .createSql("CREATE TABLE website_data__test_data (id BIGSERIAL PRIMARY KEY, title VARCHAR(255), year INTEGER)")
-						   .fetchAllSql("SELECT * FROM website_data__test_data")
-						   .fetchSubsetSql("SELECT * FROM website_data__test_data WHERE year = :year")
-						   .generated(Instant.now())
-						   .csvData("title,year\nTest Album,2024")
-						   .createdAt(Instant.now())
-						   .updatedAt(Instant.now())
-						   .build();
-	}
+    private DataRequest buildValidRequest() {
+        return DataRequest.builder()
+            .identifier(TEST_IDENTIFIER)
+            .type("tabulated")
+            .description("Test data set")
+            .columnDefinitions("[{\"name\":\"title\",\"type\":\"string\"},{\"name\":\"year\",\"type\":\"integer\"}]")
+            .createSql("CREATE TABLE website_data__test_data (id BIGSERIAL PRIMARY KEY, title VARCHAR(255), year INTEGER)")
+            .fetchAllSql("SELECT * FROM website_data__test_data")
+            .fetchSubsetSql("SELECT * FROM website_data__test_data WHERE year = :year")
+            .generated(Instant.now())
+            .csvData("title,year\nTest Album,2024")
+            .build();
+    }
 
-	private DataSummaryResponse buildSummaryResponse() {
-		return DataSummaryResponse.builder()
-								  .id(1L)
-								  .identifier(TEST_IDENTIFIER)
-								  .type("tabulated")
-								  .description("Test data set")
-								  .columnDefinitions("[{\"name\":\"title\",\"type\":\"string\"},{\"name\":\"year\",\"type\":\"integer\"}]")
-								  .createSql("CREATE TABLE website_data__test_data (id BIGSERIAL PRIMARY KEY, title VARCHAR(255), year INTEGER)")
-								  .fetchAllSql("SELECT * FROM website_data__test_data")
-								  .fetchSubsetSql("SELECT * FROM website_data__test_data WHERE year = :year")
-								  .generated(Instant.now())
-								  .createdAt(Instant.now())
-								  .updatedAt(Instant.now())
-								  .build();
-	}
+    private DataResponse buildDataResponse() {
+        return DataResponse.builder()
+            .id(1L)
+            .identifier(TEST_IDENTIFIER)
+            .type("tabulated")
+            .description("Test data set")
+            .columnDefinitions("[{\"name\":\"title\",\"type\":\"string\"},{\"name\":\"year\",\"type\":\"integer\"}]")
+            .createSql("CREATE TABLE website_data__test_data (id BIGSERIAL PRIMARY KEY, title VARCHAR(255), year INTEGER)")
+            .fetchAllSql("SELECT * FROM website_data__test_data")
+            .fetchSubsetSql("SELECT * FROM website_data__test_data WHERE year = :year")
+            .generated(Instant.now())
+            .csvData("title,year\nTest Album,2024")
+            .createdAt(Instant.now())
+            .updatedAt(Instant.now())
+            .build();
+    }
+
+    private DataSummaryResponse buildSummaryResponse() {
+        return DataSummaryResponse.builder()
+            .id(1L)
+            .identifier(TEST_IDENTIFIER)
+            .type("tabulated")
+            .description("Test data set")
+            .columnDefinitions("[{\"name\":\"title\",\"type\":\"string\"},{\"name\":\"year\",\"type\":\"integer\"}]")
+            .createSql("CREATE TABLE website_data__test_data (id BIGSERIAL PRIMARY KEY, title VARCHAR(255), year INTEGER)")
+            .fetchAllSql("SELECT * FROM website_data__test_data")
+            .fetchSubsetSql("SELECT * FROM website_data__test_data WHERE year = :year")
+            .generated(Instant.now())
+            .createdAt(Instant.now())
+            .updatedAt(Instant.now())
+            .build();
+    }
 }

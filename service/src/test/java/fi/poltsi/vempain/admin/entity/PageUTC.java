@@ -1,9 +1,10 @@
 package fi.poltsi.vempain.admin.entity;
 
-import fi.poltsi.vempain.admin.api.response.PageResponse;
-import fi.poltsi.vempain.admin.tools.TestUTCTools;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import fi.poltsi.vempain.admin.api.response.PageResponse;
+import fi.poltsi.vempain.admin.tools.TestUTCTools;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -12,155 +13,156 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PageUTC {
-	private Page page;
 
-	@BeforeEach
-	void setUpOk() {
-		page = TestUTCTools.generatePage(1L);
-		assertNotNull(page);
-	}
+    private Page page;
 
-	@Test
-	void getPageResponseOk() {
-		PageResponse pageResponse = page.toResponse();
-		assertEquals(1L, pageResponse.getFormId());
-	}
+    @BeforeEach
+    void setUpOk() {
+        page = TestUTCTools.generatePage(1L);
+        assertNotNull(page);
+    }
 
-	@Test
-	void testToStringOk() {
-		assertFalse(page.toString()
-						.isEmpty());
-	}
+    @Test
+    void getPageResponseOk() {
+        PageResponse pageResponse = page.toResponse();
+        assertEquals(1L, pageResponse.getFormId());
+    }
 
-	@Test
-	void getParentIdOk() {
-		assertTrue(page.getParentId() > -1);
-	}
+    @Test
+    void testToStringOk() {
+        assertFalse(page.toString()
+            .isEmpty());
+    }
 
-	@Test
-	void getFormIdOk() {
-		assertTrue(page.getFormId() > 0);
-	}
+    @Test
+    void getParentIdOk() {
+        assertTrue(page.getParentId() > -1);
+    }
 
-	@Test
-	void getPathOk() {
-		assertEquals("/index", page.getPagePath());
-	}
+    @Test
+    void getFormIdOk() {
+        assertTrue(page.getFormId() > 0);
+    }
 
-	@Test
-	void getSecureOk() {
-		assertTrue(page.isSecure());
-	}
+    @Test
+    void getPathOk() {
+        assertEquals("/index", page.getPagePath());
+    }
 
-	@Test
-	void getIndexListOk() {
-		assertFalse(page.isIndexList());
-	}
+    @Test
+    void getSecureOk() {
+        assertTrue(page.isSecure());
+    }
 
-	@Test
-	void getTitleOk() {
-		assertEquals("Test title", page.getTitle());
-	}
+    @Test
+    void getIndexListOk() {
+        assertFalse(page.isIndexList());
+    }
 
-	@Test
-	void getHeaderOk() {
-		assertEquals("Test header", page.getHeader());
-	}
+    @Test
+    void getTitleOk() {
+        assertEquals("Test title", page.getTitle());
+    }
 
-	@Test
-	void getBodyOk() {
-		assertEquals("This is test body", page.getBody());
-	}
+    @Test
+    void getHeaderOk() {
+        assertEquals("Test header", page.getHeader());
+    }
 
-	@Test
-	void setParentIdOk() {
-		page.setParentId(1L);
-		assertEquals(1L, page.getParentId());
-	}
+    @Test
+    void getBodyOk() {
+        assertEquals("This is test body", page.getBody());
+    }
 
-	@Test
-	void setFormIdOk() {
-		page.setFormId(2L);
-		assertEquals(2L, page.getFormId());
-	}
+    @Test
+    void setParentIdOk() {
+        page.setParentId(1L);
+        assertEquals(1L, page.getParentId());
+    }
 
-	@Test
-	void setPathOk() {
-		page.setPagePath("/index2");
-		assertEquals("/index2", page.getPagePath());
-	}
+    @Test
+    void setFormIdOk() {
+        page.setFormId(2L);
+        assertEquals(2L, page.getFormId());
+    }
 
-	@Test
-	void setSecureOk() {
-		page.setSecure(false);
-		assertFalse(page.isSecure());
-	}
+    @Test
+    void setPathOk() {
+        page.setPagePath("/index2");
+        assertEquals("/index2", page.getPagePath());
+    }
 
-	@Test
-	void setIndexListOk() {
-		page.setIndexList(true);
-		assertTrue(page.isIndexList());
-	}
+    @Test
+    void setSecureOk() {
+        page.setSecure(false);
+        assertFalse(page.isSecure());
+    }
 
-	@Test
-	void setTitleOk() {
-		page.setTitle("Test new title");
-		assertEquals("Test new title", page.getTitle());
-	}
+    @Test
+    void setIndexListOk() {
+        page.setIndexList(true);
+        assertTrue(page.isIndexList());
+    }
 
-	@Test
-	void setHeaderOk() {
-		page.setHeader("Test new header");
-		assertEquals("Test new header", page.getHeader());
-	}
+    @Test
+    void setTitleOk() {
+        page.setTitle("Test new title");
+        assertEquals("Test new title", page.getTitle());
+    }
 
-	@Test
-	void setBodyOk() {
-		page.setBody("This is a new test body");
-		assertEquals("This is a new test body", page.getBody());
-	}
+    @Test
+    void setHeaderOk() {
+        page.setHeader("Test new header");
+        assertEquals("Test new header", page.getHeader());
+    }
 
-	@Test
-	void testEqualsOk() {
-		Page clone = TestUTCTools.deepCopy(page, Page.class);
-		boolean equals = page.equals(clone);
-		assertTrue(equals);
-	}
+    @Test
+    void setBodyOk() {
+        page.setBody("This is a new test body");
+        assertEquals("This is a new test body", page.getBody());
+    }
 
-	@Test
-	void canEqualOk() {
-		Page clone = TestUTCTools.deepCopy(page, Page.class);
-		assertTrue(page.canEqual(clone));
-	}
+    @Test
+    void testEqualsOk() {
+        Page clone = TestUTCTools.deepCopy(page, Page.class);
+        boolean equals = page.equals(clone);
+        assertTrue(equals);
+    }
 
-	@Test
-	void testHashCodeOk() {
-		Page clone = TestUTCTools.deepCopy(page, Page.class);
-		assertNotNull(clone);
-		assertEquals(page.hashCode(), clone.hashCode());
-	}
+    @Test
+    void canEqualOk() {
+        Page clone = TestUTCTools.deepCopy(page, Page.class);
+        assertTrue(page.canEqual(clone));
+    }
 
-	@Test
-	void allArgsConstructorOk() {
-		Page newPage = Page.builder()
-						   .id(0L)
-						   .parentId(1L)
-						   .formId(1L)
-						   .pagePath("/index")
-						   .secure(true)
-						   .indexList(true)
-						   .title("Test title")
-						   .header("Test header")
-						   .body("Test body")
-						   .pageStyle(null)
-						   .published(null)
-						   .creator(null)
-						   .created(null)
-						   .modifier(null)
-						   .modified(null)
-						   .aclId(0L)
-						   .build();
+    @Test
+    void testHashCodeOk() {
+        Page clone = TestUTCTools.deepCopy(page, Page.class);
+        assertNotNull(clone);
+        assertEquals(page.hashCode(), clone.hashCode());
+    }
 
-		assertNull(newPage.getCreator());
-	}
+    @Test
+    void allArgsConstructorOk() {
+        Page newPage = Page.builder()
+            .id(0L)
+            .parentId(1L)
+            .formId(1L)
+            .pagePath("/index")
+            .secure(true)
+            .indexList(true)
+            .title("Test title")
+            .header("Test header")
+            .body("Test body")
+            .pageStyle(null)
+            .published(null)
+            .creator(null)
+            .created(null)
+            .modifier(null)
+            .modified(null)
+            .aclId(0L)
+            .build();
+
+        assertNull(newPage.getCreator());
+    }
 }

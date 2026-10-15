@@ -1,5 +1,14 @@
 package fi.poltsi.vempain.admin.repository.file;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
+
 import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.entity.Subject;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
@@ -7,14 +16,6 @@ import fi.poltsi.vempain.admin.service.SubjectService;
 import fi.poltsi.vempain.admin.service.file.SiteFileService;
 import fi.poltsi.vempain.common.api.FileTypeEnum;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.jpa.domain.Specification;
-
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -22,164 +23,164 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
 class SiteFileRepositoryITC extends AbstractITCTest {
-	@Autowired
-	private SubjectService    subjectService;
-	@Autowired
-	private SiteFileService siteFileService;
 
-	@Test
-	void getSubjectsByFileId() {
-		var userId = testITCTools.generateUser();
+    @Autowired
+    private SubjectService subjectService;
+    @Autowired
+    private SiteFileService siteFileService;
 
-		var subject = Subject.builder()
-							 .subjectName("subjectName")
-							 .subjectNameDe("de")
-							 .subjectNameEn("en")
-							 .subjectNameFi("fi")
-							 .subjectNameSe("se")
-							 .subjectNameEs("es")
-							 .build();
-		subject = subjectService.save(subject);
-		log.info("Created subject with id {}", subject.getId());
-		var nextFileId = siteFileRepository.findMaxFileId();
-		nextFileId++;
-		var siteFile = SiteFile.builder()
-							   .fileId(nextFileId)
-							   .filePath("filePath")
-							   .fileName("fileName")
-							   .mimeType("image/jpeg")
-							   .sha256sum("Test-SHA256-Sum")
-							   .fileType(FileTypeEnum.IMAGE)
-							   .creator(userId)
-							   .created(Instant.now())
-							   .modifier(userId)
-							   .modified(Instant.now())
-							   .build();
+    @Test
+    void getSubjectsByFileId() {
+        var userId = testITCTools.generateUser();
 
-		siteFile = siteFileService.save(siteFile);
-		log.info("Created site file with id {}", siteFile.getId());
-		subjectService.addSubjectToFile(siteFile.getId(), subject.getId());
+        var subject = Subject.builder()
+            .subjectName("subjectName")
+            .subjectNameDe("de")
+            .subjectNameEn("en")
+            .subjectNameFi("fi")
+            .subjectNameSe("se")
+            .subjectNameEs("es")
+            .build();
+        subject = subjectService.save(subject);
+        log.info("Created subject with id {}", subject.getId());
+        var nextFileId = siteFileRepository.findMaxFileId();
+        nextFileId++;
+        var siteFile = SiteFile.builder()
+            .fileId(nextFileId)
+            .filePath("filePath")
+            .fileName("fileName")
+            .mimeType("image/jpeg")
+            .sha256sum("Test-SHA256-Sum")
+            .fileType(FileTypeEnum.IMAGE)
+            .creator(userId)
+            .created(Instant.now())
+            .modifier(userId)
+            .modified(Instant.now())
+            .build();
 
-		var subjects = subjectService.getSubjectsByFileId(siteFile.getId());
+        siteFile = siteFileService.save(siteFile);
+        log.info("Created site file with id {}", siteFile.getId());
+        subjectService.addSubjectToFile(siteFile.getId(), subject.getId());
 
-		assertEquals(1, subjects.size());
-	}
+        var subjects = subjectService.getSubjectsByFileId(siteFile.getId());
 
-	@Test
-	void findByFileTypeReturnsCorrectResults() {
-		var userId = testITCTools.generateUser();
+        assertEquals(1, subjects.size());
+    }
 
-		var aclId1 = testITCTools.generateAcl(userId, null, true, true, true, true);
-		var nextFileId = siteFileRepository.findMaxFileId();
-		nextFileId++;
-		var siteFile1 = SiteFile.builder()
-								.fileId(nextFileId)
-								.aclId(aclId1)
-								.filePath("path1")
-								.fileName("file1")
-								.mimeType("image/jpeg")
-								.sha256sum("SHA256-1")
-								.fileType(FileTypeEnum.IMAGE)
-								.creator(userId)
-								.created(Instant.now())
-								.modifier(userId)
-								.modified(Instant.now())
-								.build();
-		siteFileRepository.save(siteFile1);
+    @Test
+    void findByFileTypeReturnsCorrectResults() {
+        var userId = testITCTools.generateUser();
 
-		var aclId2 = testITCTools.generateAcl(userId, null, true, true, true, true);
-		nextFileId++;
-		var siteFile2 = SiteFile.builder()
-								.fileId(nextFileId)
-								.aclId(aclId2)
-								.filePath("path2")
-								.fileName("file2")
-								.mimeType("application/pdf")
-								.sha256sum("SHA256-2")
-								.fileType(FileTypeEnum.DOCUMENT)
-								.creator(userId)
-								.created(Instant.now())
-								.modifier(userId)
-								.modified(Instant.now())
-								.build();
-		siteFileRepository.save(siteFile2);
+        var aclId1 = testITCTools.generateAcl(userId, null, true, true, true, true);
+        var nextFileId = siteFileRepository.findMaxFileId();
+        nextFileId++;
+        var siteFile1 = SiteFile.builder()
+            .fileId(nextFileId)
+            .aclId(aclId1)
+            .filePath("path1")
+            .fileName("file1")
+            .mimeType("image/jpeg")
+            .sha256sum("SHA256-1")
+            .fileType(FileTypeEnum.IMAGE)
+            .creator(userId)
+            .created(Instant.now())
+            .modifier(userId)
+            .modified(Instant.now())
+            .build();
+        siteFileRepository.save(siteFile1);
 
-		var pageable = PageRequest.of(0, 10);
+        var aclId2 = testITCTools.generateAcl(userId, null, true, true, true, true);
+        nextFileId++;
+        var siteFile2 = SiteFile.builder()
+            .fileId(nextFileId)
+            .aclId(aclId2)
+            .filePath("path2")
+            .fileName("file2")
+            .mimeType("application/pdf")
+            .sha256sum("SHA256-2")
+            .fileType(FileTypeEnum.DOCUMENT)
+            .creator(userId)
+            .created(Instant.now())
+            .modifier(userId)
+            .modified(Instant.now())
+            .build();
+        siteFileRepository.save(siteFile2);
 
-		var result = siteFileRepository.findByFileType(FileTypeEnum.IMAGE, pageable);
+        var pageable = PageRequest.of(0, 10);
 
-		assertEquals(1, result.getTotalElements());
-		assertEquals("file1", result.getContent()
-									.getFirst()
-									.getFileName());
-	}
+        var result = siteFileRepository.findByFileType(FileTypeEnum.IMAGE, pageable);
 
-	@Test
-	void findByFileTypeReturnsEmptyWhenNoMatch() {
-		var pageable = PageRequest.of(0, 10);
+        assertEquals(1, result.getTotalElements());
+        assertEquals("file1", result.getContent()
+            .getFirst()
+            .getFileName());
+    }
 
-		var result = siteFileRepository.findByFileType(FileTypeEnum.VIDEO, pageable);
+    @Test
+    void findByFileTypeReturnsEmptyWhenNoMatch() {
+        var pageable = PageRequest.of(0, 10);
 
-		assertEquals(0, result.getTotalElements());
-	}
+        var result = siteFileRepository.findByFileType(FileTypeEnum.VIDEO, pageable);
 
-	@Test
-	void findByIdWithoutMetadataDropsTheMetadataOfTheLoadedFile() {
-		var siteFile = testITCTools.generateSiteFile(1L);
+        assertEquals(0, result.getTotalElements());
+    }
 
-		var loaded = siteFileRepository.findByIdWithoutMetadata(siteFile.getId());
+    @Test
+    void findByIdWithoutMetadataDropsTheMetadataOfTheLoadedFile() {
+        var siteFile = testITCTools.generateSiteFile(1L);
 
-		assertTrue(loaded.isPresent());
-		assertNull(loaded.get()
-						 .getMetadata());
-		assertEquals(siteFile.getFileName(), loaded.get()
-												   .getFileName());
-		assertTrue(siteFileRepository.findByIdWithoutMetadata(999_999L)
-									 .isEmpty());
-	}
+        var loaded = siteFileRepository.findByIdWithoutMetadata(siteFile.getId());
 
-	@Test
-	void temporalSizeAndIdSpecificationsFilterTheListing() {
-		var first = testITCTools.generateSiteFile(1L);
-		// The generated file carries file id 0, a second one needs its own unique file id
-		var second = siteFileRepository.save(SiteFile.builder()
-													 .fileId(siteFileRepository.findMaxFileId() + 1)
-													 .aclId(testITCTools.generateAcl(1L, null, true, true, true, true))
-													 .fileName("second.jpg")
-													 .filePath("/uploads/test/2/")
-													 .mimeType("image/jpeg")
-													 .size(1024L * 1024L)
-													 .fileType(FileTypeEnum.IMAGE)
-													 .sha256sum("dummy-sha256sum-2")
-													 .creator(1L)
-													 .created(Instant.now()
-																	 .minus(1, ChronoUnit.HOURS))
-													 .build());
-		var pageable = PageRequest.of(0, 10);
+        assertTrue(loaded.isPresent());
+        assertNull(loaded.get()
+            .getMetadata());
+        assertEquals(siteFile.getFileName(), loaded.get()
+            .getFileName());
+        assertTrue(siteFileRepository.findByIdWithoutMetadata(999_999L)
+            .isEmpty());
+    }
 
-		// Both files were created an hour ago and are one megabyte large, neither has been modified
-		var recent = siteFileRepository.findAll(Specification.allOf(SiteFileSpecifications.createdAfter(Instant.now()
-																											   .minus(2, ChronoUnit.HOURS)),
-																	SiteFileSpecifications.sizeAtLeast(1024L * 1024L)), pageable);
-		assertEquals(2, recent.getTotalElements());
+    @Test
+    void temporalSizeAndIdSpecificationsFilterTheListing() {
+        var first = testITCTools.generateSiteFile(1L);
+        // The generated file carries file id 0, a second one needs its own unique file id
+        var second = siteFileRepository.save(SiteFile.builder()
+            .fileId(siteFileRepository.findMaxFileId() + 1)
+            .aclId(testITCTools.generateAcl(1L, null, true, true, true, true))
+            .fileName("second.jpg")
+            .filePath("/uploads/test/2/")
+            .mimeType("image/jpeg")
+            .size(1024L * 1024L)
+            .fileType(FileTypeEnum.IMAGE)
+            .sha256sum("dummy-sha256sum-2")
+            .creator(1L)
+            .created(Instant.now()
+                .minus(1, ChronoUnit.HOURS))
+            .build());
+        var pageable = PageRequest.of(0, 10);
 
-		var tooLarge = siteFileRepository.findAll(SiteFileSpecifications.sizeAtLeast(1024L * 1024L + 1), pageable);
-		assertEquals(0, tooLarge.getTotalElements());
+        // Both files were created an hour ago and are one megabyte large, neither has been modified
+        var recent = siteFileRepository.findAll(Specification.allOf(SiteFileSpecifications.createdAfter(Instant.now()
+            .minus(2, ChronoUnit.HOURS)), SiteFileSpecifications.sizeAtLeast(1024L * 1024L)), pageable);
+        assertEquals(2, recent.getTotalElements());
 
-		var modified = siteFileRepository.findAll(SiteFileSpecifications.modifiedAfter(Instant.now()
-																							  .minus(2, ChronoUnit.HOURS)), pageable);
-		assertEquals(0, modified.getTotalElements());
+        var tooLarge = siteFileRepository.findAll(SiteFileSpecifications.sizeAtLeast(1024L * 1024L + 1), pageable);
+        assertEquals(0, tooLarge.getTotalElements());
 
-		var byId = siteFileRepository.findAll(SiteFileSpecifications.idIn(List.of(second.getId())), pageable);
-		assertEquals(1, byId.getTotalElements());
-		assertEquals(second.getId(), byId.getContent()
-										 .getFirst()
-										 .getId());
+        var modified = siteFileRepository.findAll(SiteFileSpecifications.modifiedAfter(Instant.now()
+            .minus(2, ChronoUnit.HOURS)), pageable);
+        assertEquals(0, modified.getTotalElements());
 
-		assertEquals(0, siteFileRepository.findAll(SiteFileSpecifications.idIn(List.of()), pageable)
-										  .getTotalElements());
-		assertEquals(0, siteFileRepository.findAll(SiteFileSpecifications.idIn(null), pageable)
-										  .getTotalElements());
-		assertTrue(first.getId() > 0);
-	}
+        var byId = siteFileRepository.findAll(SiteFileSpecifications.idIn(List.of(second.getId())), pageable);
+        assertEquals(1, byId.getTotalElements());
+        assertEquals(second.getId(), byId.getContent()
+            .getFirst()
+            .getId());
+
+        assertEquals(0, siteFileRepository.findAll(SiteFileSpecifications.idIn(List.of()), pageable)
+            .getTotalElements());
+        assertEquals(0, siteFileRepository.findAll(SiteFileSpecifications.idIn(null), pageable)
+            .getTotalElements());
+        assertTrue(first.getId() > 0);
+    }
 }

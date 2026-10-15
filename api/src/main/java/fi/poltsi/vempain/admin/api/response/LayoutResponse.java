@@ -1,7 +1,11 @@
 package fi.poltsi.vempain.admin.api.response;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import fi.poltsi.vempain.admin.api.request.LayoutRequest;
 import fi.poltsi.vempain.auth.api.request.AclRequest;
 import fi.poltsi.vempain.auth.api.response.AbstractResponse;
@@ -16,9 +20,6 @@ import lombok.experimental.SuperBuilder;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 @Data
@@ -29,24 +30,25 @@ import java.util.List;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Schema(description = "Item depicting a layout item")
 public class LayoutResponse extends AbstractResponse {
-	@Schema(description = "Layout name", example = "My layout")
-	private String layoutName;
-	@Schema(description = "Layout structure", example = "<!--comp_1-->")
-	private String structure;
 
-	@JsonIgnore
-	public LayoutRequest getLayoutRequest() {
-		List<AclRequest> aclRequests = new ArrayList<>();
+    @Schema(description = "Layout name", example = "My layout")
+    private String layoutName;
+    @Schema(description = "Layout structure", example = "<!--comp_1-->")
+    private String structure;
 
-		for (AclResponse aclResponse : this.getAcls()) {
-			aclRequests.add(aclResponse.toRequest());
-		}
+    @JsonIgnore
+    public LayoutRequest getLayoutRequest() {
+        List<AclRequest> aclRequests = new ArrayList<>();
 
-		return LayoutRequest.builder()
-		                    .id(this.getId())
-		                    .layoutName(this.layoutName)
-		                    .structure(this.structure)
-		                    .acls(aclRequests)
-		                    .build();
-	}
+        for (AclResponse aclResponse : this.getAcls()) {
+            aclRequests.add(aclResponse.toRequest());
+        }
+
+        return LayoutRequest.builder()
+            .id(this.getId())
+            .layoutName(this.layoutName)
+            .structure(this.structure)
+            .acls(aclRequests)
+            .build();
+    }
 }

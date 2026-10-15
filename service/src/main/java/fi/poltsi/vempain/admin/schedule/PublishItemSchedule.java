@@ -1,5 +1,12 @@
 package fi.poltsi.vempain.admin.schedule;
 
+import java.time.Instant;
+
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
 import fi.poltsi.vempain.admin.api.ContentTypeEnum;
 import fi.poltsi.vempain.admin.api.PublishStatusEnum;
 import fi.poltsi.vempain.admin.repository.PublishScheduleRepository;
@@ -7,72 +14,66 @@ import fi.poltsi.vempain.admin.service.PublishService;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class PublishItemSchedule {
-	private static final long   DELAY         = 5 * 60 * 1000L;
-	private static final String INITIAL_DELAY =
-			"#{ 5 * 1000 + T(java.util.concurrent.ThreadLocalRandom).current().nextInt(" + DELAY + ") }";
 
-	private final PublishScheduleRepository publishScheduleRepository;
-	private final PublishService            publishService;
-	@org.springframework.beans.factory.annotation.Value("${vempain.scheduling.enabled:true}")
-	private boolean schedulingEnabled = true;
+    private static final long DELAY = 5 * 60 * 1000L;
+    private static final String INITIAL_DELAY = "#{ 5 * 1000 + T(java.util.concurrent.ThreadLocalRandom).current().nextInt(" + DELAY + ") }";
 
-	@Scheduled(fixedDelay = DELAY, initialDelayString = INITIAL_DELAY)
-	@Transactional(propagation = Propagation.REQUIRED)
-	protected void publishItems() {
-		if (!schedulingEnabled) {
-			return;
-		}
-		var scheduledPublishes = publishScheduleRepository.findAllByPublishStatusEqualsAndPublishTimeBefore(PublishStatusEnum.NOT_PUBLISHED, Instant.now());
+    private final PublishScheduleRepository publishScheduleRepository;
+    private final PublishService publishService;
+    @org.springframework.beans.factory.annotation.Value("${vempain.scheduling.enabled:true}")
+    private boolean schedulingEnabled = true;
 
-		if (scheduledPublishes.isEmpty()) {
-			log.info("No scheduled publishes found");
-			return;
-		}
+    @Scheduled(fixedDelay = DELAY, initialDelayString = INITIAL_DELAY)
+    @Transactional(propagation = Propagation.REQUIRED)
+    protected void publishItems() {
+        if (!schedulingEnabled) {
+            return;
+        }
+        var scheduledPublishes = publishScheduleRepository.findAllByPublishStatusEqualsAndPublishTimeBefore(PublishStatusEnum.NOT_PUBLISHED, Instant.now());
 
-		var counter = 0;
+        if (scheduledPublishes.isEmpty()) {
+            log.info("No scheduled publishes found");
+            return;
+        }
 
-		for (var scheduledPublish : scheduledPublishes) {
-			updatePublishStatus(scheduledPublish.getId(), PublishStatusEnum.PROCESSING);
+        var counter = 0;
 
-			log.info("Publishing item: {}", scheduledPublish.getPublishType());
+        for (var scheduledPublish : scheduledPublishes) {
+            updatePublishStatus(scheduledPublish.getId(), PublishStatusEnum.PROCESSING);
 
-			if (scheduledPublish.getPublishType() == ContentTypeEnum.PAGE) {
-				try {
-					publishService.publishPageAsSystem(scheduledPublish.getPublishId());
-				} catch (VempainEntityNotFoundException e) {
-					log.error("The page to publish no longer exists: {}", scheduledPublish.getPublishId());
-				}
-			} else if (scheduledPublish.getPublishType() == ContentTypeEnum.GALLERY) {
-				try {
-					publishService.publishGalleryAsSystem(scheduledPublish.getPublishId());
-				} catch (VempainEntityNotFoundException e) {
-					log.error("The gallery to publish no longer exists: {}", scheduledPublish.getPublishId());
-				}
-			} else {
-				log.warn("Unknown publish type: {}", scheduledPublish.getPublishType());
-			}
+            log.info("Publishing item: {}", scheduledPublish.getPublishType());
 
-			updatePublishStatus(scheduledPublish.getId(), PublishStatusEnum.PUBLISHED);
+            if (scheduledPublish.getPublishType() == ContentTypeEnum.PAGE) {
+                try {
+                    publishService.publishPageAsSystem(scheduledPublish.getPublishId());
+                } catch (VempainEntityNotFoundException e) {
+                    log.error("The page to publish no longer exists: {}", scheduledPublish.getPublishId());
+                }
+            } else if (scheduledPublish.getPublishType() == ContentTypeEnum.GALLERY) {
+                try {
+                    publishService.publishGalleryAsSystem(scheduledPublish.getPublishId());
+                } catch (VempainEntityNotFoundException e) {
+                    log.error("The gallery to publish no longer exists: {}", scheduledPublish.getPublishId());
+                }
+            } else {
+                log.warn("Unknown publish type: {}", scheduledPublish.getPublishType());
+            }
 
-			counter++;
-		}
+            updatePublishStatus(scheduledPublish.getId(), PublishStatusEnum.PUBLISHED);
 
-		log.info("{} items published", counter);
-	}
+            counter++;
+        }
 
-	@Transactional(propagation = Propagation.REQUIRED)
-	protected void updatePublishStatus(Long publishId, PublishStatusEnum publishStatusEnum) {
-		publishScheduleRepository.updatePublishStatus(publishId, publishStatusEnum);
-	}
+        log.info("{} items published", counter);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    protected void updatePublishStatus(Long publishId, PublishStatusEnum publishStatusEnum) {
+        publishScheduleRepository.updatePublishStatus(publishId, publishStatusEnum);
+    }
 }

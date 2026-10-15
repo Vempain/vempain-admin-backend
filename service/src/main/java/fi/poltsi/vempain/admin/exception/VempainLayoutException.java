@@ -6,5 +6,6 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class VempainLayoutException extends Exception {
-	private final String message;
+
+    private final String message;
 }

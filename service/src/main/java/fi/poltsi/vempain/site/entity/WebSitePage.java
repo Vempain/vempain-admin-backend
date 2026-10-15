@@ -1,17 +1,18 @@
 package fi.poltsi.vempain.site.entity;
 
+import java.time.Instant;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.Instant;
 
 @Data
 @Entity
@@ -20,59 +21,60 @@ import java.time.Instant;
 @AllArgsConstructor
 @Table(name = "web_site_page")
 public class WebSitePage {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "id")
-	protected long id;
 
-	@Column(name = "acl_id", nullable = false)
-	protected long aclId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    protected long id;
 
-	@Column(name = "page_id", nullable = false)
-	protected long pageId;
+    @Column(name = "acl_id", nullable = false)
+    protected long aclId;
 
-	@Column(name = "parent_id")
-	private Long parentId;
+    @Column(name = "page_id", nullable = false)
+    protected long pageId;
 
-	@Column(name = "file_path", nullable = false)
-	private String filePath;
+    @Column(name = "parent_id")
+    private Long parentId;
 
-	@Column(name = "secure", nullable = false)
-	private boolean secure;
+    @Column(name = "file_path", nullable = false)
+    private String filePath;
 
-	@Column(name = "indexlist", nullable = false)
-	private boolean indexList;
+    @Column(name = "secure", nullable = false)
+    private boolean secure;
 
-	@Column(name = "title", nullable = false, length = 512)
-	private String title;
+    @Column(name = "indexlist", nullable = false)
+    private boolean indexList;
 
-	@Column(name = "header", nullable = false, length = 512)
-	private String header;
+    @Column(name = "title", nullable = false, length = 512)
+    private String title;
 
-	@Column(name = "body", nullable = false, length = 524288)
-	private String body;
+    @Column(name = "header", nullable = false, length = 512)
+    private String header;
 
-	@Column(name = "page_style", length = 524288)
-	private String pageStyle;
+    @Column(name = "body", nullable = false, length = 524288)
+    private String body;
 
-	@Column(name = "creator", nullable = false, length = 512)
-	private String creator;
+    @Column(name = "page_style", length = 524288)
+    private String pageStyle;
 
-	@Column(name = "created", nullable = false)
-	private Instant created;
+    @Column(name = "creator", nullable = false, length = 512)
+    private String creator;
 
-	@Column(name = "modifier", length = 512)
-	private String modifier;
+    @Column(name = "created", nullable = false)
+    private Instant created;
 
-	@Column(name = "modified")
-	private Instant modified;
+    @Column(name = "modifier", length = 512)
+    private String modifier;
 
-	@Column(name = "cache", length = 524288)
-	private String cache;
+    @Column(name = "modified")
+    private Instant modified;
 
-	@Column(name = "embeds")
-	private String embeds;
+    @Column(name = "cache", length = 524288)
+    private String cache;
 
-	@Column(name = "published")
-	private Instant published;
+    @Column(name = "embeds")
+    private String embeds;
+
+    @Column(name = "published")
+    private Instant published;
 }

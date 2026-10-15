@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.Transient;
+
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -24,14 +25,15 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AbstractFileEntity {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "id")
-	protected Long id;
-	@Basic
-	@Column(name = "parent_id", nullable = false)
-	private   long parentId;
 
-	@Transient
-	private SiteFile siteFile;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    protected Long id;
+    @Basic
+    @Column(name = "parent_id", nullable = false)
+    private long parentId;
+
+    @Transient
+    private SiteFile siteFile;
 }

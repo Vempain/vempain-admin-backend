@@ -1,13 +1,15 @@
 package fi.poltsi.vempain.admin.service;
 
-import fi.poltsi.vempain.admin.api.request.DataRequest;
-import fi.poltsi.vempain.admin.api.response.DataResponse;
-import fi.poltsi.vempain.admin.api.response.DataSummaryResponse;
-import fi.poltsi.vempain.admin.entity.DataEntity;
-import fi.poltsi.vempain.admin.repository.DataRepository;
-import fi.poltsi.vempain.common.api.TaskStatusEnum;
-import fi.poltsi.vempain.common.task.TaskProgressStore;
-import fi.poltsi.vempain.common.task.TaskRunner;
+import java.sql.PreparedStatement;
+import java.sql.Types;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import javax.sql.DataSource;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,14 +22,14 @@ import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.web.server.ResponseStatusException;
 
-import javax.sql.DataSource;
-import java.sql.PreparedStatement;
-import java.sql.Types;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import fi.poltsi.vempain.admin.api.request.DataRequest;
+import fi.poltsi.vempain.admin.api.response.DataResponse;
+import fi.poltsi.vempain.admin.api.response.DataSummaryResponse;
+import fi.poltsi.vempain.admin.entity.DataEntity;
+import fi.poltsi.vempain.admin.repository.DataRepository;
+import fi.poltsi.vempain.common.api.TaskStatusEnum;
+import fi.poltsi.vempain.common.task.TaskProgressStore;
+import fi.poltsi.vempain.common.task.TaskRunner;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -45,590 +47,594 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class DataServiceUTC {
-	private static final String TEST_IDENTIFIER = "test_data";
-
-	@Mock
-	private DataRepository dataRepository;
-
-	private DataService dataService;
-	private JdbcTemplate mockJdbcTemplate;
-
-	@BeforeEach
-	void setUp() {
-		var mockDataSource = mock(DataSource.class);
-		dataService = new DataService(dataRepository, mockDataSource, null, null);
-
-		mockJdbcTemplate = mock(JdbcTemplate.class);
-		// Inject the mock JdbcTemplate via reflection to control site DB interaction
-		try {
-			var field = DataService.class.getDeclaredField("siteJdbcTemplate");
-			field.setAccessible(true);
-			field.set(dataService, mockJdbcTemplate);
-		} catch (Exception e) {
-			throw new RuntimeException("Failed to inject mock JdbcTemplate", e);
-		}
-	}
-
-	// findAll
-
-	@Test
-	void findAllOk() {
-		var entities = buildEntityList(3);
-		when(dataRepository.findAll()).thenReturn(entities);
-
-		List<DataSummaryResponse> result = dataService.findAll(null, null, null);
-
-		assertNotNull(result);
-		assertEquals(3, result.size());
-	}
-
-	@Test
-	void findAllEmptyOk() {
-		when(dataRepository.findAll()).thenReturn(new ArrayList<>());
-
-		List<DataSummaryResponse> result = dataService.findAll(null, null, null);
-
-		assertNotNull(result);
-		assertEquals(0, result.size());
-	}
-
-	@Test
-	void findAllFiltersByTypeAndIdentifierPrefixOk() {
-		var music = buildEntity(1L);
-		music.setIdentifier("music_library");
-		music.setDescription("Music library");
-		var gps = buildEntity(2L);
-		gps.setIdentifier("gps_timeseries_holidays");
-		gps.setType("time_series");
-		gps.setDescription("GPS trip track");
-		when(dataRepository.findAll()).thenReturn(List.of(music, gps));
-
-		List<DataSummaryResponse> result = dataService.findAll("time_series", "gps_timeseries_", null);
-
-		assertEquals(1, result.size());
-		assertEquals("gps_timeseries_holidays", result.get(0).getIdentifier());
-	}
-
-	@Test
-	void findAllFiltersBySearchOk() {
-		var music = buildEntity(1L);
-		music.setIdentifier("music_library");
-		music.setDescription("Complete music library");
-		var gps = buildEntity(2L);
-		gps.setIdentifier("gps_timeseries_holidays");
-		gps.setType("time_series");
-		gps.setDescription("GPS trip track");
-		when(dataRepository.findAll()).thenReturn(List.of(music, gps));
-
-		List<DataSummaryResponse> result = dataService.findAll(null, null, "trip");
-
-		assertEquals(1, result.size());
-		assertEquals("gps_timeseries_holidays", result.get(0).getIdentifier());
-	}
-
-	// findByIdentifier
-
-	@Test
-	void findByIdentifierOk() {
-		var entity = buildEntity(1L);
-		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
-
-		DataResponse response = dataService.findByIdentifier(TEST_IDENTIFIER);
-
-		assertNotNull(response);
-		assertEquals(TEST_IDENTIFIER, response.getIdentifier());
-	}
-
-	@Test
-	void findByIdentifierNotFoundFail() {
-		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.empty());
-
-		try {
-			dataService.findByIdentifier(TEST_IDENTIFIER);
-			fail("Should have thrown ResponseStatusException");
-		} catch (ResponseStatusException e) {
-			assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
-		}
-	}
-
-	// create
-
-	@Test
-	void createOk() {
-		var request = buildValidRequest();
-		var entity = buildEntity(1L);
-		when(dataRepository.existsByIdentifier(TEST_IDENTIFIER)).thenReturn(false);
-		when(dataRepository.save(any(DataEntity.class))).thenReturn(entity);
-
-		DataResponse response = dataService.create(request);
-
-		assertNotNull(response);
-		assertEquals(TEST_IDENTIFIER, response.getIdentifier());
-	}
-
-	@Test
-	void createDuplicateIdentifierFail() {
-		var request = buildValidRequest();
-		when(dataRepository.existsByIdentifier(TEST_IDENTIFIER)).thenReturn(true);
-
-		try {
-			dataService.create(request);
-			fail("Should have thrown ResponseStatusException for duplicate identifier");
-		} catch (ResponseStatusException e) {
-			assertEquals(HttpStatus.CONFLICT, e.getStatusCode());
-		}
-	}
-
-	@Test
-	void createNullRequestFail() {
-		try {
-			dataService.create(null);
-			fail("Should have thrown ResponseStatusException for null request");
-		} catch (ResponseStatusException e) {
-			assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
-		}
-	}
-
-	@Test
-	void createInvalidIdentifierNullFail() {
-		var request = buildValidRequest();
-		request.setIdentifier(null);
-		assertCreateBadRequest(request);
-	}
-
-	@Test
-	void createInvalidIdentifierEmptyFail() {
-		var request = buildValidRequest();
-		request.setIdentifier("");
-		assertCreateBadRequest(request);
-	}
-
-	@Test
-	void createInvalidIdentifierStartsWithDigitFail() {
-		var request = buildValidRequest();
-		request.setIdentifier("1invalid");
-		assertCreateBadRequest(request);
-	}
-
-	@Test
-	void createInvalidIdentifierUppercaseFail() {
-		var request = buildValidRequest();
-		request.setIdentifier("Invalid");
-		assertCreateBadRequest(request);
-	}
-
-	@Test
-	void createInvalidIdentifierHyphenFail() {
-		var request = buildValidRequest();
-		request.setIdentifier("invalid-identifier");
-		assertCreateBadRequest(request);
-	}
-
-	@Test
-	void createMissingTypeFail() {
-		var request = buildValidRequest();
-		request.setType(null);
-		assertCreateBadRequest(request);
-	}
-
-	@Test
-	void createMissingColumnDefinitionsFail() {
-		var request = buildValidRequest();
-		request.setColumnDefinitions(null);
-		assertCreateBadRequest(request);
-	}
-
-	@Test
-	void createMissingCreateSqlFail() {
-		var request = buildValidRequest();
-		request.setCreateSql(null);
-		assertCreateBadRequest(request);
-	}
-
-	@Test
-	void createMissingFetchAllSqlFail() {
-		var request = buildValidRequest();
-		request.setFetchAllSql(null);
-		assertCreateBadRequest(request);
-	}
-
-	@Test
-	void createMissingFetchSubsetSqlFail() {
-		var request = buildValidRequest();
-		request.setFetchSubsetSql(null);
-		assertCreateBadRequest(request);
-	}
-
-	@Test
-	void createMissingCsvDataFail() {
-		var request = buildValidRequest();
-		request.setCsvData(null);
-		assertCreateBadRequest(request);
-	}
-
-	// update
-
-	@Test
-	void updateOk() {
-		var request = buildValidRequest();
-		var entity = buildEntity(1L);
-		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
-		when(dataRepository.save(any(DataEntity.class))).thenReturn(entity);
-
-		DataResponse response = dataService.update(request);
-
-		assertNotNull(response);
-		assertEquals(TEST_IDENTIFIER, response.getIdentifier());
-	}
-
-	@Test
-	void updateNotFoundFail() {
-		var request = buildValidRequest();
-		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.empty());
-
-		try {
-			dataService.update(request);
-			fail("Should have thrown ResponseStatusException");
-		} catch (ResponseStatusException e) {
-			assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
-		}
-	}
-
-	@Test
-	void updateNullRequestFail() {
-		try {
-			dataService.update(null);
-			fail("Should have thrown ResponseStatusException");
-		} catch (ResponseStatusException e) {
-			assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
-		}
-	}
-
-	// publish
-
-	@Test
-	void publishOk() {
-		var entity = buildEntity(1L);
-		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
-
-		DataResponse response = dataService.publish(TEST_IDENTIFIER);
-
-		assertNotNull(response);
-		assertEquals(TEST_IDENTIFIER, response.getIdentifier());
-		verify(mockJdbcTemplate).execute("DROP TABLE IF EXISTS \"website_data__test_data\"");
-		verify(mockJdbcTemplate).execute("CREATE TABLE \"website_data__test_data\" (id BIGSERIAL PRIMARY KEY, title VARCHAR(255))");
-	}
-
-	@Test
-	void publishRewritesCreateSqlTableNameOk() {
-		var entity = buildEntity(1L);
-		entity.setCreateSql("CREATE TABLE wrong_table_name (id BIGSERIAL PRIMARY KEY, title VARCHAR(255))");
-		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
-
-		DataResponse response = dataService.publish(TEST_IDENTIFIER);
-
-		assertNotNull(response);
-		verify(mockJdbcTemplate).execute("CREATE TABLE \"website_data__test_data\" (id BIGSERIAL PRIMARY KEY, title VARCHAR(255))");
-	}
-
-	@Test
-	void publishInvalidCreateSqlFail() {
-		var entity = buildEntity(1L);
-		entity.setCreateSql("DROP TABLE some_table");
-		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
-
-		try {
-			dataService.publish(TEST_IDENTIFIER);
-			fail("Should have thrown ResponseStatusException for invalid create SQL");
-		} catch (ResponseStatusException e) {
-			assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
-		}
-	}
-
-	@Test
-	void publishNotFoundFail() {
-		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.empty());
-
-		try {
-			dataService.publish(TEST_IDENTIFIER);
-			fail("Should have thrown ResponseStatusException");
-		} catch (ResponseStatusException e) {
-			assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
-		}
-	}
-
-	@Test
-	void publishCsvColumnCountMismatchFail() {
-		var entity = buildEntity(1L);
-		entity.setCsvData("title,year\nOnlyTitle");
-		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
-
-		try {
-			dataService.publish(TEST_IDENTIFIER);
-			fail("Should have thrown ResponseStatusException for invalid CSV row width");
-		} catch (ResponseStatusException e) {
-			assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
-		}
-	}
-
-	@Test
-	void publishSiteDbFailureThrowsInternalError() {
-		var entity = buildEntity(1L);
-		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
-		doThrow(new RuntimeException("DB failure")).when(mockJdbcTemplate).execute(anyString());
-
-		try {
-			dataService.publish(TEST_IDENTIFIER);
-			fail("Should have thrown ResponseStatusException");
-		} catch (ResponseStatusException e) {
-			assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, e.getStatusCode());
-		}
-	}
-
-	// Helpers
-
-	private void assertCreateBadRequest(DataRequest request) {
-		try {
-			dataService.create(request);
-			fail("Should have thrown ResponseStatusException for invalid request");
-		} catch (ResponseStatusException e) {
-			assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
-		}
-	}
-
-	private DataRequest buildValidRequest() {
-		return DataRequest.builder()
-						  .identifier(TEST_IDENTIFIER)
-						  .type("tabulated")
-						  .description("Test data set")
-						  .columnDefinitions("[{\"name\":\"title\",\"type\":\"string\"}]")
-						  .createSql("CREATE TABLE website_data__test_data (id BIGSERIAL PRIMARY KEY, title VARCHAR(255))")
-						  .fetchAllSql("SELECT * FROM website_data__test_data")
-						  .fetchSubsetSql("SELECT * FROM website_data__test_data WHERE title = :title")
-						  .generated(Instant.now())
-						  .csvData("title\nTest Album")
-						  .build();
-	}
-
-	private DataEntity buildEntity(Long id) {
-		var now = Instant.now();
-		return DataEntity.builder()
-						 .id(id)
-						 .identifier(TEST_IDENTIFIER)
-						 .type("tabulated")
-						 .description("Test data set")
-						 .columnDefinitions("[{\"name\":\"title\",\"type\":\"string\"}]")
-						 .createSql("CREATE TABLE website_data__test_data (id BIGSERIAL PRIMARY KEY, title VARCHAR(255))")
-						 .fetchAllSql("SELECT * FROM website_data__test_data")
-						 .fetchSubsetSql("SELECT * FROM website_data__test_data WHERE title = :title")
-						 .generated(now)
-						 .csvData("title\nTest Album")
-						 .createdAt(now)
-						 .updatedAt(now)
-						 .build();
-	}
-
-	private List<DataEntity> buildEntityList(int count) {
-		var entities = new ArrayList<DataEntity>();
-		for (int i = 0; i < count; i++) {
-			var now = Instant.now();
-			entities.add(DataEntity.builder()
-								   .id((long) (i + 1))
-								   .identifier("data_set_" + i)
-								   .type("tabulated")
-								   .description("Test data set " + i)
-								   .columnDefinitions("[{\"name\":\"value\",\"type\":\"string\"}]")
-								   .createSql("CREATE TABLE website_data__data_set_" + i + " (id BIGSERIAL PRIMARY KEY, value TEXT)")
-								   .fetchAllSql("SELECT * FROM website_data__data_set_" + i)
-								   .fetchSubsetSql("SELECT * FROM website_data__data_set_" + i + " WHERE value = :value")
-								   .generated(now)
-								   .csvData("value\ntest")
-								   .createdAt(now)
-								   .updatedAt(now)
-								   .build());
-		}
-		return entities;
-	}
-
-	// delete
-
-	@Test
-	void deleteDropsSiteTableAndRemovesTheEntityOk() {
-		var entity = buildEntity(1L);
-		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
-
-		dataService.delete(TEST_IDENTIFIER);
-
-		verify(mockJdbcTemplate).execute("DROP TABLE IF EXISTS \"website_data__" + TEST_IDENTIFIER + "\"");
-		verify(dataRepository).delete(entity);
-	}
-
-	@Test
-	void deleteNotFoundFail() {
-		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.empty());
-
-		try {
-			dataService.delete(TEST_IDENTIFIER);
-			fail("Should have thrown ResponseStatusException");
-		} catch (ResponseStatusException e) {
-			assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
-		}
-		verify(dataRepository, never()).delete(any());
-	}
-
-	@Test
-	void deleteFailsWhenTheSiteTableCannotBeDropped() {
-		var entity = buildEntity(1L);
-		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
-		doThrow(new RuntimeException("db down")).when(mockJdbcTemplate)
-												.execute(anyString());
-
-		try {
-			dataService.delete(TEST_IDENTIFIER);
-			fail("Should have thrown ResponseStatusException");
-		} catch (ResponseStatusException e) {
-			assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, e.getStatusCode());
-		}
-		verify(dataRepository, never()).delete(any());
-	}
-
-	// ---- filters, the publish task, CSV parsing and type coercion ----
-
-	@Test
-	void findAllFiltersByIdentifierPrefixAndToleratesMissingDescriptionsAndBlankFilters() {
-		var entities = buildEntityList(2);
-		entities.getFirst()
-				.setDescription(null);
-		when(dataRepository.findAll()).thenReturn(entities);
-
-		assertEquals(0, dataService.findAll(null, "other_", null)
-								   .size());
-		assertEquals(2, dataService.findAll("  ", "data_set", "data")
-								   .size());
-		assertEquals(1, dataService.findAll(null, null, "test data set 1")
-								   .size());
-	}
-
-	@Test
-	void publishAsTaskRejectsAnUnknownDataSetAndOtherwisePublishesThroughTheProxy() {
-		var applicationContext = mock(ApplicationContext.class);
-		var taskStore = new TaskProgressStore();
-		var taskService = new DataService(dataRepository, mock(DataSource.class), new TaskRunner(taskStore, Runnable::run), applicationContext);
-		when(dataRepository.findByIdentifier("missing")).thenReturn(Optional.empty());
-		assertThrows(ResponseStatusException.class, () -> taskService.publishAsTask("missing"));
-
-		var entity = buildEntity(1L);
-		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
-		var proxy = mock(DataService.class);
-		when(proxy.publish(TEST_IDENTIFIER)).thenReturn(entity.toDataResponse());
-		when(applicationContext.getBean(DataService.class)).thenReturn(proxy);
-
-		var accepted = taskService.publishAsTask(TEST_IDENTIFIER);
-
-		var task = taskStore.find(accepted.getTaskId())
-							.orElseThrow();
-		assertEquals(TaskStatusEnum.COMPLETED, task.getStatus());
-		assertEquals(TEST_IDENTIFIER, ((DataResponse) task.getResult()).getIdentifier());
-		verify(proxy).publish(TEST_IDENTIFIER);
-	}
-
-	@Test
-	void publishRejectsACreateStatementWithoutColumnsAndSkipsEmptyCsvData() {
-		var entity = buildEntity(1L);
-		entity.setCreateSql("CREATE TABLE website_data__test_data");
-		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
-		var thrown = assertThrows(ResponseStatusException.class, () -> dataService.publish(TEST_IDENTIFIER));
-		assertEquals(HttpStatus.BAD_REQUEST, thrown.getStatusCode());
-
-		entity.setCreateSql("CREATE TABLE website_data__test_data (id BIGSERIAL PRIMARY KEY, title VARCHAR(255))");
-		entity.setCsvData("   ");
-		dataService.publish(TEST_IDENTIFIER);
-		entity.setCsvData("title");
-		dataService.publish(TEST_IDENTIFIER);
-		verify(mockJdbcTemplate, never()).update(anyString(), any(PreparedStatementSetter.class));
-	}
-
-	@Test
-	void publishRejectsInvalidColumnNamesInTheCsvHeader() {
-		var entity = buildEntity(1L);
-		entity.setCsvData("bad-name\nvalue");
-		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
-
-		var thrown = assertThrows(ResponseStatusException.class, () -> dataService.publish(TEST_IDENTIFIER));
-
-		assertEquals(HttpStatus.BAD_REQUEST, thrown.getStatusCode());
-	}
-
-	@SuppressWarnings("unchecked")
-	private void stubColumnTypes(Map<String, Integer> types) {
-		when(mockJdbcTemplate.query(anyString(), any(ResultSetExtractor.class))).thenReturn(types);
-	}
-
-	private PreparedStatement runInsertsAgainst(PreparedStatement statement) {
-		doAnswer(invocation -> {
-			invocation.getArgument(1, PreparedStatementSetter.class)
-					  .setValues(statement);
-			return 1;
-		}).when(mockJdbcTemplate)
-		  .update(anyString(), any(PreparedStatementSetter.class));
-		return statement;
-	}
-
-	@Test
-	void publishCoercesCsvValuesToTheColumnTypesAndBindsNullsForBlanks() throws Exception {
-		var entity = buildEntity(1L);
-		entity.setCsvData("""
-								  small,whole,big,single,dbl,dec,flag,day,moment,stamp,text
-								  1,2,3,1.5,2.5,3.25,yes,2024-06-01,10:15:30,2024-06-01T10:15:30Z,"quoted ""name"", with comma"
-								  
-								  ,,,,,,,,,,
-								  7,8,9,1.5,2.5,3.25,n,2024-06-02,11:00:00,2024-06-02T11:00:00+02:00,plain
-								  7,8,9,1.5,2.5,3.25,0,2024-06-02,11:00:00,2024-06-02T11:00:00,plain
-								  """);
-		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
-		stubColumnTypes(Map.ofEntries(Map.entry("small", Types.SMALLINT), Map.entry("whole", Types.INTEGER), Map.entry("big", Types.BIGINT),
-									  Map.entry("single", Types.REAL), Map.entry("dbl", Types.DOUBLE), Map.entry("dec", Types.NUMERIC),
-									  Map.entry("flag", Types.BOOLEAN), Map.entry("day", Types.DATE), Map.entry("moment", Types.TIME),
-									  Map.entry("stamp", Types.TIMESTAMP), Map.entry("text", Types.VARCHAR)));
-		var statement = runInsertsAgainst(mock(PreparedStatement.class));
-
-		dataService.publish(TEST_IDENTIFIER);
-
-		verify(mockJdbcTemplate, times(4)).update(anyString(), any(PreparedStatementSetter.class));
-		verify(statement).setObject(11, "quoted \"name\", with comma");
-		verify(statement).setObject(1, (short) 1, Types.SMALLINT);
-		verify(statement).setObject(2, 2, Types.INTEGER);
-		verify(statement).setObject(3, 3L, Types.BIGINT);
-		verify(statement, times(3)).setObject(4, 1.5f, Types.REAL);
-		verify(statement, times(3)).setObject(5, 2.5d, Types.DOUBLE);
-		verify(statement, times(3)).setObject(6, new java.math.BigDecimal("3.25"), Types.NUMERIC);
-		verify(statement).setObject(7, true, Types.BOOLEAN);
-		verify(statement, times(2)).setObject(7, false, Types.BOOLEAN);
-		verify(statement).setObject(8, java.sql.Date.valueOf("2024-06-01"), Types.DATE);
-		verify(statement).setObject(9, java.sql.Time.valueOf("10:15:30"), Types.TIME);
-		verify(statement, times(3)).setObject(org.mockito.ArgumentMatchers.eq(10), any(java.sql.Timestamp.class), org.mockito.ArgumentMatchers.eq(Types.TIMESTAMP));
-		verify(statement).setNull(1, Types.SMALLINT);
-		verify(statement).setNull(11, Types.VARCHAR);
-	}
-
-	private void assertPublishBadRequest(String header, String value, int sqlType) {
-		var entity = buildEntity(1L);
-		entity.setCsvData(header + "\n" + value);
-		when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
-		stubColumnTypes(Map.of(header, sqlType));
-		runInsertsAgainst(mock(PreparedStatement.class));
-
-		var thrown = assertThrows(ResponseStatusException.class, () -> dataService.publish(TEST_IDENTIFIER));
-
-		assertEquals(HttpStatus.BAD_REQUEST, thrown.getStatusCode(), header + "=" + value);
-	}
-
-	@Test
-	void publishRejectsValuesThatDoNotFitTheirColumnType() {
-		assertPublishBadRequest("flag", "maybe", Types.BOOLEAN);
-		assertPublishBadRequest("day", "yesterday", Types.DATE);
-		assertPublishBadRequest("moment", "noon", Types.TIME);
-		assertPublishBadRequest("stamp", "2024-06-01 10:15", Types.TIMESTAMP);
-		assertPublishBadRequest("whole", "1.5", Types.INTEGER);
-	}
+
+    private static final String TEST_IDENTIFIER = "test_data";
+
+    @Mock
+    private DataRepository dataRepository;
+
+    private DataService dataService;
+    private JdbcTemplate mockJdbcTemplate;
+
+    @BeforeEach
+    void setUp() {
+        var mockDataSource = mock(DataSource.class);
+        dataService = new DataService(dataRepository, mockDataSource, null, null);
+
+        mockJdbcTemplate = mock(JdbcTemplate.class);
+        // Inject the mock JdbcTemplate via reflection to control site DB interaction
+        try {
+            var field = DataService.class.getDeclaredField("siteJdbcTemplate");
+            field.setAccessible(true);
+            field.set(dataService, mockJdbcTemplate);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to inject mock JdbcTemplate", e);
+        }
+    }
+
+    // findAll
+
+    @Test
+    void findAllOk() {
+        var entities = buildEntityList(3);
+        when(dataRepository.findAll()).thenReturn(entities);
+
+        List<DataSummaryResponse> result = dataService.findAll(null, null, null);
+
+        assertNotNull(result);
+        assertEquals(3, result.size());
+    }
+
+    @Test
+    void findAllEmptyOk() {
+        when(dataRepository.findAll()).thenReturn(new ArrayList<>());
+
+        List<DataSummaryResponse> result = dataService.findAll(null, null, null);
+
+        assertNotNull(result);
+        assertEquals(0, result.size());
+    }
+
+    @Test
+    void findAllFiltersByTypeAndIdentifierPrefixOk() {
+        var music = buildEntity(1L);
+        music.setIdentifier("music_library");
+        music.setDescription("Music library");
+        var gps = buildEntity(2L);
+        gps.setIdentifier("gps_timeseries_holidays");
+        gps.setType("time_series");
+        gps.setDescription("GPS trip track");
+        when(dataRepository.findAll()).thenReturn(List.of(music, gps));
+
+        List<DataSummaryResponse> result = dataService.findAll("time_series", "gps_timeseries_", null);
+
+        assertEquals(1, result.size());
+        assertEquals("gps_timeseries_holidays", result.get(0)
+            .getIdentifier());
+    }
+
+    @Test
+    void findAllFiltersBySearchOk() {
+        var music = buildEntity(1L);
+        music.setIdentifier("music_library");
+        music.setDescription("Complete music library");
+        var gps = buildEntity(2L);
+        gps.setIdentifier("gps_timeseries_holidays");
+        gps.setType("time_series");
+        gps.setDescription("GPS trip track");
+        when(dataRepository.findAll()).thenReturn(List.of(music, gps));
+
+        List<DataSummaryResponse> result = dataService.findAll(null, null, "trip");
+
+        assertEquals(1, result.size());
+        assertEquals("gps_timeseries_holidays", result.get(0)
+            .getIdentifier());
+    }
+
+    // findByIdentifier
+
+    @Test
+    void findByIdentifierOk() {
+        var entity = buildEntity(1L);
+        when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+
+        DataResponse response = dataService.findByIdentifier(TEST_IDENTIFIER);
+
+        assertNotNull(response);
+        assertEquals(TEST_IDENTIFIER, response.getIdentifier());
+    }
+
+    @Test
+    void findByIdentifierNotFoundFail() {
+        when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.empty());
+
+        try {
+            dataService.findByIdentifier(TEST_IDENTIFIER);
+            fail("Should have thrown ResponseStatusException");
+        } catch (ResponseStatusException e) {
+            assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
+        }
+    }
+
+    // create
+
+    @Test
+    void createOk() {
+        var request = buildValidRequest();
+        var entity = buildEntity(1L);
+        when(dataRepository.existsByIdentifier(TEST_IDENTIFIER)).thenReturn(false);
+        when(dataRepository.save(any(DataEntity.class))).thenReturn(entity);
+
+        DataResponse response = dataService.create(request);
+
+        assertNotNull(response);
+        assertEquals(TEST_IDENTIFIER, response.getIdentifier());
+    }
+
+    @Test
+    void createDuplicateIdentifierFail() {
+        var request = buildValidRequest();
+        when(dataRepository.existsByIdentifier(TEST_IDENTIFIER)).thenReturn(true);
+
+        try {
+            dataService.create(request);
+            fail("Should have thrown ResponseStatusException for duplicate identifier");
+        } catch (ResponseStatusException e) {
+            assertEquals(HttpStatus.CONFLICT, e.getStatusCode());
+        }
+    }
+
+    @Test
+    void createNullRequestFail() {
+        try {
+            dataService.create(null);
+            fail("Should have thrown ResponseStatusException for null request");
+        } catch (ResponseStatusException e) {
+            assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
+        }
+    }
+
+    @Test
+    void createInvalidIdentifierNullFail() {
+        var request = buildValidRequest();
+        request.setIdentifier(null);
+        assertCreateBadRequest(request);
+    }
+
+    @Test
+    void createInvalidIdentifierEmptyFail() {
+        var request = buildValidRequest();
+        request.setIdentifier("");
+        assertCreateBadRequest(request);
+    }
+
+    @Test
+    void createInvalidIdentifierStartsWithDigitFail() {
+        var request = buildValidRequest();
+        request.setIdentifier("1invalid");
+        assertCreateBadRequest(request);
+    }
+
+    @Test
+    void createInvalidIdentifierUppercaseFail() {
+        var request = buildValidRequest();
+        request.setIdentifier("Invalid");
+        assertCreateBadRequest(request);
+    }
+
+    @Test
+    void createInvalidIdentifierHyphenFail() {
+        var request = buildValidRequest();
+        request.setIdentifier("invalid-identifier");
+        assertCreateBadRequest(request);
+    }
+
+    @Test
+    void createMissingTypeFail() {
+        var request = buildValidRequest();
+        request.setType(null);
+        assertCreateBadRequest(request);
+    }
+
+    @Test
+    void createMissingColumnDefinitionsFail() {
+        var request = buildValidRequest();
+        request.setColumnDefinitions(null);
+        assertCreateBadRequest(request);
+    }
+
+    @Test
+    void createMissingCreateSqlFail() {
+        var request = buildValidRequest();
+        request.setCreateSql(null);
+        assertCreateBadRequest(request);
+    }
+
+    @Test
+    void createMissingFetchAllSqlFail() {
+        var request = buildValidRequest();
+        request.setFetchAllSql(null);
+        assertCreateBadRequest(request);
+    }
+
+    @Test
+    void createMissingFetchSubsetSqlFail() {
+        var request = buildValidRequest();
+        request.setFetchSubsetSql(null);
+        assertCreateBadRequest(request);
+    }
+
+    @Test
+    void createMissingCsvDataFail() {
+        var request = buildValidRequest();
+        request.setCsvData(null);
+        assertCreateBadRequest(request);
+    }
+
+    // update
+
+    @Test
+    void updateOk() {
+        var request = buildValidRequest();
+        var entity = buildEntity(1L);
+        when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+        when(dataRepository.save(any(DataEntity.class))).thenReturn(entity);
+
+        DataResponse response = dataService.update(request);
+
+        assertNotNull(response);
+        assertEquals(TEST_IDENTIFIER, response.getIdentifier());
+    }
+
+    @Test
+    void updateNotFoundFail() {
+        var request = buildValidRequest();
+        when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.empty());
+
+        try {
+            dataService.update(request);
+            fail("Should have thrown ResponseStatusException");
+        } catch (ResponseStatusException e) {
+            assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
+        }
+    }
+
+    @Test
+    void updateNullRequestFail() {
+        try {
+            dataService.update(null);
+            fail("Should have thrown ResponseStatusException");
+        } catch (ResponseStatusException e) {
+            assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
+        }
+    }
+
+    // publish
+
+    @Test
+    void publishOk() {
+        var entity = buildEntity(1L);
+        when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+
+        DataResponse response = dataService.publish(TEST_IDENTIFIER);
+
+        assertNotNull(response);
+        assertEquals(TEST_IDENTIFIER, response.getIdentifier());
+        verify(mockJdbcTemplate).execute("DROP TABLE IF EXISTS \"website_data__test_data\"");
+        verify(mockJdbcTemplate).execute("CREATE TABLE \"website_data__test_data\" (id BIGSERIAL PRIMARY KEY, title VARCHAR(255))");
+    }
+
+    @Test
+    void publishRewritesCreateSqlTableNameOk() {
+        var entity = buildEntity(1L);
+        entity.setCreateSql("CREATE TABLE wrong_table_name (id BIGSERIAL PRIMARY KEY, title VARCHAR(255))");
+        when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+
+        DataResponse response = dataService.publish(TEST_IDENTIFIER);
+
+        assertNotNull(response);
+        verify(mockJdbcTemplate).execute("CREATE TABLE \"website_data__test_data\" (id BIGSERIAL PRIMARY KEY, title VARCHAR(255))");
+    }
+
+    @Test
+    void publishInvalidCreateSqlFail() {
+        var entity = buildEntity(1L);
+        entity.setCreateSql("DROP TABLE some_table");
+        when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+
+        try {
+            dataService.publish(TEST_IDENTIFIER);
+            fail("Should have thrown ResponseStatusException for invalid create SQL");
+        } catch (ResponseStatusException e) {
+            assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
+        }
+    }
+
+    @Test
+    void publishNotFoundFail() {
+        when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.empty());
+
+        try {
+            dataService.publish(TEST_IDENTIFIER);
+            fail("Should have thrown ResponseStatusException");
+        } catch (ResponseStatusException e) {
+            assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
+        }
+    }
+
+    @Test
+    void publishCsvColumnCountMismatchFail() {
+        var entity = buildEntity(1L);
+        entity.setCsvData("title,year\nOnlyTitle");
+        when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+
+        try {
+            dataService.publish(TEST_IDENTIFIER);
+            fail("Should have thrown ResponseStatusException for invalid CSV row width");
+        } catch (ResponseStatusException e) {
+            assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
+        }
+    }
+
+    @Test
+    void publishSiteDbFailureThrowsInternalError() {
+        var entity = buildEntity(1L);
+        when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+        doThrow(new RuntimeException("DB failure")).when(mockJdbcTemplate)
+            .execute(anyString());
+
+        try {
+            dataService.publish(TEST_IDENTIFIER);
+            fail("Should have thrown ResponseStatusException");
+        } catch (ResponseStatusException e) {
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, e.getStatusCode());
+        }
+    }
+
+    // Helpers
+
+    private void assertCreateBadRequest(DataRequest request) {
+        try {
+            dataService.create(request);
+            fail("Should have thrown ResponseStatusException for invalid request");
+        } catch (ResponseStatusException e) {
+            assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
+        }
+    }
+
+    private DataRequest buildValidRequest() {
+        return DataRequest.builder()
+            .identifier(TEST_IDENTIFIER)
+            .type("tabulated")
+            .description("Test data set")
+            .columnDefinitions("[{\"name\":\"title\",\"type\":\"string\"}]")
+            .createSql("CREATE TABLE website_data__test_data (id BIGSERIAL PRIMARY KEY, title VARCHAR(255))")
+            .fetchAllSql("SELECT * FROM website_data__test_data")
+            .fetchSubsetSql("SELECT * FROM website_data__test_data WHERE title = :title")
+            .generated(Instant.now())
+            .csvData("title\nTest Album")
+            .build();
+    }
+
+    private DataEntity buildEntity(Long id) {
+        var now = Instant.now();
+        return DataEntity.builder()
+            .id(id)
+            .identifier(TEST_IDENTIFIER)
+            .type("tabulated")
+            .description("Test data set")
+            .columnDefinitions("[{\"name\":\"title\",\"type\":\"string\"}]")
+            .createSql("CREATE TABLE website_data__test_data (id BIGSERIAL PRIMARY KEY, title VARCHAR(255))")
+            .fetchAllSql("SELECT * FROM website_data__test_data")
+            .fetchSubsetSql("SELECT * FROM website_data__test_data WHERE title = :title")
+            .generated(now)
+            .csvData("title\nTest Album")
+            .createdAt(now)
+            .updatedAt(now)
+            .build();
+    }
+
+    private List<DataEntity> buildEntityList(int count) {
+        var entities = new ArrayList<DataEntity>();
+        for (int i = 0; i < count; i++) {
+            var now = Instant.now();
+            entities.add(DataEntity.builder()
+                .id((long) (i + 1))
+                .identifier("data_set_" + i)
+                .type("tabulated")
+                .description("Test data set " + i)
+                .columnDefinitions("[{\"name\":\"value\",\"type\":\"string\"}]")
+                .createSql("CREATE TABLE website_data__data_set_" + i + " (id BIGSERIAL PRIMARY KEY, value TEXT)")
+                .fetchAllSql("SELECT * FROM website_data__data_set_" + i)
+                .fetchSubsetSql("SELECT * FROM website_data__data_set_" + i + " WHERE value = :value")
+                .generated(now)
+                .csvData("value\ntest")
+                .createdAt(now)
+                .updatedAt(now)
+                .build());
+        }
+        return entities;
+    }
+
+    // delete
+
+    @Test
+    void deleteDropsSiteTableAndRemovesTheEntityOk() {
+        var entity = buildEntity(1L);
+        when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+
+        dataService.delete(TEST_IDENTIFIER);
+
+        verify(mockJdbcTemplate).execute("DROP TABLE IF EXISTS \"website_data__" + TEST_IDENTIFIER + "\"");
+        verify(dataRepository).delete(entity);
+    }
+
+    @Test
+    void deleteNotFoundFail() {
+        when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.empty());
+
+        try {
+            dataService.delete(TEST_IDENTIFIER);
+            fail("Should have thrown ResponseStatusException");
+        } catch (ResponseStatusException e) {
+            assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
+        }
+        verify(dataRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteFailsWhenTheSiteTableCannotBeDropped() {
+        var entity = buildEntity(1L);
+        when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+        doThrow(new RuntimeException("db down")).when(mockJdbcTemplate)
+            .execute(anyString());
+
+        try {
+            dataService.delete(TEST_IDENTIFIER);
+            fail("Should have thrown ResponseStatusException");
+        } catch (ResponseStatusException e) {
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, e.getStatusCode());
+        }
+        verify(dataRepository, never()).delete(any());
+    }
+
+    // ---- filters, the publish task, CSV parsing and type coercion ----
+
+    @Test
+    void findAllFiltersByIdentifierPrefixAndToleratesMissingDescriptionsAndBlankFilters() {
+        var entities = buildEntityList(2);
+        entities.getFirst()
+            .setDescription(null);
+        when(dataRepository.findAll()).thenReturn(entities);
+
+        assertEquals(0, dataService.findAll(null, "other_", null)
+            .size());
+        assertEquals(2, dataService.findAll("  ", "data_set", "data")
+            .size());
+        assertEquals(1, dataService.findAll(null, null, "test data set 1")
+            .size());
+    }
+
+    @Test
+    void publishAsTaskRejectsAnUnknownDataSetAndOtherwisePublishesThroughTheProxy() {
+        var applicationContext = mock(ApplicationContext.class);
+        var taskStore = new TaskProgressStore();
+        var taskService = new DataService(dataRepository, mock(DataSource.class), new TaskRunner(taskStore, Runnable::run), applicationContext);
+        when(dataRepository.findByIdentifier("missing")).thenReturn(Optional.empty());
+        assertThrows(ResponseStatusException.class, () -> taskService.publishAsTask("missing"));
+
+        var entity = buildEntity(1L);
+        when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+        var proxy = mock(DataService.class);
+        when(proxy.publish(TEST_IDENTIFIER)).thenReturn(entity.toDataResponse());
+        when(applicationContext.getBean(DataService.class)).thenReturn(proxy);
+
+        var accepted = taskService.publishAsTask(TEST_IDENTIFIER);
+
+        var task = taskStore.find(accepted.getTaskId())
+            .orElseThrow();
+        assertEquals(TaskStatusEnum.COMPLETED, task.getStatus());
+        assertEquals(TEST_IDENTIFIER, ((DataResponse) task.getResult()).getIdentifier());
+        verify(proxy).publish(TEST_IDENTIFIER);
+    }
+
+    @Test
+    void publishRejectsACreateStatementWithoutColumnsAndSkipsEmptyCsvData() {
+        var entity = buildEntity(1L);
+        entity.setCreateSql("CREATE TABLE website_data__test_data");
+        when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+        var thrown = assertThrows(ResponseStatusException.class, () -> dataService.publish(TEST_IDENTIFIER));
+        assertEquals(HttpStatus.BAD_REQUEST, thrown.getStatusCode());
+
+        entity.setCreateSql("CREATE TABLE website_data__test_data (id BIGSERIAL PRIMARY KEY, title VARCHAR(255))");
+        entity.setCsvData("   ");
+        dataService.publish(TEST_IDENTIFIER);
+        entity.setCsvData("title");
+        dataService.publish(TEST_IDENTIFIER);
+        verify(mockJdbcTemplate, never()).update(anyString(), any(PreparedStatementSetter.class));
+    }
+
+    @Test
+    void publishRejectsInvalidColumnNamesInTheCsvHeader() {
+        var entity = buildEntity(1L);
+        entity.setCsvData("bad-name\nvalue");
+        when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+
+        var thrown = assertThrows(ResponseStatusException.class, () -> dataService.publish(TEST_IDENTIFIER));
+
+        assertEquals(HttpStatus.BAD_REQUEST, thrown.getStatusCode());
+    }
+
+    @SuppressWarnings("unchecked")
+    private void stubColumnTypes(Map<String, Integer> types) {
+        when(mockJdbcTemplate.query(anyString(), any(ResultSetExtractor.class))).thenReturn(types);
+    }
+
+    private PreparedStatement runInsertsAgainst(PreparedStatement statement) {
+        doAnswer(invocation -> {
+            invocation.getArgument(1, PreparedStatementSetter.class)
+                .setValues(statement);
+            return 1;
+        }).when(mockJdbcTemplate)
+            .update(anyString(), any(PreparedStatementSetter.class));
+        return statement;
+    }
+
+    @Test
+    void publishCoercesCsvValuesToTheColumnTypesAndBindsNullsForBlanks() throws Exception {
+        var entity = buildEntity(1L);
+        entity.setCsvData("""
+                small,whole,big,single,dbl,dec,flag,day,moment,stamp,text
+                1,2,3,1.5,2.5,3.25,yes,2024-06-01,10:15:30,2024-06-01T10:15:30Z,"quoted ""name"", with comma"
+
+                ,,,,,,,,,,
+                7,8,9,1.5,2.5,3.25,n,2024-06-02,11:00:00,2024-06-02T11:00:00+02:00,plain
+                7,8,9,1.5,2.5,3.25,0,2024-06-02,11:00:00,2024-06-02T11:00:00,plain
+                """);
+        when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+        stubColumnTypes(Map.ofEntries(Map.entry("small", Types.SMALLINT), Map.entry("whole", Types.INTEGER), Map.entry("big", Types.BIGINT),
+                Map.entry("single", Types.REAL), Map.entry("dbl", Types.DOUBLE), Map.entry("dec", Types.NUMERIC), Map.entry("flag", Types.BOOLEAN),
+                Map.entry("day", Types.DATE), Map.entry("moment", Types.TIME), Map.entry("stamp", Types.TIMESTAMP), Map.entry("text", Types.VARCHAR)));
+        var statement = runInsertsAgainst(mock(PreparedStatement.class));
+
+        dataService.publish(TEST_IDENTIFIER);
+
+        verify(mockJdbcTemplate, times(4)).update(anyString(), any(PreparedStatementSetter.class));
+        verify(statement).setObject(11, "quoted \"name\", with comma");
+        verify(statement).setObject(1, (short) 1, Types.SMALLINT);
+        verify(statement).setObject(2, 2, Types.INTEGER);
+        verify(statement).setObject(3, 3L, Types.BIGINT);
+        verify(statement, times(3)).setObject(4, 1.5f, Types.REAL);
+        verify(statement, times(3)).setObject(5, 2.5d, Types.DOUBLE);
+        verify(statement, times(3)).setObject(6, new java.math.BigDecimal("3.25"), Types.NUMERIC);
+        verify(statement).setObject(7, true, Types.BOOLEAN);
+        verify(statement, times(2)).setObject(7, false, Types.BOOLEAN);
+        verify(statement).setObject(8, java.sql.Date.valueOf("2024-06-01"), Types.DATE);
+        verify(statement).setObject(9, java.sql.Time.valueOf("10:15:30"), Types.TIME);
+        verify(statement, times(3)).setObject(org.mockito.ArgumentMatchers.eq(10), any(java.sql.Timestamp.class),
+                org.mockito.ArgumentMatchers.eq(Types.TIMESTAMP));
+        verify(statement).setNull(1, Types.SMALLINT);
+        verify(statement).setNull(11, Types.VARCHAR);
+    }
+
+    private void assertPublishBadRequest(String header, String value, int sqlType) {
+        var entity = buildEntity(1L);
+        entity.setCsvData(header + "\n" + value);
+        when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+        stubColumnTypes(Map.of(header, sqlType));
+        runInsertsAgainst(mock(PreparedStatement.class));
+
+        var thrown = assertThrows(ResponseStatusException.class, () -> dataService.publish(TEST_IDENTIFIER));
+
+        assertEquals(HttpStatus.BAD_REQUEST, thrown.getStatusCode(), header + "=" + value);
+    }
+
+    @Test
+    void publishRejectsValuesThatDoNotFitTheirColumnType() {
+        assertPublishBadRequest("flag", "maybe", Types.BOOLEAN);
+        assertPublishBadRequest("day", "yesterday", Types.DATE);
+        assertPublishBadRequest("moment", "noon", Types.TIME);
+        assertPublishBadRequest("stamp", "2024-06-01 10:15", Types.TIMESTAMP);
+        assertPublishBadRequest("whole", "1.5", Types.INTEGER);
+    }
 }
