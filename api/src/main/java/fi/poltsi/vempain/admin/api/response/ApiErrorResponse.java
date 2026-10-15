@@ -1,19 +1,21 @@
 package fi.poltsi.vempain.admin.api.response;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.experimental.SuperBuilder;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
-
-import java.util.List;
 
 @SuperBuilder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Schema(description = "Error response when there's an API calling failure")
 public class ApiErrorResponse extends BaseResponse {
-	private final String       message;
-	private final String       debugMessage;
-	private final List<String> tracePath;
+
+    private final String message;
+    private final String debugMessage;
+    private final List<String> tracePath;
 }

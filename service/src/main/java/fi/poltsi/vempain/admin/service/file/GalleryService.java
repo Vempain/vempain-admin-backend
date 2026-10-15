@@ -1,5 +1,17 @@
 package fi.poltsi.vempain.admin.service.file;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
 import fi.poltsi.vempain.admin.api.QueryDetailEnum;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
 import fi.poltsi.vempain.admin.api.response.file.FileGroupListResponse;
@@ -15,270 +27,260 @@ import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.service.AclService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class GalleryService {
-	private final GalleryRepository  galleryRepository;
-	private final SiteFileRepository siteFileRepository;
-	private final GalleryFileService galleryFileService;
-	private final AclService    aclService;
-	private final AccessService accessService;
 
-	public List<Gallery> findAllForUser() {
-		var galleryList = new ArrayList<Gallery>();
-		var fullList = galleryRepository.findAll();
+    private final GalleryRepository galleryRepository;
+    private final SiteFileRepository siteFileRepository;
+    private final GalleryFileService galleryFileService;
+    private final AclService aclService;
+    private final AccessService accessService;
 
-		for (Gallery gallery : fullList) {
-			if (accessService.hasReadPermission(gallery.getAclId())) {
-				populateGalleryWithSiteFiles(gallery, false);
-				galleryList.add(gallery);
-			}
-		}
+    public List<Gallery> findAllForUser() {
+        var galleryList = new ArrayList<Gallery>();
+        var fullList = galleryRepository.findAll();
 
-		return galleryList;
-	}
+        for (Gallery gallery : fullList) {
+            if (accessService.hasReadPermission(gallery.getAclId())) {
+                populateGalleryWithSiteFiles(gallery, false);
+                galleryList.add(gallery);
+            }
+        }
 
-	@Transactional(readOnly = true)
-	public List<GalleryResponse> findAllAsResponsesForUser(QueryDetailEnum queryDetailEnum) {
-		var galleries = findAllForUser();
-		var responses = new ArrayList<GalleryResponse>();
+        return galleryList;
+    }
 
-		for (Gallery gallery : galleries) {
-			populateGalleryWithSiteFiles(gallery, queryDetailEnum == QueryDetailEnum.FULL);
+    @Transactional(readOnly = true)
+    public List<GalleryResponse> findAllAsResponsesForUser(QueryDetailEnum queryDetailEnum) {
+        var galleries = findAllForUser();
+        var responses = new ArrayList<GalleryResponse>();
 
-			var response = gallery.getResponse();
-			responses.add(response);
-		}
+        for (Gallery gallery : galleries) {
+            populateGalleryWithSiteFiles(gallery, queryDetailEnum == QueryDetailEnum.FULL);
 
-		return responses;
-	}
+            var response = gallery.getResponse();
+            responses.add(response);
+        }
 
-	@Transactional(readOnly = true)
-	public GalleryResponse findById(long galleryId) {
-		var gallery = galleryRepository.findById(galleryId)
-		                               .orElse(null);
+        return responses;
+    }
 
-		if (gallery == null) {
-			return null;
-		}
+    @Transactional(readOnly = true)
+    public GalleryResponse findById(long galleryId) {
+        var gallery = galleryRepository.findById(galleryId)
+            .orElse(null);
 
-		if (!accessService.hasReadPermission(gallery.getAclId())) {
-			return null;
-		}
+        if (gallery == null) {
+            return null;
+        }
 
-		populateGalleryWithSiteFiles(gallery, false);
-		return gallery.getResponse();
-	}
+        if (!accessService.hasReadPermission(gallery.getAclId())) {
+            return null;
+        }
 
-	public void requireModify(long galleryId) {
-		var gallery = galleryRepository.findById(galleryId)
-									   .orElseThrow(() -> new org.springframework.security.access.AccessDeniedException("Gallery is not accessible"));
-		if (!accessService.hasModifyPermission(gallery.getAclId())) {
-			throw new org.springframework.security.access.AccessDeniedException("User does not have permission to modify gallery");
-		}
-	}
+        populateGalleryWithSiteFiles(gallery, false);
+        return gallery.getResponse();
+    }
 
-	@Transactional(propagation = Propagation.REQUIRED)
-	public GalleryResponse createGallery(GalleryRequest galleryRequest) throws VempainAclException {
-		var aclId = aclService.getNextAclId();
-		var gallery = Gallery.builder()
-		                     .shortname(galleryRequest.getShortName())
-		                     .description(galleryRequest.getDescription())
-		                     .aclId(aclId)
-		                     .creator(accessService.getUserId())
-		                     .created(Instant.now())
-		                     .modifier(null)
-		                     .modified(null)
-		                     .locked(false)
-		                     .build();
-		var newGallery = galleryRepository.save(gallery);
-		galleryFileService.addGalleryFiles(newGallery.getId(), galleryRequest.getSiteFilesId());
+    public void requireModify(long galleryId) {
+        var gallery = galleryRepository.findById(galleryId)
+            .orElseThrow(() -> new org.springframework.security.access.AccessDeniedException("Gallery is not accessible"));
+        if (!accessService.hasModifyPermission(gallery.getAclId())) {
+            throw new org.springframework.security.access.AccessDeniedException("User does not have permission to modify gallery");
+        }
+    }
 
-		try {
-			aclService.saveAclRequests(aclId, galleryRequest.getAcls());
-		} catch (Exception e) {
-			log.error("Could not create ACLs for new gallery with ID: {}", newGallery.getId(), e);
-			throw new VempainAclException("Could not create ACLs for new gallery with ID: " + newGallery.getId());
-		}
+    @Transactional(propagation = Propagation.REQUIRED)
+    public GalleryResponse createGallery(GalleryRequest galleryRequest) throws VempainAclException {
+        var aclId = aclService.getNextAclId();
+        var gallery = Gallery.builder()
+            .shortname(galleryRequest.getShortName())
+            .description(galleryRequest.getDescription())
+            .aclId(aclId)
+            .creator(accessService.getUserId())
+            .created(Instant.now())
+            .modifier(null)
+            .modified(null)
+            .locked(false)
+            .build();
+        var newGallery = galleryRepository.save(gallery);
+        galleryFileService.addGalleryFiles(newGallery.getId(), galleryRequest.getSiteFilesId());
 
-		populateGalleryWithSiteFiles(newGallery, false);
-		return newGallery.getResponse();
-	}
+        try {
+            aclService.saveAclRequests(aclId, galleryRequest.getAcls());
+        } catch (Exception e) {
+            log.error("Could not create ACLs for new gallery with ID: {}", newGallery.getId(), e);
+            throw new VempainAclException("Could not create ACLs for new gallery with ID: " + newGallery.getId());
+        }
 
-	@Transactional(propagation = Propagation.REQUIRED)
-	public GalleryResponse updateGallery(GalleryRequest galleryRequest) throws VempainAclException {
-		log.debug("Received gallery request: {}", galleryRequest);
-		var currentGallery = galleryRepository.findById(galleryRequest.getId())
-		                                      .orElse(null);
+        populateGalleryWithSiteFiles(newGallery, false);
+        return newGallery.getResponse();
+    }
 
-		if (currentGallery == null) {
-			log.warn("Could not find gallery with ID: {}", galleryRequest.getId());
-			return null;
-		}
-		if (!accessService.hasModifyPermission(currentGallery.getAclId())) {
-			throw new org.springframework.security.access.AccessDeniedException("User does not have permission to modify gallery");
-		}
+    @Transactional(propagation = Propagation.REQUIRED)
+    public GalleryResponse updateGallery(GalleryRequest galleryRequest) throws VempainAclException {
+        log.debug("Received gallery request: {}", galleryRequest);
+        var currentGallery = galleryRepository.findById(galleryRequest.getId())
+            .orElse(null);
 
-		currentGallery.setShortname(galleryRequest.getShortName());
-		currentGallery.setDescription(galleryRequest.getDescription());
-		currentGallery.setModifier(accessService.getUserId());
-		currentGallery.setModified(Instant.now());
-		currentGallery.setLocked(false);
+        if (currentGallery == null) {
+            log.warn("Could not find gallery with ID: {}", galleryRequest.getId());
+            return null;
+        }
+        if (!accessService.hasModifyPermission(currentGallery.getAclId())) {
+            throw new org.springframework.security.access.AccessDeniedException("User does not have permission to modify gallery");
+        }
 
-		var updatedGallery = galleryRepository.save(currentGallery);
-		galleryFileService.updateGalleryFiles(updatedGallery.getId(), galleryRequest.getSiteFilesId());
+        currentGallery.setShortname(galleryRequest.getShortName());
+        currentGallery.setDescription(galleryRequest.getDescription());
+        currentGallery.setModifier(accessService.getUserId());
+        currentGallery.setModified(Instant.now());
+        currentGallery.setLocked(false);
 
-		try {
-			aclService.updateFromRequestList(galleryRequest.getAcls());
-		} catch (Exception e) {
-			log.error("Could not update ACLs for gallery with ID: {}", galleryRequest.getId(), e);
-			throw new VempainAclException("Could not update ACLs for gallery with ID: " + galleryRequest.getId());
-		}
+        var updatedGallery = galleryRepository.save(currentGallery);
+        galleryFileService.updateGalleryFiles(updatedGallery.getId(), galleryRequest.getSiteFilesId());
 
-		populateGalleryWithSiteFiles(updatedGallery, false);
-		return updatedGallery.getResponse();
-	}
+        try {
+            aclService.updateFromRequestList(galleryRequest.getAcls());
+        } catch (Exception e) {
+            log.error("Could not update ACLs for gallery with ID: {}", galleryRequest.getId(), e);
+            throw new VempainAclException("Could not update ACLs for gallery with ID: " + galleryRequest.getId());
+        }
 
-	@Transactional
-	public void deleteGallery(long galleryId) {
-		var gallery = galleryRepository.findById(galleryId)
-		                               .orElse(null);
-		if (gallery == null) {
-			return;
-		}
-		if (!accessService.hasDeletePermission(gallery.getAclId())) {
-			throw new org.springframework.security.access.AccessDeniedException("User does not have permission to delete gallery");
-		}
-		galleryRepository.deleteById(galleryId);
-	}
+        populateGalleryWithSiteFiles(updatedGallery, false);
+        return updatedGallery.getResponse();
+    }
 
-	private void populateGalleryWithSiteFiles(Gallery gallery, boolean withMetadata) {
-		var aclList = aclService.findAclByAclId(gallery.getAclId());
-		gallery.setAcls(aclList);
-		var galleryFiles = galleryFileService.findGalleryFileByGalleryId(gallery.getId());
+    @Transactional
+    public void deleteGallery(long galleryId) {
+        var gallery = galleryRepository.findById(galleryId)
+            .orElse(null);
+        if (gallery == null) {
+            return;
+        }
+        if (!accessService.hasDeletePermission(gallery.getAclId())) {
+            throw new org.springframework.security.access.AccessDeniedException("User does not have permission to delete gallery");
+        }
+        galleryRepository.deleteById(galleryId);
+    }
 
-		var fileCommons = new ArrayList<SiteFile>();
+    private void populateGalleryWithSiteFiles(Gallery gallery, boolean withMetadata) {
+        var aclList = aclService.findAclByAclId(gallery.getAclId());
+        gallery.setAcls(aclList);
+        var galleryFiles = galleryFileService.findGalleryFileByGalleryId(gallery.getId());
 
-		for (var galleryFile : galleryFiles) {
-			var siteFile = withMetadata
-						   ? siteFileRepository.findById(galleryFile.getSiteFileId())
-						   : siteFileRepository.findByIdWithoutMetadata(galleryFile.getSiteFileId());
+        var fileCommons = new ArrayList<SiteFile>();
 
-			// Site files carry their own ACL: a gallery the user may read can still contain files the user may not see
-			siteFile.filter(file -> accessService.hasReadPermission(file.getAclId()))
-					.ifPresent(fileCommons::add);
-		}
+        for (var galleryFile : galleryFiles) {
+            var siteFile = withMetadata ? siteFileRepository.findById(galleryFile.getSiteFileId())
+                    : siteFileRepository.findByIdWithoutMetadata(galleryFile.getSiteFileId());
 
-		gallery.setSiteFiles(fileCommons);
-	}
+            // Site files carry their own ACL: a gallery the user may read can still contain files the user may not see
+            siteFile.filter(file -> accessService.hasReadPermission(file.getAclId()))
+                .ifPresent(fileCommons::add);
+        }
 
-	public Iterable<Gallery> findAll() {
-		return galleryRepository.findAll();
-	}
+        gallery.setSiteFiles(fileCommons);
+    }
 
-	@Transactional(readOnly = true)
-	public PagedResponse<GalleryResponse> findPagedByUser(PagedRequest request) {
-		return findPagedByUser(request, true);
-	}
+    public Iterable<Gallery> findAll() {
+        return galleryRepository.findAll();
+    }
 
-	@Transactional(readOnly = true)
-	public PagedResponse<GalleryResponse> findPagedByUserWithoutFiles(PagedRequest request) {
-		return findPagedByUser(request, false);
-	}
+    @Transactional(readOnly = true)
+    public PagedResponse<GalleryResponse> findPagedByUser(PagedRequest request) {
+        return findPagedByUser(request, true);
+    }
 
-	@Transactional(readOnly = true)
-	public PagedResponse<FileGroupListResponse> findPagedGalleryListByUser(PagedRequest request) {
-		int safePage = request.getPage();
-		int safeSize = Math.min(request.getSize(), 200);
-		Sort sortSpec = buildSort(request.getSortBy(), request.getDirection());
-		Pageable pageable = Pageable.unpaged(sortSpec);
-		var pageResult = galleryRepository.searchGalleriesForList(request.getSearch(), Boolean.TRUE.equals(request.getCaseSensitive()), pageable);
-		var accessibleGalleries = new ArrayList<Gallery>();
+    @Transactional(readOnly = true)
+    public PagedResponse<GalleryResponse> findPagedByUserWithoutFiles(PagedRequest request) {
+        return findPagedByUser(request, false);
+    }
 
-		for (var gallery : pageResult.getContent()) {
-			if (accessService.hasReadPermission(gallery.getAclId())) {
-				accessibleGalleries.add(gallery);
-			}
-		}
+    @Transactional(readOnly = true)
+    public PagedResponse<FileGroupListResponse> findPagedGalleryListByUser(PagedRequest request) {
+        int safePage = request.getPage();
+        int safeSize = Math.min(request.getSize(), 200);
+        Sort sortSpec = buildSort(request.getSortBy(), request.getDirection());
+        Pageable pageable = Pageable.unpaged(sortSpec);
+        var pageResult = galleryRepository.searchGalleriesForList(request.getSearch(), Boolean.TRUE.equals(request.getCaseSensitive()), pageable);
+        var accessibleGalleries = new ArrayList<Gallery>();
 
-		int totalElements = accessibleGalleries.size();
-		int totalPages = (int) Math.ceil((double) totalElements / safeSize);
-		int fromIndex = Math.min(safePage * safeSize, totalElements);
-		int toIndex = Math.min(fromIndex + safeSize, totalElements);
-		var items = new ArrayList<FileGroupListResponse>();
+        for (var gallery : pageResult.getContent()) {
+            if (accessService.hasReadPermission(gallery.getAclId())) {
+                accessibleGalleries.add(gallery);
+            }
+        }
 
-		for (var gallery : accessibleGalleries.subList(fromIndex, toIndex)) {
-			populateGalleryWithAcls(gallery);
-			var fileCount = galleryFileService.findGalleryFileByGalleryId(gallery.getId())
-											  .size();
-			items.add(gallery.getListResponse(fileCount));
-		}
+        int totalElements = accessibleGalleries.size();
+        int totalPages = (int) Math.ceil((double) totalElements / safeSize);
+        int fromIndex = Math.min(safePage * safeSize, totalElements);
+        int toIndex = Math.min(fromIndex + safeSize, totalElements);
+        var items = new ArrayList<FileGroupListResponse>();
 
-		return PagedResponse.of(items, safePage, safeSize, totalElements, totalPages, safePage == 0, totalPages == 0 || safePage + 1 >= totalPages);
-	}
+        for (var gallery : accessibleGalleries.subList(fromIndex, toIndex)) {
+            populateGalleryWithAcls(gallery);
+            var fileCount = galleryFileService.findGalleryFileByGalleryId(gallery.getId())
+                .size();
+            items.add(gallery.getListResponse(fileCount));
+        }
 
-	@Transactional(readOnly = true)
-	public FileGroupListResponse findGalleryListById(long galleryId) {
-		var gallery = galleryRepository.findById(galleryId)
-		                               .orElse(null);
-		if (gallery == null || !accessService.hasReadPermission(gallery.getAclId())) {
-			return null;
-		}
-		populateGalleryWithAcls(gallery);
-		return gallery.getListResponse(galleryFileService.findGalleryFileByGalleryId(galleryId)
-		                                                 .size());
-	}
+        return PagedResponse.of(items, safePage, safeSize, totalElements, totalPages, safePage == 0, totalPages == 0
+                                                                                                     || safePage + 1 >= totalPages);
+    }
 
-	private PagedResponse<GalleryResponse> findPagedByUser(PagedRequest request, boolean includeFiles) {
-		int safePage = request.getPage();
-		int safeSize = Math.min(request.getSize(), 200);
-		Sort sortSpec = buildSort(request.getSortBy(), request.getDirection());
-		Pageable pageable = PageRequest.of(safePage, safeSize, sortSpec);
+    @Transactional(readOnly = true)
+    public FileGroupListResponse findGalleryListById(long galleryId) {
+        var gallery = galleryRepository.findById(galleryId)
+            .orElse(null);
+        if (gallery == null
+            || !accessService.hasReadPermission(gallery.getAclId())) {
+            return null;
+        }
+        populateGalleryWithAcls(gallery);
+        return gallery.getListResponse(galleryFileService.findGalleryFileByGalleryId(galleryId)
+            .size());
+    }
 
-		var pageResult = includeFiles
-						 ? galleryRepository.searchGalleries(request.getSearch(), Boolean.TRUE.equals(request.getCaseSensitive()), pageable)
-						 : galleryRepository.searchGalleriesWithoutFiles(request.getSearch(), Boolean.TRUE.equals(request.getCaseSensitive()), pageable);
+    private PagedResponse<GalleryResponse> findPagedByUser(PagedRequest request, boolean includeFiles) {
+        int safePage = request.getPage();
+        int safeSize = Math.min(request.getSize(), 200);
+        Sort sortSpec = buildSort(request.getSortBy(), request.getDirection());
+        Pageable pageable = PageRequest.of(safePage, safeSize, sortSpec);
 
-		var items = new ArrayList<GalleryResponse>();
+        var pageResult = includeFiles ? galleryRepository.searchGalleries(request.getSearch(), Boolean.TRUE.equals(request.getCaseSensitive()), pageable)
+                : galleryRepository.searchGalleriesWithoutFiles(request.getSearch(), Boolean.TRUE.equals(request.getCaseSensitive()), pageable);
 
-		for (var gallery : pageResult.getContent()) {
-			if (accessService.hasReadPermission(gallery.getAclId())) {
-				if (includeFiles) {
-					populateGalleryWithSiteFiles(gallery, false);
-				} else {
-					populateGalleryWithAcls(gallery);
-				}
-				items.add(gallery.getResponse());
-			}
-		}
+        var items = new ArrayList<GalleryResponse>();
 
-		return PagedResponse.of(items, pageResult.getNumber(), pageResult.getSize(), pageResult.getTotalElements(),
-		                        pageResult.getTotalPages(), pageResult.isFirst(), pageResult.isLast());
-	}
+        for (var gallery : pageResult.getContent()) {
+            if (accessService.hasReadPermission(gallery.getAclId())) {
+                if (includeFiles) {
+                    populateGalleryWithSiteFiles(gallery, false);
+                } else {
+                    populateGalleryWithAcls(gallery);
+                }
+                items.add(gallery.getResponse());
+            }
+        }
 
-	private void populateGalleryWithAcls(Gallery gallery) {
-		gallery.setAcls(aclService.findAclByAclId(gallery.getAclId()));
-	}
+        return PagedResponse.of(items, pageResult.getNumber(), pageResult.getSize(), pageResult.getTotalElements(), pageResult.getTotalPages(),
+                pageResult.isFirst(), pageResult.isLast());
+    }
 
-	private Sort buildSort(String sort, Sort.Direction direction) {
-		Sort.Direction dir = direction == null ? Sort.Direction.ASC : direction;
-		return switch (sort == null ? "" : sort.toLowerCase(Locale.ROOT)) {
-			case "short_name", "shortname" -> Sort.by(dir, "shortname");
-			case "description" -> Sort.by(dir, "description");
-			default -> Sort.by(dir, "id");
-		};
-	}
+    private void populateGalleryWithAcls(Gallery gallery) {
+        gallery.setAcls(aclService.findAclByAclId(gallery.getAclId()));
+    }
+
+    private Sort buildSort(String sort, Sort.Direction direction) {
+        Sort.Direction dir = direction == null ? Sort.Direction.ASC : direction;
+        return switch (sort == null ? "" : sort.toLowerCase(Locale.ROOT)) {
+            case "short_name", "shortname" -> Sort.by(dir, "shortname");
+            case "description" -> Sort.by(dir, "description");
+            default -> Sort.by(dir, "id");
+        };
+    }
 }

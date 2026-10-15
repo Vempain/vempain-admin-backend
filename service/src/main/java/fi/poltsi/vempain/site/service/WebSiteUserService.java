@@ -1,5 +1,15 @@
 package fi.poltsi.vempain.site.service;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
 import fi.poltsi.vempain.admin.api.site.request.WebSiteUserRequest;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteUserResponse;
 import fi.poltsi.vempain.admin.service.AccessService;
@@ -8,198 +18,191 @@ import fi.poltsi.vempain.site.entity.WebSiteUser;
 import fi.poltsi.vempain.site.repository.WebSiteUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class WebSiteUserService {
-	private final PasswordEncoder       passwordEncoder;
-	private final AccessService         accessService;
-	private final WebSiteAclService     webSiteAclService;
-	private final WebSiteUserRepository webSiteUserRepository;
 
-	/**
-	 * Find all site web users
-	 *
-	 * @return List of user responses
-	 */
-	public List<WebSiteUserResponse> findAll() {
-		var responses = new ArrayList<WebSiteUserResponse>();
+    private final PasswordEncoder passwordEncoder;
+    private final AccessService accessService;
+    private final WebSiteAclService webSiteAclService;
+    private final WebSiteUserRepository webSiteUserRepository;
 
-		webSiteUserRepository.findAll()
-		                     .forEach(user -> responses.add(webSiteAclService.findResourcesByUserId(user.getId())));
-		return responses;
-	}
+    /**
+     * Find all site web users
+     *
+     * @return List of user responses
+     */
+    public List<WebSiteUserResponse> findAll() {
+        var responses = new ArrayList<WebSiteUserResponse>();
 
-	/**
-	 * Find a site web user by ID
-	 *
-	 * @param userId The user ID
-	 * @return User response
-	 */
-	public WebSiteUserResponse findById(Long userId) {
-		return webSiteUserRepository.findById(userId)
-		                            .map(user -> webSiteAclService.findResourcesByUserId(user.getId()))
-		                            .orElseThrow(() -> {
-										log.error("Site web user not found with ID: {}", userId);
-										return new ResponseStatusException(HttpStatus.NOT_FOUND, "Site web user not found");
-									});
-	}
+        webSiteUserRepository.findAll()
+            .forEach(user -> responses.add(webSiteAclService.findResourcesByUserId(user.getId())));
+        return responses;
+    }
 
-	/**
-	 * Find a site web user by username
-	 *
-	 * @param username The username
-	 * @return User response
-	 */
-	public WebSiteUserResponse findByUsername(String username) {
-		return webSiteUserRepository.findByUsername(username)
-		                            .map(WebSiteUser::toResponse)
-		                            .orElseThrow(() -> {
-										log.error("Site web user not found with username: {}", username);
-										return new ResponseStatusException(HttpStatus.NOT_FOUND, "Site web user not found");
-									});
-	}
+    /**
+     * Find a site web user by ID
+     *
+     * @param userId The user ID
+     * @return User response
+     */
+    public WebSiteUserResponse findById(Long userId) {
+        return webSiteUserRepository.findById(userId)
+            .map(user -> webSiteAclService.findResourcesByUserId(user.getId()))
+            .orElseThrow(() -> {
+                log.error("Site web user not found with ID: {}", userId);
+                return new ResponseStatusException(HttpStatus.NOT_FOUND, "Site web user not found");
+            });
+    }
 
-	/**
-	 * Create a new site web user
-	 *
-	 * @param request The user request containing username and password
-	 * @return Created user response
-	 */
-	@Transactional
-	public WebSiteUserResponse create(WebSiteUserRequest request) {
-		Long adminUserId = accessService.getValidUserId();
+    /**
+     * Find a site web user by username
+     *
+     * @param username The username
+     * @return User response
+     */
+    public WebSiteUserResponse findByUsername(String username) {
+        return webSiteUserRepository.findByUsername(username)
+            .map(WebSiteUser::toResponse)
+            .orElseThrow(() -> {
+                log.error("Site web user not found with username: {}", username);
+                return new ResponseStatusException(HttpStatus.NOT_FOUND, "Site web user not found");
+            });
+    }
 
-		// Validate password is provided for new user
-		if (request.getPassword() == null || request.getPassword()
-		                                            .isBlank()) {
-			log.error("Password is required when creating a new site web user");
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password is required");
-		}
+    /**
+     * Create a new site web user
+     *
+     * @param request The user request containing username and password
+     * @return Created user response
+     */
+    @Transactional
+    public WebSiteUserResponse create(WebSiteUserRequest request) {
+        Long adminUserId = accessService.getValidUserId();
 
-		// Check if username already exists
-		if (webSiteUserRepository.existsByUsername(request.getUsername())) {
-			log.error("Username already exists: {}", request.getUsername());
-			throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already exists");
-		}
+        // Validate password is provided for new user
+        if (request.getPassword() == null
+            || request.getPassword()
+                .isBlank()) {
+            log.error("Password is required when creating a new site web user");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password is required");
+        }
 
-		String passwordHash = AuthTools.passwordHash(request.getPassword());
+        // Check if username already exists
+        if (webSiteUserRepository.existsByUsername(request.getUsername())) {
+            log.error("Username already exists: {}", request.getUsername());
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already exists");
+        }
 
-		WebSiteUser user = WebSiteUser.builder()
-		                              .username(request.getUsername())
-		                              .passwordHash(passwordHash)
-		                              .globalPermission(request.getGlobalPermission())
-		                              .creator(adminUserId)
-		                              .created(Instant.now())
-		                              .build();
+        String passwordHash = AuthTools.passwordHash(request.getPassword());
 
-		WebSiteUser saved = webSiteUserRepository.save(user);
-		log.debug("Created new site web user with ID: {} by admin user: {}", saved.getId(), adminUserId);
-		return saved.toResponse();
-	}
+        WebSiteUser user = WebSiteUser.builder()
+            .username(request.getUsername())
+            .passwordHash(passwordHash)
+            .globalPermission(request.getGlobalPermission())
+            .creator(adminUserId)
+            .created(Instant.now())
+            .build();
 
-	/**
-	 * Update an existing site web user
-	 *
-	 * @param userId  The user ID to update
-	 * @param request The user request containing updated data
-	 * @return Updated user response
-	 */
-	@Transactional
-	public WebSiteUserResponse update(Long userId, WebSiteUserRequest request) {
-		Long adminUserId = accessService.getValidUserId();
+        WebSiteUser saved = webSiteUserRepository.save(user);
+        log.debug("Created new site web user with ID: {} by admin user: {}", saved.getId(), adminUserId);
+        return saved.toResponse();
+    }
 
-		WebSiteUser user = webSiteUserRepository.findById(userId)
-		                                        .orElseThrow(() -> {
-													log.error("Site web user not found with ID: {}", userId);
-													return new ResponseStatusException(HttpStatus.NOT_FOUND, "Site web user not found");
-												});
+    /**
+     * Update an existing site web user
+     *
+     * @param userId  The user ID to update
+     * @param request The user request containing updated data
+     * @return Updated user response
+     */
+    @Transactional
+    public WebSiteUserResponse update(Long userId, WebSiteUserRequest request) {
+        Long adminUserId = accessService.getValidUserId();
 
-		// Update username if changed and not already taken
-		if (!user.getUsername()
-		         .equals(request.getUsername())) {
-			if (webSiteUserRepository.existsByUsername(request.getUsername())) {
-				log.error("Username already exists: {}", request.getUsername());
-				throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already exists");
-			}
-			user.setUsername(request.getUsername());
-		}
+        WebSiteUser user = webSiteUserRepository.findById(userId)
+            .orElseThrow(() -> {
+                log.error("Site web user not found with ID: {}", userId);
+                return new ResponseStatusException(HttpStatus.NOT_FOUND, "Site web user not found");
+            });
 
-		// Update password if provided
-		if (request.getPassword() != null && !request.getPassword()
-		                                             .isBlank()) {
-			String passwordHash = AuthTools.passwordHash(request.getPassword());
-			user.setPasswordHash(passwordHash);
-		}
+        // Update username if changed and not already taken
+        if (!user.getUsername()
+            .equals(request.getUsername())) {
+            if (webSiteUserRepository.existsByUsername(request.getUsername())) {
+                log.error("Username already exists: {}", request.getUsername());
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already exists");
+            }
+            user.setUsername(request.getUsername());
+        }
 
-		user.setGlobalPermission(request.getGlobalPermission());
-		user.setModifier(adminUserId);
-		user.setModified(Instant.now());
+        // Update password if provided
+        if (request.getPassword() != null
+            && !request.getPassword()
+                .isBlank()) {
+            String passwordHash = AuthTools.passwordHash(request.getPassword());
+            user.setPasswordHash(passwordHash);
+        }
 
-		WebSiteUser saved = webSiteUserRepository.save(user);
-		log.debug("Updated site web user ID: {} by admin user: {}", userId, adminUserId);
-		return saved.toResponse();
-	}
+        user.setGlobalPermission(request.getGlobalPermission());
+        user.setModifier(adminUserId);
+        user.setModified(Instant.now());
 
-	/**
-	 * Delete a site web user
-	 * Note: This will cascade delete all ACL entries for this user
-	 *
-	 * @param userId The user ID to delete
-	 */
-	@Transactional
-	public void delete(Long userId) {
-		Long adminUserId = accessService.getValidUserId();
+        WebSiteUser saved = webSiteUserRepository.save(user);
+        log.debug("Updated site web user ID: {} by admin user: {}", userId, adminUserId);
+        return saved.toResponse();
+    }
 
-		if (!webSiteUserRepository.existsById(userId)) {
-			log.error("Site web user not found with ID: {}", userId);
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Site web user not found");
-		}
+    /**
+     * Delete a site web user Note: This will cascade delete all ACL entries for this user
+     *
+     * @param userId The user ID to delete
+     */
+    @Transactional
+    public void delete(Long userId) {
+        Long adminUserId = accessService.getValidUserId();
 
-		webSiteUserRepository.deleteById(userId);
-		log.debug("Deleted site web user ID: {} by admin user: {}", userId, adminUserId);
-	}
+        if (!webSiteUserRepository.existsById(userId)) {
+            log.error("Site web user not found with ID: {}", userId);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Site web user not found");
+        }
 
-	/**
-	 * Change password for a site web user
-	 *
-	 * @param userId      The user ID
-	 * @param newPassword The new plaintext password
-	 * @return Updated user response
-	 */
-	@Transactional
-	public WebSiteUserResponse changePassword(Long userId, String newPassword) {
-		Long adminUserId = accessService.getValidUserId();
+        webSiteUserRepository.deleteById(userId);
+        log.debug("Deleted site web user ID: {} by admin user: {}", userId, adminUserId);
+    }
 
-		if (newPassword == null || newPassword.isBlank()) {
-			log.error("Password cannot be empty");
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password cannot be empty");
-		}
+    /**
+     * Change password for a site web user
+     *
+     * @param userId      The user ID
+     * @param newPassword The new plaintext password
+     * @return Updated user response
+     */
+    @Transactional
+    public WebSiteUserResponse changePassword(Long userId, String newPassword) {
+        Long adminUserId = accessService.getValidUserId();
 
-		WebSiteUser user = webSiteUserRepository.findById(userId)
-		                                        .orElseThrow(() -> {
-													log.error("Site web user not found with ID: {}", userId);
-													return new ResponseStatusException(HttpStatus.NOT_FOUND, "Site web user not found");
-												});
+        if (newPassword == null
+            || newPassword.isBlank()) {
+            log.error("Password cannot be empty");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password cannot be empty");
+        }
 
-		String passwordHash = AuthTools.passwordHash(newPassword);
-		user.setPasswordHash(passwordHash);
-		user.setModifier(adminUserId);
-		user.setModified(Instant.now());
+        WebSiteUser user = webSiteUserRepository.findById(userId)
+            .orElseThrow(() -> {
+                log.error("Site web user not found with ID: {}", userId);
+                return new ResponseStatusException(HttpStatus.NOT_FOUND, "Site web user not found");
+            });
 
-		WebSiteUser saved = webSiteUserRepository.save(user);
-		log.debug("Changed password for site web user ID: {} by admin user: {}", userId, adminUserId);
-		return saved.toResponse();
-	}
+        String passwordHash = AuthTools.passwordHash(newPassword);
+        user.setPasswordHash(passwordHash);
+        user.setModifier(adminUserId);
+        user.setModified(Instant.now());
+
+        WebSiteUser saved = webSiteUserRepository.save(user);
+        log.debug("Changed password for site web user ID: {} by admin user: {}", userId, adminUserId);
+        return saved.toResponse();
+    }
 }
-

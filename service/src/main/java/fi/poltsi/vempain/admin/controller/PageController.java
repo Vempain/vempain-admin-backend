@@ -1,5 +1,14 @@
 package fi.poltsi.vempain.admin.controller;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
 import fi.poltsi.vempain.admin.VempainMessages;
 import fi.poltsi.vempain.admin.api.ContentTypeEnum;
 import fi.poltsi.vempain.admin.api.PublishResultEnum;
@@ -20,236 +29,235 @@ import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
 @RestController
 public class PageController implements PageAPI {
-	private final PageService     pageService;
-	private final PublishService  publishService;
-	private final DeleteService   deleteService;
-	private final ScheduleService scheduleService;
 
-	@Override
-	public ResponseEntity<PagedResponse<PageResponse>> getPages(PagePagedRequest request) {
-		return ResponseEntity.ok(pageService.findPagedByUser(request));
-	}
+    private final PageService pageService;
+    private final PublishService publishService;
+    private final DeleteService deleteService;
+    private final ScheduleService scheduleService;
 
-	@Override
-	public ResponseEntity<List<PageResponse>> getPagesByFormId(long formId) {
-		var pages = pageService.findAllByFormIdForUser(formId);
+    @Override
+    public ResponseEntity<PagedResponse<PageResponse>> getPages(PagePagedRequest request) {
+        return ResponseEntity.ok(pageService.findPagedByUser(request));
+    }
 
-		ArrayList<PageResponse> responses = new ArrayList<>();
+    @Override
+    public ResponseEntity<List<PageResponse>> getPagesByFormId(long formId) {
+        var pages = pageService.findAllByFormIdForUser(formId);
 
-		for (Page page : pages) {
-			responses.add(pageService.populateResponse(page));
-		}
+        ArrayList<PageResponse> responses = new ArrayList<>();
 
-		return ResponseEntity.ok(responses);
-	}
+        for (Page page : pages) {
+            responses.add(pageService.populateResponse(page));
+        }
 
-	@Override
-	public ResponseEntity<PageResponse> getPageById(long pageId) {
-		var page = pageService.findByIdByUser(pageId);
+        return ResponseEntity.ok(responses);
+    }
 
-		if (page == null) {
-			log.error("Could not retrieve page with ID {}", pageId);
-			return ResponseEntity.status(HttpStatus.NOT_FOUND)
-			                     .body(null);
-		}
+    @Override
+    public ResponseEntity<PageResponse> getPageById(long pageId) {
+        var page = pageService.findByIdByUser(pageId);
 
-		log.debug("Found page with ID {}: {}", pageId, page.getPagePath());
+        if (page == null) {
+            log.error("Could not retrieve page with ID {}", pageId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(null);
+        }
 
-		var pageResponse = pageService.populateResponse(page);
-		log.debug("Returning page response: {}", pageResponse);
-		return ResponseEntity.ok(pageResponse);
-	}
+        log.debug("Found page with ID {}: {}", pageId, page.getPagePath());
 
-	@Override
-	public ResponseEntity<PagePathSuggestionResponse> suggestPagePath(String prefix) {
-		return ResponseEntity.ok(pageService.suggestPath(prefix));
-	}
+        var pageResponse = pageService.populateResponse(page);
+        log.debug("Returning page response: {}", pageResponse);
+        return ResponseEntity.ok(pageResponse);
+    }
 
-	@Override
-	public ResponseEntity<PageResponse> addPage(PageRequest pageRequest) {
-		log.debug("Received call to add a page with: {}", pageRequest);
-		verifyPageRequest(pageRequest);
-		log.debug("Request verified, saving page.");
-		var page = pageService.saveFromPageRequest(pageRequest);
-		return ResponseEntity.ok(pageService.populateResponse(page));
-	}
+    @Override
+    public ResponseEntity<PagePathSuggestionResponse> suggestPagePath(String prefix) {
+        return ResponseEntity.ok(pageService.suggestPath(prefix));
+    }
 
-	@Override
-	public ResponseEntity<PageResponse> updatePage(PageRequest pageRequest) {
-		if (pageRequest == null || pageRequest.getId() < 1L) {
-			log.error(VempainMessages.MALFORMED_ID_IN_REQUEST_MSG, pageRequest);
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_ID_IN_REQUEST);
-		}
+    @Override
+    public ResponseEntity<PageResponse> addPage(PageRequest pageRequest) {
+        log.debug("Received call to add a page with: {}", pageRequest);
+        verifyPageRequest(pageRequest);
+        log.debug("Request verified, saving page.");
+        var page = pageService.saveFromPageRequest(pageRequest);
+        return ResponseEntity.ok(pageService.populateResponse(page));
+    }
 
-		verifyPageRequest(pageRequest);
+    @Override
+    public ResponseEntity<PageResponse> updatePage(PageRequest pageRequest) {
+        if (pageRequest == null
+            || pageRequest.getId() < 1L) {
+            log.error(VempainMessages.MALFORMED_ID_IN_REQUEST_MSG, pageRequest);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_ID_IN_REQUEST);
+        }
 
-		var page = pageService.updateFromRequest(pageRequest);
-		var pageResponse = pageService.populateResponse(page);
-		return ResponseEntity.ok(pageResponse);
-	}
+        verifyPageRequest(pageRequest);
 
-	@Override
-	public ResponseEntity<DeleteResponse> deletePage(long pageId) {
-		if (pageId < 1L) {
-			log.error(VempainMessages.MALFORMED_ID_IN_REQUEST_MSG, pageId);
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_ID_IN_REQUEST);
-		}
+        var page = pageService.updateFromRequest(pageRequest);
+        var pageResponse = pageService.populateResponse(page);
+        return ResponseEntity.ok(pageResponse);
+    }
 
-		try {
-			deleteService.deletePageById(pageId);
-			return ResponseEntity.ok(DeleteResponse.builder()
-			                                       .count(1)
-			                                       .id(pageId)
-			                                       .name("Form")
-			                                       .timestamp(Instant.now())
-			                                       .httpStatus(HttpStatus.OK)
-			                                       .build());
-		} catch (VempainEntityNotFoundException e) {
-			log.error("Failed to delete a page:\n{}", e.getMessage());
-			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, VempainMessages.INTERNAL_ERROR);
-		}
-	}
+    @Override
+    public ResponseEntity<DeleteResponse> deletePage(long pageId) {
+        if (pageId < 1L) {
+            log.error(VempainMessages.MALFORMED_ID_IN_REQUEST_MSG, pageId);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_ID_IN_REQUEST);
+        }
 
-	// //////////////////// Publishing actions
+        try {
+            deleteService.deletePageById(pageId);
+            return ResponseEntity.ok(DeleteResponse.builder()
+                .count(1)
+                .id(pageId)
+                .name("Form")
+                .timestamp(Instant.now())
+                .httpStatus(HttpStatus.OK)
+                .build());
+        } catch (VempainEntityNotFoundException e) {
+            log.error("Failed to delete a page:\n{}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, VempainMessages.INTERNAL_ERROR);
+        }
+    }
 
-	@Override
-	public ResponseEntity<PublishResponse> publishAll(Instant publishDate) {
-		PublishResponse response;
+    // //////////////////// Publishing actions
 
-		if (publishDate != null) {
-			var pages = pageService.findAllByUser();
+    @Override
+    public ResponseEntity<PublishResponse> publishAll(Instant publishDate) {
+        PublishResponse response;
 
-			for (var page : pages) {
-				if (!publishService.canPublishPage(page)) {
-					log.warn("Not scheduling page {} because the user may not publish it", page.getId());
-					continue;
-				}
+        if (publishDate != null) {
+            var pages = pageService.findAllByUser();
 
-				createPagePublishSchedule(publishDate, page.getId(), "Publish all pages");
-			}
+            for (var page : pages) {
+                if (!publishService.canPublishPage(page)) {
+                    log.warn("Not scheduling page {} because the user may not publish it", page.getId());
+                    continue;
+                }
 
-			response = PublishResponse.builder()
-			                          .result(PublishResultEnum.OK)
-			                          .message("Successfully scheduled to publish all pages")
-			                          .timestamp(Instant.now())
-			                          .build();
-		} else {
-			// Publishing is long running: it is started as a background task that the client follows through the task API
-			var task = publishService.publishAllPagesAsTask();
-			response = PublishResponse.builder()
-									  .result(PublishResultEnum.OK)
-									  .message("Publishing of all pages started")
-									  .timestamp(Instant.now())
-									  .task(task)
-									  .build();
-			return ResponseEntity.accepted()
-								 .body(response);
-		}
+                createPagePublishSchedule(publishDate, page.getId(), "Publish all pages");
+            }
 
-		return ResponseEntity.ok(response);
-	}
+            response = PublishResponse.builder()
+                .result(PublishResultEnum.OK)
+                .message("Successfully scheduled to publish all pages")
+                .timestamp(Instant.now())
+                .build();
+        } else {
+            // Publishing is long running: it is started as a background task that the client follows through the task API
+            var task = publishService.publishAllPagesAsTask();
+            response = PublishResponse.builder()
+                .result(PublishResultEnum.OK)
+                .message("Publishing of all pages started")
+                .timestamp(Instant.now())
+                .task(task)
+                .build();
+            return ResponseEntity.accepted()
+                .body(response);
+        }
 
-	@Override
-	public ResponseEntity<PublishResponse> publishPage(PublishRequest publishRequest) {
-		PublishResponse response;
+        return ResponseEntity.ok(response);
+    }
 
-		if (publishRequest == null || publishRequest.getId() < 1L) {
-			log.error(VempainMessages.MALFORMED_ID_IN_REQUEST_MSG, publishRequest);
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_ID_IN_REQUEST);
-		}
+    @Override
+    public ResponseEntity<PublishResponse> publishPage(PublishRequest publishRequest) {
+        PublishResponse response;
 
-		try {
-			if (publishRequest.isPublishSchedule()) {
-				// The scheduler publishes without a user context, so the permission is verified when the schedule is created
-				publishService.authorizePagePublish(publishRequest.getId());
-				return createPagePublishSchedule(publishRequest.getPublishDateTime(), publishRequest.getId(), publishRequest.getPublishMessage());
-			}
+        if (publishRequest == null
+            || publishRequest.getId() < 1L) {
+            log.error(VempainMessages.MALFORMED_ID_IN_REQUEST_MSG, publishRequest);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_ID_IN_REQUEST);
+        }
 
-			var task = publishService.publishPageAsTask(publishRequest.getId());
-			response = PublishResponse.builder()
-			                          .result(PublishResultEnum.OK)
-									  .message("Publishing of the page started")
-			                          .timestamp(Instant.now())
-									  .task(task)
-			                          .build();
-		} catch (VempainEntityNotFoundException e) {
-			response = PublishResponse.builder()
-			                          .result(PublishResultEnum.FAIL)
-			                          .message("Could not find page")
-			                          .timestamp(Instant.now())
-			                          .build();
-			return ResponseEntity.status(HttpStatus.NOT_FOUND)
-			                     .body(response);
-		}
+        try {
+            if (publishRequest.isPublishSchedule()) {
+                // The scheduler publishes without a user context, so the permission is verified when the schedule is created
+                publishService.authorizePagePublish(publishRequest.getId());
+                return createPagePublishSchedule(publishRequest.getPublishDateTime(), publishRequest.getId(), publishRequest.getPublishMessage());
+            }
 
-		return ResponseEntity.accepted()
-							 .body(response);
-	}
+            var task = publishService.publishPageAsTask(publishRequest.getId());
+            response = PublishResponse.builder()
+                .result(PublishResultEnum.OK)
+                .message("Publishing of the page started")
+                .timestamp(Instant.now())
+                .task(task)
+                .build();
+        } catch (VempainEntityNotFoundException e) {
+            response = PublishResponse.builder()
+                .result(PublishResultEnum.FAIL)
+                .message("Could not find page")
+                .timestamp(Instant.now())
+                .build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(response);
+        }
 
-	private ResponseEntity<PublishResponse> createPagePublishSchedule(Instant publishDateTime, long pageId, String message) {
-		PublishResponse response;
-		var publishResponse = scheduleService.schedulePublish(publishDateTime, pageId, ContentTypeEnum.PAGE, message);
+        return ResponseEntity.accepted()
+            .body(response);
+    }
 
-		if (publishResponse == null) {
-			response = PublishResponse.builder()
-			                          .result(PublishResultEnum.FAIL)
-			                          .message("Failed to schedule page for publishing")
-			                          .timestamp(Instant.now())
-			                          .build();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-			                     .body(response);
-		}
+    private ResponseEntity<PublishResponse> createPagePublishSchedule(Instant publishDateTime, long pageId, String message) {
+        PublishResponse response;
+        var publishResponse = scheduleService.schedulePublish(publishDateTime, pageId, ContentTypeEnum.PAGE, message);
 
-		response = PublishResponse.builder()
-		                          .result(PublishResultEnum.OK)
-		                          .message("Successfully scheduled page for publishing")
-		                          .timestamp(Instant.now())
-		                          .build();
-		return ResponseEntity.ok(response);
-	}
+        if (publishResponse == null) {
+            response = PublishResponse.builder()
+                .result(PublishResultEnum.FAIL)
+                .message("Failed to schedule page for publishing")
+                .timestamp(Instant.now())
+                .build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(response);
+        }
 
-	@Override
-	public ResponseEntity<PublishResponse> deletePublishedPage(long pageId) {
-		if (pageId < 1L) {
-			log.error(VempainMessages.MALFORMED_ID_IN_REQUEST_MSG, pageId);
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_ID_IN_REQUEST);
-		}
+        response = PublishResponse.builder()
+            .result(PublishResultEnum.OK)
+            .message("Successfully scheduled page for publishing")
+            .timestamp(Instant.now())
+            .build();
+        return ResponseEntity.ok(response);
+    }
 
-		pageService.deleteByUser(pageId);
+    @Override
+    public ResponseEntity<PublishResponse> deletePublishedPage(long pageId) {
+        if (pageId < 1L) {
+            log.error(VempainMessages.MALFORMED_ID_IN_REQUEST_MSG, pageId);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_ID_IN_REQUEST);
+        }
 
-		PublishResponse response = PublishResponse.builder()
-		                                          .result(PublishResultEnum.OK)
-		                                          .message("Successfully deleted page")
-		                                          .timestamp(Instant.now())
-		                                          .build();
-		return ResponseEntity.ok(response);
-	}
+        pageService.deleteByUser(pageId);
 
-	private void verifyPageRequest(PageRequest pageRequest) {
-		if (pageRequest == null
-		    || (pageRequest.getPagePath() == null || pageRequest.getPagePath()
-		                                                        .isBlank())
-		    || (pageRequest.getTitle() == null || pageRequest.getTitle()
-		                                                     .isBlank())
-		    || (pageRequest.getHeader() == null || pageRequest.getHeader()
-		                                                      .isBlank())
-		    || (pageRequest.getAcls() == null || pageRequest.getAcls()
-		                                                    .isEmpty())) {
-			log.error("Malformed request when creating new page: {}", pageRequest);
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Malformed page creation request");
-		}
-	}
+        PublishResponse response = PublishResponse.builder()
+            .result(PublishResultEnum.OK)
+            .message("Successfully deleted page")
+            .timestamp(Instant.now())
+            .build();
+        return ResponseEntity.ok(response);
+    }
+
+    private void verifyPageRequest(PageRequest pageRequest) {
+        if (pageRequest == null
+            || (pageRequest.getPagePath() == null
+                || pageRequest.getPagePath()
+                    .isBlank())
+            || (pageRequest.getTitle() == null
+                || pageRequest.getTitle()
+                    .isBlank())
+            || (pageRequest.getHeader() == null
+                || pageRequest.getHeader()
+                    .isBlank())
+            || (pageRequest.getAcls() == null
+                || pageRequest.getAcls()
+                    .isEmpty())) {
+            log.error("Malformed request when creating new page: {}", pageRequest);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Malformed page creation request");
+        }
+    }
 }

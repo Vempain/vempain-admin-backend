@@ -1,6 +1,9 @@
 package fi.poltsi.vempain.admin.api.request;
 
+import java.time.Instant;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import fi.poltsi.vempain.admin.api.ContentTypeEnum;
 import fi.poltsi.vempain.admin.api.PublishStatusEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -11,8 +14,6 @@ import lombok.NoArgsConstructor;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
 
-import java.time.Instant;
-
 @Data
 @Builder
 @AllArgsConstructor
@@ -21,21 +22,22 @@ import java.time.Instant;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Schema(description = "System schedule trigger request")
 public class PublishScheduleRequest {
-	@Schema(description = "ID of the publish schedule", example = "123", requiredMode = Schema.RequiredMode.REQUIRED)
-	private long id;
 
-	@Schema(description = "Time when the item should be published", example = "2021-01-01T12:00:00Z", requiredMode = Schema.RequiredMode.REQUIRED)
-	private Instant publishTime;
+    @Schema(description = "ID of the publish schedule", example = "123", requiredMode = Schema.RequiredMode.REQUIRED)
+    private long id;
 
-	@Schema(description = "Status of the publish task", example = "PENDING", requiredMode = Schema.RequiredMode.REQUIRED)
-	private PublishStatusEnum publishStatus;
+    @Schema(description = "Time when the item should be published", example = "2021-01-01T12:00:00Z", requiredMode = Schema.RequiredMode.REQUIRED)
+    private Instant publishTime;
 
-	@Schema(description = "Message of the publish task", example = "Publishing item", requiredMode = Schema.RequiredMode.REQUIRED)
-	private String publishMessage;
+    @Schema(description = "Status of the publish task", example = "PENDING", requiredMode = Schema.RequiredMode.REQUIRED)
+    private PublishStatusEnum publishStatus;
 
-	@Schema(description = "Type of the item to be published", example = "PAGE", requiredMode = Schema.RequiredMode.REQUIRED)
-	private ContentTypeEnum publishType;
+    @Schema(description = "Message of the publish task", example = "Publishing item", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String publishMessage;
 
-	@Schema(description = "ID of the item to be published", example = "123", requiredMode = Schema.RequiredMode.REQUIRED)
-	private long publishId;
+    @Schema(description = "Type of the item to be published", example = "PAGE", requiredMode = Schema.RequiredMode.REQUIRED)
+    private ContentTypeEnum publishType;
+
+    @Schema(description = "ID of the item to be published", example = "123", requiredMode = Schema.RequiredMode.REQUIRED)
+    private long publishId;
 }

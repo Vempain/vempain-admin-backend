@@ -1,19 +1,21 @@
 package fi.poltsi.vempain.admin.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import fi.poltsi.vempain.admin.api.response.PageResponse;
-import fi.poltsi.vempain.auth.entity.AbstractVempainEntity;
+import java.time.Instant;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import fi.poltsi.vempain.admin.api.response.PageResponse;
+import fi.poltsi.vempain.auth.entity.AbstractVempainEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-
-import java.time.Instant;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -24,46 +26,47 @@ import java.time.Instant;
 @ToString(callSuper = true)
 @Table(name = "page")
 public class Page extends AbstractVempainEntity {
-	@Column(name = "parent_id")
-	private Long    parentId;
-	@Column(name = "form_id", nullable = false)
-	private long    formId;
-	@Column(name = "page_path", nullable = false)
-	private String pagePath;
-	@Column(name = "secure", nullable = false)
-	private boolean secure;
-	@Column(name = "indexlist", nullable = false)
-	private boolean indexList;
-	@Column(name = "title", nullable = false, length = 512)
-	private String  title;
-	@Column(name = "header", nullable = false, length = 512)
-	private String  header;
-	@Column(name = "body", nullable = false, length = 524288)
-	private String  body;
-	@Column(name = "page_style", length = 524288)
-	private String pageStyle;
-	@Column(name = "published")
-	private Instant published;
 
-	@JsonIgnore
-	public PageResponse toResponse() {
-		return PageResponse.builder()
-		                   .id(this.id)
-		                   .parentId(this.parentId)
-		                   .formId(this.formId)
-		                   .pagePath(this.pagePath)
-		                   .secure(this.secure)
-		                   .indexList(this.indexList)
-		                   .title(this.title)
-		                   .header(this.header)
-		                   .body(this.body)
-		                   .pageStyle(this.pageStyle)
-		                   .acls(null)
-		                   .creator(this.creator)
-		                   .created(this.created)
-		                   .modifier(this.modifier)
-		                   .modified(this.modified)
-		                   .published(this.published)
-		                   .build();
-	}
+    @Column(name = "parent_id")
+    private Long parentId;
+    @Column(name = "form_id", nullable = false)
+    private long formId;
+    @Column(name = "page_path", nullable = false)
+    private String pagePath;
+    @Column(name = "secure", nullable = false)
+    private boolean secure;
+    @Column(name = "indexlist", nullable = false)
+    private boolean indexList;
+    @Column(name = "title", nullable = false, length = 512)
+    private String title;
+    @Column(name = "header", nullable = false, length = 512)
+    private String header;
+    @Column(name = "body", nullable = false, length = 524288)
+    private String body;
+    @Column(name = "page_style", length = 524288)
+    private String pageStyle;
+    @Column(name = "published")
+    private Instant published;
+
+    @JsonIgnore
+    public PageResponse toResponse() {
+        return PageResponse.builder()
+            .id(this.id)
+            .parentId(this.parentId)
+            .formId(this.formId)
+            .pagePath(this.pagePath)
+            .secure(this.secure)
+            .indexList(this.indexList)
+            .title(this.title)
+            .header(this.header)
+            .body(this.body)
+            .pageStyle(this.pageStyle)
+            .acls(null)
+            .creator(this.creator)
+            .created(this.created)
+            .modifier(this.modifier)
+            .modified(this.modified)
+            .published(this.published)
+            .build();
+    }
 }

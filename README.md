@@ -146,6 +146,7 @@ We also need an user account on the remote server which is used to transfer the 
 website root. The user should also have a passwordless SSH access to the remote server. The following steps are required:
 
 1. Create a user on the remote server, e.g. `vempain` and set up the SSH keys for the user. The following commands should be run on the remote server:
+
    ```shell
    adduser vempain
    mkdir ~vempain/.ssh
@@ -154,10 +155,12 @@ website root. The user should also have a passwordless SSH access to the remote 
    chmod -R 0700 ~vempain/.ssh
    ```
 2. The user should have read/write access to the website root. The following commands should be run on the remote server:
+
    ```shell
    chown -R vempain: /var/www/site
    ```
 3. Test the connection from the docker host machine to the remote server. The following command should be run on the docker host machine:
+
    ```shell
    ssh -i /etc/vempain_admin/.ssh/id_ed25519 vempain@remote.tld
    ```
@@ -190,7 +193,7 @@ accepts only TLS connections: the entrypoint enables SSL with the given certific
 `sslmode=require` (in the `prod` profile it refuses to start with a datasource URL that does not require TLS). The script takes several environment variables,
 prefixed with ENV_, which you can set from the command line. The following variables should be set:
 
-| Variable                         | Description                                                                                              | Example             |
+|             Variable             |                                               Description                                                |       Example       |
 |----------------------------------|----------------------------------------------------------------------------------------------------------|---------------------|
 | ENV_VEMPAIN_TYPE                 | The type of the vempain service, can be e.g. `prod` or `stg`. Prefix to container name                   | prod                |
 | ENV_VEMPAIN_ADMIN_VERSION        | The build version of the vempain-admin docker image, should be in form of major.minor.patch.             | 1.2.3               |

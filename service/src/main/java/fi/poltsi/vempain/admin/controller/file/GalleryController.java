@@ -1,5 +1,14 @@
 package fi.poltsi.vempain.admin.controller.file;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
 import fi.poltsi.vempain.admin.VempainMessages;
 import fi.poltsi.vempain.admin.api.ContentTypeEnum;
 import fi.poltsi.vempain.admin.api.PublishResultEnum;
@@ -23,249 +32,243 @@ import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
 @RestController
 public class GalleryController implements GalleryAPI {
-	private final GalleryService     galleryService;
-	private final PublishService     publishService;
-	private final PageGalleryService pageGalleryService;
-	private final ScheduleService    scheduleService;
 
-	@Override
-	public ResponseEntity<List<GalleryResponse>> getGalleries(QueryDetailEnum queryDetailEnum) {
-		return ResponseEntity.ok(galleryService.findAllAsResponsesForUser(queryDetailEnum));
-	}
+    private final GalleryService galleryService;
+    private final PublishService publishService;
+    private final PageGalleryService pageGalleryService;
+    private final ScheduleService scheduleService;
 
-	@Override
-	public ResponseEntity<PagedResponse<GalleryResponse>> getPagedGalleries(PagedRequest request) {
-		return ResponseEntity.ok(galleryService.findPagedByUser(request));
-	}
+    @Override
+    public ResponseEntity<List<GalleryResponse>> getGalleries(QueryDetailEnum queryDetailEnum) {
+        return ResponseEntity.ok(galleryService.findAllAsResponsesForUser(queryDetailEnum));
+    }
 
-	@Override
-	public ResponseEntity<PagedResponse<GalleryResponse>> getPagedGalleriesWithoutFiles(PagedRequest request) {
-		return ResponseEntity.ok(galleryService.findPagedByUserWithoutFiles(request));
-	}
+    @Override
+    public ResponseEntity<PagedResponse<GalleryResponse>> getPagedGalleries(PagedRequest request) {
+        return ResponseEntity.ok(galleryService.findPagedByUser(request));
+    }
 
-	@Override
-	public ResponseEntity<PagedResponse<FileGroupListResponse>> getPagedGalleryList(PagedRequest request) {
-		return ResponseEntity.ok(galleryService.findPagedGalleryListByUser(request));
-	}
+    @Override
+    public ResponseEntity<PagedResponse<GalleryResponse>> getPagedGalleriesWithoutFiles(PagedRequest request) {
+        return ResponseEntity.ok(galleryService.findPagedByUserWithoutFiles(request));
+    }
 
-	@Override
-	public ResponseEntity<List<GalleryResponse>> getGalleriesByPage(long pageId, QueryDetailEnum queryDetailEnum) {
-		var pageGalleries = new ArrayList<GalleryResponse>();
-		var galleries = pageGalleryService.findPageGalleryByPageId(pageId);
+    @Override
+    public ResponseEntity<PagedResponse<FileGroupListResponse>> getPagedGalleryList(PagedRequest request) {
+        return ResponseEntity.ok(galleryService.findPagedGalleryListByUser(request));
+    }
 
-		for (PageGallery pageGallery : galleries) {
-			pageGalleries.add(galleryService.findById(pageGallery.getGalleryId()));
-		}
+    @Override
+    public ResponseEntity<List<GalleryResponse>> getGalleriesByPage(long pageId, QueryDetailEnum queryDetailEnum) {
+        var pageGalleries = new ArrayList<GalleryResponse>();
+        var galleries = pageGalleryService.findPageGalleryByPageId(pageId);
 
-		return ResponseEntity.ok(pageGalleries);
-	}
+        for (PageGallery pageGallery : galleries) {
+            pageGalleries.add(galleryService.findById(pageGallery.getGalleryId()));
+        }
 
-	@Override
-	public ResponseEntity<List<FileGroupListResponse>> getGalleryListByPage(long pageId) {
-		var pageGalleries = new ArrayList<FileGroupListResponse>();
-		var galleries = pageGalleryService.findPageGalleryByPageId(pageId);
+        return ResponseEntity.ok(pageGalleries);
+    }
 
-		for (PageGallery pageGallery : galleries) {
-			var gallery = galleryService.findGalleryListById(pageGallery.getGalleryId());
-			if (gallery != null) {
-				pageGalleries.add(gallery);
-			}
-		}
+    @Override
+    public ResponseEntity<List<FileGroupListResponse>> getGalleryListByPage(long pageId) {
+        var pageGalleries = new ArrayList<FileGroupListResponse>();
+        var galleries = pageGalleryService.findPageGalleryByPageId(pageId);
 
-		return ResponseEntity.ok(pageGalleries);
-	}
+        for (PageGallery pageGallery : galleries) {
+            var gallery = galleryService.findGalleryListById(pageGallery.getGalleryId());
+            if (gallery != null) {
+                pageGalleries.add(gallery);
+            }
+        }
 
-	@Override
-	public ResponseEntity<GalleryResponse> getGalleryById(long galleryId) {
-		return ResponseEntity.ok(galleryService.findById(galleryId));
-	}
+        return ResponseEntity.ok(pageGalleries);
+    }
 
-	@Override
-	public ResponseEntity<GalleryResponse> createGallery(GalleryRequest galleryRequest) {
-		GalleryResponse galleryResponse;
+    @Override
+    public ResponseEntity<GalleryResponse> getGalleryById(long galleryId) {
+        return ResponseEntity.ok(galleryService.findById(galleryId));
+    }
 
-		try {
-			galleryResponse = galleryService.createGallery(galleryRequest);
-		} catch (VempainAclException e) {
-			log.error("Could not create gallery: {}", e.getMessage());
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-			                     .build();
-		}
+    @Override
+    public ResponseEntity<GalleryResponse> createGallery(GalleryRequest galleryRequest) {
+        GalleryResponse galleryResponse;
 
-		return ResponseEntity.ok(galleryResponse);
-	}
+        try {
+            galleryResponse = galleryService.createGallery(galleryRequest);
+        } catch (VempainAclException e) {
+            log.error("Could not create gallery: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .build();
+        }
 
-	@Override
-	public ResponseEntity<DeleteResponse> deleteGallery(long galleryId) {
-		var gallery = galleryService.findById(galleryId);
+        return ResponseEntity.ok(galleryResponse);
+    }
 
-		if (gallery == null) {
-			log.error("Could not find gallery with ID {} for deletion", galleryId);
-			return ResponseEntity.status(HttpStatus.NOT_FOUND)
-			                     .build();
-		}
+    @Override
+    public ResponseEntity<DeleteResponse> deleteGallery(long galleryId) {
+        var gallery = galleryService.findById(galleryId);
 
-		try {
-			galleryService.deleteGallery(galleryId);
-		} catch (Exception e) {
-			log.error("Could not delete gallery with ID {}: {}", galleryId, e.getMessage());
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-			                     .build();
-		}
+        if (gallery == null) {
+            log.error("Could not find gallery with ID {} for deletion", galleryId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .build();
+        }
 
-		return ResponseEntity.ok(DeleteResponse.builder()
-		                                       .id(galleryId)
-		                                       .count(1L)
-		                                       .name(gallery.getShortName())
-		                                       .httpStatus(HttpStatus.OK)
-		                                       .timestamp(Instant.now())
-		                                       .build());
-	}
+        try {
+            galleryService.deleteGallery(galleryId);
+        } catch (Exception e) {
+            log.error("Could not delete gallery with ID {}: {}", galleryId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .build();
+        }
 
-	@Override
-	public ResponseEntity<GalleryResponse> updateGallery(GalleryRequest galleryRequest) {
-		log.debug("Received request to update gallery with ID {}: {}", galleryRequest.getId(), galleryRequest);
+        return ResponseEntity.ok(DeleteResponse.builder()
+            .id(galleryId)
+            .count(1L)
+            .name(gallery.getShortName())
+            .httpStatus(HttpStatus.OK)
+            .timestamp(Instant.now())
+            .build());
+    }
 
-		if (galleryRequest.getId() == 0) {
-			log.error("Gallery ID is missing in the request");
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-			                     .build();
-		}
+    @Override
+    public ResponseEntity<GalleryResponse> updateGallery(GalleryRequest galleryRequest) {
+        log.debug("Received request to update gallery with ID {}: {}", galleryRequest.getId(), galleryRequest);
 
-		GalleryResponse galleryResponse;
+        if (galleryRequest.getId() == 0) {
+            log.error("Gallery ID is missing in the request");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .build();
+        }
 
-		try {
-			galleryResponse = galleryService.updateGallery(galleryRequest);
-		} catch (VempainAclException e) {
-			log.error("Could not update gallery: {}", e.getMessage());
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-			                     .build();
-		}
+        GalleryResponse galleryResponse;
 
-		return ResponseEntity.ok(galleryResponse);
-	}
+        try {
+            galleryResponse = galleryService.updateGallery(galleryRequest);
+        } catch (VempainAclException e) {
+            log.error("Could not update gallery: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .build();
+        }
 
-	// //////////////////// Publishing actions
+        return ResponseEntity.ok(galleryResponse);
+    }
 
-	@Override
-	public ResponseEntity<PublishResponse> publishAll(Instant publishDate) {
-		PublishResponse response;
+    // //////////////////// Publishing actions
 
-		if (publishDate != null) {
-			var galleries = galleryService.findAll();
+    @Override
+    public ResponseEntity<PublishResponse> publishAll(Instant publishDate) {
+        PublishResponse response;
 
-			for (var gallery : galleries) {
-				if (!publishService.canPublishGallery(gallery.getId())) {
-					log.warn("Not scheduling gallery {} because the user may not publish it", gallery.getId());
-					continue;
-				}
+        if (publishDate != null) {
+            var galleries = galleryService.findAll();
 
-				createGalleryPublishSchedule(publishDate, gallery.getId(), "Publish all galleries");
-			}
+            for (var gallery : galleries) {
+                if (!publishService.canPublishGallery(gallery.getId())) {
+                    log.warn("Not scheduling gallery {} because the user may not publish it", gallery.getId());
+                    continue;
+                }
 
-			response = PublishResponse.builder()
-			                          .result(PublishResultEnum.OK)
-			                          .message("Successfully scheduled to publish all galleries")
-			                          .timestamp(Instant.now())
-			                          .build();
-		} else {
-			// Publishing transfers files to the site server: it is started as a background task that the client follows through the task API
-			var task = publishService.publishAllGalleriesAsTask();
-			response = PublishResponse.builder()
-									  .result(PublishResultEnum.OK)
-									  .message("Publishing of all galleries started")
-									  .timestamp(Instant.now())
-									  .task(task)
-									  .build();
-			return ResponseEntity.accepted()
-								 .body(response);
-		}
+                createGalleryPublishSchedule(publishDate, gallery.getId(), "Publish all galleries");
+            }
 
-		return ResponseEntity.ok(response);
-	}
+            response = PublishResponse.builder()
+                .result(PublishResultEnum.OK)
+                .message("Successfully scheduled to publish all galleries")
+                .timestamp(Instant.now())
+                .build();
+        } else {
+            // Publishing transfers files to the site server: it is started as a background task that the client follows through the task API
+            var task = publishService.publishAllGalleriesAsTask();
+            response = PublishResponse.builder()
+                .result(PublishResultEnum.OK)
+                .message("Publishing of all galleries started")
+                .timestamp(Instant.now())
+                .task(task)
+                .build();
+            return ResponseEntity.accepted()
+                .body(response);
+        }
 
-	@Override
-	public ResponseEntity<PublishResponse> publishGallery(PublishRequest publishRequest) {
-		PublishResponse response;
+        return ResponseEntity.ok(response);
+    }
 
-		if (publishRequest == null || publishRequest.getId() < 1L) {
-			log.error(VempainMessages.MALFORMED_ID_IN_REQUEST_MSG, publishRequest);
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_ID_IN_REQUEST);
-		}
+    @Override
+    public ResponseEntity<PublishResponse> publishGallery(PublishRequest publishRequest) {
+        PublishResponse response;
 
-		try {
-			if (publishRequest.isPublishSchedule()) {
-				// The scheduler publishes without a user context, so the permission is verified when the schedule is created
-				publishService.authorizeGalleryPublish(publishRequest.getId());
-				return createGalleryPublishSchedule(publishRequest.getPublishDateTime(), publishRequest.getId(), publishRequest.getPublishMessage());
-			}
+        if (publishRequest == null
+            || publishRequest.getId() < 1L) {
+            log.error(VempainMessages.MALFORMED_ID_IN_REQUEST_MSG, publishRequest);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_ID_IN_REQUEST);
+        }
 
-			var task = publishService.publishGalleryAsTask(publishRequest.getId());
-			response = PublishResponse.builder()
-			                          .result(PublishResultEnum.OK)
-									  .message("Publishing of the gallery started")
-			                          .timestamp(Instant.now())
-									  .task(task)
-			                          .build();
-		} catch (VempainEntityNotFoundException e) {
-			response = PublishResponse.builder()
-			                          .result(PublishResultEnum.FAIL)
-			                          .message("Could not find gallery")
-			                          .timestamp(Instant.now())
-			                          .build();
-			return ResponseEntity.status(HttpStatus.NOT_FOUND)
-			                     .body(response);
-		}
+        try {
+            if (publishRequest.isPublishSchedule()) {
+                // The scheduler publishes without a user context, so the permission is verified when the schedule is created
+                publishService.authorizeGalleryPublish(publishRequest.getId());
+                return createGalleryPublishSchedule(publishRequest.getPublishDateTime(), publishRequest.getId(), publishRequest.getPublishMessage());
+            }
 
-		return ResponseEntity.accepted()
-							 .body(response);
-	}
+            var task = publishService.publishGalleryAsTask(publishRequest.getId());
+            response = PublishResponse.builder()
+                .result(PublishResultEnum.OK)
+                .message("Publishing of the gallery started")
+                .timestamp(Instant.now())
+                .task(task)
+                .build();
+        } catch (VempainEntityNotFoundException e) {
+            response = PublishResponse.builder()
+                .result(PublishResultEnum.FAIL)
+                .message("Could not find gallery")
+                .timestamp(Instant.now())
+                .build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(response);
+        }
 
-	@Override
-	public ResponseEntity<PublishResponse> publishSelectedGalleries(GalleryPublishRequest request) {
-		var task = publishService.publishSelectedGalleriesAsTask(request.getGalleryIds());
-		var response = PublishResponse.builder()
-									  .result(PublishResultEnum.OK)
-									  .message("Publishing of the selected galleries started")
-									  .timestamp(Instant.now())
-									  .task(task)
-									  .build();
-		return ResponseEntity.accepted()
-							 .body(response);
-	}
+        return ResponseEntity.accepted()
+            .body(response);
+    }
 
-	private ResponseEntity<PublishResponse> createGalleryPublishSchedule(Instant publishDateTime, Long galleryId, String message) {
-		PublishResponse response;
-		var publishResponse = scheduleService.schedulePublish(publishDateTime, galleryId, ContentTypeEnum.GALLERY, message);
+    @Override
+    public ResponseEntity<PublishResponse> publishSelectedGalleries(GalleryPublishRequest request) {
+        var task = publishService.publishSelectedGalleriesAsTask(request.getGalleryIds());
+        var response = PublishResponse.builder()
+            .result(PublishResultEnum.OK)
+            .message("Publishing of the selected galleries started")
+            .timestamp(Instant.now())
+            .task(task)
+            .build();
+        return ResponseEntity.accepted()
+            .body(response);
+    }
 
-		if (publishResponse == null) {
-			response = PublishResponse.builder()
-			                          .result(PublishResultEnum.FAIL)
-			                          .message("Failed to schedule gallery for publishing")
-			                          .timestamp(Instant.now())
-			                          .build();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-			                     .body(response);
-		}
+    private ResponseEntity<PublishResponse> createGalleryPublishSchedule(Instant publishDateTime, Long galleryId, String message) {
+        PublishResponse response;
+        var publishResponse = scheduleService.schedulePublish(publishDateTime, galleryId, ContentTypeEnum.GALLERY, message);
 
-		response = PublishResponse.builder()
-		                          .result(PublishResultEnum.OK)
-		                          .message("Successfully scheduled gallery for publishing")
-		                          .timestamp(Instant.now())
-		                          .build();
-		return ResponseEntity.ok(response);
-	}
+        if (publishResponse == null) {
+            response = PublishResponse.builder()
+                .result(PublishResultEnum.FAIL)
+                .message("Failed to schedule gallery for publishing")
+                .timestamp(Instant.now())
+                .build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(response);
+        }
+
+        response = PublishResponse.builder()
+            .result(PublishResultEnum.OK)
+            .message("Successfully scheduled gallery for publishing")
+            .timestamp(Instant.now())
+            .build();
+        return ResponseEntity.ok(response);
+    }
 }

@@ -1,10 +1,9 @@
 package fi.poltsi.vempain.admin.api.request.file;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import fi.poltsi.vempain.common.api.request.CopyrightRequest;
-import fi.poltsi.vempain.common.api.request.TagRequest;
-import fi.poltsi.vempain.common.api.response.LocationResponse;
-import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -12,6 +11,13 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+import fi.poltsi.vempain.common.api.request.CopyrightRequest;
+import fi.poltsi.vempain.common.api.request.TagRequest;
+import fi.poltsi.vempain.common.api.response.LocationResponse;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,10 +25,6 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
 
 @Data
 @Builder
@@ -33,77 +35,83 @@ import java.util.List;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Schema(name = "FileIngestRequest", description = "Metadata for ingesting a file into site storage")
 public class FileIngestRequest {
-	@Schema(description = "Sort order of the file in the gallery", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
-	@Min(0)
-	private long sortOrder;
 
-	@Schema(description = "Target file name", example = "img_001.jpg", requiredMode = Schema.RequiredMode.REQUIRED)
-	@NotBlank
-	@Size(max = 255)
-	private String fileName;
+    @Schema(description = "ID of the file in the file backend (files.id), stored as the file_id of the site file", example = "12345",
+            requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotNull
+    @Positive
+    private Long fileId;
 
-	@Schema(description = "Relative directory path under the mimetype class directory", example = "gallery/2025/08")
-	@Size(max = 2048)
-	private String filePath;
+    @Schema(description = "Sort order of the file in the gallery", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Min(0)
+    private long sortOrder;
 
-	@Schema(description = "RFC 2046 MIME type", example = "image/jpeg", requiredMode = Schema.RequiredMode.REQUIRED)
-	@NotBlank
-	@Size(max = 255)
-	@Pattern(regexp = "^[^/\\s]+/[^/\\s]+$", message = "Must be in 'type/subtype' format")
-	private String mimeType;
+    @Schema(description = "Target file name", example = "img_001.jpg", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotBlank
+    @Size(max = 255)
+    private String fileName;
 
-	@Schema(description = "Comment", example = "Some comment", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-	@NotNull
-	private String comment;
+    @Schema(description = "Relative directory path under the mimetype class directory", example = "gallery/2025/08")
+    @Size(max = 2048)
+    private String filePath;
 
-	@Schema(description = "If image or video, the width in pixels", example = "1920", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-	private Integer width;
+    @Schema(description = "RFC 2046 MIME type", example = "image/jpeg", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotBlank
+    @Size(max = 255)
+    @Pattern(regexp = "^[^/\\s]+/[^/\\s]+$", message = "Must be in 'type/subtype' format")
+    private String mimeType;
 
-	@Schema(description = "If image or video, the height in pixels", example = "1080", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-	private Integer height;
+    @Schema(description = "Comment", example = "Some comment", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @NotNull
+    private String comment;
 
-	@Schema(description = "If video or audio, the duration length", example = "PT2M30S", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-	private Duration length;
+    @Schema(description = "If image or video, the width in pixels", example = "1920", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private Integer width;
 
-	@Schema(description = "If document, the number of pages", example = "10", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-	private Integer pages;
+    @Schema(description = "If image or video, the height in pixels", example = "1080", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private Integer height;
 
-	@Schema(description = "Metadata of the file in JSON format", example = "{\"some-field\": \"some value\"}", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-	@NotNull
-	private String metadata;
+    @Schema(description = "If video or audio, the duration length", example = "PT2M30S", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private Duration length;
 
-	@Schema(description = "SHA 256 sum of the sent file, used to verify the file integrity", example = "a", requiredMode = Schema.RequiredMode.REQUIRED)
-	@NotNull
-	private String sha256sum;
+    @Schema(description = "If document, the number of pages", example = "10", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private Integer pages;
 
-	@Schema(description = "Existing gallery ID to associate with (if any)", example = "1001")
-	@Positive
-	private Long galleryId;
+    @Schema(description = "Metadata of the file in JSON format", example = "{\"some-field\": \"some value\"}", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @NotNull
+    private String metadata;
 
-	@Schema(description = "Gallery short name (created/updated if provided)", example = "Summer 2025")
-	@Size(max = 255)
-	private String galleryName;
+    @Schema(description = "SHA 256 sum of the sent file, used to verify the file integrity", example = "a", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotNull
+    private String sha256sum;
 
-	@Schema(description = "Gallery description (created/updated if provided)", example = "A sunny album from August 2025")
-	@Size(max = 2048)
-	private String galleryDescription;
+    @Schema(description = "Existing gallery ID to associate with (if any)", example = "1001")
+    @Positive
+    private Long galleryId;
 
-	@Schema(description = "Datetime of creation of the original file", example = "2025-08-15T14:30:00Z", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-	private Instant originalDateTime;
+    @Schema(description = "Gallery short name (created/updated if provided)", example = "Summer 2025")
+    @Size(max = 255)
+    private String galleryName;
 
-	@Schema(description = "List of tags linked to the file", example = "[list of tag requests]", requiredMode = Schema.RequiredMode.REQUIRED)
-	private List<TagRequest> tags;
+    @Schema(description = "Gallery description (created/updated if provided)", example = "A sunny album from August 2025")
+    @Size(max = 2048)
+    private String galleryDescription;
 
-	@Schema(description = "Location (GPS) data associated with the file", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-	private LocationResponse location;
+    @Schema(description = "Datetime of creation of the original file", example = "2025-08-15T14:30:00Z", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private Instant originalDateTime;
 
-	@Schema(description = "Copyright information associated with the file", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-	private CopyrightRequest copyright;
+    @Schema(description = "List of tags linked to the file", example = "[list of tag requests]", requiredMode = Schema.RequiredMode.REQUIRED)
+    private List<TagRequest> tags;
 
-	@Schema(description = "Additional admin users granted privileges on the ingested site file and its gallery, next to the ingesting account "
-						  + "which always gets every privilege. Validated (existing active users, no duplicates, at least one privilege each) "
-						  + "before the file is stored.",
-			requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-	@Valid
-	private List<FileIngestAclRequest> acls;
+    @Schema(description = "Location (GPS) data associated with the file", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private LocationResponse location;
+
+    @Schema(description = "Copyright information associated with the file", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private CopyrightRequest copyright;
+
+    @Schema(description = "Additional admin users granted privileges on the ingested site file and its gallery, next to the ingesting account "
+            + "which always gets every privilege. Validated (existing active users, no duplicates, at least one privilege each) "
+            + "before the file is stored.", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @Valid
+    private List<FileIngestAclRequest> acls;
 }

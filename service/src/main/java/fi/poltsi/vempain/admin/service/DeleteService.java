@@ -1,5 +1,7 @@
 package fi.poltsi.vempain.admin.service;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import fi.poltsi.vempain.admin.repository.ComponentRepository;
 import fi.poltsi.vempain.admin.repository.FormRepository;
@@ -9,137 +11,136 @@ import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.repository.AclRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Service for deleting entities within a single transaction as we need to cascade removal of entities which have foreign keys
- * This would not be needed if the database would be set to CASCADE DELETE
+ * Service for deleting entities within a single transaction as we need to cascade removal of entities which have foreign keys This would not be needed if the
+ * database would be set to CASCADE DELETE
  */
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class DeleteService {
-	private final ComponentRepository  componentRepository;
-	private final AclRepository        aclRepository;
-	private final FormComponentService formComponentService;
-	private final PageRepository       pageRepository;
-	private final FormRepository       formRepository;
-	private final LayoutRepository     layoutRepository;
-	private final AccessService accessService;
 
-	/**
-	 * Delete a layout as well as any forms and pages that are associated with the layout
-	 */
-	@Transactional
-	public void deleteLayoutById(long layoutId) throws VempainEntityNotFoundException {
-		var optionalLayout = layoutRepository.findById(layoutId);
+    private final ComponentRepository componentRepository;
+    private final AclRepository aclRepository;
+    private final FormComponentService formComponentService;
+    private final PageRepository pageRepository;
+    private final FormRepository formRepository;
+    private final LayoutRepository layoutRepository;
+    private final AccessService accessService;
 
-		if (optionalLayout.isEmpty()) {
-			log.error("Layout not found: {}", layoutId);
-			throw new VempainEntityNotFoundException("Layout not found by id: " + layoutId, "layout");
-		}
+    /**
+     * Delete a layout as well as any forms and pages that are associated with the layout
+     */
+    @Transactional
+    public void deleteLayoutById(long layoutId) throws VempainEntityNotFoundException {
+        var optionalLayout = layoutRepository.findById(layoutId);
 
-		var layout = optionalLayout.get();
-		requireDelete(layout.getAclId(), "layout");
-		var forms = formRepository.findByLayoutId(layoutId);
+        if (optionalLayout.isEmpty()) {
+            log.error("Layout not found: {}", layoutId);
+            throw new VempainEntityNotFoundException("Layout not found by id: " + layoutId, "layout");
+        }
 
-		for (var form : forms) {
-			deleteFormById(form.getId());
-		}
+        var layout = optionalLayout.get();
+        requireDelete(layout.getAclId(), "layout");
+        var forms = formRepository.findByLayoutId(layoutId);
 
-		aclRepository.deleteAclsByAclId(layout.getAclId());
-		layoutRepository.deleteById(layoutId);
-	}
+        for (var form : forms) {
+            deleteFormById(form.getId());
+        }
 
-	/**
-	 * Deletion of a component will also remove any and all forms that are associated with the component and as an extension, any and
-	 * all pages that are associated with the forms.
-	 *
-	 * @param componentId Component to be deleted
-	 */
-	@Transactional
-	public void deleteComponentById(long componentId) throws VempainEntityNotFoundException {
-		var optionalComponent = componentRepository.findById(componentId);
+        aclRepository.deleteAclsByAclId(layout.getAclId());
+        layoutRepository.deleteById(layoutId);
+    }
 
-		if (optionalComponent.isEmpty()) {
-			log.error("Component not found: {}", componentId);
-			throw new VempainEntityNotFoundException("Component not found by id: " + componentId, "component");
-		}
+    /**
+     * Deletion of a component will also remove any and all forms that are associated with the component and as an extension, any and all pages that are
+     * associated with the forms.
+     *
+     * @param componentId Component to be deleted
+     */
+    @Transactional
+    public void deleteComponentById(long componentId) throws VempainEntityNotFoundException {
+        var optionalComponent = componentRepository.findById(componentId);
 
-		// Remove the ACLs
-		var component = optionalComponent.get();
-		requireDelete(component.getAclId(), "component");
+        if (optionalComponent.isEmpty()) {
+            log.error("Component not found: {}", componentId);
+            throw new VempainEntityNotFoundException("Component not found by id: " + componentId, "component");
+        }
 
-		// Remove the forms
-		var formComponents = formComponentService.findFormComponentByComponentId(componentId);
+        // Remove the ACLs
+        var component = optionalComponent.get();
+        requireDelete(component.getAclId(), "component");
 
-		for (var formComponent : formComponents) {
-			deleteFormById(formComponent.getFormId());
-		}
+        // Remove the forms
+        var formComponents = formComponentService.findFormComponentByComponentId(componentId);
 
-		aclRepository.deleteAclsByAclId(component.getAclId());
-		componentRepository.deleteById(componentId);
-	}
+        for (var formComponent : formComponents) {
+            deleteFormById(formComponent.getFormId());
+        }
 
-	/**
-	 * Delete a form and its ACL entries, this will also delete any and all pages that are associated with the form
-	 *
-	 * @param formId Form to be deleted
-	 */
-	@Transactional
-	public void deleteFormById(long formId) throws VempainEntityNotFoundException {
-		var optionalForm = formRepository.findById(formId);
+        aclRepository.deleteAclsByAclId(component.getAclId());
+        componentRepository.deleteById(componentId);
+    }
 
-		if (optionalForm.isEmpty()) {
-			log.error("Form not found: {}", formId);
-			throw new VempainEntityNotFoundException("Form not found by id: " + formId, "page");
-		}
+    /**
+     * Delete a form and its ACL entries, this will also delete any and all pages that are associated with the form
+     *
+     * @param formId Form to be deleted
+     */
+    @Transactional
+    public void deleteFormById(long formId) throws VempainEntityNotFoundException {
+        var optionalForm = formRepository.findById(formId);
 
-		var form = optionalForm.get();
-		requireDelete(form.getAclId(), "form");
+        if (optionalForm.isEmpty()) {
+            log.error("Form not found: {}", formId);
+            throw new VempainEntityNotFoundException("Form not found by id: " + formId, "page");
+        }
 
-		var pages = pageRepository.findByFormId(formId);
+        var form = optionalForm.get();
+        requireDelete(form.getAclId(), "form");
 
-		for (var page : pages) {
-			deletePageById(page.getId());
-		}
+        var pages = pageRepository.findByFormId(formId);
 
-		// Remove any form-component associations
-		// Remove the forms
-		var formComponents = formComponentService.findFormComponentByFormId(formId);
+        for (var page : pages) {
+            deletePageById(page.getId());
+        }
 
-		for (var formComponent : formComponents) {
-			formComponentService.deleteFormComponent(formId, formComponent.getComponentId(), formComponent.getSortOrder());
-		}
+        // Remove any form-component associations
+        // Remove the forms
+        var formComponents = formComponentService.findFormComponentByFormId(formId);
 
-		aclRepository.deleteAclsByAclId(form.getAclId());
-		formRepository.deleteById(formId);
-	}
+        for (var formComponent : formComponents) {
+            formComponentService.deleteFormComponent(formId, formComponent.getComponentId(), formComponent.getSortOrder());
+        }
 
-	/**
-	 * Delete a page and its ACL entries
-	 *
-	 * @param pageId Page to be deleted
-	 */
-	@Transactional
-	public void deletePageById(long pageId) throws VempainEntityNotFoundException {
-		var page = pageRepository.findById(pageId);
+        aclRepository.deleteAclsByAclId(form.getAclId());
+        formRepository.deleteById(formId);
+    }
 
-		if (page == null) {
-			log.error("Page not found: {}", pageId);
-			throw new VempainEntityNotFoundException("Page not found by id: " + pageId, "page");
-		}
-		requireDelete(page.getAclId(), "page");
+    /**
+     * Delete a page and its ACL entries
+     *
+     * @param pageId Page to be deleted
+     */
+    @Transactional
+    public void deletePageById(long pageId) throws VempainEntityNotFoundException {
+        var page = pageRepository.findById(pageId);
 
-		aclRepository.deleteAclsByAclId(page.getAclId());
-		pageRepository.deletePageById(pageId);
-	}
+        if (page == null) {
+            log.error("Page not found: {}", pageId);
+            throw new VempainEntityNotFoundException("Page not found by id: " + pageId, "page");
+        }
+        requireDelete(page.getAclId(), "page");
 
-	private void requireDelete(long aclId, String resource) {
-		if (!accessService.hasDeletePermission(aclId)) {
-			throw new org.springframework.security.access.AccessDeniedException("User does not have permission to delete " + resource);
-		}
-	}
+        aclRepository.deleteAclsByAclId(page.getAclId());
+        pageRepository.deletePageById(pageId);
+    }
+
+    private void requireDelete(long aclId, String resource) {
+        if (!accessService.hasDeletePermission(aclId)) {
+            throw new org.springframework.security.access.AccessDeniedException("User does not have permission to delete " + resource);
+        }
+    }
 }

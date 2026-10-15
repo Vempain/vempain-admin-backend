@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,26 +20,27 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Table(name = "web_site_subject")
 public class WebSiteSubject {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "id")
-	private long   id;
-	@Basic
-	@Column(name = "subject")
-	private String subjectName;
-	@Basic
-	@Column(name = "subject_de")
-	private String subjectNameDe;
-	@Basic
-	@Column(name = "subject_en")
-	private String subjectNameEn;
-	@Basic
-	@Column(name = "subject_es")
-	private String subjectNameEs;
-	@Basic
-	@Column(name = "subject_fi")
-	private String subjectNameFi;
-	@Basic
-	@Column(name = "subject_se")
-	private String subjectNameSe;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private long id;
+    @Basic
+    @Column(name = "subject")
+    private String subjectName;
+    @Basic
+    @Column(name = "subject_de")
+    private String subjectNameDe;
+    @Basic
+    @Column(name = "subject_en")
+    private String subjectNameEn;
+    @Basic
+    @Column(name = "subject_es")
+    private String subjectNameEs;
+    @Basic
+    @Column(name = "subject_fi")
+    private String subjectNameFi;
+    @Basic
+    @Column(name = "subject_se")
+    private String subjectNameSe;
 }

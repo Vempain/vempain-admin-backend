@@ -1,5 +1,16 @@
 package fi.poltsi.vempain.admin.controller;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.annotation.ScheduledAnnotationBeanPostProcessor;
+import org.springframework.scheduling.config.ScheduledTask;
+import org.springframework.web.bind.annotation.RestController;
+
 import fi.poltsi.vempain.admin.api.request.PublishScheduleRequest;
 import fi.poltsi.vempain.admin.api.request.TriggerSystemScheduleRequest;
 import fi.poltsi.vempain.admin.api.response.PublishScheduleResponse;
@@ -10,153 +21,145 @@ import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.ScheduleService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.TaskScheduler;
-import org.springframework.scheduling.annotation.ScheduledAnnotationBeanPostProcessor;
-import org.springframework.scheduling.config.ScheduledTask;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 
 @Slf4j
 @AllArgsConstructor
 @RestController
 public class ScheduleController implements ScheduleAPI {
-	private ScheduledAnnotationBeanPostProcessor postProcessor;
-	private TaskScheduler                        taskScheduler;
-	private ScheduleService                      scheduleService;
-	private AccessService accessService;
 
-	@Override
-	public ResponseEntity<List<ScheduleTriggerResponse>> getSystemSchedules() {
-		accessService.checkAdminAccess();
-		Set<ScheduledTask> scheduledTaskSet = postProcessor.getScheduledTasks();
-		ArrayList<ScheduleTriggerResponse> scheduleTriggerResponses = new ArrayList<>();
-		var idCounter = 1L;
+    private ScheduledAnnotationBeanPostProcessor postProcessor;
+    private TaskScheduler taskScheduler;
+    private ScheduleService scheduleService;
+    private AccessService accessService;
 
-		for (ScheduledTask scheduledTask : scheduledTaskSet) {
-			scheduleTriggerResponses.add(ScheduleTriggerResponse.builder()
-			                                                    .id(idCounter)
-			                                                    .scheduleName(scheduledTask.getTask()
-			                                                                               .toString())
-			                                                    .status("ACTIVE")
-			                                                    .build());
-			idCounter++;
-		}
+    @Override
+    public ResponseEntity<List<ScheduleTriggerResponse>> getSystemSchedules() {
+        accessService.checkAdminAccess();
+        Set<ScheduledTask> scheduledTaskSet = postProcessor.getScheduledTasks();
+        ArrayList<ScheduleTriggerResponse> scheduleTriggerResponses = new ArrayList<>();
+        var idCounter = 1L;
 
-		return ResponseEntity.ok(scheduleTriggerResponses);
-	}
+        for (ScheduledTask scheduledTask : scheduledTaskSet) {
+            scheduleTriggerResponses.add(ScheduleTriggerResponse.builder()
+                .id(idCounter)
+                .scheduleName(scheduledTask.getTask()
+                    .toString())
+                .status("ACTIVE")
+                .build());
+            idCounter++;
+        }
 
-	@Override
-	public ResponseEntity<ScheduleTriggerResponse> getSystemScheduleByName(String systemScheduleName) {
-		accessService.checkAdminAccess();
-		Set<ScheduledTask> scheduledTaskSet = postProcessor.getScheduledTasks();
+        return ResponseEntity.ok(scheduleTriggerResponses);
+    }
 
-		for (ScheduledTask scheduledTask : scheduledTaskSet) {
-			if (scheduledTask.getTask()
-			                 .toString()
-			                 .equals(systemScheduleName)) {
-				return ResponseEntity.ok(ScheduleTriggerResponse.builder()
-				                                                .id(1L)
-				                                                .scheduleName(scheduledTask.getTask()
-				                                                                           .toString())
-				                                                .status("ACTIVE")
-				                                                .build());
-			}
-		}
+    @Override
+    public ResponseEntity<ScheduleTriggerResponse> getSystemScheduleByName(String systemScheduleName) {
+        accessService.checkAdminAccess();
+        Set<ScheduledTask> scheduledTaskSet = postProcessor.getScheduledTasks();
 
-		return ResponseEntity.notFound()
-		                     .build();
-	}
+        for (ScheduledTask scheduledTask : scheduledTaskSet) {
+            if (scheduledTask.getTask()
+                .toString()
+                .equals(systemScheduleName)) {
+                return ResponseEntity.ok(ScheduleTriggerResponse.builder()
+                    .id(1L)
+                    .scheduleName(scheduledTask.getTask()
+                        .toString())
+                    .status("ACTIVE")
+                    .build());
+            }
+        }
 
-	@Override
-	public ResponseEntity<ScheduleTriggerResponse> triggerSystemSchedule(TriggerSystemScheduleRequest schedule) {
-		accessService.checkAdminAccess();
-		log.debug("Call to trigger system schedule: {}", schedule);
-		Set<ScheduledTask> scheduledTaskSet = postProcessor.getScheduledTasks();
+        return ResponseEntity.notFound()
+            .build();
+    }
 
-		for (ScheduledTask scheduledTask : scheduledTaskSet) {
-			if (scheduledTask.getTask()
-			                 .toString()
-			                 .equals(schedule.getScheduleName())) {
-				taskScheduler.schedule(scheduledTask.getTask()
-				                                    .getRunnable(), Instant.now()
-				                                                           .plusSeconds(schedule.getDelay()));
+    @Override
+    public ResponseEntity<ScheduleTriggerResponse> triggerSystemSchedule(TriggerSystemScheduleRequest schedule) {
+        accessService.checkAdminAccess();
+        log.debug("Call to trigger system schedule: {}", schedule);
+        Set<ScheduledTask> scheduledTaskSet = postProcessor.getScheduledTasks();
 
-				return ResponseEntity.ok(ScheduleTriggerResponse.builder()
-				                                                .id(1L)
-				                                                .scheduleName(scheduledTask.getTask()
-				                                                                           .toString())
-				                                                .status("ACTIVE")
-				                                                .build());
-			}
-		}
+        for (ScheduledTask scheduledTask : scheduledTaskSet) {
+            if (scheduledTask.getTask()
+                .toString()
+                .equals(schedule.getScheduleName())) {
+                taskScheduler.schedule(scheduledTask.getTask()
+                    .getRunnable(),
+                        Instant.now()
+                            .plusSeconds(schedule.getDelay()));
 
-		log.error("Failed to trigger system schedule with name: {}", schedule.getScheduleName());
+                return ResponseEntity.ok(ScheduleTriggerResponse.builder()
+                    .id(1L)
+                    .scheduleName(scheduledTask.getTask()
+                        .toString())
+                    .status("ACTIVE")
+                    .build());
+            }
+        }
 
-		return ResponseEntity.notFound()
-		                     .build();
-	}
+        log.error("Failed to trigger system schedule with name: {}", schedule.getScheduleName());
 
-	@Override
-	public ResponseEntity<List<PublishScheduleResponse>> listPublishingSchedules() {
-		accessService.checkAdminAccess();
-		log.debug("Call to get all the publishing schedules");
-		var upcomingPublishSchedules = scheduleService.getUpcomingPublishSchedules();
-		return ResponseEntity.ok(upcomingPublishSchedules);
-	}
+        return ResponseEntity.notFound()
+            .build();
+    }
 
-	@Override
-	public ResponseEntity<PublishScheduleResponse> getPublishingScheduleById(long id) {
-		accessService.checkAdminAccess();
-		log.debug("Call to get publishing schedule ID: {}", id);
-		var publishScheduleResponse = scheduleService.getPublishScheduleById(id);
+    @Override
+    public ResponseEntity<List<PublishScheduleResponse>> listPublishingSchedules() {
+        accessService.checkAdminAccess();
+        log.debug("Call to get all the publishing schedules");
+        var upcomingPublishSchedules = scheduleService.getUpcomingPublishSchedules();
+        return ResponseEntity.ok(upcomingPublishSchedules);
+    }
 
-		if (publishScheduleResponse == null) {
-			return ResponseEntity.notFound()
-			                     .build();
-		}
+    @Override
+    public ResponseEntity<PublishScheduleResponse> getPublishingScheduleById(long id) {
+        accessService.checkAdminAccess();
+        log.debug("Call to get publishing schedule ID: {}", id);
+        var publishScheduleResponse = scheduleService.getPublishScheduleById(id);
 
-		return ResponseEntity.ok(publishScheduleResponse);
-	}
+        if (publishScheduleResponse == null) {
+            return ResponseEntity.notFound()
+                .build();
+        }
 
-	@Override
-	public ResponseEntity<PublishScheduleResponse> triggerPublishSchedule(PublishScheduleRequest publishScheduleRequest) {
-		accessService.checkAdminAccess();
-		log.debug("Call to trigger publishing schedule: {}", publishScheduleRequest);
+        return ResponseEntity.ok(publishScheduleResponse);
+    }
 
-		var publishScheduleResponse = scheduleService.triggerPublishSchedule(publishScheduleRequest);
+    @Override
+    public ResponseEntity<PublishScheduleResponse> triggerPublishSchedule(PublishScheduleRequest publishScheduleRequest) {
+        accessService.checkAdminAccess();
+        log.debug("Call to trigger publishing schedule: {}", publishScheduleRequest);
 
-		if (publishScheduleResponse == null) {
-			return ResponseEntity.notFound()
-			                     .build();
-		}
+        var publishScheduleResponse = scheduleService.triggerPublishSchedule(publishScheduleRequest);
 
-		return ResponseEntity.ok(publishScheduleResponse);
-	}
+        if (publishScheduleResponse == null) {
+            return ResponseEntity.notFound()
+                .build();
+        }
 
-	@Override
-	public ResponseEntity<List<FileImportScheduleResponse>> listFileImportSchedules() {
-		accessService.checkAdminAccess();
-		log.debug("Call to get all the file import schedules");
-		var upcomingFileImportSchedules = scheduleService.getUpcomingFileImportSchedules();
-		return ResponseEntity.ok(upcomingFileImportSchedules);
-	}
+        return ResponseEntity.ok(publishScheduleResponse);
+    }
 
-	@Override
-	public ResponseEntity<FileImportScheduleResponse> getFileImportScheduleById(long id) {
-		accessService.checkAdminAccess();
-		log.debug("Call to get file import schedule ID: {}", id);
-		var fileImportSchedule = scheduleService.getFileImportScheduleById(id);
+    @Override
+    public ResponseEntity<List<FileImportScheduleResponse>> listFileImportSchedules() {
+        accessService.checkAdminAccess();
+        log.debug("Call to get all the file import schedules");
+        var upcomingFileImportSchedules = scheduleService.getUpcomingFileImportSchedules();
+        return ResponseEntity.ok(upcomingFileImportSchedules);
+    }
 
-		if (fileImportSchedule == null) {
-			return ResponseEntity.notFound()
-			                     .build();
-		}
+    @Override
+    public ResponseEntity<FileImportScheduleResponse> getFileImportScheduleById(long id) {
+        accessService.checkAdminAccess();
+        log.debug("Call to get file import schedule ID: {}", id);
+        var fileImportSchedule = scheduleService.getFileImportScheduleById(id);
 
-		return ResponseEntity.ok(fileImportSchedule);
-	}
+        if (fileImportSchedule == null) {
+            return ResponseEntity.notFound()
+                .build();
+        }
+
+        return ResponseEntity.ok(fileImportSchedule);
+    }
 }

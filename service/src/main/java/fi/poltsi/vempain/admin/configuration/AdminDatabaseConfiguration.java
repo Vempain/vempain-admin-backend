@@ -1,7 +1,9 @@
 package fi.poltsi.vempain.admin.configuration;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
+
 import jakarta.persistence.EntityManagerFactory;
+
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceProperties;
@@ -15,45 +17,43 @@ import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-import javax.sql.DataSource;
+import com.zaxxer.hikari.HikariDataSource;
 
 @Configuration
 @EnableTransactionManagement
-@EnableJpaRepositories(entityManagerFactoryRef = "adminEntityManagerFactory",
-                       transactionManagerRef = "adminTransactionManager",
-					   basePackages = {"fi.poltsi.vempain.admin.repository", "fi.poltsi.vempain.auth.repository",
-									   "fi.poltsi.vempain.common.task.repository"})
+@EnableJpaRepositories(entityManagerFactoryRef = "adminEntityManagerFactory", transactionManagerRef = "adminTransactionManager",
+        basePackages = { "fi.poltsi.vempain.admin.repository", "fi.poltsi.vempain.auth.repository", "fi.poltsi.vempain.common.task.repository" })
 public class AdminDatabaseConfiguration {
-	@Primary
-	@Bean
-	@ConfigurationProperties("spring.admin-datasource")
-	public DataSourceProperties adminDataSourceProperties() {
-		return new DataSourceProperties();
-	}
 
-	@Primary
-	@Bean(name = "adminDataSource")
-	@ConfigurationProperties(prefix = "spring.admin-datasource.configuration")
-	public DataSource adminDataSource() {
-		return adminDataSourceProperties().initializeDataSourceBuilder()
-		                                  .type(HikariDataSource.class)
-		                                  .build();
-	}
+    @Primary
+    @Bean
+    @ConfigurationProperties("spring.admin-datasource")
+    public DataSourceProperties adminDataSourceProperties() {
+        return new DataSourceProperties();
+    }
 
-	@Primary
-	@Bean(name = "adminEntityManagerFactory")
-	public LocalContainerEntityManagerFactoryBean adminEntityManagerFactory(EntityManagerFactoryBuilder builder,
-	                                                                        @Qualifier("adminDataSource") DataSource dataSource) {
-		return builder
-				.dataSource(dataSource)
-				.packages("fi.poltsi.vempain.admin.entity", "fi.poltsi.vempain.auth.entity", "fi.poltsi.vempain.common.task.entity")
-				.persistenceUnit("admin")
-				.build();
-	}
+    @Primary
+    @Bean(name = "adminDataSource")
+    @ConfigurationProperties(prefix = "spring.admin-datasource.configuration")
+    public DataSource adminDataSource() {
+        return adminDataSourceProperties().initializeDataSourceBuilder()
+            .type(HikariDataSource.class)
+            .build();
+    }
 
-	@Primary
-	@Bean(name = "adminTransactionManager")
-	public PlatformTransactionManager adminTransactionManager(@Qualifier("adminEntityManagerFactory") EntityManagerFactory adminEntityManagerFactory) {
-		return new JpaTransactionManager(adminEntityManagerFactory);
-	}
+    @Primary
+    @Bean(name = "adminEntityManagerFactory")
+    public LocalContainerEntityManagerFactoryBean adminEntityManagerFactory(EntityManagerFactoryBuilder builder,
+            @Qualifier("adminDataSource") DataSource dataSource) {
+        return builder.dataSource(dataSource)
+            .packages("fi.poltsi.vempain.admin.entity", "fi.poltsi.vempain.auth.entity", "fi.poltsi.vempain.common.task.entity")
+            .persistenceUnit("admin")
+            .build();
+    }
+
+    @Primary
+    @Bean(name = "adminTransactionManager")
+    public PlatformTransactionManager adminTransactionManager(@Qualifier("adminEntityManagerFactory") EntityManagerFactory adminEntityManagerFactory) {
+        return new JpaTransactionManager(adminEntityManagerFactory);
+    }
 }

@@ -1,6 +1,7 @@
 package fi.poltsi.vempain.admin.api.response.file;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import fi.poltsi.vempain.common.api.FileTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -16,12 +17,13 @@ import tools.jackson.databind.annotation.JsonNaming;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Schema(description = "Response containing the image file data")
 public class FileThumbResponse extends AbstractFileResponse {
-	@Schema(description = "Parent ID of the file, in the common file table", example = "123", requiredMode = Schema.RequiredMode.REQUIRED)
-	private long         parentId;
-	@Schema(description = "Parent class", example = "IMAGE", requiredMode = Schema.RequiredMode.REQUIRED)
-	private FileTypeEnum parentType;
-	@Schema(description = "Width of the image, in pixels", example = "250", requiredMode = Schema.RequiredMode.REQUIRED)
-	private long         width;
-	@Schema(description = "Height of the image, in pixels", example = "250", requiredMode = Schema.RequiredMode.REQUIRED)
-	private long height;
+
+    @Schema(description = "Parent ID of the file, in the common file table", example = "123", requiredMode = Schema.RequiredMode.REQUIRED)
+    private long parentId;
+    @Schema(description = "Parent class", example = "IMAGE", requiredMode = Schema.RequiredMode.REQUIRED)
+    private FileTypeEnum parentType;
+    @Schema(description = "Width of the image, in pixels", example = "250", requiredMode = Schema.RequiredMode.REQUIRED)
+    private long width;
+    @Schema(description = "Height of the image, in pixels", example = "250", requiredMode = Schema.RequiredMode.REQUIRED)
+    private long height;
 }

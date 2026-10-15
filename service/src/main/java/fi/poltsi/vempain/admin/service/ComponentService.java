@@ -1,5 +1,17 @@
 package fi.poltsi.vempain.admin.service;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
 import fi.poltsi.vempain.admin.VempainMessages;
 import fi.poltsi.vempain.admin.api.request.ComponentRequest;
 import fi.poltsi.vempain.admin.entity.Component;
@@ -13,241 +25,233 @@ import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.AclService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class ComponentService {
-	private static final String              COMPONENT_ID = "component";
-	private final        ComponentRepository componentRepository;
-	private final        AclService          aclService;
-	private final        AccessService       accessService;
 
-	public List<Component> findAll() {
-		ArrayList<Component> components = new ArrayList<>();
+    private static final String COMPONENT_ID = "component";
+    private final ComponentRepository componentRepository;
+    private final AclService aclService;
+    private final AccessService accessService;
 
-		for (Component component : componentRepository.findAll()) {
-			components.add(component);
-		}
+    public List<Component> findAll() {
+        ArrayList<Component> components = new ArrayList<>();
 
-		return components;
-	}
+        for (Component component : componentRepository.findAll()) {
+            components.add(component);
+        }
 
-	public List<Component> findAllByUser() {
-		Iterable<Component> allComponents = componentRepository.findAll();
-		ArrayList<Component> accessableComponents = new ArrayList<>();
+        return components;
+    }
 
-		for (Component component : allComponents) {
-			if (accessService.hasReadPermission(component.getAclId())) {
-				accessableComponents.add(component);
-			}
-		}
-		return accessableComponents;
-	}
+    public List<Component> findAllByUser() {
+        Iterable<Component> allComponents = componentRepository.findAll();
+        ArrayList<Component> accessableComponents = new ArrayList<>();
 
-	public PagedResponse<Component> findPagedByUser(PagedRequest request) {
-		var components = new ArrayList<>(findAllByUser());
-		var search = request.getSearch();
-		if (search != null && !search.isBlank()) {
-			var query = Boolean.TRUE.equals(request.getCaseSensitive()) ? search : search.toLowerCase(Locale.ROOT);
-			components.removeIf(component -> {
-				var name = component.getCompName();
-				var candidate = Boolean.TRUE.equals(request.getCaseSensitive()) ? name : name.toLowerCase(Locale.ROOT);
-				return !candidate.contains(query);
-			});
-		}
-		components.sort(java.util.Comparator.comparing(Component::getId));
-		if (request.getSortBy() != null && request.getSortBy()
-		                                          .equals("comp_name")) {
-			components.sort(java.util.Comparator.comparing(Component::getCompName, String.CASE_INSENSITIVE_ORDER));
-		}
-		if (request.getDirection() == org.springframework.data.domain.Sort.Direction.DESC) {
-			java.util.Collections.reverse(components);
-		}
-		return PagedResponseService.create(components, request);
-	}
+        for (Component component : allComponents) {
+            if (accessService.hasReadPermission(component.getAclId())) {
+                accessableComponents.add(component);
+            }
+        }
+        return accessableComponents;
+    }
 
-	public Component findById(long componentId) throws VempainComponentException {
-		var optionalComponent = componentRepository.findById(componentId);
+    public PagedResponse<Component> findPagedByUser(PagedRequest request) {
+        var components = new ArrayList<>(findAllByUser());
+        var search = request.getSearch();
+        if (search != null
+            && !search.isBlank()) {
+            var query = Boolean.TRUE.equals(request.getCaseSensitive()) ? search : search.toLowerCase(Locale.ROOT);
+            components.removeIf(component -> {
+                var name = component.getCompName();
+                var candidate = Boolean.TRUE.equals(request.getCaseSensitive()) ? name : name.toLowerCase(Locale.ROOT);
+                return !candidate.contains(query);
+            });
+        }
+        components.sort(java.util.Comparator.comparing(Component::getId));
+        if (request.getSortBy() != null
+            && request.getSortBy()
+                .equals("comp_name")) {
+            components.sort(java.util.Comparator.comparing(Component::getCompName, String.CASE_INSENSITIVE_ORDER));
+        }
+        if (request.getDirection() == org.springframework.data.domain.Sort.Direction.DESC) {
+            java.util.Collections.reverse(components);
+        }
+        return PagedResponseService.create(components, request);
+    }
 
-		if (optionalComponent.isEmpty()) {
-			log.error("Failed to find component by ID: {}", componentId);
-			throw new VempainComponentException("Failed to find component");
-		}
+    public Component findById(long componentId) throws VempainComponentException {
+        var optionalComponent = componentRepository.findById(componentId);
 
-		return optionalComponent.get();
-	}
+        if (optionalComponent.isEmpty()) {
+            log.error("Failed to find component by ID: {}", componentId);
+            throw new VempainComponentException("Failed to find component");
+        }
 
-	public Component findByIdByUser(long componentId) {
-		var userId = accessService.getValidUserId();
+        return optionalComponent.get();
+    }
 
-		Component component;
+    public Component findByIdByUser(long componentId) {
+        var userId = accessService.getValidUserId();
 
-		try {
-			component = findById(componentId);
-		} catch (VempainComponentException e) {
-			log.error("Failed to fetch component by ID: {}", componentId);
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND);
-		}
+        Component component;
 
-		if (accessService.hasReadPermission(component.getAclId())) {
-			return component;
-		} else {
-			log.error("User {} tried to access component {} ({}) with insufficient permissions", userId, component.getId(),
-			          component.getCompName());
-			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, VempainMessages.UNAUTHORIZED_ACCESS);
-		}
-	}
+        try {
+            component = findById(componentId);
+        } catch (VempainComponentException e) {
+            log.error("Failed to fetch component by ID: {}", componentId);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND);
+        }
 
-	public Component findByName(String compName) throws VempainComponentException {
-		var component = componentRepository.findByCompName(compName);
+        if (accessService.hasReadPermission(component.getAclId())) {
+            return component;
+        } else {
+            log.error("User {} tried to access component {} ({}) with insufficient permissions", userId, component.getId(), component.getCompName());
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, VempainMessages.UNAUTHORIZED_ACCESS);
+        }
+    }
 
-		if (component == null) {
-			log.error("Could not find a component with the name: {}", compName);
-			throw new VempainComponentException("Failed to find component by name");
-		}
+    public Component findByName(String compName) throws VempainComponentException {
+        var component = componentRepository.findByCompName(compName);
 
-		return component;
-	}
+        if (component == null) {
+            log.error("Could not find a component with the name: {}", compName);
+            throw new VempainComponentException("Failed to find component by name");
+        }
 
-	@Transactional(propagation = Propagation.REQUIRED)
-	public void deleteById(long componentId) throws VempainEntityNotFoundException {
-		var optionalComponent = componentRepository.findById(componentId);
+        return component;
+    }
 
-		if (optionalComponent.isEmpty()) {
-			log.error("Tried to delete a non-existing component ID: {}", componentId);
-			throw new VempainEntityNotFoundException("Component not found for deletion", COMPONENT_ID);
-		}
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void deleteById(long componentId) throws VempainEntityNotFoundException {
+        var optionalComponent = componentRepository.findById(componentId);
 
-		aclService.deleteByAclId(optionalComponent.get()
-		                                          .getAclId());
-		componentRepository.deleteById(componentId);
-	}
+        if (optionalComponent.isEmpty()) {
+            log.error("Tried to delete a non-existing component ID: {}", componentId);
+            throw new VempainEntityNotFoundException("Component not found for deletion", COMPONENT_ID);
+        }
 
-	@Transactional(propagation = Propagation.REQUIRED)
-	public Component save(Component component) throws VempainComponentException, VempainAbstractException {
-		validateComponent(component);
-		return componentRepository.save(component);
-	}
+        aclService.deleteByAclId(optionalComponent.get()
+            .getAclId());
+        componentRepository.deleteById(componentId);
+    }
 
-	@Transactional(propagation = Propagation.REQUIRED)
-	public Component saveFromRequest(ComponentRequest request) {
-		var userId = accessService.getValidUserId();
+    @Transactional(propagation = Propagation.REQUIRED)
+    public Component save(Component component) throws VempainComponentException, VempainAbstractException {
+        validateComponent(component);
+        return componentRepository.save(component);
+    }
 
-		try {
-			var component = findByName(request.getCompName());
-			log.error("User tried to save a new component with an existing name: {} (ID: {})", component.getCompName(), component.getId());
-			throw new ResponseStatusException(HttpStatus.CONFLICT, VempainMessages.OBJECT_NAME_ALREADY_EXISTS);
-		} catch (VempainComponentException e) {
-			log.info("No component with name {} found, can save it", request.getCompName());
-		}
+    @Transactional(propagation = Propagation.REQUIRED)
+    public Component saveFromRequest(ComponentRequest request) {
+        var userId = accessService.getValidUserId();
 
-		long aclId = aclService.saveNewAclForObject(request.getAcls());
+        try {
+            var component = findByName(request.getCompName());
+            log.error("User tried to save a new component with an existing name: {} (ID: {})", component.getCompName(), component.getId());
+            throw new ResponseStatusException(HttpStatus.CONFLICT, VempainMessages.OBJECT_NAME_ALREADY_EXISTS);
+        } catch (VempainComponentException e) {
+            log.info("No component with name {} found, can save it", request.getCompName());
+        }
 
-		Component newComponent = Component.builder()
-		                                  .compData(request.getCompData())
-		                                  .compName(request.getCompName())
-		                                  .locked(false)
-		                                  .aclId(aclId)
-		                                  .creator(userId)
-		                                  .created(Instant.now())
-		                                  .modifier(userId)
-		                                  .modified(Instant.now()
-		                                                   .plus(1, ChronoUnit.SECONDS))
-		                                  .build();
+        long aclId = aclService.saveNewAclForObject(request.getAcls());
 
-		return componentRepository.save(newComponent);
-	}
+        Component newComponent = Component.builder()
+            .compData(request.getCompData())
+            .compName(request.getCompName())
+            .locked(false)
+            .aclId(aclId)
+            .creator(userId)
+            .created(Instant.now())
+            .modifier(userId)
+            .modified(Instant.now()
+                .plus(1, ChronoUnit.SECONDS))
+            .build();
 
-	@Transactional(propagation = Propagation.REQUIRED)
-	public Component updateFromRequest(ComponentRequest request) throws VempainEntityNotFoundException, VempainComponentException,
-	                                                                    VempainAclException, VempainAbstractException {
-		var userId = accessService.getValidUserId();
-		Component component;
+        return componentRepository.save(newComponent);
+    }
 
-		try {
-			component = findById(request.getId());
-		} catch (VempainComponentException e) {
-			log.error("Could not find component to be updated by request {}", request);
-			throw new VempainEntityNotFoundException("Component can not be updated because it does not exist", COMPONENT_ID);
-		}
+    @Transactional(propagation = Propagation.REQUIRED)
+    public Component updateFromRequest(ComponentRequest request)
+            throws VempainEntityNotFoundException, VempainComponentException, VempainAclException, VempainAbstractException {
+        var userId = accessService.getValidUserId();
+        Component component;
 
-		if (!accessService.hasModifyPermission(component.getAclId())) {
-			log.error("User {} has no permission to modify component {}", userId, request.getId());
-			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User has no permission to update component");
-		}
+        try {
+            component = findById(request.getId());
+        } catch (VempainComponentException e) {
+            log.error("Could not find component to be updated by request {}", request);
+            throw new VempainEntityNotFoundException("Component can not be updated because it does not exist", COMPONENT_ID);
+        }
 
-		// We remove the old ACL entries and replace them with the new one from the request
-		aclService.updateFromRequestList(request.getAcls());
-		component.setCompData(request.getCompData());
-		component.setCompName(request.getCompName());
-		component.setModifier(userId);
-		component.setModified(Instant.now());
+        if (!accessService.hasModifyPermission(component.getAclId())) {
+            log.error("User {} has no permission to modify component {}", userId, request.getId());
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User has no permission to update component");
+        }
 
-		validateComponent(component);
-		return componentRepository.save(component);
-	}
+        // We remove the old ACL entries and replace them with the new one from the request
+        aclService.updateFromRequestList(request.getAcls());
+        component.setCompData(request.getCompData());
+        component.setCompName(request.getCompName());
+        component.setModifier(userId);
+        component.setModified(Instant.now());
 
-	@Transactional(propagation = Propagation.REQUIRED)
-	public void deleteByUser(Long componentId) throws VempainAclException {
-		var userId = accessService.getValidUserId();
+        validateComponent(component);
+        return componentRepository.save(component);
+    }
 
-		var optionalComponent = componentRepository.findById(componentId);
-		if (optionalComponent.isEmpty()) {
-			log.error("Could not delete non-existing component with ID {}", componentId);
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND);
-		}
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void deleteByUser(Long componentId) throws VempainAclException {
+        var userId = accessService.getValidUserId();
 
-		var component = optionalComponent.get();
+        var optionalComponent = componentRepository.findById(componentId);
+        if (optionalComponent.isEmpty()) {
+            log.error("Could not delete non-existing component with ID {}", componentId);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND);
+        }
 
-		if (!accessService.hasDeletePermission(component.getAclId())) {
-			log.error("User {} tried to delete component {} ({}) with insufficient permissions", userId, component.getId(),
-			          component.getCompName());
-			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, VempainMessages.UNAUTHORIZED_ACCESS);
-		}
+        var component = optionalComponent.get();
 
-		try {
-			log.debug("component ACL ID: {}", component.getAclId());
-			aclService.deleteByAclId(component.getAclId());
-		} catch (VempainEntityNotFoundException e) {
-			log.warn("The layout referred to non-existing ACL ID: {}", component.getAclId());
-		} catch (Exception e) {
-			log.error("Failed to remove ACL ID {} for layout {}", component.getAclId(), componentId, e);
-			throw new VempainAclException("Failed to remove ACL");
-		}
+        if (!accessService.hasDeletePermission(component.getAclId())) {
+            log.error("User {} tried to delete component {} ({}) with insufficient permissions", userId, component.getId(), component.getCompName());
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, VempainMessages.UNAUTHORIZED_ACCESS);
+        }
 
-		try {
-			componentRepository.delete(component);
-		} catch (Exception e) {
-			log.error("Failed to remove component: {}", component, e);
-			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, VempainMessages.INTERNAL_ERROR);
-		}
-	}
+        try {
+            log.debug("component ACL ID: {}", component.getAclId());
+            aclService.deleteByAclId(component.getAclId());
+        } catch (VempainEntityNotFoundException e) {
+            log.warn("The layout referred to non-existing ACL ID: {}", component.getAclId());
+        } catch (Exception e) {
+            log.error("Failed to remove ACL ID {} for layout {}", component.getAclId(), componentId, e);
+            throw new VempainAclException("Failed to remove ACL");
+        }
 
-	private void validateComponent(Component component) throws VempainComponentException, VempainAbstractException {
-		if (component.getCompData() == null || component.getCompData()
-		                                                .isBlank()) {
-			log.error("Component data is not set: {}", component);
-			throw new VempainComponentException("Component data is not set");
-		}
+        try {
+            componentRepository.delete(component);
+        } catch (Exception e) {
+            log.error("Failed to remove component: {}", component, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, VempainMessages.INTERNAL_ERROR);
+        }
+    }
 
-		if (component.getCompName() == null || component.getCompName()
-		                                                .isBlank()) {
-			log.error("Component name is not set: {}", component);
-			throw new VempainComponentException("Component name is not set");
-		}
+    private void validateComponent(Component component) throws VempainComponentException, VempainAbstractException {
+        if (component.getCompData() == null
+            || component.getCompData()
+                .isBlank()) {
+            log.error("Component data is not set: {}", component);
+            throw new VempainComponentException("Component data is not set");
+        }
 
-		aclService.validateAbstractData(component);
-	}
+        if (component.getCompName() == null
+            || component.getCompName()
+                .isBlank()) {
+            log.error("Component name is not set: {}", component);
+            throw new VempainComponentException("Component name is not set");
+        }
+
+        aclService.validateAbstractData(component);
+    }
 }

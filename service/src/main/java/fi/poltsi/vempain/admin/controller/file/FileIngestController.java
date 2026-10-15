@@ -1,20 +1,22 @@
 package fi.poltsi.vempain.admin.controller.file;
 
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
 import fi.poltsi.vempain.admin.api.request.file.FileIngestRequest;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestResponse;
+import fi.poltsi.vempain.admin.api.response.file.FileIngestUnitResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestUserResponse;
 import fi.poltsi.vempain.admin.rest.file.FileIngestAPI;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.file.FileIngestService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 import tools.jackson.databind.ObjectMapper;
-
-import java.util.List;
 
 import static fi.poltsi.vempain.auth.tools.JsonTools.toJson;
 
@@ -22,55 +24,62 @@ import static fi.poltsi.vempain.auth.tools.JsonTools.toJson;
 @RestController
 @RequiredArgsConstructor
 public class FileIngestController implements FileIngestAPI {
-	private final FileIngestService fileIngestService;
-	private final AccessService accessService;
-	private final ObjectMapper      objectMapper;
 
-	@Override
-	public ResponseEntity<FileIngestResponse> ingest(String fileIngestRequestJSON, MultipartFile multipartFile) {
-		accessService.checkAdminAccess();
-		// First we use object mapper to convert the fileIngestRequestJSON into FileIngestRequest
-		FileIngestRequest fileIngestRequest;
+    private final FileIngestService fileIngestService;
+    private final AccessService accessService;
+    private final ObjectMapper objectMapper;
 
-		try {
-			fileIngestRequest = objectMapper.readValue(fileIngestRequestJSON, FileIngestRequest.class);
-			log.debug("Received file ingest request: {}", toJson(fileIngestRequest));
-		} catch (IllegalArgumentException e) {
-			log.warn("Invalid file ingest request JSON: {}", e.getMessage());
-			return ResponseEntity.badRequest()
-			                     .build();
-		}
+    @Override
+    public ResponseEntity<FileIngestResponse> ingest(String fileIngestRequestJSON, MultipartFile multipartFile) {
+        accessService.checkAdminAccess();
+        // First we use object mapper to convert the fileIngestRequestJSON into FileIngestRequest
+        FileIngestRequest fileIngestRequest;
 
-		try {
-			var result = fileIngestService.ingest(fileIngestRequest, multipartFile);
-			return ResponseEntity.ok(result);
-		} catch (IllegalArgumentException e) {
-			log.warn("Bad request in file ingest: {}", e.getMessage());
-			return ResponseEntity.badRequest()
-			                     .build();
-		} catch (AccessDeniedException e) {
-			log.warn("Unauthorized S2S call: {}", e.getMessage());
-			return ResponseEntity.status(401)
-			                     .build();
-		} catch (Exception e) {
-			log.error("File ingest failed", e);
-			return ResponseEntity.internalServerError()
-			                     .build();
-		}
-	}
+        try {
+            fileIngestRequest = objectMapper.readValue(fileIngestRequestJSON, FileIngestRequest.class);
+            log.debug("Received file ingest request: {}", toJson(fileIngestRequest));
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid file ingest request JSON: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                .build();
+        }
 
-	@Override
-	public ResponseEntity<List<FileIngestUserResponse>> listIngestUsers() {
-		accessService.checkAdminAccess();
-		return ResponseEntity.ok(fileIngestService.listIngestUsers());
-	}
+        try {
+            var result = fileIngestService.ingest(fileIngestRequest, multipartFile);
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            log.warn("Bad request in file ingest: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                .build();
+        } catch (AccessDeniedException e) {
+            log.warn("Unauthorized S2S call: {}", e.getMessage());
+            return ResponseEntity.status(401)
+                .build();
+        } catch (Exception e) {
+            log.error("File ingest failed", e);
+            return ResponseEntity.internalServerError()
+                .build();
+        }
+    }
 
-	@Override
-	public ResponseEntity<Void> deleteSiteFile(long siteFileId) {
-		accessService.checkAdminAccess();
-		log.debug("Received request to delete ingested site file {}", siteFileId);
-		fileIngestService.deleteIngestedSiteFile(siteFileId);
-		return ResponseEntity.noContent()
-							 .build();
-	}
+    @Override
+    public ResponseEntity<List<FileIngestUserResponse>> listIngestUsers() {
+        accessService.checkAdminAccess();
+        return ResponseEntity.ok(fileIngestService.listIngestUsers());
+    }
+
+    @Override
+    public ResponseEntity<List<FileIngestUnitResponse>> listIngestUnits() {
+        accessService.checkAdminAccess();
+        return ResponseEntity.ok(fileIngestService.listIngestUnits());
+    }
+
+    @Override
+    public ResponseEntity<Void> deleteSiteFile(long siteFileId) {
+        accessService.checkAdminAccess();
+        log.debug("Received request to delete ingested site file {}", siteFileId);
+        fileIngestService.deleteIngestedSiteFile(siteFileId);
+        return ResponseEntity.noContent()
+            .build();
+    }
 }

@@ -1,108 +1,108 @@
 package fi.poltsi.vempain.admin.service.file;
 
-import fi.poltsi.vempain.admin.entity.file.GalleryFile;
+import java.util.ArrayList;
+import java.util.List;
+
 import jakarta.persistence.EntityManager;
-import lombok.AllArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
+import fi.poltsi.vempain.admin.entity.file.GalleryFile;
+import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
 @Service
 public class GalleryFileService {
-	private final EntityManager entityManager;
-	private final FileThumbService fileThumbService;
 
-	@Transactional(propagation = Propagation.REQUIRED)
-	public void deleteAllGalleryFiles() {
-		entityManager.joinTransaction();
-		var query = entityManager.createNativeQuery("DELETE FROM gallery_file");
-		query.executeUpdate();
-	}
+    private final EntityManager entityManager;
+    private final FileThumbService fileThumbService;
 
-	@Transactional(propagation = Propagation.REQUIRED)
-	public void deleteGalleryFile(Long galleryId, Long fileId, Long sortOrder) {
-		var query = entityManager.createNativeQuery("DELETE FROM gallery_file " +
-		                                            "WHERE gallery_id = :galleryId " +
-		                                            "  AND site_file_id = :fileId " +
-		                                            "  AND sort_order = :sortOrder");
-		query.setParameter("galleryId", galleryId);
-		query.setParameter("fileId", fileId);
-		query.setParameter("sortOrder", sortOrder);
-		query.executeUpdate();
-	}
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void deleteAllGalleryFiles() {
+        entityManager.joinTransaction();
+        var query = entityManager.createNativeQuery("DELETE FROM gallery_file");
+        query.executeUpdate();
+    }
 
-	@Transactional(propagation = Propagation.REQUIRED)
-	public void deleteGalleryFilesBySiteFileId(Long siteFileId) {
-		var query = entityManager.createNativeQuery("DELETE FROM gallery_file WHERE site_file_id = :fileId");
-		query.setParameter("fileId", siteFileId);
-		query.executeUpdate();
-	}
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void deleteGalleryFile(Long galleryId, Long fileId, Long sortOrder) {
+        var query = entityManager.createNativeQuery(
+                "DELETE FROM gallery_file " + "WHERE gallery_id = :galleryId " + "  AND site_file_id = :fileId " + "  AND sort_order = :sortOrder");
+        query.setParameter("galleryId", galleryId);
+        query.setParameter("fileId", fileId);
+        query.setParameter("sortOrder", sortOrder);
+        query.executeUpdate();
+    }
 
-	public List<GalleryFile> findGalleryFileByGalleryId(Long galleryId) {
-		var query = entityManager.createNativeQuery("SELECT gf.gallery_id, gf.site_file_id, gf.sort_order " +
-		                                            "FROM gallery_file gf " +
-		                                            "WHERE gf.gallery_id = :galleryId " +
-		                                            "ORDER BY gf.sort_order");
-		query.setParameter("galleryId", galleryId);
-		List<Object[]> gfObjects = query.getResultList();
-		List<GalleryFile> galleryFiles = new ArrayList<>();
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void deleteGalleryFilesBySiteFileId(Long siteFileId) {
+        var query = entityManager.createNativeQuery("DELETE FROM gallery_file WHERE site_file_id = :fileId");
+        query.setParameter("fileId", siteFileId);
+        query.executeUpdate();
+    }
 
-		if (gfObjects.isEmpty()) {
-			return new ArrayList<>();
-		}
+    public List<GalleryFile> findGalleryFileByGalleryId(Long galleryId) {
+        var query = entityManager.createNativeQuery("SELECT gf.gallery_id, gf.site_file_id, gf.sort_order "
+                + "FROM gallery_file gf "
+                + "WHERE gf.gallery_id = :galleryId "
+                + "ORDER BY gf.sort_order");
+        query.setParameter("galleryId", galleryId);
+        List<Object[]> gfObjects = query.getResultList();
+        List<GalleryFile> galleryFiles = new ArrayList<>();
 
-		for (Object[] o : gfObjects) {
-			var intFormId = (Long) o[0];
-			var intCompId = (Long) o[1];
-			var intSortOrder = (Long) o[2];
-			galleryFiles.add(GalleryFile.builder()
-			                            .galleryId(intFormId)
-			                            .siteFileId(intCompId)
-			                            .sortOrder(intSortOrder)
-			                            .build());
-		}
+        if (gfObjects.isEmpty()) {
+            return new ArrayList<>();
+        }
 
-		return galleryFiles;
-	}
+        for (Object[] o : gfObjects) {
+            var intFormId = (Long) o[0];
+            var intCompId = (Long) o[1];
+            var intSortOrder = (Long) o[2];
+            galleryFiles.add(GalleryFile.builder()
+                .galleryId(intFormId)
+                .siteFileId(intCompId)
+                .sortOrder(intSortOrder)
+                .build());
+        }
 
-	@Transactional(propagation = Propagation.REQUIRED)
-	public void addGalleryFile(Long galleryId, Long siteFileId, Long sortOrder) {
-		var query = entityManager.createNativeQuery("INSERT INTO gallery_file (gallery_id, site_file_id, sort_order) " +
-		                                            "VALUES (:galleryId, :siteFileId, :sortOrder)");
-		query.setParameter("galleryId", galleryId);
-		query.setParameter("siteFileId", siteFileId);
-		query.setParameter("sortOrder", sortOrder);
-		query.executeUpdate();
+        return galleryFiles;
+    }
 
-		// Make also sure that the thumb file exists
-		fileThumbService.generateThumbFile(siteFileId);
-	}
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void addGalleryFile(Long galleryId, Long siteFileId, Long sortOrder) {
+        var query = entityManager
+            .createNativeQuery("INSERT INTO gallery_file (gallery_id, site_file_id, sort_order) " + "VALUES (:galleryId, :siteFileId, :sortOrder)");
+        query.setParameter("galleryId", galleryId);
+        query.setParameter("siteFileId", siteFileId);
+        query.setParameter("sortOrder", sortOrder);
+        query.executeUpdate();
 
-	@Transactional(propagation = Propagation.REQUIRED)
-	public void addGalleryFiles(long galleryId, long[] siteFileIds) {
-		var orderId = 0L;
+        // Make also sure that the thumb file exists
+        fileThumbService.generateThumbFile(siteFileId);
+    }
 
-		for (var siteFileId : siteFileIds) {
-			addGalleryFile(galleryId, siteFileId, orderId);
-			orderId++;
-		}
-	}
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void addGalleryFiles(long galleryId, long[] siteFileIds) {
+        var orderId = 0L;
 
-	@Transactional(propagation = Propagation.REQUIRED)
-	public void deleteGalleryFilesByGalleryId(Long galleryId) {
-		var query = entityManager.createNativeQuery("DELETE FROM gallery_file " +
-		                                            "WHERE gallery_id = :galleryId");
-		query.setParameter("galleryId", galleryId);
-		query.executeUpdate();
-	}
+        for (var siteFileId : siteFileIds) {
+            addGalleryFile(galleryId, siteFileId, orderId);
+            orderId++;
+        }
+    }
 
-	@Transactional(propagation = Propagation.REQUIRED)
-	public void updateGalleryFiles(Long galleryId, long[] siteFileIds) {
-		deleteGalleryFilesByGalleryId(galleryId);
-		addGalleryFiles(galleryId, siteFileIds);
-	}
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void deleteGalleryFilesByGalleryId(Long galleryId) {
+        var query = entityManager.createNativeQuery("DELETE FROM gallery_file " + "WHERE gallery_id = :galleryId");
+        query.setParameter("galleryId", galleryId);
+        query.executeUpdate();
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void updateGalleryFiles(Long galleryId, long[] siteFileIds) {
+        deleteGalleryFilesByGalleryId(galleryId);
+        addGalleryFiles(galleryId, siteFileIds);
+    }
 }

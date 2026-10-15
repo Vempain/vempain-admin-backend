@@ -1,15 +1,16 @@
 package fi.poltsi.vempain.admin.repository;
 
+import java.util.Optional;
+import java.util.stream.StreamSupport;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.transaction.annotation.Transactional;
+
 import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.entity.Form;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.auth.exception.VempainAbstractException;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Test;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
-import java.util.stream.StreamSupport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -18,69 +19,70 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
 class FormRepositoryITC extends AbstractITCTest {
-	private final long initCount = 10;
 
-	@Test
-	void findAll() {
-		testITCTools.generateForms(initCount);
-		var forms = formRepository.findAll();
-		assertNotNull(forms);
-		assertEquals(initCount, StreamSupport.stream(forms.spliterator(), false)
-											 .count());
+    private final long initCount = 10;
 
-		for (Form form : forms) {
-			assertForm(form);
-		}
-	}
+    @Test
+    void findAll() {
+        testITCTools.generateForms(initCount);
+        var forms = formRepository.findAll();
+        assertNotNull(forms);
+        assertEquals(initCount, StreamSupport.stream(forms.spliterator(), false)
+            .count());
 
-	@Test
-	void findByIdOk() {
-		var formIds = testITCTools.generateForms(initCount);
-		var optionalForm = formRepository.findById(formIds.getFirst());
-		assertTrue(optionalForm.isPresent());
-		assertForm(optionalForm.get());
-	}
+        for (Form form : forms) {
+            assertForm(form);
+        }
+    }
 
-	@Test
-	void findByFormNameOk() {
-		testITCTools.generateForms(initCount);
-		var form = formRepository.findByFormName("Test form 1");
-		assertForm(form);
-	}
+    @Test
+    void findByIdOk() {
+        var formIds = testITCTools.generateForms(initCount);
+        var optionalForm = formRepository.findById(formIds.getFirst());
+        assertTrue(optionalForm.isPresent());
+        assertForm(optionalForm.get());
+    }
 
-	@Transactional
-	@Test
-	void deleteFormById() {
-		testITCTools.generateForms(initCount);
-		var forms = formRepository.findAll();
-		assertTrue(StreamSupport.stream(forms.spliterator(), false)
-								.findAny()
-								.isPresent());
-		var form = forms.iterator()
-						.next();
-		formRepository.deleteById(form.getId());
-		Optional<Form> noForm = formRepository.findById(form.getId());
-		assertTrue(noForm.isEmpty());
-	}
+    @Test
+    void findByFormNameOk() {
+        testITCTools.generateForms(initCount);
+        var form = formRepository.findByFormName("Test form 1");
+        assertForm(form);
+    }
 
-	@Test
-	void findComponentByFormIdOk() throws VempainComponentException, VempainAbstractException {
-		var formId = testITCTools.generateForm();
-		assertNotNull(formId);
-		var componentIdList = testITCTools.generateComponents(3);
-		testITCTools.addComponentsToForm(formId, componentIdList);
-		var components = formComponentService.findFormComponentByFormId(formId);
-		assertEquals(3, components.size());
-	}
+    @Transactional
+    @Test
+    void deleteFormById() {
+        testITCTools.generateForms(initCount);
+        var forms = formRepository.findAll();
+        assertTrue(StreamSupport.stream(forms.spliterator(), false)
+            .findAny()
+            .isPresent());
+        var form = forms.iterator()
+            .next();
+        formRepository.deleteById(form.getId());
+        Optional<Form> noForm = formRepository.findById(form.getId());
+        assertTrue(noForm.isEmpty());
+    }
 
-	private void assertForm(Form form) {
-		assertNotNull(form);
-		assertTrue(form.getCreator() > 0);
-		assertNotNull(form.getCreated());
-		assertNull(form.getModifier());
-		assertNull(form.getModified());
-		assertTrue(form.getId() > 0);
-		assertTrue(form.getFormName()
-					   .contains("Test form "));
-	}
+    @Test
+    void findComponentByFormIdOk() throws VempainComponentException, VempainAbstractException {
+        var formId = testITCTools.generateForm();
+        assertNotNull(formId);
+        var componentIdList = testITCTools.generateComponents(3);
+        testITCTools.addComponentsToForm(formId, componentIdList);
+        var components = formComponentService.findFormComponentByFormId(formId);
+        assertEquals(3, components.size());
+    }
+
+    private void assertForm(Form form) {
+        assertNotNull(form);
+        assertTrue(form.getCreator() > 0);
+        assertNotNull(form.getCreated());
+        assertNull(form.getModifier());
+        assertNull(form.getModified());
+        assertTrue(form.getId() > 0);
+        assertTrue(form.getFormName()
+            .contains("Test form "));
+    }
 }

@@ -16,12 +16,13 @@ import tools.jackson.databind.annotation.JsonNaming;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Schema(description = "Paged site resource request")
 public class WebSiteResourcePagedRequest extends PagedRequest {
-	@Schema(description = "Resource type to list", example = "SITE_FILE")
-	private WebSiteResourceEnum type;
 
-	@Schema(description = "File type filter for site files", example = "IMAGE")
-	private FileTypeEnum fileType;
+    @Schema(description = "Resource type to list", example = "SITE_FILE")
+    private WebSiteResourceEnum type;
 
-	@Schema(description = "ACL ID filter", example = "42")
-	private Long aclId;
+    @Schema(description = "File type filter for site files", example = "IMAGE")
+    private FileTypeEnum fileType;
+
+    @Schema(description = "ACL ID filter", example = "42")
+    private Long aclId;
 }

@@ -1,6 +1,7 @@
 package fi.poltsi.vempain.site.repository;
 
-import fi.poltsi.vempain.site.entity.WebSitePage;
+import java.util.Optional;
+
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,53 +13,54 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
+import fi.poltsi.vempain.site.entity.WebSitePage;
 
 @Repository
 public interface WebSitePageRepository extends PagingAndSortingRepository<WebSitePage, Long>, JpaRepository<WebSitePage, Long> {
-	WebSitePage findByFilePath(String filePath);
 
-	Optional<WebSitePage> findByPageId(long pageId);
+    WebSitePage findByFilePath(String filePath);
 
-	void deletePageById(long id);
+    Optional<WebSitePage> findByPageId(long pageId);
 
-	@Transactional
-	@Modifying
-	@Query(value = "UPDATE web_site_page SET cache = NULL WHERE true", nativeQuery = true)
-	void resetCache();
+    void deletePageById(long id);
 
-	@Transactional
-	@Modifying
-	@Query(value = "UPDATE web_site_page SET cache = NULL WHERE id = :pageId", nativeQuery = true)
-	void resetCacheByPageId(@Param("pageId") long pageId);
+    @Transactional
+    @Modifying
+    @Query(value = "UPDATE web_site_page SET cache = NULL WHERE true", nativeQuery = true)
+    void resetCache();
 
-	@NonNull
-	Page<WebSitePage> findAll(@NonNull Pageable pageable);
+    @Transactional
+    @Modifying
+    @Query(value = "UPDATE web_site_page SET cache = NULL WHERE id = :pageId", nativeQuery = true)
+    void resetCacheByPageId(@Param("pageId") long pageId);
 
-	@NonNull
-	Page<WebSitePage> findByTitleContainingIgnoreCase(String query, @NonNull Pageable pageable);
+    @NonNull
+    Page<WebSitePage> findAll(@NonNull Pageable pageable);
 
-	@NonNull
-	Page<WebSitePage> findByFilePathContainingIgnoreCase(String filePath, @NonNull Pageable pageable);
+    @NonNull
+    Page<WebSitePage> findByTitleContainingIgnoreCase(String query, @NonNull Pageable pageable);
 
-	@NonNull
-	Page<WebSitePage> findByBodyContainingIgnoreCase(String body, @NonNull Pageable pageable);
+    @NonNull
+    Page<WebSitePage> findByFilePathContainingIgnoreCase(String filePath, @NonNull Pageable pageable);
 
-	@NonNull
-	Page<WebSitePage> findByHeaderContainingIgnoreCase(String header, @NonNull Pageable pageable);
+    @NonNull
+    Page<WebSitePage> findByBodyContainingIgnoreCase(String body, @NonNull Pageable pageable);
 
-	@NonNull
-	Page<WebSitePage> findByAclId(long aclId, @NonNull Pageable pageable);
+    @NonNull
+    Page<WebSitePage> findByHeaderContainingIgnoreCase(String header, @NonNull Pageable pageable);
 
-	@NonNull
-	Page<WebSitePage> findByAclIdAndTitleContainingIgnoreCase(long aclId, String query, @NonNull Pageable pageable);
+    @NonNull
+    Page<WebSitePage> findByAclId(long aclId, @NonNull Pageable pageable);
 
-	@NonNull
-	Page<WebSitePage> findByAclIdAndFilePathContainingIgnoreCase(long aclId, String filePath, @NonNull Pageable pageable);
+    @NonNull
+    Page<WebSitePage> findByAclIdAndTitleContainingIgnoreCase(long aclId, String query, @NonNull Pageable pageable);
 
-	@NonNull
-	Page<WebSitePage> findByAclIdAndBodyContainingIgnoreCase(long aclId, String body, @NonNull Pageable pageable);
+    @NonNull
+    Page<WebSitePage> findByAclIdAndFilePathContainingIgnoreCase(long aclId, String filePath, @NonNull Pageable pageable);
 
-	@NonNull
-	Page<WebSitePage> findByAclIdAndHeaderContainingIgnoreCase(long aclId, String header, @NonNull Pageable pageable);
+    @NonNull
+    Page<WebSitePage> findByAclIdAndBodyContainingIgnoreCase(long aclId, String body, @NonNull Pageable pageable);
+
+    @NonNull
+    Page<WebSitePage> findByAclIdAndHeaderContainingIgnoreCase(long aclId, String header, @NonNull Pageable pageable);
 }

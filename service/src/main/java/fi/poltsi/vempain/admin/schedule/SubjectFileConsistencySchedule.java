@@ -1,60 +1,62 @@
 package fi.poltsi.vempain.admin.schedule;
 
-import fi.poltsi.vempain.admin.service.file.FileService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.Set;
+import fi.poltsi.vempain.admin.service.file.FileService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class SubjectFileConsistencySchedule {
-	private static final long   DELAY         = 60 * 60 * 1000L;
-	private static final String INITIAL_DELAY = "#{ 30 * 1000 + T(java.util.concurrent.ThreadLocalRandom).current().nextInt(" + DELAY + ") }";
 
-	private final FileService fileService;
-	@org.springframework.beans.factory.annotation.Value("${vempain.scheduling.enabled:true}")
-	private boolean schedulingEnabled = true;
+    private static final long DELAY = 60 * 60 * 1000L;
+    private static final String INITIAL_DELAY = "#{ 30 * 1000 + T(java.util.concurrent.ThreadLocalRandom).current().nextInt(" + DELAY + ") }";
 
-	@Scheduled(fixedDelay = DELAY, initialDelayString = INITIAL_DELAY)
-	public void verify() {
-		if (!schedulingEnabled) {
-			return;
-		}
-		removeOrphanedJoins();
-	}
+    private final FileService fileService;
+    @org.springframework.beans.factory.annotation.Value("${vempain.scheduling.enabled:true}")
+    private boolean schedulingEnabled = true;
 
-	private void removeOrphanedJoins() {
-		// Get set of file IDs from file_common
-		var siteFileIdSet = getSiteFileIdSet();
-		// Get set of file IDs from file_subject
-		Set<Long> fileSubjectIdSet = fileService.findAllSiteFileIdWithSubject();
+    @Scheduled(fixedDelay = DELAY, initialDelayString = INITIAL_DELAY)
+    public void verify() {
+        if (!schedulingEnabled) {
+            return;
+        }
+        removeOrphanedJoins();
+    }
 
-		// We're interested in the file IDs which are listed in the file_subject-table, but which are missing from file_common table. So
-		// we remove all fileCommonIdSet from fileSubjectIdSet
-		fileSubjectIdSet.removeAll(siteFileIdSet);
+    private void removeOrphanedJoins() {
+        // Get set of file IDs from file_common
+        var siteFileIdSet = getSiteFileIdSet();
+        // Get set of file IDs from file_subject
+        Set<Long> fileSubjectIdSet = fileService.findAllSiteFileIdWithSubject();
 
-		if (fileSubjectIdSet.isEmpty()) {
-			log.debug("No orphaned file_subject entries found");
-		} else {
-			log.info("Found {} file_subject entries that do not have a site file and needs to be purged", fileSubjectIdSet.size());
-			// We need to purge the file_subject-table
-			fileService.removeFileSubjects(fileSubjectIdSet);
-		}
-	}
+        // We're interested in the file IDs which are listed in the file_subject-table, but which are missing from file_common table. So
+        // we remove all fileCommonIdSet from fileSubjectIdSet
+        fileSubjectIdSet.removeAll(siteFileIdSet);
 
-	private Set<Long> getSiteFileIdSet() {
-		var siteFiles = fileService.findAllSiteFiles();
-		Set<Long> resultSet = new HashSet<>();
+        if (fileSubjectIdSet.isEmpty()) {
+            log.debug("No orphaned file_subject entries found");
+        } else {
+            log.info("Found {} file_subject entries that do not have a site file and needs to be purged", fileSubjectIdSet.size());
+            // We need to purge the file_subject-table
+            fileService.removeFileSubjects(fileSubjectIdSet);
+        }
+    }
 
-		for (var fileCommon : siteFiles) {
-			resultSet.add(fileCommon.getId());
-		}
+    private Set<Long> getSiteFileIdSet() {
+        var siteFiles = fileService.findAllSiteFiles();
+        Set<Long> resultSet = new HashSet<>();
 
-		return resultSet;
-	}
+        for (var fileCommon : siteFiles) {
+            resultSet.add(fileCommon.getId());
+        }
+
+        return resultSet;
+    }
 }
