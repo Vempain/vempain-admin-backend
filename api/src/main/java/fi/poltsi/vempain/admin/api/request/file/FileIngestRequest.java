@@ -77,8 +77,8 @@ public class FileIngestRequest {
     @Schema(description = "If document, the number of pages", example = "10", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private Integer pages;
 
-    @Schema(description = "Metadata of the file in JSON format", example = "{\"some-field\": \"some value\"}", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    @NotNull
+    @Schema(description = "Metadata of the file in JSON format", example = "{\"some-field\": \"some value\"}", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotBlank
     private String metadata;
 
     @Schema(description = "SHA 256 sum of the sent file, used to verify the file integrity", example = "a", requiredMode = Schema.RequiredMode.REQUIRED)
