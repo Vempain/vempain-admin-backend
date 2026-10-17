@@ -487,7 +487,7 @@ public class PublishService {
             log.debug("Saving web site file: {} with metadata length {} from siteFile metadata length {}", toJson(webSiteFile), (webSiteFile.getMetadata()
                     != null ? webSiteFile.getMetadata()
                         .length() : 0),
-                    (webSiteFile.getMetadata() != null ? siteFile.getMetadata()
+                    (siteFile.getMetadata() != null ? siteFile.getMetadata()
                         .length() : 0));
             var newWebSiteFile = webSiteFileRepository.save(webSiteFile);
             // Add new gallery file relation

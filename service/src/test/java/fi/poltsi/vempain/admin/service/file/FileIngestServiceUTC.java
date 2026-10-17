@@ -218,6 +218,31 @@ class FileIngestServiceUTC {
     }
 
     @Test
+    void ingestInternal_blankMetadata_rejectsRequestBeforeSaving() {
+        when(storageDirectoryConfiguration.storageLocations()).thenReturn(Map.of("image", tempDir.toString()));
+        when(siteFileRepository.findByFilePathAndFileName(any(), any())).thenReturn(Optional.empty());
+        when(accessService.getUserId()).thenReturn(1L);
+
+        var request = FileIngestRequest.builder()
+            .fileName("test.jpg")
+            .mimeType("image/jpeg")
+            .sha256sum(SHA256_SUM)
+            .fileId(FILE_ID)
+            .comment("")
+            .metadata(" ")
+            .tags(List.of())
+            .build();
+
+        var multipartFile = new MockMultipartFile("file", "test.jpg", "image/jpeg", FILE_CONTENT);
+
+        var exception = assertThrows(VempainIngestException.class, () -> fileIngestService.ingestInternal(request, multipartFile));
+
+        assertEquals("Metadata must not be null or blank", exception.getCause()
+            .getMessage());
+        verify(fileService, never()).saveSiteFile(any(SiteFile.class));
+    }
+
+    @Test
     void ingestInternal_fileAlreadyInGallery_doesNotAddDuplicate() throws VempainIngestException {
         when(storageDirectoryConfiguration.storageLocations()).thenReturn(Map.of("image", tempDir.toString()));
 

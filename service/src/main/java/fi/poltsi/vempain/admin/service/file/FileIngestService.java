@@ -194,7 +194,13 @@ public class FileIngestService {
             siteFile.setSize(size);
             siteFile.setSha256sum(fileIngestRequest.getSha256sum());
             siteFile.setComment(fileIngestRequest.getComment());
-            siteFile.setMetadata(fileIngestRequest.getMetadata());
+            var metadata = fileIngestRequest.getMetadata();
+            if (metadata == null
+                || metadata.isBlank()) {
+                throw new IllegalArgumentException("Metadata must not be null or blank");
+            }
+            log.debug("Persisting metadata for fileId={}, fileName={}, metadataLength={}", fileIngestRequest.getFileId(), cleanFileName, metadata.length());
+            siteFile.setMetadata(metadata);
             siteFile.setHeight(fileIngestRequest.getHeight());
             siteFile.setWidth(fileIngestRequest.getWidth());
             siteFile.setLength(fileIngestRequest.getLength());

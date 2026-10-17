@@ -18,8 +18,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.ObjectMapper;
 
-import static fi.poltsi.vempain.auth.tools.JsonTools.toJson;
-
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -37,7 +35,11 @@ public class FileIngestController implements FileIngestAPI {
 
         try {
             fileIngestRequest = objectMapper.readValue(fileIngestRequestJSON, FileIngestRequest.class);
-            log.debug("Received file ingest request: {}", toJson(fileIngestRequest));
+            log.debug("Received file ingest request: fileId={}, fileName={}, metadataPresent={}, metadataLength={}", fileIngestRequest.getFileId(),
+                    fileIngestRequest.getFileName(), fileIngestRequest.getMetadata() != null, fileIngestRequest.getMetadata() != null
+                            ? fileIngestRequest.getMetadata()
+                                .length()
+                            : null);
         } catch (IllegalArgumentException e) {
             log.warn("Invalid file ingest request JSON: {}", e.getMessage());
             return ResponseEntity.badRequest()
