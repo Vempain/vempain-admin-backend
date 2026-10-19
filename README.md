@@ -238,6 +238,41 @@ ENV_VEMPAIN_TYPE=prod \
 docker compose up -d
 ```
 
+### Application metrics
+
+The backend pushes its Micrometer metrics (JVM, HTTP, Hikari pools, Tomcat, the shared background task meters and the admin specific
+`vempain.*` meters) as OTLP/HTTP to the Prometheus of the monitoring environment. Nothing is exposed on the management port for
+scraping. The export is off until the container gets this environment:
+
+|          Variable           |                                        Description                                         |                              Example                              |
+|-----------------------------|--------------------------------------------------------------------------------------------|-------------------------------------------------------------------|
+| VEMPAIN_METRICS_ENABLED     | `true` switches the OTLP export on                                                         | true                                                              |
+| VEMPAIN_METRICS_URL         | OTLP/HTTP metrics endpoint of Prometheus (behind Traefik basic auth)                       | https://grafana.intra.poltsi.fi/prometheus/api/v1/otlp/v1/metrics |
+| VEMPAIN_METRICS_USERNAME    | Basic auth user of that endpoint                                                           | vempain                                                           |
+| VEMPAIN_METRICS_PASSWORD    | Basic auth password                                                                        | secret                                                            |
+| VEMPAIN_METRICS_CERTIFICATE | Path of the PEM certificate (or CA) to trust for the endpoint; empty uses the JVM default  | /run/secrets/metrics-certificate.crt                              |
+| VEMPAIN_METRICS_STEP        | Export interval                                                                            | 1m                                                                |
+| VEMPAIN_METRICS_ROLE        | `api` for the HTTP replicas, `scheduler` for the scheduler replica; becomes the `role` tag | api                                                               |
+
+### Distributed tracing
+
+Requests are traced with OpenTelemetry (`spring-boot-starter-opentelemetry`): an incoming W3C `traceparent` header, set by Traefik, the admin
+SPA or the file backend's Feign calls, is continued, the server span and every log line of the request carry the trace and span ids (`[app,traceId,spanId]` in
+the console pattern) and the spans are pushed as OTLP/HTTP to the Tempo of the monitoring environment. A
+background task started by a request runs later in a span of its own; the task id logged at submit time links the two. The export is
+off until the container gets this environment (the credentials and certificate are the `VEMPAIN_METRICS_*` ones):
+
+|         Variable         |                                        Description                                         |                     Example                     |
+|--------------------------|--------------------------------------------------------------------------------------------|-------------------------------------------------|
+| VEMPAIN_TRACING_ENABLED  | `true` switches tracing and the OTLP span export on                                        | true                                            |
+| VEMPAIN_TRACING_URL      | OTLP/HTTP traces endpoint of Tempo (behind Traefik basic auth)                             | https://grafana.intra.poltsi.fi/tempo/v1/traces |
+| VEMPAIN_TRACING_SAMPLING | Share of new traces that are sampled, 0..1 (a continued trace keeps its parent's decision) | 1.0                                             |
+
+The admin specific meters: `vempain.api_token.requests{result}` and `vempain.api_token.expiry.days`, `vempain.ingest.files{result}` and
+`vempain.ingest.bytes`, `vempain.site_transfer.files{kind}`, `vempain.site_transfer.bytes`, `vempain.site_transfer.duration{result}` and
+`vempain.site_transfer.connect.failures`, `vempain.publish_schedule.pending`, `vempain.publish_schedule.items{result}` and
+`vempain.publish_schedule.lag`, `vempain.consistency.fixed{schedule}` and the inventory gauges `vempain.inventory.pages|galleries|site_files|subjects`.
+
 ### Security concerns
 
 #### Site database

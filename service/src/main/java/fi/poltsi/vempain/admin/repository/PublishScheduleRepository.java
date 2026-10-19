@@ -20,6 +20,11 @@ public interface PublishScheduleRepository extends ListCrudRepository<PublishSch
 
     List<PublishSchedule> findAllByPublishStatusEqualsAndPublishTimeBefore(PublishStatusEnum publishStatusEnum, Instant publishTime);
 
+    /**
+     * Number of schedules in the given status; the pending publishes gauge reads NOT_PUBLISHED.
+     */
+    long countByPublishStatus(PublishStatusEnum publishStatus);
+
     @Transactional
     @Modifying
     @Query("UPDATE PublishSchedule ps SET ps.publishStatus = ?2 WHERE ps.id = ?1")

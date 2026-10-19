@@ -1,5 +1,6 @@
 package fi.poltsi.vempain.admin.schedule;
 
+import java.time.Duration;
 import java.time.Instant;
 
 import org.springframework.scheduling.annotation.Scheduled;
@@ -9,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import fi.poltsi.vempain.admin.api.ContentTypeEnum;
 import fi.poltsi.vempain.admin.api.PublishStatusEnum;
+import fi.poltsi.vempain.admin.metrics.AdminMetrics;
 import fi.poltsi.vempain.admin.repository.PublishScheduleRepository;
 import fi.poltsi.vempain.admin.service.PublishService;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
@@ -25,6 +27,7 @@ public class PublishItemSchedule {
 
     private final PublishScheduleRepository publishScheduleRepository;
     private final PublishService publishService;
+    private final AdminMetrics adminMetrics;
     @org.springframework.beans.factory.annotation.Value("${vempain.scheduling.enabled:true}")
     private boolean schedulingEnabled = true;
 
@@ -47,29 +50,41 @@ public class PublishItemSchedule {
             updatePublishStatus(scheduledPublish.getId(), PublishStatusEnum.PROCESSING);
 
             log.info("Publishing item: {}", scheduledPublish.getPublishType());
-
-            if (scheduledPublish.getPublishType() == ContentTypeEnum.PAGE) {
-                try {
-                    publishService.publishPageAsSystem(scheduledPublish.getPublishId());
-                } catch (VempainEntityNotFoundException e) {
-                    log.error("The page to publish no longer exists: {}", scheduledPublish.getPublishId());
-                }
-            } else if (scheduledPublish.getPublishType() == ContentTypeEnum.GALLERY) {
-                try {
-                    publishService.publishGalleryAsSystem(scheduledPublish.getPublishId());
-                } catch (VempainEntityNotFoundException e) {
-                    log.error("The gallery to publish no longer exists: {}", scheduledPublish.getPublishId());
-                }
-            } else {
-                log.warn("Unknown publish type: {}", scheduledPublish.getPublishType());
+            if (scheduledPublish.getPublishTime() != null) {
+                adminMetrics.publishScheduleLag(Duration.between(scheduledPublish.getPublishTime(), Instant.now()));
             }
 
+            adminMetrics.publishScheduleItem(publishItem(scheduledPublish.getPublishType(), scheduledPublish.getPublishId()));
             updatePublishStatus(scheduledPublish.getId(), PublishStatusEnum.PUBLISHED);
 
             counter++;
         }
 
         log.info("{} items published", counter);
+    }
+
+    /**
+     * Publishes one item and names the outcome for the metrics: published, missing (the item no longer exists), unknown_type; a publish that throws anything
+     * else is counted as failed and the exception propagates as before.
+     */
+    private String publishItem(ContentTypeEnum publishType, Long publishId) {
+        try {
+            if (publishType == ContentTypeEnum.PAGE) {
+                publishService.publishPageAsSystem(publishId);
+            } else if (publishType == ContentTypeEnum.GALLERY) {
+                publishService.publishGalleryAsSystem(publishId);
+            } else {
+                log.warn("Unknown publish type: {}", publishType);
+                return "unknown_type";
+            }
+            return "published";
+        } catch (VempainEntityNotFoundException e) {
+            log.error("The {} to publish no longer exists: {}", publishType == ContentTypeEnum.PAGE ? "page" : "gallery", publishId);
+            return "missing";
+        } catch (RuntimeException e) {
+            adminMetrics.publishScheduleItem("failed");
+            throw e;
+        }
     }
 
     @Transactional(propagation = Propagation.REQUIRED)

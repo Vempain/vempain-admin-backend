@@ -15,9 +15,11 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import fi.poltsi.vempain.admin.entity.file.FileThumb;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
+import fi.poltsi.vempain.admin.metrics.AdminMetrics;
 import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.admin.service.file.FileThumbService;
 import fi.poltsi.vempain.common.api.FileTypeEnum;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.never;
@@ -43,7 +45,7 @@ class MissingThumbGeneratorScheduleUTC {
 
     @BeforeEach
     void setUp() {
-        schedule = new MissingThumbGeneratorSchedule(fileService, fileThumbService);
+        schedule = new MissingThumbGeneratorSchedule(fileService, fileThumbService, new AdminMetrics(new SimpleMeterRegistry()));
         ReflectionTestUtils.setField(schedule, "siteFileDirectory", storage.toString());
     }
 

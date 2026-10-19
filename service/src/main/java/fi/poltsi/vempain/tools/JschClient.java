@@ -22,13 +22,25 @@ import com.jcraft.jsch.SftpException;
 
 import fi.poltsi.vempain.admin.entity.file.FileThumb;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Timer;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * SFTP transfer of published files to the site server. The transfers are measured on the global Micrometer registry (Spring Boot binds the application registry
+ * to it): {@code vempain.site_transfer.files{kind}}, {@code vempain.site_transfer.bytes}, {@code vempain.site_transfer.duration{result}} and
+ * {@code vempain.site_transfer.connect.failures}.
+ */
 @Slf4j
 @Setter
 @Component
 public class JschClient {
+
+    public static final String TRANSFER_FILES = "vempain.site_transfer.files";
+    public static final String TRANSFER_BYTES = "vempain.site_transfer.bytes";
+    public static final String TRANSFER_DURATION = "vempain.site_transfer.duration";
+    public static final String CONNECT_FAILURES = "vempain.site_transfer.connect.failures";
 
     private static final int SESSION_TIMEOUT = 26_000;
     private static final int CHANNEL_TIMEOUT = 25_000;
@@ -65,12 +77,20 @@ public class JschClient {
             jsch.addIdentity(adminSshPrivateKey);
         } catch (JSchException e) {
             log.error("Failed to load private key file {}. Make sure this exists", adminSshPrivateKey);
+            Metrics.counter(CONNECT_FAILURES)
+                .increment();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to load private key file");
         }
 
-        jschSession.connect(SESSION_TIMEOUT);
-        channel = jschSession.openChannel("sftp");
-        channel.connect(CHANNEL_TIMEOUT);
+        try {
+            jschSession.connect(SESSION_TIMEOUT);
+            channel = jschSession.openChannel("sftp");
+            channel.connect(CHANNEL_TIMEOUT);
+        } catch (JSchException e) {
+            Metrics.counter(CONNECT_FAILURES)
+                .increment();
+            throw e;
+        }
         channelSftp = (ChannelSftp) channel;
     }
 
@@ -86,6 +106,17 @@ public class JschClient {
      * @param onFileTransferred called after a site file and its thumbnails have been transferred; may be null
      */
     public void transferFilesToSite(List<SiteFile> siteFiles, List<FileThumb> thumbList, Consumer<SiteFile> onFileTransferred) throws SftpException {
+        var sample = Timer.start(Metrics.globalRegistry);
+        var result = "failure";
+        try {
+            transferAll(siteFiles, thumbList, onFileTransferred);
+            result = "success";
+        } finally {
+            sample.stop(Metrics.timer(TRANSFER_DURATION, "result", result));
+        }
+    }
+
+    private void transferAll(List<SiteFile> siteFiles, List<FileThumb> thumbList, Consumer<SiteFile> onFileTransferred) throws SftpException {
         if (!siteDirectoryExists(siteWwwRoot)) {
             log.error("The site main directory {} does not exist, file transfer is aborted", siteWwwRoot);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Site configuration is not set up correctly");
@@ -118,6 +149,7 @@ public class JschClient {
             }
 
             channelSftp.put(absolutePathConvertedFile, targetDir + File.separator + siteFile.getFileName());
+            countTransferred("file", absolutePathConvertedFile);
 
             for (var iterator = remainingThumbs.iterator(); iterator.hasNext();) {
                 var fileThumb = iterator.next();
@@ -143,6 +175,20 @@ public class JschClient {
             .getFilePath() + File.separator + thumbSubDir;
         log.debug("Transferring thumb {} to {}", absolutePathThumbFile, targetDir);
         channelSftp.put(absolutePathThumbFile, targetDir);
+        countTransferred("thumb", absolutePathThumbFile);
+    }
+
+    /**
+     * Counts one transferred file and its size; the size is the local file's, 0 when it cannot be read.
+     */
+    private static void countTransferred(String kind, String localPath) {
+        Metrics.counter(TRANSFER_FILES, "kind", kind)
+            .increment();
+        var bytes = new File(localPath).length();
+        if (bytes > 0) {
+            Metrics.counter(TRANSFER_BYTES)
+                .increment(bytes);
+        }
     }
 
     private void createRecursivelySiteDirectory(String mainDir, List<String> subDirList) throws SftpException {

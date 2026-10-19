@@ -20,6 +20,7 @@ import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import fi.poltsi.vempain.admin.api.Constants;
+import fi.poltsi.vempain.admin.metrics.AdminMetrics;
 import fi.poltsi.vempain.admin.service.ApiTokenService;
 import fi.poltsi.vempain.auth.service.UserDetailsImpl;
 import fi.poltsi.vempain.auth.service.UserDetailsServiceImpl;
@@ -58,6 +59,7 @@ public class ApiTokenAuthenticationFilter extends OncePerRequestFilter {
     private final ApiTokenService apiTokenService;
     private final UserService userService;
     private final UserDetailsServiceImpl userDetailsService;
+    private final AdminMetrics adminMetrics;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
@@ -74,6 +76,7 @@ public class ApiTokenAuthenticationFilter extends OncePerRequestFilter {
         var token = apiTokenService.authenticate(presented, request.getRemoteAddr());
 
         if (token.isEmpty()) {
+            // The reason (unknown, expired, wrong network) was counted by the token service
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid API token");
             return;
         }
@@ -81,6 +84,7 @@ public class ApiTokenAuthenticationFilter extends OncePerRequestFilter {
         if (!isAllowed(request.getMethod(), path)) {
             log.warn("API token {} used on {} {}, which tokens may not call", token.get()
                 .getTokenPrefix(), request.getMethod(), path);
+            adminMetrics.apiTokenRequest("forbidden_endpoint");
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "API tokens may not call this endpoint");
             return;
         }
@@ -94,6 +98,7 @@ public class ApiTokenAuthenticationFilter extends OncePerRequestFilter {
                 .getTokenPrefix(),
                     token.get()
                         .getOwnerUserId());
+            adminMetrics.apiTokenRequest("missing_user");
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid API token");
             return;
         }
@@ -106,6 +111,7 @@ public class ApiTokenAuthenticationFilter extends OncePerRequestFilter {
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext()
             .setAuthentication(authentication);
+        adminMetrics.apiTokenRequest("accepted");
         filterChain.doFilter(request, response);
     }
 

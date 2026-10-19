@@ -6,6 +6,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import fi.poltsi.vempain.admin.entity.file.FileThumb;
+import fi.poltsi.vempain.admin.metrics.AdminMetrics;
 import fi.poltsi.vempain.admin.service.file.FileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +25,7 @@ public class DuplicateFileRemovalSchedule {
     private static final String INITIAL_DELAY = "#{ 30 * 1000 + T(java.util.concurrent.ThreadLocalRandom).current().nextInt(" + DELAY + ") }";
 
     private final FileService fileService;
+    private final AdminMetrics adminMetrics;
     @org.springframework.beans.factory.annotation.Value("${vempain.scheduling.enabled:true}")
     private boolean schedulingEnabled = true;
 
@@ -54,6 +56,7 @@ public class DuplicateFileRemovalSchedule {
             if (optionalSiteFile.isEmpty()) {
                 log.info("Removing thumb file {} because it does not refer to valid common file", iteratingThumb);
                 fileService.deleteFileThumb(iteratingThumb);
+                adminMetrics.consistencyFixed("duplicate_file", 1);
             } else {
                 if (counter > 0) {
                     log.info("Found a duplicate image {} with valid common: {}", iteratingThumb, optionalSiteFile);

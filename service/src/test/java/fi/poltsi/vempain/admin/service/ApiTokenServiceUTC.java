@@ -9,13 +9,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import fi.poltsi.vempain.admin.api.request.ApiTokenRequest;
 import fi.poltsi.vempain.admin.entity.ApiToken;
+import fi.poltsi.vempain.admin.metrics.AdminMetrics;
 import fi.poltsi.vempain.admin.repository.ApiTokenRepository;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -34,6 +37,8 @@ class ApiTokenServiceUTC {
 
     @Mock
     private ApiTokenRepository apiTokenRepository;
+    @Spy
+    private AdminMetrics adminMetrics = new AdminMetrics(new SimpleMeterRegistry());
     @InjectMocks
     private ApiTokenService apiTokenService;
 
@@ -122,6 +127,10 @@ class ApiTokenServiceUTC {
             .minus(1, ChronoUnit.SECONDS));
         assertTrue(apiTokenService.authenticate(token, "10.1.2.77")
             .isEmpty(), "expired");
+        // The refusals are counted by reason; the accepted request is counted by the filter once the owner is resolved
+        verify(adminMetrics, org.mockito.Mockito.times(2)).apiTokenRequest("wrong_network");
+        verify(adminMetrics).apiTokenRequest("expired");
+        verify(adminMetrics, never()).apiTokenRequest("accepted");
     }
 
     @Test

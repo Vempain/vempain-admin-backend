@@ -6,6 +6,7 @@ import java.util.Set;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import fi.poltsi.vempain.admin.metrics.AdminMetrics;
 import fi.poltsi.vempain.admin.service.file.FileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,7 @@ public class SubjectFileConsistencySchedule {
     private static final String INITIAL_DELAY = "#{ 30 * 1000 + T(java.util.concurrent.ThreadLocalRandom).current().nextInt(" + DELAY + ") }";
 
     private final FileService fileService;
+    private final AdminMetrics adminMetrics;
     @org.springframework.beans.factory.annotation.Value("${vempain.scheduling.enabled:true}")
     private boolean schedulingEnabled = true;
 
@@ -46,6 +48,7 @@ public class SubjectFileConsistencySchedule {
             log.info("Found {} file_subject entries that do not have a site file and needs to be purged", fileSubjectIdSet.size());
             // We need to purge the file_subject-table
             fileService.removeFileSubjects(fileSubjectIdSet);
+            adminMetrics.consistencyFixed("subject_file", fileSubjectIdSet.size());
         }
     }
 

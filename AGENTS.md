@@ -143,10 +143,42 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
   offered; `vempain.admin.api-token.default-network` overrides it for deployments spanning hosts; otherwise the administrator enters
   it. Tests: `ApiTokenCTC`, `ApiTokenServiceUTC`, `NetworkMatcherUTC`, `PrivateNetworkDetectorUTC`, `ApiTokenContractJTC`. Never read the
   token from `Authorization`.
+- Application metrics are Micrometer meters pushed as OTLP/HTTP to the monitoring environment's Prometheus (`micrometer-registry-otlp`,
+  push only: nothing is exposed on the management port for scraping because `/actuator` is routed publicly through Traefik). The
+  container environment `VEMPAIN_METRICS_ENABLED|URL|USERNAME|PASSWORD|CERTIFICATE|STEP|ROLE` is mapped to `vempain.metrics.*` in
+  `application.yaml`; `vempain-common` core turns those into the Boot `management.otlp.metrics.export.*` properties (basic-auth header,
+  SSL bundle for the self-signed certificate) with its `MetricsExportEnvironmentPostProcessor`, so this backend needs `vempain-common`
+
+  > = the release that ships it (bump `gradle/libs.versions.toml`; the shared `vempain.tasks.*` meters come from the same release). Every
+  > meter carries the `application`, `role` (`api`/`scheduler`) and `instance` tags. The custom meters live in
+  > `fi.poltsi.vempain.admin.metrics`: `AdminMetrics` (the counters and timers: `vempain.api_token.requests{result}`,
+  > `vempain.ingest.files{result}`/`vempain.ingest.bytes`, `vempain.publish_schedule.items{result}`/`vempain.publish_schedule.lag`,
+  > `vempain.consistency.fixed{schedule}`, and the `cachedGauge` helper that re-reads a database value at most once a minute) and
+  > `AdminInventoryMetrics` (the gauges `vempain.inventory.pages|galleries|site_files|subjects`, `vempain.publish_schedule.pending`,
+  > `vempain.api_token.expiry.days`). `JschClient` measures the SFTP transfers on the global registry (`vempain.site_transfer.files{kind}`, `.bytes`,
+  > `.duration{result}`, `.connect.failures`). The two Hikari pools are named `admin` and
+  > `site` (`spring.*-datasource.configuration.pool-name`) so the `hikaricp.*` meters are distinguishable, and the Tomcat MBeans are
+  > registered for `tomcat.*`. Report new events through `AdminMetrics` (one place for names and tags, low-cardinality tags only); tests
+  > use a `SimpleMeterRegistry` (`AdminMetricsUTC`, `AdminInventoryMetricsUTC`, the metric assertions of the filter, schedule and
+  > `JschClientUTC` tests).
+
+- Distributed tracing: `spring-boot-starter-opentelemetry` (Micrometer Tracing with the OpenTelemetry bridge and the OTLP exporter). An
+  incoming W3C `traceparent` (Traefik, the admin SPA, the file backend's Feign calls) is continued; Boot puts `traceId`/`spanId` into the
+  MDC and the console pattern, so every log line of a request carries them. `VEMPAIN_TRACING_ENABLED|URL|SAMPLING` map to
+  `vempain.tracing.*` and `management.tracing.enabled` in `application.yaml`; the Tempo endpoint, the basic-auth header, the certificate
+  bundle and the sampling probability (`management.opentelemetry.tracing.export.otlp.*`, `management.tracing.sampling.probability`) are
+  set by `vempain-common`'s `MetricsExportEnvironmentPostProcessor`, reusing the metrics credentials, so the `vempain-common` bump above
+  covers tracing too. `management.tracing.export.enabled` is bound to the same switch, because Boot's `LogCorrelationEnvironmentPostProcessor`
+  adds the `[app,traceId,spanId]` block to the console pattern whenever a `Tracer` is on the classpath and the export is not disabled;
+  the block therefore appears only when tracing is on, identically in the three backends. Background tasks run in a span of their own (`task <type>`,
+  `vempain-common` `TaskRunner`). Keep tracing off in
+  tests (`vempain.tracing.enabled` defaults to false); `TraceContinuationCTC` switches it on for one context and asserts the continuation
+  of a caller's trace id into the server span and the MDC. Never log a trace id as a request parameter or label it with addresses.
 - Security findings and their mitigations are recorded in `security/OWASP-2025-audit-report.md`; keep it current when changing authorization,
   query building, SSH/filesystem publishing or input handling.
 - `lombok.config` sets `lombok.addLombokGeneratedAnnotation = true` so generated code is excluded from JaCoCo; keep it when touching coverage settings.
-- The repo uses **tabs** for Java indentation and a 160-char line length (`.editorconfig`). Avoid mass reformatting.
+- The repo uses **4 spaces** for Java indentation and a 160-char line length (`.editorconfig`; the layout beyond that is owned by
+  `.config/eclipse-formatter.xml`). Avoid mass reformatting.
 
 ## External integrations
 
