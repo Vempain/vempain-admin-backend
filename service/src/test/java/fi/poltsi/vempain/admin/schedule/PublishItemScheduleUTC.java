@@ -8,15 +8,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import fi.poltsi.vempain.admin.api.ContentTypeEnum;
 import fi.poltsi.vempain.admin.api.PublishStatusEnum;
 import fi.poltsi.vempain.admin.entity.PublishSchedule;
+import fi.poltsi.vempain.admin.metrics.AdminMetrics;
 import fi.poltsi.vempain.admin.repository.PublishScheduleRepository;
 import fi.poltsi.vempain.admin.service.PublishService;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -40,6 +43,8 @@ class PublishItemScheduleUTC {
     @Mock
     private PublishService publishService;
 
+    @Spy
+    private AdminMetrics adminMetrics = new AdminMetrics(new SimpleMeterRegistry());
     @InjectMocks
     private PublishItemSchedule schedule;
 
@@ -93,6 +98,8 @@ class PublishItemScheduleUTC {
             .publishGalleryAsSystem(20L);
         order.verify(publishScheduleRepository)
             .updatePublishStatus(2L, PublishStatusEnum.PUBLISHED);
+        verify(adminMetrics, org.mockito.Mockito.times(2)).publishScheduleItem("published");
+        verify(adminMetrics, org.mockito.Mockito.times(2)).publishScheduleLag(any());
     }
 
     @Test
@@ -111,5 +118,20 @@ class PublishItemScheduleUTC {
         verify(publishScheduleRepository).updatePublishStatus(3L, PublishStatusEnum.PUBLISHED);
         verify(publishService, never()).publishPageAsSystem(30L);
         verify(publishService, never()).publishGalleryAsSystem(30L);
+        verify(adminMetrics, org.mockito.Mockito.times(2)).publishScheduleItem("missing");
+        verify(adminMetrics).publishScheduleItem("unknown_type");
+    }
+
+    @Test
+    void aPublishThatThrowsIsCountedAsFailedAndStillPropagates() throws Exception {
+        when(publishScheduleRepository.findAllByPublishStatusEqualsAndPublishTimeBefore(eq(PublishStatusEnum.NOT_PUBLISHED), any()))
+            .thenReturn(List.of(due(1L, ContentTypeEnum.PAGE, 10L)));
+        doThrow(new IllegalStateException("site server down")).when(publishService)
+            .publishPageAsSystem(10L);
+
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> schedule.publishItems());
+
+        verify(adminMetrics).publishScheduleItem("failed");
+        verify(publishScheduleRepository, never()).updatePublishStatus(1L, PublishStatusEnum.PUBLISHED);
     }
 }

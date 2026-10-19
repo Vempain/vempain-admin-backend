@@ -19,11 +19,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import fi.poltsi.vempain.admin.api.Constants;
 import fi.poltsi.vempain.admin.entity.ApiToken;
+import fi.poltsi.vempain.admin.metrics.AdminMetrics;
 import fi.poltsi.vempain.admin.service.ApiTokenService;
 import fi.poltsi.vempain.auth.entity.UserAccount;
 import fi.poltsi.vempain.auth.service.UserDetailsImpl;
 import fi.poltsi.vempain.auth.service.UserDetailsServiceImpl;
 import fi.poltsi.vempain.auth.service.UserService;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -55,8 +57,17 @@ class ApiTokenAuthenticationFilterUTC {
         SecurityContextHolder.clearContext();
     }
 
+    private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
+
     private ApiTokenAuthenticationFilter filter() {
-        return new ApiTokenAuthenticationFilter(apiTokenService, userService, userDetailsService);
+        return new ApiTokenAuthenticationFilter(apiTokenService, userService, userDetailsService, new AdminMetrics(registry));
+    }
+
+    private double counted(String result) {
+        var counter = registry.find(AdminMetrics.API_TOKEN_REQUESTS)
+            .tag("result", result)
+            .counter();
+        return counter == null ? 0 : counter.count();
     }
 
     private static MockHttpServletRequest request(String method, String uri) {
@@ -131,6 +142,7 @@ class ApiTokenAuthenticationFilterUTC {
 
         assertEquals(403, response.getStatus());
         verify(userService, never()).findById(org.mockito.ArgumentMatchers.anyLong());
+        assertEquals(1, counted("forbidden_endpoint"), "the refusal is counted");
     }
 
     @Test
@@ -144,6 +156,7 @@ class ApiTokenAuthenticationFilterUTC {
         assertEquals(401, response.getStatus());
         assertNull(SecurityContextHolder.getContext()
             .getAuthentication());
+        assertEquals(1, counted("missing_user"), "the refusal is counted");
     }
 
     @Test
@@ -187,6 +200,8 @@ class ApiTokenAuthenticationFilterUTC {
             .map(GrantedAuthority::getAuthority)
             .anyMatch(ApiTokenAuthenticationFilter.API_TOKEN_AUTHORITY::equals));
         assertNotNull(authentication.getDetails());
+        assertEquals(1, counted("accepted"), "the accepted request is counted");
+        assertEquals(0, counted("forbidden_endpoint"));
     }
 
     @Test

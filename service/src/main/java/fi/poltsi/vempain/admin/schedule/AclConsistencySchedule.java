@@ -19,6 +19,7 @@ import fi.poltsi.vempain.admin.entity.file.Gallery;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.exception.VempainLayoutException;
+import fi.poltsi.vempain.admin.metrics.AdminMetrics;
 import fi.poltsi.vempain.admin.service.ComponentService;
 import fi.poltsi.vempain.admin.service.FormService;
 import fi.poltsi.vempain.admin.service.LayoutService;
@@ -54,6 +55,7 @@ public class AclConsistencySchedule {
     private final UnitService unitService;
     private final UserService userService;
     private final FileService fileService;
+    private final AdminMetrics adminMetrics;
     private final Set<Long> missingAcls = new HashSet<>();
     private final Map<Long, Long> missingAclCreators = new HashMap<>();
     private final Set<Long> orphanAcls = new HashSet<>();
@@ -61,6 +63,8 @@ public class AclConsistencySchedule {
     private final ArrayList<AbstractVempainEntity> unassignedAclObjects = new ArrayList<>();
     // internal state (not injected)
     private Set<Long> tableAcls = new HashSet<>();
+    // Repairs made by the current run, reported as vempain.consistency.fixed{schedule=acl} at its end
+    private long fixed;
     @org.springframework.beans.factory.annotation.Value("${vempain.scheduling.enabled:true}")
     private boolean schedulingEnabled = true;
 
@@ -103,9 +107,11 @@ public class AclConsistencySchedule {
         createMissingAcls();
         removeOrphanAcls();
         removeDuplicateAcls();
+        adminMetrics.consistencyFixed("acl", fixed);
     }
 
     private void resetState() {
+        fixed = 0;
         missingAcls.clear();
         missingAclCreators.clear();
         orphanAcls.clear();
@@ -138,6 +144,7 @@ public class AclConsistencySchedule {
                         if (aclA.equals(aclB)) {
                             log.debug("Removing duplicate ACL: {}", aclB);
                             aclService.deleteById(aclB.getId());
+                            fixed++;
                         }
                     }
                 }
@@ -152,6 +159,7 @@ public class AclConsistencySchedule {
             try {
                 aclService.deleteByAclId(aclId);
                 itr.remove();
+                fixed++;
             } catch (VempainEntityNotFoundException e) {
                 log.error("Error removing orphaned ACL ID {}: {}", aclId, e.getMessage());
             }
@@ -188,6 +196,7 @@ public class AclConsistencySchedule {
                 .build();
             try {
                 aclService.save(unitAcl);
+                fixed++;
             } catch (VempainAclException e) {
                 log.error("Failed to add ACL ID {} when adding the unit ACL", aclId);
             }
@@ -249,6 +258,7 @@ public class AclConsistencySchedule {
 
                 entity.setAclId(aclId);
                 saveEntity(entity);
+                fixed++;
             }
         }
     }
@@ -269,6 +279,7 @@ public class AclConsistencySchedule {
                 var aclId = aclService.createNewAcl(owner, null, true, true, true, true);
                 entity.setAclId(aclId);
                 saveEntity(entity);
+                fixed++;
                 log.info("Assigned new ACL ID {} owned by user {} to object ({}) ID {}", aclId, owner, entity.getClass()
                     .getName(), entity.getId());
             } catch (VempainAclException e) {
@@ -314,6 +325,7 @@ public class AclConsistencySchedule {
                 log.info("Creating missing ACL: {}", newAcl);
                 aclService.save(newAcl);
                 itr.remove();
+                fixed++;
             } catch (VempainAclException e) {
                 log.error("Failed to create an ACL for object using ACL ID {}", aclId);
             }

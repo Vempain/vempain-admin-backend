@@ -3,6 +3,7 @@ package fi.poltsi.vempain.tools;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,6 +22,8 @@ import com.jcraft.jsch.SftpException;
 import fi.poltsi.vempain.admin.entity.file.FileThumb;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.common.api.FileTypeEnum;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -46,13 +49,21 @@ class JschClientUTC {
 
     private JschClient jschClient;
 
+    private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
+
     @BeforeEach
     void setUp() {
+        Metrics.addRegistry(registry);
         jschClient = new JschClient();
         ReflectionTestUtils.setField(jschClient, "channelSftp", channelSftp);
         ReflectionTestUtils.setField(jschClient, "siteWwwRoot", "/www");
         ReflectionTestUtils.setField(jschClient, "siteFileDirectory", "/site-files");
         ReflectionTestUtils.setField(jschClient, "thumbSubDir", ".thumb");
+    }
+
+    @AfterEach
+    void detachRegistry() {
+        Metrics.removeRegistry(registry);
     }
 
     @Test
@@ -101,6 +112,40 @@ class JschClientUTC {
             .put("/site-files/thumbs/orphan.jpeg", "/www/image/2024/trip/.thumb");
         order.verify(channelSftp, org.mockito.Mockito.never())
             .put(anyString(), anyString());
+        // The transfer is measured on the global registry: two site files, two thumbnails, one successful transfer
+        assertThat(registry.get(JschClient.TRANSFER_FILES)
+            .tag("kind", "file")
+            .counter()
+            .count()).isEqualTo(2);
+        assertThat(registry.get(JschClient.TRANSFER_FILES)
+            .tag("kind", "thumb")
+            .counter()
+            .count()).isEqualTo(2);
+        assertThat(registry.get(JschClient.TRANSFER_DURATION)
+            .tag("result", "success")
+            .timer()
+            .count()).isEqualTo(1);
+    }
+
+    @Test
+    void aFailedTransferIsMeasuredAsAFailure() throws Exception {
+        var file = SiteFile.builder()
+            .id(1L)
+            .fileType(FileTypeEnum.IMAGE)
+            .filePath("x")
+            .fileName("a.jpg")
+            .build();
+        doThrow(new SftpException(ChannelSftp.SSH_FX_PERMISSION_DENIED, "denied")).when(channelSftp)
+            .put("/site-files/image/x/a.jpg", "/www/image/x/a.jpg");
+
+        org.junit.jupiter.api.Assertions.assertThrows(SftpException.class, () -> jschClient.transferFilesToSite(List.of(file), List.of()));
+
+        assertThat(registry.get(JschClient.TRANSFER_DURATION)
+            .tag("result", "failure")
+            .timer()
+            .count()).isEqualTo(1);
+        assertThat(registry.find(JschClient.TRANSFER_FILES)
+            .counter()).isNull();
     }
 
     @Test
@@ -161,6 +206,25 @@ class JschClientUTC {
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, thrown.getStatusCode());
         verify(session, never()).connect(anyInt());
+        assertThat(registry.get(JschClient.CONNECT_FAILURES)
+            .counter()
+            .count()).isEqualTo(1);
+    }
+
+    @Test
+    void aRefusedSessionCountsAsAConnectFailure() throws Exception {
+        var jsch = mock(JSch.class);
+        var session = mock(Session.class);
+        ReflectionTestUtils.setField(jschClient, "jsch", jsch);
+        when(jsch.getSession(anyString(), anyString(), anyInt())).thenReturn(session);
+        doThrow(new JSchException("connection refused")).when(session)
+            .connect(anyInt());
+
+        assertThrows(JSchException.class, () -> jschClient.connect("site.example", 22, "vempain-site", "/home/vempain-admin", "/home/vempain-admin/.ssh/id"));
+
+        assertThat(registry.get(JschClient.CONNECT_FAILURES)
+            .counter()
+            .count()).isEqualTo(1);
     }
 
     @Test

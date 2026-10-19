@@ -22,6 +22,7 @@ import fi.poltsi.vempain.admin.api.response.ApiTokenCreatedResponse;
 import fi.poltsi.vempain.admin.api.response.ApiTokenNetworkResponse;
 import fi.poltsi.vempain.admin.api.response.ApiTokenResponse;
 import fi.poltsi.vempain.admin.entity.ApiToken;
+import fi.poltsi.vempain.admin.metrics.AdminMetrics;
 import fi.poltsi.vempain.admin.repository.ApiTokenRepository;
 import fi.poltsi.vempain.tools.NetworkMatcher;
 import fi.poltsi.vempain.tools.PrivateNetworkDetector;
@@ -44,6 +45,7 @@ public class ApiTokenService {
     private static final Duration LAST_USED_INTERVAL = Duration.ofMinutes(1);
 
     private final ApiTokenRepository apiTokenRepository;
+    private final AdminMetrics adminMetrics;
     private final SecureRandom secureRandom = new SecureRandom();
 
     /**
@@ -176,12 +178,14 @@ public class ApiTokenService {
         if (presentedToken == null
             || presentedToken.isBlank()
             || !presentedToken.startsWith(TOKEN_PREFIX)) {
+            adminMetrics.apiTokenRequest("unknown");
             return Optional.empty();
         }
 
         var optionalToken = apiTokenRepository.findByTokenHash(hash(presentedToken.trim()));
         if (optionalToken.isEmpty()) {
             log.warn("Unknown API token presented from {}", clientAddress);
+            adminMetrics.apiTokenRequest("unknown");
             return Optional.empty();
         }
 
@@ -189,10 +193,12 @@ public class ApiTokenService {
         if (!token.getExpiresAt()
             .isAfter(Instant.now())) {
             log.warn("Expired API token {} presented from {}", token.getTokenPrefix(), clientAddress);
+            adminMetrics.apiTokenRequest("expired");
             return Optional.empty();
         }
         if (!NetworkMatcher.matches(token.getNetwork(), clientAddress)) {
             log.warn("API token {} presented from {} which is outside its network {}", token.getTokenPrefix(), clientAddress, token.getNetwork());
+            adminMetrics.apiTokenRequest("wrong_network");
             return Optional.empty();
         }
 

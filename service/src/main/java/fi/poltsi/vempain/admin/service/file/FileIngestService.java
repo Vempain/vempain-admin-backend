@@ -34,6 +34,7 @@ import fi.poltsi.vempain.admin.configuration.StorageDirectoryConfiguration;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.exception.VempainIngestException;
+import fi.poltsi.vempain.admin.metrics.AdminMetrics;
 import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
 import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.service.AccessService;
@@ -73,6 +74,7 @@ public class FileIngestService {
     private final SubjectService subjectService;
     private final FileService fileService;
     private final LocationService locationService;
+    private final AdminMetrics adminMetrics;
 
     @Value("${vempain.admin.file.site-file-directory}")
     private String siteFileDirectory;
@@ -100,12 +102,16 @@ public class FileIngestService {
         }
     }
 
-    // Public entry point: delegates to internal ingest and ensures cleanup on failure
+    // Public entry point: delegates to internal ingest, counts the outcome and ensures cleanup on failure
     @Transactional
     public FileIngestResponse ingest(FileIngestRequest fileIngestRequest, MultipartFile multipartFile) throws Exception {
+        var bytes = multipartFile == null ? 0L : multipartFile.getSize();
         try {
-            return ingestInternal(fileIngestRequest, multipartFile);
+            var response = ingestInternal(fileIngestRequest, multipartFile);
+            adminMetrics.ingest(response.isUpdated() ? "updated" : "created", bytes);
+            return response;
         } catch (VempainIngestException vex) {
+            adminMetrics.ingest("rejected", bytes);
             // Attempt to delete locally stored file if present
             Path stored = vex.getStoredFile();
             if (stored != null) {

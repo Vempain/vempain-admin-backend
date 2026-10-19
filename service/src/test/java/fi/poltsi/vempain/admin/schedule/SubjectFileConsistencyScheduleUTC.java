@@ -8,11 +8,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
+import fi.poltsi.vempain.admin.metrics.AdminMetrics;
 import fi.poltsi.vempain.admin.service.file.FileService;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -29,6 +32,8 @@ class SubjectFileConsistencyScheduleUTC {
     @Mock
     private FileService fileService;
 
+    @Spy
+    private AdminMetrics adminMetrics = new AdminMetrics(new SimpleMeterRegistry());
     @InjectMocks
     private SubjectFileConsistencySchedule schedule;
 

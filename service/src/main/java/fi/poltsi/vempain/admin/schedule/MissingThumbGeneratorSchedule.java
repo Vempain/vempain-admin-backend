@@ -9,6 +9,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import fi.poltsi.vempain.admin.entity.file.FileThumb;
+import fi.poltsi.vempain.admin.metrics.AdminMetrics;
 import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.admin.service.file.FileThumbService;
 import lombok.extern.slf4j.Slf4j;
@@ -22,15 +23,17 @@ public class MissingThumbGeneratorSchedule {
 
     private final FileService fileService;
     private final FileThumbService fileThumbService;
+    private final AdminMetrics adminMetrics;
 
     @Value("${vempain.admin.file.site-file-directory}")
     private String siteFileDirectory;
     @Value("${vempain.scheduling.enabled:true}")
     private boolean schedulingEnabled = true;
 
-    public MissingThumbGeneratorSchedule(FileService fileService, FileThumbService fileThumbService) {
+    public MissingThumbGeneratorSchedule(FileService fileService, FileThumbService fileThumbService, AdminMetrics adminMetrics) {
         this.fileService = fileService;
         this.fileThumbService = fileThumbService;
+        this.adminMetrics = adminMetrics;
     }
 
     @Scheduled(fixedDelay = DELAY, initialDelayString = INITIAL_DELAY)
@@ -74,6 +77,7 @@ public class MissingThumbGeneratorSchedule {
                             log.info("Generating missing thumb file for: {}", fileThumb.getId());
                             log.info("Generating thumb image for site file: {}", siteFile.getId());
                             fileThumbService.generateThumbFile(siteFile.getId());
+                            adminMetrics.consistencyFixed("missing_thumb", 1);
                         }
                     } else {
                         log.warn("Could not generate new thumb for parent ID {} because no app file exists", fileThumb.getParentId());

@@ -21,11 +21,16 @@ spring:
     driver-class-name: org.postgresql.Driver
     username: override-me
     password: override-me
+    configuration:
+      # Hikari pool name: the hikaricp.* meters of the two pools are told apart by their pool tag
+      pool-name: admin
   site-datasource:
     url: override-me
     driver-class-name: org.postgresql.Driver
     username: override-me
     password: override-me
+    configuration:
+      pool-name: site
   jpa:
     show-sql: false
     open-in-view: false
@@ -45,6 +50,9 @@ server:
   tomcat:
     max-http-form-post-size: 120MB
     max-swallow-size: 120MB
+    # Registers the Tomcat MBeans so that Micrometer publishes the tomcat.* meters (thread pool, sessions)
+    mbeanregistry:
+      enabled: true
 
 actuator:
   enabled: true
@@ -56,6 +64,14 @@ actuator:
 management:
   server:
     port: 8081
+  tracing:
+    # Tracing auto-configuration follows the deployment switch; vempain-common's MetricsExportEnvironmentPostProcessor adds the endpoint,
+    # credentials, certificate bundle and sampling when it is on. The export switch is bound as well: Boot adds the [app,traceId,spanId]
+    # block to the console log pattern whenever a Tracer is on the classpath and the export is not disabled, so the block appears only
+    # when tracing is on (identical in the three backends).
+    enabled: ${vempain.tracing.enabled}
+    export:
+      enabled: ${vempain.tracing.enabled}
   endpoints:
     web:
       exposure:
@@ -79,6 +95,16 @@ management:
   metrics:
     tags:
       application: vempain-admin-backend
+      # api for the HTTP replicas, scheduler for the scheduler replica of the swarm stack
+      role: ${VEMPAIN_METRICS_ROLE:api}
+      instance: ${HOSTNAME:local}
+  otlp:
+    metrics:
+      export:
+        # Push-only export: the vempain.metrics.* settings below are turned into the url, step, Authorization header and SSL bundle of this
+        # exporter by the environment post-processor of vempain-common; nothing is exposed on the management port for scraping
+        enabled: ${vempain.metrics.enabled}
+        base-time-unit: seconds
 
 springdoc:
   show-login-endpoint: true
@@ -99,6 +125,22 @@ logging:
 
 vempain:
   name: @projectName@
+  metrics:
+    # OTLP/HTTP push of the application metrics to the monitoring environment (Prometheus behind Traefik basic auth with a self-signed
+    # certificate); all of these come from the VEMPAIN_METRICS_* environment of the container
+    enabled: ${VEMPAIN_METRICS_ENABLED:false}
+    url: ${VEMPAIN_METRICS_URL:}
+    username: ${VEMPAIN_METRICS_USERNAME:}
+    password: ${VEMPAIN_METRICS_PASSWORD:}
+    # PEM certificate (or CA) to trust for the metrics endpoint; empty uses the JVM default trust
+    certificate: ${VEMPAIN_METRICS_CERTIFICATE:}
+    step: ${VEMPAIN_METRICS_STEP:1m}
+  tracing:
+    # OTLP/HTTP push of the request traces (W3C traceparent continued from Traefik and the file backend) to the Tempo of the monitoring
+    # environment; credentials and certificate are the metrics ones. Off by default so that local runs and tests never export.
+    enabled: ${VEMPAIN_TRACING_ENABLED:false}
+    url: ${VEMPAIN_TRACING_URL:}
+    sampling: ${VEMPAIN_TRACING_SAMPLING:1.0}
   scheduling:
     enabled: ${VEMPAIN_SCHEDULING_ENABLED:true}
   tasks:
