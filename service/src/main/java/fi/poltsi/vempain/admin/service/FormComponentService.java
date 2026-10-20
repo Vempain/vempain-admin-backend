@@ -34,6 +34,8 @@ public class FormComponentService {
         var query = entityManager.createNativeQuery(
                 "SELECT fc.form_id, fc.component_id, fc.sort_order " + "FROM form_component fc " + "WHERE fc.form_id = :formId " + "ORDER BY fc.sort_order");
         query.setParameter("formId", formId);
+        // JPA's native Query API is untyped; the SELECT above yields exactly one Object[] per row
+        @SuppressWarnings("unchecked")
         List<Object[]> fcObjects = query.getResultList();
         return mapComponentFormResults(fcObjects);
     }
@@ -42,6 +44,8 @@ public class FormComponentService {
         var query = entityManager
             .createNativeQuery("SELECT fc.form_id, fc.component_id, fc.sort_order " + "FROM form_component fc " + "WHERE fc.component_id = :componentId");
         query.setParameter("componentId", componentId);
+        // JPA's native Query API is untyped; the SELECT above yields exactly one Object[] per row
+        @SuppressWarnings("unchecked")
         List<Object[]> fcObjects = query.getResultList();
 
         return mapComponentFormResults(fcObjects);

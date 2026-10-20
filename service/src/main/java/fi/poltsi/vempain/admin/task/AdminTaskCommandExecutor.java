@@ -47,7 +47,7 @@ public class AdminTaskCommandExecutor implements TaskCommandExecutor {
                 .refreshAllGalleryFilesNow(ids(payload.path("gallery_ids")), progress);
             case PUBLISH_DATA_SET -> applicationContext.getBean(DataService.class)
                 .publishNow(payload.path("identifier")
-                    .asText(), progress);
+                    .asString(), progress);
         };
     }
 

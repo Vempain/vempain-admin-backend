@@ -73,6 +73,6 @@ class ApiTokenContractJTC {
             .get(0)
             .propertyNames()));
         assertEquals("PRIVATE_NETWORK", tree.path("source")
-            .asText());
+            .asString());
     }
 }

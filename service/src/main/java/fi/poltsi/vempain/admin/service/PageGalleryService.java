@@ -49,6 +49,8 @@ public class PageGalleryService {
         var query = entityManager.createNativeQuery(
                 "SELECT pg.page_id, pg.gallery_id, pg.sort_order " + "FROM page_gallery pg " + "WHERE pg.page_id = :pageId " + "ORDER BY pg.sort_order");
         query.setParameter("pageId", pageId);
+        // JPA's native Query API is untyped; the SELECT above yields exactly one Object[] per row
+        @SuppressWarnings("unchecked")
         List<Object[]> pgObjects = query.getResultList();
         return mapPageGalleryResults(pgObjects);
     }
@@ -57,6 +59,8 @@ public class PageGalleryService {
         var query = entityManager
             .createNativeQuery("SELECT pg.page_id, pg.gallery_id, pg.sort_order " + "FROM page_gallery pg " + "WHERE pg.gallery_id = :galleryId");
         query.setParameter("galleryId", galleryId);
+        // JPA's native Query API is untyped; the SELECT above yields exactly one Object[] per row
+        @SuppressWarnings("unchecked")
         List<Object[]> pgObjects = query.getResultList();
         return mapPageGalleryResults(pgObjects);
     }

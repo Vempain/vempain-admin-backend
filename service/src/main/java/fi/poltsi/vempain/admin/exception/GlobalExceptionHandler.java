@@ -58,7 +58,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(EntityAlreadyExistsException.class)
     public ProblemDetail handleEntityAlreadyExists(EntityAlreadyExistsException exception) {
-        return problem(HttpStatus.UNPROCESSABLE_ENTITY, exception.getMessage(), exception);
+        return problem(HttpStatus.UNPROCESSABLE_CONTENT, exception.getMessage(), exception);
     }
 
     @ExceptionHandler(DataObjectAlreadyExistsException.class)

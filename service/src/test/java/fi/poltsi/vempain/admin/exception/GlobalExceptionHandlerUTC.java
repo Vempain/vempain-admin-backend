@@ -60,7 +60,7 @@ class GlobalExceptionHandlerUTC {
 
     @Test
     void conflictHandlers() {
-        assertProblem(handler.handleEntityAlreadyExists(new EntityAlreadyExistsException("Form exists", "form")), HttpStatus.UNPROCESSABLE_ENTITY,
+        assertProblem(handler.handleEntityAlreadyExists(new EntityAlreadyExistsException("Form exists", "form")), HttpStatus.UNPROCESSABLE_CONTENT,
                 "Form exists");
         assertProblem(handler.handleDataObjectAlreadyExists(new DataObjectAlreadyExistsException()), HttpStatus.NOT_ACCEPTABLE,
                 "The object already exists or is invalid");

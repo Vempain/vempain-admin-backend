@@ -41,6 +41,11 @@ repositories {
 	maven { url = "https://mvn.0110.be/releases" }
 }
 
+// Report deprecated API use and unchecked operations with their location instead of javac's "recompile with -Xlint" note
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += ['-Xlint:deprecation', '-Xlint:unchecked']
+}
+
 dependencies {
 	annotationProcessor "org.springframework.boot:spring-boot-configuration-processor:${libs.versions.spring.boot.get()}"
 	implementation project(':api')
