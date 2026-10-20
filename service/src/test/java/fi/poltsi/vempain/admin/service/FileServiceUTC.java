@@ -9,6 +9,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -458,14 +459,14 @@ class FileServiceUTC {
     private PageRequest stubReadableListing(PageRequest pageRequest) {
         var emptyPage = new PageImpl<SiteFile>(List.of(), pageRequest, 0);
         when(accessService.<SiteFile>readableSpecification()).thenReturn((root, query, criteriaBuilder) -> null);
-        when(siteFileRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(emptyPage);
+        when(siteFileRepository.findAll(ArgumentMatchers.<Specification<SiteFile>>any(), any(Pageable.class))).thenReturn(emptyPage);
         return pageRequest;
     }
 
     @SuppressWarnings("unchecked")
     private void verifyReadableListing() {
         verify(accessService).<SiteFile>readableSpecification();
-        verify(siteFileRepository).findAll(any(Specification.class), any(Pageable.class));
+        verify(siteFileRepository).findAll(ArgumentMatchers.<Specification<SiteFile>>any(), any(Pageable.class));
     }
 
     @Test
@@ -553,7 +554,8 @@ class FileServiceUTC {
             .sha256sum("x")
             .build();
         when(accessService.<SiteFile>readableSpecification()).thenReturn((root, query, criteriaBuilder) -> null);
-        when(siteFileRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(readable), pageRequest, 1));
+        when(siteFileRepository.findAll(ArgumentMatchers.<Specification<SiteFile>>any(), any(Pageable.class)))
+            .thenReturn(new PageImpl<>(List.of(readable), pageRequest, 1));
 
         var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, null, null));
 
@@ -572,7 +574,7 @@ class FileServiceUTC {
 
         assertNotNull(result);
         var pageableCaptor = org.mockito.ArgumentCaptor.forClass(Pageable.class);
-        verify(siteFileRepository).findAll(any(Specification.class), pageableCaptor.capture());
+        verify(siteFileRepository).findAll(ArgumentMatchers.<Specification<SiteFile>>any(), pageableCaptor.capture());
         assertNotNull(pageableCaptor.getValue()
             .getSort()
             .getOrderFor("created"));
@@ -586,7 +588,7 @@ class FileServiceUTC {
 
         assertNotNull(result);
         var pageableCaptor = org.mockito.ArgumentCaptor.forClass(Pageable.class);
-        verify(siteFileRepository).findAll(any(Specification.class), pageableCaptor.capture());
+        verify(siteFileRepository).findAll(ArgumentMatchers.<Specification<SiteFile>>any(), pageableCaptor.capture());
         assertNotNull(pageableCaptor.getValue()
             .getSort()
             .getOrderFor("modified"));
@@ -600,7 +602,7 @@ class FileServiceUTC {
 
         assertNotNull(result);
         var pageableCaptor = org.mockito.ArgumentCaptor.forClass(Pageable.class);
-        verify(siteFileRepository).findAll(any(Specification.class), pageableCaptor.capture());
+        verify(siteFileRepository).findAll(ArgumentMatchers.<Specification<SiteFile>>any(), pageableCaptor.capture());
         assertEquals("fileName", pageableCaptor.getValue()
             .getSort()
             .getOrderFor("fileName")

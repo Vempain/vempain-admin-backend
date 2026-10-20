@@ -82,7 +82,7 @@ class ApiTokenCTC {
             .getContentAsString();
         return objectMapper.readTree(json)
             .path("token")
-            .asText();
+            .asString();
     }
 
     @Test
@@ -212,18 +212,18 @@ class ApiTokenCTC {
             assertTrue(tree.path("network")
                 .isNull());
             assertTrue("NONE".equals(tree.path("source")
-                .asText()));
+                .asString()));
         } else {
             assertTrue("PRIVATE_NETWORK".equals(tree.path("source")
-                .asText()));
+                .asString()));
             assertTrue(tree.path("network")
-                .asText()
+                .asString()
                 .equals(candidates.get(0)
                     .path("network")
-                    .asText()));
+                    .asString()));
             assertTrue(candidates.get(0)
                 .path("interface_name")
-                .asText()
+                .asString()
                 .length() > 0);
         }
         mockMvc.perform(get("/admin-management/api-tokens/default-network"))

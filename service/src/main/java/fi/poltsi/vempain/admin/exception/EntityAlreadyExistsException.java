@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import lombok.Getter;
 
 @Getter
-@ResponseStatus(code = HttpStatus.UNPROCESSABLE_ENTITY, reason = "The object already exists")
+@ResponseStatus(code = HttpStatus.UNPROCESSABLE_CONTENT, reason = "The object already exists")
 public class EntityAlreadyExistsException extends Exception {
 
     private final String message;

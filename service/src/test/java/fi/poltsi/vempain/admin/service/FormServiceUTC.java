@@ -689,7 +689,9 @@ class FormServiceUTC {
         when(formRepository.findByFormName("Renamed")).thenReturn(null);
         when(accessService.getUserId()).thenReturn(1L);
         when(formRepository.save(form)).thenReturn(form);
-        when(formComponentService.findFormComponentByFormId(1L)).thenReturn(List.of(TestUTCTools.generateFormComponent(1L, 0L)), List.of(), List.of());
+        when(formComponentService.findFormComponentByFormId(1L)).thenReturn(List.of(TestUTCTools.generateFormComponent(1L, 0L)))
+            .thenReturn(List.of())
+            .thenReturn(List.of());
         when(componentService.findById(5L)).thenReturn(component);
         var request = updateRequest("Renamed", List.of(TestUTCTools.generateComponentRequest(5L, 55L)));
 
@@ -741,7 +743,8 @@ class FormServiceUTC {
         when(accessService.hasModifyPermission(1L)).thenReturn(true);
         when(accessService.getUserId()).thenReturn(1L);
         when(formRepository.save(form)).thenReturn(form);
-        when(formComponentService.findFormComponentByFormId(1L)).thenReturn(List.of(), List.of(TestUTCTools.generateFormComponent(1L, 0L)));
+        when(formComponentService.findFormComponentByFormId(1L)).thenReturn(List.of())
+            .thenReturn(List.of(TestUTCTools.generateFormComponent(1L, 0L)));
         when(componentService.findById(5L)).thenReturn(TestUTCTools.generateComponent(5L, 55L));
         when(componentService.findById(0L)).thenThrow(new VempainComponentException("gone"));
 

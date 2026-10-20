@@ -49,6 +49,8 @@ public class GalleryFileService {
                 + "WHERE gf.gallery_id = :galleryId "
                 + "ORDER BY gf.sort_order");
         query.setParameter("galleryId", galleryId);
+        // JPA's native Query API is untyped; the SELECT above yields exactly one Object[] per row
+        @SuppressWarnings("unchecked")
         List<Object[]> gfObjects = query.getResultList();
         List<GalleryFile> galleryFiles = new ArrayList<>();
 
