@@ -95,9 +95,18 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
   everything). The grantable users are served by `GET /content-management/file/site-file/users` (`FileIngestUserResponse`: id, login
   name, name, nick only; `ACTIVE` and unlocked accounts) and the grantable units by `GET /content-management/file/site-file/units`
   (`FileIngestUnitResponse`: id, name, description) for the file backend, whose own user base is separate; the listings are on the API token
-  allowlist (`ApiTokenAuthenticationFilter`) and every endpoint needs the administrator ACL like the ingest itself. Tests: `FileIngestServiceUTC`,
-  `FileIngestServiceITC` (real ACL rows), `FileIngestCTC`,
-  `FileIngestAclContractJTC` (api module).
+  allowlist (`ApiTokenAuthenticationFilter`) and every endpoint needs the administrator ACL like the ingest itself. The answer of an ingest
+  (`FileIngestResponse`, snake_case since the ACL lookup release, the former camelCase keys are still read through `@JsonAlias`) carries the
+  `site_file_id`, the `gallery_id` and `gallery_site_file_ids`, the IDs of every site file linked to the gallery after the ingest in gallery
+  order, so the file backend can record what a publish created. The current grantees of an earlier ingest are read back with
+  `GET /content-management/file/site-file/{siteFileId}/acls` (`FileIngestSiteFileAclResponse`: site file ID, source `file_id`, `acls`),
+  `GET /content-management/file/site-file/by-file-id/{fileId}/acls` (same answer keyed by the unique `site_file.file_id`, for files published
+  before the file backend recorded the site file ID) and `GET /content-management/file/gallery/{galleryId}/acls`
+  (`FileIngestGalleryAclResponse`: gallery ID, shortname, `site_file_ids` in gallery order, `acls`); the `acls` rows (`FileIngestAclResponse`,
+  the shape of `FileIngestAclRequest`) are the ACL rows other than the calling account's own, so a client can show them and send them back
+  unchanged (`FileIngestService.additionalGrantees`); an unknown ID answers `404`. All three are on the API token allowlist. Tests:
+  `FileIngestServiceUTC`, `FileIngestServiceITC` (real ACL rows), `FileIngestCTC`, `FileIngestControllerUTC`, `FileIngestAclContractJTC`
+  (api module), `ApiTokenAuthenticationFilterUTC` (allowlist).
 - `GET /content-management/pages/path-suggestion?prefix=` (`PageService.suggestPath`) backs the path auto-completion of the page editor:
   it matches readable pages with `PageRepository.findByPagePathPrefix(LikePatterns.prefix(prefix))` (escaped LIKE, explicit `ESCAPE`),
   drops the last part of every matching path and answers the common leading parts (`commonParentPath`, null when none). Tests:

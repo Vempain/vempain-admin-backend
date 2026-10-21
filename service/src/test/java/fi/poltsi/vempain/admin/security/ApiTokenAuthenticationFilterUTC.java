@@ -209,6 +209,11 @@ class ApiTokenAuthenticationFilterUTC {
         assertTrue(ApiTokenAuthenticationFilter.isAllowed("POST", "/content-management/file/site-file"));
         assertTrue(ApiTokenAuthenticationFilter.isAllowed("DELETE", "/content-management/file/site-file/12"));
         assertTrue(ApiTokenAuthenticationFilter.isAllowed("DELETE", "/content-management/data/gps_1"));
+        assertTrue(ApiTokenAuthenticationFilter.isAllowed("GET", "/content-management/file/site-file/12/acls"));
+        assertTrue(ApiTokenAuthenticationFilter.isAllowed("GET", "/content-management/file/site-file/by-file-id/678/acls"));
+        assertTrue(ApiTokenAuthenticationFilter.isAllowed("GET", "/content-management/file/gallery/7/acls"));
+        assertFalse(ApiTokenAuthenticationFilter.isAllowed("GET", "/content-management/file/site-file/12"));
+        assertFalse(ApiTokenAuthenticationFilter.isAllowed("GET", "/content-management/file/gallery/7"));
         assertFalse(ApiTokenAuthenticationFilter.isAllowed("GET", "/content-management/file/site-file"));
         assertFalse(ApiTokenAuthenticationFilter.isAllowed("GET", "/content-management/pages"));
     }

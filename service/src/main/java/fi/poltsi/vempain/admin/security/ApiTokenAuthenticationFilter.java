@@ -43,13 +43,17 @@ public class ApiTokenAuthenticationFilter extends OncePerRequestFilter {
     public static final String API_TOKEN_AUTHORITY = "API_TOKEN";
 
     /**
-     * Method + path (relative to the context path) patterns a token may call: file ingest, undo of an ingest, the grantable users, the paged site file listing
-     * used by the refresh schedule and data set management. Never the token management or anything else.
+     * Method + path (relative to the context path) patterns a token may call: file ingest, undo of an ingest, the grantable users and units, the current
+     * grantees of an ingested site file or gallery, the paged site file listing used by the refresh schedule and data set management. Never the token
+     * management or anything else.
      */
     static final List<AllowedCall> ALLOWED = List.of(new AllowedCall(HttpMethod.POST, Constants.REST_FILE_PREFIX + "/site-file"),
             new AllowedCall(HttpMethod.DELETE, Constants.REST_FILE_PREFIX + "/site-file/*"),
             new AllowedCall(HttpMethod.GET, Constants.REST_FILE_PREFIX + "/site-file/users"),
             new AllowedCall(HttpMethod.GET, Constants.REST_FILE_PREFIX + "/site-file/units"),
+            new AllowedCall(HttpMethod.GET, Constants.REST_FILE_PREFIX + "/site-file/*/acls"),
+            new AllowedCall(HttpMethod.GET, Constants.REST_FILE_PREFIX + "/site-file/by-file-id/*/acls"),
+            new AllowedCall(HttpMethod.GET, Constants.REST_FILE_PREFIX + "/gallery/*/acls"),
             new AllowedCall(HttpMethod.POST, Constants.REST_FILE_PREFIX + "/site-files/paged"),
             new AllowedCall(HttpMethod.GET, Constants.REST_DATA_PREFIX + "/*"), new AllowedCall(HttpMethod.POST, Constants.REST_DATA_PREFIX),
             new AllowedCall(HttpMethod.PUT, Constants.REST_DATA_PREFIX), new AllowedCall(HttpMethod.DELETE, Constants.REST_DATA_PREFIX + "/*"));

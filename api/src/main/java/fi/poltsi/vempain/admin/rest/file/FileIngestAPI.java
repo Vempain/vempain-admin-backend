@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
+import fi.poltsi.vempain.admin.api.response.file.FileIngestGalleryAclResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestResponse;
+import fi.poltsi.vempain.admin.api.response.file.FileIngestSiteFileAclResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestUnitResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestUserResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -79,4 +81,55 @@ public interface FileIngestAPI {
     @SecurityRequirement(name = "Bearer Authentication")
     @GetMapping(value = MAIN_PATH + "/site-file/units", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<List<FileIngestUnitResponse>> listIngestUnits();
+
+    @Operation(summary = "Current ACL grantees of an ingested site file",
+            description = "Service-to-service endpoint. Answers the admin users and units that hold privileges on the site file next to the ingesting "
+                    + "account, in the shape of the acls list of the ingest request, so that the calling service can show and resend them when the same "
+                    + "file is ingested again.",
+            tags = "FileIngestApi")
+    @ApiResponses(
+            value = {
+                @ApiResponse(responseCode = "200", description = "The grantees of the site file",
+                        content = {
+                            @Content(schema = @Schema(implementation = FileIngestSiteFileAclResponse.class), mediaType = MediaType.APPLICATION_JSON_VALUE) }),
+                @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+                @ApiResponse(responseCode = "404", description = "Site file not found", content = @Content),
+                @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content) })
+    @SecurityRequirement(name = "Bearer Authentication")
+    @GetMapping(value = MAIN_PATH + "/site-file/{siteFileId}/acls", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<FileIngestSiteFileAclResponse> getSiteFileAcls(@PathVariable("siteFileId") long siteFileId);
+
+    @Operation(summary = "Current ACL grantees of the site file ingested from a given source file",
+            description = "Service-to-service endpoint. Same answer as the lookup by site file ID, but keyed by the file_id the ingest request carried "
+                    + "(the files.id of the file backend, unique per site file), for files published before the calling service recorded the site "
+                    + "file ID.",
+            tags = "FileIngestApi")
+    @ApiResponses(
+            value = {
+                @ApiResponse(responseCode = "200", description = "The grantees of the site file",
+                        content = {
+                            @Content(schema = @Schema(implementation = FileIngestSiteFileAclResponse.class), mediaType = MediaType.APPLICATION_JSON_VALUE) }),
+                @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+                @ApiResponse(responseCode = "404", description = "No site file was ingested from that file", content = @Content),
+                @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content) })
+    @SecurityRequirement(name = "Bearer Authentication")
+    @GetMapping(value = MAIN_PATH + "/site-file/by-file-id/{fileId}/acls", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<FileIngestSiteFileAclResponse> getSiteFileAclsByFileId(@PathVariable("fileId") long fileId);
+
+    @Operation(summary = "Current ACL grantees and site files of an ingested gallery",
+            description = "Service-to-service endpoint. Answers the admin users and units that hold privileges on the gallery next to the ingesting "
+                    + "account, plus the IDs of the site files linked to the gallery, so that the calling service can show and resend the grantees when "
+                    + "the same file group is ingested again.",
+            tags = "FileIngestApi")
+    @ApiResponses(
+            value = {
+                @ApiResponse(responseCode = "200", description = "The grantees and site files of the gallery",
+                        content = {
+                            @Content(schema = @Schema(implementation = FileIngestGalleryAclResponse.class), mediaType = MediaType.APPLICATION_JSON_VALUE) }),
+                @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+                @ApiResponse(responseCode = "404", description = "Gallery not found", content = @Content),
+                @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content) })
+    @SecurityRequirement(name = "Bearer Authentication")
+    @GetMapping(value = MAIN_PATH + "/gallery/{galleryId}/acls", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<FileIngestGalleryAclResponse> getGalleryAcls(@PathVariable("galleryId") long galleryId);
 }

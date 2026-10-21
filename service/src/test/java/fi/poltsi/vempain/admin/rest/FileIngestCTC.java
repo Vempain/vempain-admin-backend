@@ -14,8 +14,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Controller Test Class (CTC) for the service-to-service user and unit listings of {@code FileIngestAPI}: the file backend fetches it to let its users pick
- * additional ACL grantees before publishing.
+ * Controller Test Class (CTC) for the service-to-service user and unit listings of {@code FileIngestAPI}, which the file backend fetches to let its users pick
+ * additional ACL grantees before publishing, and for the ACL lookups of an ingested site file or gallery.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -56,6 +56,20 @@ class FileIngestCTC {
             .andExpect(status().isUnauthorized());
         mockMvc.perform(get("/content-management/file/site-file/units"))
             .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/content-management/file/site-file/1/acls"))
+            .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/content-management/file/gallery/1/acls"))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void theAclLookupsAnswerNotFoundForUnknownResources() throws Exception {
+        mockMvc.perform(get("/content-management/file/site-file/987654321/acls").header("Authorization", adminBearerToken()))
+            .andExpect(status().isNotFound());
+        mockMvc.perform(get("/content-management/file/site-file/by-file-id/987654321/acls").header("Authorization", adminBearerToken()))
+            .andExpect(status().isNotFound());
+        mockMvc.perform(get("/content-management/file/gallery/987654321/acls").header("Authorization", adminBearerToken()))
+            .andExpect(status().isNotFound());
     }
 
     private String adminBearerToken() {

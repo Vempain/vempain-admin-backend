@@ -20,6 +20,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.server.ResponseStatusException;
 
 import fi.poltsi.vempain.admin.api.request.file.FileIngestAclRequest;
 import fi.poltsi.vempain.admin.api.request.file.FileIngestRequest;
@@ -138,6 +139,7 @@ class FileIngestServiceUTC {
         assertNotNull(response);
         assertEquals(42L, response.getSiteFileId());
         assertNull(response.getGalleryId());
+        assertNull(response.getGallerySiteFileIds(), "no gallery, no gallery site file list");
         var savedCaptor = ArgumentCaptor.forClass(SiteFile.class);
         verify(fileService).saveSiteFile(savedCaptor.capture());
         assertEquals(METADATA_JSON, savedCaptor.getValue()
@@ -292,7 +294,10 @@ class FileIngestServiceUTC {
         var response = fileIngestService.ingestInternal(request, multipartFile);
 
         assertNotNull(response);
-        verify(galleryFileService).findGalleryFileByGalleryId(100L);
+        verify(galleryFileService, never()).addGalleryFile(anyLong(), anyLong(), anyLong());
+        // The answer still lists the site files of the gallery after the ingest
+        assertEquals(List.of(7L), response.getGallerySiteFileIds());
+        verify(galleryFileService, times(2)).findGalleryFileByGalleryId(100L);
     }
 
     @Test
@@ -1101,5 +1106,163 @@ class FileIngestServiceUTC {
         assertNotNull(result);
         assertEquals(98L, result.getId());
         verify(galleryRepository, never()).findByShortname(any());
+    }
+
+    // ─── ACL lookups of ingested resources ───────────────────────────────────────
+
+    private List<Acl> aclRowsOf(long aclId) {
+        return List.of(Acl.builder()
+            .aclId(aclId)
+            .userId(1L)
+            .readPrivilege(true)
+            .createPrivilege(true)
+            .modifyPrivilege(true)
+            .deletePrivilege(true)
+            .build(),
+                Acl.builder()
+                    .aclId(aclId)
+                    .userId(12L)
+                    .readPrivilege(true)
+                    .modifyPrivilege(true)
+                    .build(),
+                Acl.builder()
+                    .aclId(aclId)
+                    .unitId(3L)
+                    .readPrivilege(true)
+                    .build(),
+                Acl.builder()
+                    .aclId(aclId)
+                    .build());
+    }
+
+    @Test
+    void getSiteFileAcls_answersTheGranteesWithoutTheIngestingAccountsOwnRow() {
+        var siteFile = SiteFile.builder()
+            .build();
+        siteFile.setId(42L);
+        siteFile.setAclId(10L);
+        siteFile.setFileId(FILE_ID);
+        when(siteFileRepository.findById(42L)).thenReturn(Optional.of(siteFile));
+        when(accessService.getUserId()).thenReturn(1L);
+        when(aclService.findAclByAclId(10L)).thenReturn(aclRowsOf(10L));
+
+        var response = fileIngestService.getSiteFileAcls(42L);
+
+        assertEquals(42L, response.getSiteFileId());
+        assertEquals(FILE_ID, response.getFileId());
+        // The caller's own row and a row without any grantee are left out
+        assertEquals(2, response.getAcls()
+            .size());
+        var user = response.getAcls()
+            .getFirst();
+        assertEquals(12L, user.getUserId());
+        assertNull(user.getUnitId());
+        assertTrue(user.isReadPrivilege());
+        assertFalse(user.isCreatePrivilege());
+        assertTrue(user.isModifyPrivilege());
+        assertFalse(user.isDeletePrivilege());
+        var unit = response.getAcls()
+            .get(1);
+        assertNull(unit.getUserId());
+        assertEquals(3L, unit.getUnitId());
+        assertTrue(unit.isReadPrivilege());
+        assertFalse(unit.isModifyPrivilege());
+    }
+
+    @Test
+    void getSiteFileAcls_unknownSiteFileIsNotFound() {
+        when(siteFileRepository.findById(404L)).thenReturn(Optional.empty());
+
+        var exception = assertThrows(ResponseStatusException.class, () -> fileIngestService.getSiteFileAcls(404L));
+
+        assertEquals(404, exception.getStatusCode()
+            .value());
+        verify(aclService, never()).findAclByAclId(anyLong());
+    }
+
+    @Test
+    void getSiteFileAclsByFileId_findsTheSiteFileOfTheSourceFileOrIsNotFound() {
+        var siteFile = SiteFile.builder()
+            .build();
+        siteFile.setId(44L);
+        siteFile.setAclId(11L);
+        siteFile.setFileId(FILE_ID);
+        when(siteFileRepository.findByFileId(FILE_ID)).thenReturn(Optional.of(siteFile));
+        when(siteFileRepository.findByFileId(FILE_ID + 1)).thenReturn(Optional.empty());
+        when(accessService.getUserId()).thenReturn(1L);
+        when(aclService.findAclByAclId(11L)).thenReturn(aclRowsOf(11L));
+
+        var response = fileIngestService.getSiteFileAclsByFileId(FILE_ID);
+
+        assertEquals(44L, response.getSiteFileId());
+        assertEquals(FILE_ID, response.getFileId());
+        assertEquals(2, response.getAcls()
+            .size());
+
+        var exception = assertThrows(ResponseStatusException.class, () -> fileIngestService.getSiteFileAclsByFileId(FILE_ID + 1));
+        assertEquals(404, exception.getStatusCode()
+            .value());
+    }
+
+    @Test
+    void getSiteFileAcls_withoutAnAclAnswersNoGrantees() {
+        var siteFile = SiteFile.builder()
+            .build();
+        siteFile.setId(43L);
+        siteFile.setAclId(0L);
+        when(siteFileRepository.findById(43L)).thenReturn(Optional.of(siteFile));
+
+        var response = fileIngestService.getSiteFileAcls(43L);
+
+        assertTrue(response.getAcls()
+            .isEmpty());
+        verify(aclService, never()).findAclByAclId(anyLong());
+    }
+
+    @Test
+    void getGalleryAcls_answersTheLinkedSiteFilesInOrderAndTheGrantees() {
+        var gallery = Gallery.builder()
+            .id(100L)
+            .shortname("Summer")
+            .aclId(20L)
+            .build();
+        when(galleryRepository.findById(100L)).thenReturn(Optional.of(gallery));
+        when(galleryFileService.findGalleryFileByGalleryId(100L)).thenReturn(List.of(GalleryFile.builder()
+            .galleryId(100L)
+            .siteFileId(7L)
+            .sortOrder(0L)
+            .build(),
+                GalleryFile.builder()
+                    .galleryId(100L)
+                    .siteFileId(8L)
+                    .sortOrder(1L)
+                    .build()));
+        when(accessService.getUserId()).thenReturn(1L);
+        when(aclService.findAclByAclId(20L)).thenReturn(aclRowsOf(20L));
+
+        var response = fileIngestService.getGalleryAcls(100L);
+
+        assertEquals(100L, response.getGalleryId());
+        assertEquals("Summer", response.getShortname());
+        assertEquals(List.of(7L, 8L), response.getSiteFileIds());
+        assertEquals(2, response.getAcls()
+            .size());
+        assertEquals(12L, response.getAcls()
+            .getFirst()
+            .getUserId());
+        assertEquals(3L, response.getAcls()
+            .get(1)
+            .getUnitId());
+    }
+
+    @Test
+    void getGalleryAcls_unknownGalleryIsNotFound() {
+        when(galleryRepository.findById(404L)).thenReturn(Optional.empty());
+
+        var exception = assertThrows(ResponseStatusException.class, () -> fileIngestService.getGalleryAcls(404L));
+
+        assertEquals(404, exception.getStatusCode()
+            .value());
+        verify(galleryFileService, never()).findGalleryFileByGalleryId(anyLong());
     }
 }

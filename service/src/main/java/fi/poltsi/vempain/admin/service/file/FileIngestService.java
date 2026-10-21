@@ -27,11 +27,15 @@ import org.springframework.web.server.ResponseStatusException;
 
 import fi.poltsi.vempain.admin.api.request.file.FileIngestAclRequest;
 import fi.poltsi.vempain.admin.api.request.file.FileIngestRequest;
+import fi.poltsi.vempain.admin.api.response.file.FileIngestAclResponse;
+import fi.poltsi.vempain.admin.api.response.file.FileIngestGalleryAclResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestResponse;
+import fi.poltsi.vempain.admin.api.response.file.FileIngestSiteFileAclResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestUnitResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestUserResponse;
 import fi.poltsi.vempain.admin.configuration.StorageDirectoryConfiguration;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
+import fi.poltsi.vempain.admin.entity.file.GalleryFile;
 import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.exception.VempainIngestException;
 import fi.poltsi.vempain.admin.metrics.AdminMetrics;
@@ -137,6 +141,7 @@ public class FileIngestService {
     protected FileIngestResponse ingestInternal(FileIngestRequest fileIngestRequest, MultipartFile multipartFile) throws VempainIngestException {
         Path storedFile = null;
         Long galleryId = null;
+        List<Long> gallerySiteFileIds = null;
 
         try {
             ValidateFileIngestRequest(fileIngestRequest, multipartFile);
@@ -271,16 +276,108 @@ public class FileIngestService {
                 if (!alreadyLinked) {
                     galleryFileService.addGalleryFile(gallery.getId(), siteFile.getId(), fileIngestRequest.getSortOrder());
                 }
+                // The caller learns which site files make up the gallery after this ingest, in gallery order
+                gallerySiteFileIds = linkedSiteFileIds(gallery.getId());
             }
 
             return FileIngestResponse.builder()
                 .galleryId(galleryId)
                 .siteFileId(siteFile.getId())
                 .updated(siteFileExisted)
+                .gallerySiteFileIds(gallerySiteFileIds)
                 .build();
         } catch (Exception e) {
             throw new VempainIngestException("Ingest failed", e, storedFile);
         }
+    }
+
+    /**
+     * The grantees of a site file created by an earlier ingest, without the ingesting account, so that the file backend can show and resend them.
+     *
+     * @throws ResponseStatusException 404 when the site file does not exist
+     */
+    @Transactional(readOnly = true)
+    public FileIngestSiteFileAclResponse getSiteFileAcls(long siteFileId) {
+        var siteFile = siteFileRepository.findById(siteFileId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Site file not found"));
+
+        return siteFileAcls(siteFile);
+    }
+
+    /**
+     * Like {@link #getSiteFileAcls} but keyed by the source file of the file backend ({@code site_file.file_id}, unique), for files that were published before
+     * the file backend started to record the site file ID.
+     *
+     * @throws ResponseStatusException 404 when no site file was ingested from that file
+     */
+    @Transactional(readOnly = true)
+    public FileIngestSiteFileAclResponse getSiteFileAclsByFileId(long fileId) {
+        var siteFile = siteFileRepository.findByFileId(fileId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No site file ingested from file " + fileId));
+
+        return siteFileAcls(siteFile);
+    }
+
+    private FileIngestSiteFileAclResponse siteFileAcls(SiteFile siteFile) {
+        return FileIngestSiteFileAclResponse.builder()
+            .siteFileId(siteFile.getId())
+            .fileId(siteFile.getFileId())
+            .acls(additionalGrantees(siteFile.getAclId()))
+            .build();
+    }
+
+    /**
+     * The grantees of a gallery created by an earlier ingest, without the ingesting account, together with the site files linked to the gallery in gallery
+     * order.
+     *
+     * @throws ResponseStatusException 404 when the gallery does not exist
+     */
+    @Transactional(readOnly = true)
+    public FileIngestGalleryAclResponse getGalleryAcls(long galleryId) {
+        var gallery = galleryRepository.findById(galleryId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Gallery not found"));
+
+        return FileIngestGalleryAclResponse.builder()
+            .galleryId(gallery.getId())
+            .shortname(gallery.getShortname())
+            .siteFileIds(linkedSiteFileIds(gallery.getId()))
+            .acls(additionalGrantees(gallery.getAclId()))
+            .build();
+    }
+
+    private List<Long> linkedSiteFileIds(long galleryId) {
+        return galleryFileService.findGalleryFileByGalleryId(galleryId)
+            .stream()
+            .map(GalleryFile::getSiteFileId)
+            .toList();
+    }
+
+    /**
+     * The rows of an ACL other than the calling (ingesting) account's own row, in the shape the ingest request takes them. The calling account always holds
+     * every privilege on what it ingested and is therefore never an additional grantee.
+     */
+    List<FileIngestAclResponse> additionalGrantees(long aclId) {
+        if (aclId < 1) {
+            return List.of();
+        }
+
+        var callerId = accessService.getUserId();
+
+        return aclService.findAclByAclId(aclId)
+            .stream()
+            .filter(row -> row.getUserId() != null
+                           || row.getUnitId() != null)
+            .filter(row -> row.getUserId() == null
+                           || !Objects.equals(row.getUserId(), callerId))
+            .map(row -> FileIngestAclResponse.builder()
+                .userId(row.getUserId())
+                .unitId(row.getUnitId())
+                .readPrivilege(row.isReadPrivilege())
+                .createPrivilege(row.isCreatePrivilege())
+                .modifyPrivilege(row.isModifyPrivilege())
+                .deletePrivilege(row.isDeletePrivilege())
+                .build())
+            .toList();
     }
 
     /**

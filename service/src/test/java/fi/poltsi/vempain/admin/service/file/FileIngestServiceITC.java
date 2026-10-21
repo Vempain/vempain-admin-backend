@@ -11,6 +11,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.api.request.file.FileIngestAclRequest;
@@ -21,6 +22,7 @@ import static fi.poltsi.vempain.admin.api.Constants.ADMIN_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -83,6 +85,65 @@ class FileIngestServiceITC extends AbstractITCTest {
             assertFalse(rowOf(rows, granteeId).isModifyPrivilege(), "privileges of the first grantee were replaced");
             assertTrue(rowOf(rows, secondGrantee).isDeletePrivilege());
         }
+    }
+
+    @Test
+    void theAclLookupsAnswerTheAdditionalGranteesAndTheGallerySiteFiles() throws Exception {
+        var granteeId = testITCTools.generateUser();
+        var request = request("itc-lookup.jpeg", "gallery-lookup", List.of(acl(granteeId, true, false, true, false)));
+
+        var response = fileIngestService.ingest(request, multipart("itc-lookup.jpeg"));
+
+        assertEquals(List.of(response.getSiteFileId()), response.getGallerySiteFileIds());
+
+        var siteFileAcls = fileIngestService.getSiteFileAcls(response.getSiteFileId());
+        assertEquals(response.getSiteFileId(), siteFileAcls.getSiteFileId());
+        assertEquals(FILE_ID, siteFileAcls.getFileId());
+        // The ingesting administrator's own row is not an additional grantee
+        assertEquals(1, siteFileAcls.getAcls()
+            .size());
+        var grantee = siteFileAcls.getAcls()
+            .getFirst();
+        assertEquals(granteeId, grantee.getUserId());
+        assertNull(grantee.getUnitId());
+        assertTrue(grantee.isReadPrivilege());
+        assertFalse(grantee.isCreatePrivilege());
+        assertTrue(grantee.isModifyPrivilege());
+        assertFalse(grantee.isDeletePrivilege());
+
+        var galleryAcls = fileIngestService.getGalleryAcls(response.getGalleryId());
+        assertEquals("gallery-lookup", galleryAcls.getShortname());
+        assertEquals(List.of(response.getSiteFileId()), galleryAcls.getSiteFileIds());
+        assertEquals(1, galleryAcls.getAcls()
+            .size());
+        assertEquals(granteeId, galleryAcls.getAcls()
+            .getFirst()
+            .getUserId());
+
+        // A second file of the same group extends the gallery's site file list, in gallery order
+        var second = request("itc-lookup-2.jpeg", "gallery-lookup", null);
+        second.setFileId(FILE_ID + 1);
+        second.setGalleryId(response.getGalleryId());
+        second.setSortOrder(1);
+        var secondResponse = fileIngestService.ingest(second, multipart("itc-lookup-2.jpeg"));
+
+        assertEquals(List.of(response.getSiteFileId(), secondResponse.getSiteFileId()), secondResponse.getGallerySiteFileIds());
+        assertEquals(secondResponse.getGallerySiteFileIds(), fileIngestService.getGalleryAcls(response.getGalleryId())
+            .getSiteFileIds());
+        assertTrue(fileIngestService.getSiteFileAcls(secondResponse.getSiteFileId())
+            .getAcls()
+            .isEmpty(), "the second ingest granted nobody");
+
+        // The source file ID (unique per site file) finds the same answer, for files published before their site file ID was recorded
+        var byFileId = fileIngestService.getSiteFileAclsByFileId(FILE_ID);
+        assertEquals(response.getSiteFileId(), byFileId.getSiteFileId());
+        assertEquals(granteeId, byFileId.getAcls()
+            .getFirst()
+            .getUserId());
+        assertThrows(ResponseStatusException.class, () -> fileIngestService.getSiteFileAclsByFileId(FILE_ID + 2));
+
+        assertThrows(ResponseStatusException.class, () -> fileIngestService.getSiteFileAcls(987654321L));
+        assertThrows(ResponseStatusException.class, () -> fileIngestService.getGalleryAcls(987654321L));
     }
 
     @Test
