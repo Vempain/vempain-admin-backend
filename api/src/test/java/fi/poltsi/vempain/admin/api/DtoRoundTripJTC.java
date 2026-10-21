@@ -33,11 +33,11 @@ class DtoRoundTripJTC {
     private static final String BASE_PACKAGE = "fi.poltsi.vempain.admin.api";
     private static final Pattern SNAKE_CASE = Pattern.compile("^[a-z0-9]+(_[a-z0-9]+)*$");
     /**
-     * DTOs that predate the snake_case rule and still write camelCase keys because they carry no {@code @JsonNaming}. Both ends of the file ingest call share
-     * the {@code FileIngestResponse} class, so renaming its keys is a released contract change for the file backend, and {@code GallerySearchRequest} is not
-     * referenced by any endpoint. Remove an entry here once the class is fixed.
+     * DTOs that predate the snake_case rule and still write camelCase keys because they carry no {@code @JsonNaming}: {@code GallerySearchRequest} is not
+     * referenced by any endpoint. Remove an entry here once the class is fixed. ({@code FileIngestResponse} writes snake_case since the ACL lookup release and
+     * reads its former camelCase keys through {@code @JsonAlias}.)
      */
-    private static final Set<String> KNOWN_CAMEL_CASE_DTOS = Set.of("GallerySearchRequest", "FileIngestResponse");
+    private static final Set<String> KNOWN_CAMEL_CASE_DTOS = Set.of("GallerySearchRequest");
 
     private final JsonMapper mapper = JsonMapper.builder()
         .build();

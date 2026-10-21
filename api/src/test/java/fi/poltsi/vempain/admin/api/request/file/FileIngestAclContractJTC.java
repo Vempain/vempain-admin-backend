@@ -1,9 +1,14 @@
 package fi.poltsi.vempain.admin.api.request.file;
 
+import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
+import fi.poltsi.vempain.admin.api.response.file.FileIngestAclResponse;
+import fi.poltsi.vempain.admin.api.response.file.FileIngestGalleryAclResponse;
+import fi.poltsi.vempain.admin.api.response.file.FileIngestResponse;
+import fi.poltsi.vempain.admin.api.response.file.FileIngestSiteFileAclResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestUnitResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestUserResponse;
 import tools.jackson.databind.ObjectMapper;
@@ -13,8 +18,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * JSON contract of the ingest ACL extension consumed by the file backend: {@link FileIngestAclRequest} inside {@link FileIngestRequest} and the
- * {@link FileIngestUserResponse} list of grantable users.
+ * JSON contract of the ingest ACL extension consumed by the file backend: {@link FileIngestAclRequest} inside {@link FileIngestRequest}, the
+ * {@link FileIngestUserResponse} list of grantable users, the {@link FileIngestResponse} of an ingest and the ACL lookups of an ingested site file
+ * ({@link FileIngestSiteFileAclResponse}) and gallery ({@link FileIngestGalleryAclResponse}).
  */
 class FileIngestAclContractJTC {
 
@@ -104,5 +110,79 @@ class FileIngestAclContractJTC {
                 objectMapper
                     .readValue("{\"id\": 12, \"login_name\": \"arnold\", \"name\": \"A\", \"nick\": \"B\", \"email\": \"x\"}", FileIngestUserResponse.class)
                     .getLoginName());
+    }
+
+    @Test
+    void ingestResponseWritesSnakeCaseAndStillReadsTheFormerCamelCaseKeys() throws Exception {
+        var response = FileIngestResponse.builder()
+            .galleryId(7L)
+            .siteFileId(42L)
+            .updated(true)
+            .gallerySiteFileIds(List.of(41L, 42L))
+            .build();
+
+        var tree = objectMapper.readTree(objectMapper.writeValueAsString(response));
+        assertEquals(Set.of("gallery_id", "site_file_id", "updated", "gallery_site_file_ids"), new java.util.HashSet<>(tree.propertyNames()));
+        assertEquals(42L, tree.path("site_file_id")
+            .asLong());
+        assertEquals(2, tree.path("gallery_site_file_ids")
+            .size());
+
+        // A file backend of this release still understands the answer of an admin backend that wrote camelCase
+        var legacy = objectMapper.readValue("{\"galleryId\": 7, \"siteFileId\": 42, \"updated\": false}", FileIngestResponse.class);
+        assertEquals(7L, legacy.getGalleryId());
+        assertEquals(42L, legacy.getSiteFileId());
+        assertFalse(legacy.isUpdated());
+        assertEquals(null, legacy.getGallerySiteFileIds());
+
+        var current = objectMapper.readValue(objectMapper.writeValueAsString(response), FileIngestResponse.class);
+        assertEquals(response, current);
+    }
+
+    @Test
+    void siteFileAclResponseListsTheGranteesInTheShapeOfTheIngestRequest() throws Exception {
+        var response = FileIngestSiteFileAclResponse.builder()
+            .siteFileId(42L)
+            .fileId(678L)
+            .acls(List.of(FileIngestAclResponse.builder()
+                .userId(12L)
+                .readPrivilege(true)
+                .modifyPrivilege(true)
+                .build(),
+                    FileIngestAclResponse.builder()
+                        .unitId(3L)
+                        .readPrivilege(true)
+                        .build()))
+            .build();
+
+        var tree = objectMapper.readTree(objectMapper.writeValueAsString(response));
+        assertEquals(Set.of("site_file_id", "file_id", "acls"), new java.util.HashSet<>(tree.propertyNames()));
+        var row = tree.path("acls")
+            .get(0);
+        assertEquals(Set.of("user_id", "unit_id", "read_privilege", "create_privilege", "modify_privilege", "delete_privilege"),
+                new java.util.HashSet<>(row.propertyNames()));
+        // The rows can be sent back unchanged as the acls of the next ingest request
+        var resent = objectMapper.readValue(row.toString(), FileIngestAclRequest.class);
+        assertEquals(12L, resent.getUserId());
+        assertTrue(resent.isUserOrUnit());
+        assertTrue(resent.isModifyPrivilege());
+        assertEquals(response, objectMapper.readValue(objectMapper.writeValueAsString(response), FileIngestSiteFileAclResponse.class));
+    }
+
+    @Test
+    void galleryAclResponseCarriesTheLinkedSiteFilesAndTheGrantees() throws Exception {
+        var response = FileIngestGalleryAclResponse.builder()
+            .galleryId(7L)
+            .shortname("Summer")
+            .siteFileIds(List.of(41L, 42L))
+            .acls(List.of())
+            .build();
+
+        var tree = objectMapper.readTree(objectMapper.writeValueAsString(response));
+        assertEquals(Set.of("gallery_id", "shortname", "site_file_ids", "acls"), new java.util.HashSet<>(tree.propertyNames()));
+        assertEquals(41L, tree.path("site_file_ids")
+            .get(0)
+            .asLong());
+        assertEquals(response, objectMapper.readValue(objectMapper.writeValueAsString(response), FileIngestGalleryAclResponse.class));
     }
 }

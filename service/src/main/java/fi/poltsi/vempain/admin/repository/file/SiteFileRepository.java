@@ -22,6 +22,9 @@ public interface SiteFileRepository extends ListPagingAndSortingRepository<SiteF
 
     Optional<SiteFile> findByFilePathAndFileName(String filePath, String fileName);
 
+    /** The site file ingested from the given source file of the file backend; {@code site_file.file_id} is unique */
+    Optional<SiteFile> findByFileId(long fileId);
+
     List<SiteFile> findByIdIn(ArrayList<Long> siteFileIdList);
 
     @Query(nativeQuery = true, value = "SELECT DISTINCT s.id FROM site_file s JOIN file_subject sf ON s.id = sf.site_file_id")

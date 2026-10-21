@@ -207,3 +207,16 @@ covered by the companion frontend report.
 * The network restriction stays mandatory also on Docker/Swarm networks: with `vempain.admin.api-token.private-network=true` the
   backend proposes the private overlay/bridge network it is attached to (`PrivateNetworkDetector`, private ranges only), so operators
   do not fall back to `0.0.0.0/0`.
+
+## Addendum 2026-10-21 — ACL lookups of ingested resources
+
+* `GET /content-management/file/site-file/{siteFileId}/acls`, `GET /content-management/file/site-file/by-file-id/{fileId}/acls` and
+  `GET /content-management/file/gallery/{galleryId}/acls` (`FileIngestService.getSiteFileAcls`/`getSiteFileAclsByFileId`/`getGalleryAcls`)
+  let the file backend read back the additional grantees of an earlier ingest so that its user can see and resend them. They are
+  service-to-service endpoints like the ingest: administrator ACL (`accessService.checkAdminAccess()`), on the API token allowlist
+  (`ApiTokenAuthenticationFilter.ALLOWED`, exact method + path patterns), read-only transactions, and the answer is reduced to grantee
+  IDs and privilege flags (never names, e-mail addresses or anything of the ACL table beyond the four flags). The calling account's own
+  row is left out. The IDs are path variables bound to `long`; an unknown ID answers `404` without revealing anything else (A01, A04).
+* `FileIngestResponse` now additionally lists `gallery_site_file_ids`, IDs only, of the gallery the ingest touched (A01: the caller already
+  holds every privilege on that gallery).
+* Tests: `FileIngestServiceUTC`, `FileIngestServiceITC`, `FileIngestCTC` (401 unauthenticated, 404 unknown), `ApiTokenAuthenticationFilterUTC`.

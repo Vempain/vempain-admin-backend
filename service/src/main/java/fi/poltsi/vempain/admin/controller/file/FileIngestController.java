@@ -8,7 +8,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import fi.poltsi.vempain.admin.api.request.file.FileIngestRequest;
+import fi.poltsi.vempain.admin.api.response.file.FileIngestGalleryAclResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestResponse;
+import fi.poltsi.vempain.admin.api.response.file.FileIngestSiteFileAclResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestUnitResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestUserResponse;
 import fi.poltsi.vempain.admin.rest.file.FileIngestAPI;
@@ -83,5 +85,23 @@ public class FileIngestController implements FileIngestAPI {
         fileIngestService.deleteIngestedSiteFile(siteFileId);
         return ResponseEntity.noContent()
             .build();
+    }
+
+    @Override
+    public ResponseEntity<FileIngestSiteFileAclResponse> getSiteFileAcls(long siteFileId) {
+        accessService.checkAdminAccess();
+        return ResponseEntity.ok(fileIngestService.getSiteFileAcls(siteFileId));
+    }
+
+    @Override
+    public ResponseEntity<FileIngestSiteFileAclResponse> getSiteFileAclsByFileId(long fileId) {
+        accessService.checkAdminAccess();
+        return ResponseEntity.ok(fileIngestService.getSiteFileAclsByFileId(fileId));
+    }
+
+    @Override
+    public ResponseEntity<FileIngestGalleryAclResponse> getGalleryAcls(long galleryId) {
+        accessService.checkAdminAccess();
+        return ResponseEntity.ok(fileIngestService.getGalleryAcls(galleryId));
     }
 }

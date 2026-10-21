@@ -12,7 +12,9 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.access.AccessDeniedException;
 
 import fi.poltsi.vempain.admin.api.request.file.FileIngestRequest;
+import fi.poltsi.vempain.admin.api.response.file.FileIngestGalleryAclResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestResponse;
+import fi.poltsi.vempain.admin.api.response.file.FileIngestSiteFileAclResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestUnitResponse;
 import fi.poltsi.vempain.admin.api.response.file.FileIngestUserResponse;
 import fi.poltsi.vempain.admin.service.AccessService;
@@ -157,5 +159,54 @@ class FileIngestControllerUTC {
         assertThrows(AccessDeniedException.class, () -> controller.listIngestUnits());
         assertThrows(AccessDeniedException.class, () -> controller.deleteSiteFile(1L));
         verify(fileIngestService, never()).deleteIngestedSiteFile(eq(1L));
+    }
+
+    @Test
+    void theGranteesOfAnIngestedSiteFileAreAnsweredForAdministrators() {
+        var acls = FileIngestSiteFileAclResponse.builder()
+            .siteFileId(42L)
+            .fileId(7L)
+            .acls(List.of())
+            .build();
+        when(fileIngestService.getSiteFileAcls(42L)).thenReturn(acls);
+
+        var response = controller.getSiteFileAcls(42L);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(acls, response.getBody());
+        verify(accessService).checkAdminAccess();
+    }
+
+    @Test
+    void theGranteesOfTheSiteFileOfASourceFileAreAnsweredForAdministrators() {
+        var acls = FileIngestSiteFileAclResponse.builder()
+            .siteFileId(42L)
+            .fileId(7L)
+            .acls(List.of())
+            .build();
+        when(fileIngestService.getSiteFileAclsByFileId(7L)).thenReturn(acls);
+
+        var response = controller.getSiteFileAclsByFileId(7L);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(acls, response.getBody());
+        verify(accessService).checkAdminAccess();
+    }
+
+    @Test
+    void theGranteesOfAnIngestedGalleryAreAnsweredForAdministrators() {
+        var acls = FileIngestGalleryAclResponse.builder()
+            .galleryId(7L)
+            .shortname("Summer")
+            .siteFileIds(List.of(42L))
+            .acls(List.of())
+            .build();
+        when(fileIngestService.getGalleryAcls(7L)).thenReturn(acls);
+
+        var response = controller.getGalleryAcls(7L);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(acls, response.getBody());
+        verify(accessService).checkAdminAccess();
     }
 }
