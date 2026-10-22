@@ -1,5 +1,7 @@
 package fi.poltsi.vempain.site.entity;
 
+import java.time.Instant;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -42,6 +44,24 @@ public class WebSiteConfiguration {
     @Column(name = "config_value", length = 4000, nullable = false)
     private String configValue;
 
+    /**
+     * Nick of the admin user who created the row, null for the rows seeded by the migrations.
+     */
+    @Column(name = "creator", length = 512)
+    private String creator;
+
+    @Column(name = "created")
+    private Instant created;
+
+    /**
+     * Nick of the admin user who last updated the value.
+     */
+    @Column(name = "modifier", length = 512)
+    private String modifier;
+
+    @Column(name = "modified")
+    private Instant modified;
+
     public WebSiteConfigurationResponse toResponse() {
         return WebSiteConfigurationResponse.builder()
             .id(this.id)
@@ -49,6 +69,10 @@ public class WebSiteConfiguration {
             .configType(this.configType)
             .configDefault(this.configDefault)
             .configValue(this.configValue)
+            .creator(this.creator)
+            .created(this.created)
+            .modifier(this.modifier)
+            .modified(this.modified)
             .build();
     }
 }

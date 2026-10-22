@@ -33,6 +33,7 @@ import fi.poltsi.vempain.common.task.TaskRunner;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -322,6 +323,10 @@ class DataServiceUTC {
         assertEquals(TEST_IDENTIFIER, response.getIdentifier());
         verify(mockJdbcTemplate).execute("DROP TABLE IF EXISTS \"website_data__test_data\"");
         verify(mockJdbcTemplate).execute("CREATE TABLE \"website_data__test_data\" (id BIGSERIAL PRIMARY KEY, title VARCHAR(255))");
+        // The release time is recorded once the site table is in place
+        assertNotNull(entity.getPublished());
+        assertEquals(entity.getPublished(), response.getPublished());
+        verify(dataRepository).save(entity);
     }
 
     @Test
@@ -389,6 +394,10 @@ class DataServiceUTC {
         } catch (ResponseStatusException e) {
             assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, e.getStatusCode());
         }
+
+        // A failed release leaves the data set unpublished
+        assertNull(entity.getPublished());
+        verify(dataRepository, never()).save(any());
     }
 
     // Helpers

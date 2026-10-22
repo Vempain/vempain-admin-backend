@@ -76,7 +76,7 @@ class WebSiteManagementCTC {
             .description("Snowy days")
             .aclId(200L)
             .galleryId(10L)
-            .creator(1L)
+            .creator("admin")
             .created(Instant.now())
             .build());
 

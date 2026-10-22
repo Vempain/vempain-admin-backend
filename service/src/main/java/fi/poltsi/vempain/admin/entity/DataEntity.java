@@ -74,6 +74,13 @@ public class DataEntity {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
+    /**
+     * When the data set was last released to the website (its site table created and filled), null when it has never been published.
+     */
+    @Basic
+    @Column(name = "published")
+    private Instant published;
+
     public DataResponse toDataResponse() {
         return DataResponse.builder()
             .id(this.id)
@@ -88,6 +95,7 @@ public class DataEntity {
             .csvData(this.csvData)
             .createdAt(this.createdAt)
             .updatedAt(this.updatedAt)
+            .published(this.published)
             .build();
     }
 
@@ -104,6 +112,7 @@ public class DataEntity {
             .generated(this.generated)
             .createdAt(this.createdAt)
             .updatedAt(this.updatedAt)
+            .published(this.published)
             .build();
     }
 }

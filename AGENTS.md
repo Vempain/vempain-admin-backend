@@ -38,6 +38,32 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
   - Auth migrations (`db/migration/auth`) are also loaded on the admin Flyway; they come from the `vempain-auth-core` jar on the classpath, not from this repo,
     so their versions must never collide with `db/migration/admin`.
 - When you add a persisted field, expect to update **migration + entity + request/response DTO + service mapping + tests**. Example of a recent site-field addition: `global_permission` in `V1002__add_global_permission_on_user.sql` and `WebSiteUser`.
+- Every resource that is released to the website records the time of its last release in a nullable `published` column of the admin
+  schema (`NULL` = never released): `page.published` (set by `PublishService.publishPageAsSystem`), `gallery.published` and
+  `site_file.published` (`V1007__website_release_timestamps.sql`, set by `publishGalleryAsSystem` once the files are on the site server
+  and the site rows are rewritten; an empty gallery transfers nothing and stays unpublished) and `data_store.published` (set by
+  `DataService.publish` after the site table is created and filled). The DTOs expose it as `published` (`PageResponse`,
+  `GalleryResponse`, `FileGroupListResponse`, `SiteFileResponse`, `DataResponse`/`DataSummaryResponse`) and the gallery list sorts
+  by it (`GalleryRepositoryImpl.mapSort`). Never set it on create, update or re-ingest. Tests: `PublishServiceUTC/ITC`,
+  `DataServiceUTC/ITC`, `DataCTC`, `GalleryRepositoryImplUTC`.
+- The page, gallery list and site file listings take the optional `modified_after_publish` flag (`PagePagedRequest`,
+  `GalleryPagedRequest` for `POST galleries/paged-list`, `SiteFilePagedRequest`): with `true` only the resources whose website copy is
+  outdated are returned, i.e. `published` and `modified` are both set and `published < modified` (`fi.poltsi.vempain.tools.ReleaseState`
+  for the in-memory page and gallery listings, `SiteFileSpecifications.modifiedAfterPublish()` in the site file query). A resource that
+  was never released, or never modified since its creation, is not "outdated". Re-ingest from the file backend sets `modifier`/`modified`
+  on the existing site file and gallery (`FileIngestService`), so a re-published file shows up in the filter until the gallery is
+  published again. Tests: `ReleaseStateUTC`, `PageServiceUTC`, `GalleryServiceUTC`, `FileServiceUTC`, `SiteFileRepositoryITC`.
+- Every site table a resource is published to carries the audit trail `creator`/`created`/`modifier`/`modified`, with the admin users
+  named by nick like `web_site_page` (the website has its own user base, admin IDs mean nothing there): `web_site_file`,
+  `web_gps_location`, `web_site_subject` and `web_site_configuration` got the nullable columns in site migration
+  `V1004__site_audit_columns.sql`, and `V1005__gallery_audit_nicks.sql` turned the admin user IDs of `web_site_gallery` into nullable
+  nick columns (`Gallery.getSiteGallery` no longer copies them, the publish sets them). Never store an admin user ID in a site table.
+  `PublishService.publishGalleryAsSystem` copies the site file's own trail (nicks resolved with
+  `nickOf`) and attributes the GPS location and subject rows it creates or updates to the file's modifier, else creator (`actor`:
+  creator/created on a new site row, modifier/modified on an existing one, `WebSiteSubjectService.saveAllFromAdminSubject(subjects,
+  actor)`); `WebSiteConfigurationService.updateConfiguration` sets modifier/modified to the calling administrator's nick and now.
+  Rows published before the columns existed keep NULL until republished; never backfill them with made-up values. The website backend
+  maps the fields read-only. Tests: `PublishServiceUTC`, `WebSiteSubjectServiceUTC`, `WebSiteConfigurationServiceUTC`.
 - `fi.poltsi.vempain.admin.service.DataService` is the bridge between Admin-managed dataset metadata and the site datasource tables. GPS embed discovery depends on `findAll(type, identifierPrefix, search)` returning `time_series` rows found by `search=gps`, including legacy unprefixed identifiers.
 - When Admin publishes CSV into the site datasource, column coercion is schema-driven. Timestamp/date/time columns now accept ISO text inputs and fail with `400 BAD_REQUEST` when parsing is invalid; preserve that behavior when changing publish/import logic.
 
@@ -188,6 +214,17 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
 - `lombok.config` sets `lombok.addLombokGeneratedAnnotation = true` so generated code is excluded from JaCoCo; keep it when touching coverage settings.
 - The repo uses **4 spaces** for Java indentation and a 160-char line length (`.editorconfig`; the layout beyond that is owned by
   `.config/eclipse-formatter.xml`). Avoid mass reformatting.
+
+## Migration scripts
+
+- `migration-scripts/<topic>/` holds one-off data migrations that run outside the service (bash or Python, each with a `README.md`
+  and, for Python, standard-library `unittest` tests runnable without a database). They never ship in the jar. The first one,
+  `migration-scripts/website-release-timestamps/`, backfills the `published` columns of pages, galleries, site files and data sets
+  from the website: exact release times where the site has them (`web_site_page.published`, the files' modification times on the site
+  server, PostgreSQL commit timestamps when tracked) and otherwise a comparison of the admin copy with the site copy (unchanged =
+  released at the last modification, changed = the newest known time older than it, else unresolved and reported). It writes a report
+  and an SQL file and only updates NULL columns unless told to overwrite. `populate_thumbnail_path.sh` at the repository root predates
+  the directory and stays where it is.
 
 ## External integrations
 

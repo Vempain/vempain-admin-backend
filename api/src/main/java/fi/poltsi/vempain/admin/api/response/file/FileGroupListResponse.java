@@ -1,5 +1,7 @@
 package fi.poltsi.vempain.admin.api.response.file;
 
+import java.time.Instant;
+
 import fi.poltsi.vempain.auth.api.response.AbstractResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -21,4 +23,6 @@ public class FileGroupListResponse extends AbstractResponse {
     private String description;
     @Schema(description = "Number of files associated with the gallery", example = "42")
     private long fileCount;
+    @Schema(description = "Date when the gallery was last published to the website, null if never", example = "2022-05-13T16:03:44Z")
+    private Instant published;
 }

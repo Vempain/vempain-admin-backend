@@ -1,6 +1,7 @@
 package fi.poltsi.vempain.admin.entity.file;
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,6 +44,11 @@ public class Gallery extends AbstractVempainEntity implements Serializable {
     @Size(min = 2, max = 256, message = "Description should be between 2 and 256 characters")
     @Column(name = "shortname", nullable = false)
     private String shortname;
+    /**
+     * When the gallery was last released to the website, null when it has never been published.
+     */
+    @Column(name = "published")
+    private Instant published;
 
     @Transient
     private List<SiteFile> siteFiles;
@@ -74,6 +80,7 @@ public class Gallery extends AbstractVempainEntity implements Serializable {
             .created(this.created)
             .modifier(this.modifier)
             .modified(this.modified)
+            .published(this.published)
             .build();
     }
 
@@ -94,17 +101,19 @@ public class Gallery extends AbstractVempainEntity implements Serializable {
             .created(this.created)
             .modifier(this.modifier)
             .modified(this.modified)
+            .published(this.published)
             .build();
     }
 
+    /**
+     * The site copy of the gallery without the creator and modifier: the site names the admin users by nick, which the publish resolves.
+     */
     public WebSiteGallery getSiteGallery() {
         return WebSiteGallery.builder()
             .galleryId(this.id)
             .description(this.description)
             .shortname(this.shortname)
-            .creator(this.creator)
             .created(this.created)
-            .modifier(this.modifier)
             .modified(this.modified)
             .build();
     }

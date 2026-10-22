@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -14,6 +15,7 @@ import fi.poltsi.vempain.site.repository.SiteSubjectRepository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doNothing;
@@ -62,11 +64,21 @@ class WebSiteSubjectServiceUTC {
         when(siteSubjectRepository.findBySubjectName("nature")).thenReturn(null);
         when(siteSubjectRepository.save(any(WebSiteSubject.class))).thenReturn(saved);
 
-        var result = webSiteSubjectService.saveFromAdminSubject(subject);
+        var result = webSiteSubjectService.saveFromAdminSubject(subject, "alice");
 
         assertNotNull(result);
         assertEquals("nature", result.getSubjectName());
-        verify(siteSubjectRepository).save(any(WebSiteSubject.class));
+        var captor = ArgumentCaptor.forClass(WebSiteSubject.class);
+        verify(siteSubjectRepository).save(captor.capture());
+        // A new site subject records who published it and when
+        assertEquals("alice", captor.getValue()
+            .getCreator());
+        assertNotNull(captor.getValue()
+            .getCreated());
+        assertNull(captor.getValue()
+            .getModifier());
+        assertNull(captor.getValue()
+            .getModified());
     }
 
     @Test
@@ -78,11 +90,15 @@ class WebSiteSubjectServiceUTC {
         when(siteSubjectRepository.findBySubjectName("nature")).thenReturn(existing);
         when(siteSubjectRepository.save(any(WebSiteSubject.class))).thenReturn(existing);
 
-        var result = webSiteSubjectService.saveFromAdminSubject(subject);
+        var result = webSiteSubjectService.saveFromAdminSubject(subject, "bob");
 
         assertNotNull(result);
         assertEquals("en-nature", result.getSubjectNameEn());
         verify(siteSubjectRepository).save(existing);
+        // An existing site subject keeps its creator and records the update
+        assertNull(existing.getCreator());
+        assertEquals("bob", existing.getModifier());
+        assertNotNull(existing.getModified());
     }
 
     @Test
@@ -96,7 +112,7 @@ class WebSiteSubjectServiceUTC {
         when(siteSubjectRepository.save(any(WebSiteSubject.class))).thenReturn(savedNature)
             .thenReturn(savedTravel);
 
-        var result = webSiteSubjectService.saveAllFromAdminSubject(subjects);
+        var result = webSiteSubjectService.saveAllFromAdminSubject(subjects, "alice");
 
         assertNotNull(result);
         assertEquals(2, result.size());
@@ -104,7 +120,7 @@ class WebSiteSubjectServiceUTC {
 
     @Test
     void saveAllFromAdminSubjectEmptyOk() {
-        var result = webSiteSubjectService.saveAllFromAdminSubject(List.of());
+        var result = webSiteSubjectService.saveAllFromAdminSubject(List.of(), "alice");
 
         assertNotNull(result);
         assertEquals(0, result.size());

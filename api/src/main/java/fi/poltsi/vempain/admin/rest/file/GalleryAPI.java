@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import fi.poltsi.vempain.admin.api.QueryDetailEnum;
 import fi.poltsi.vempain.admin.api.request.PublishRequest;
+import fi.poltsi.vempain.admin.api.request.file.GalleryPagedRequest;
 import fi.poltsi.vempain.admin.api.request.file.GalleryPublishRequest;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
 import fi.poltsi.vempain.admin.api.response.DeleteResponse;
@@ -198,7 +199,8 @@ public interface GalleryAPI {
     ResponseEntity<PagedResponse<GalleryResponse>> getPagedGalleriesWithoutFiles(@Valid @RequestBody PagedRequest request);
 
     @Operation(summary = "Get a lightweight page of galleries",
-            description = "Filter and paginate galleries without loading associated file details. The response contains gallery metadata and file_count for list and selector use.",
+            description = "Filter and paginate galleries without loading associated file details. The response contains gallery metadata and file_count for list and selector use. "
+                    + "With modified_after_publish=true only the galleries modified after their last release to the website are returned.",
             tags = "GalleryAPI")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Paged lightweight gallery result",
@@ -208,7 +210,7 @@ public interface GalleryAPI {
         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content) })
     @SecurityRequirement(name = "******")
     @PostMapping(value = MAIN_PATH + "/paged-list", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<PagedResponse<FileGroupListResponse>> getPagedGalleryList(@Valid @RequestBody PagedRequest request);
+    ResponseEntity<PagedResponse<FileGroupListResponse>> getPagedGalleryList(@Valid @RequestBody GalleryPagedRequest request);
 
     @Operation(summary = "Publish selected galleries", description = "Publishes a list of galleries", tags = "GalleryAPI")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "List of gallery IDs to publish", required = true,

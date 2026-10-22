@@ -116,6 +116,12 @@ Take the output which is the encoded password and run the following SQL:
 UPDATE user_account SET password='<encoded password>' WHERE id=1;
 ```
 
+## Migration scripts
+
+One-off data migrations that run outside the service live in `migration-scripts/<topic>/`, each with its own README. The
+`website-release-timestamps` scripts backfill the release timestamps (`published`) of pages, galleries, site files and data sets from
+the published website for resources released before the backend recorded them.
+
 ## Running production
 
 ### Preparations

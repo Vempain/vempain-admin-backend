@@ -26,6 +26,7 @@ import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.AclService;
 import fi.poltsi.vempain.tools.LikePatterns;
+import fi.poltsi.vempain.tools.ReleaseState;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -132,6 +133,12 @@ public class PageService {
 
     public PagedResponse<PageResponse> findPagedByUser(PagePagedRequest request) {
         var pages = new ArrayList<>(findAllByUser());
+
+        if (Boolean.TRUE.equals(request.getModifiedAfterPublish())) {
+            // Only the pages whose website copy is outdated: released once and modified after that release
+            pages.removeIf(page -> !ReleaseState.isModifiedAfterPublish(page.getPublished(), page.getModified()));
+        }
+
         var search = request.getSearch();
         if (search != null
             && !search.isBlank()) {

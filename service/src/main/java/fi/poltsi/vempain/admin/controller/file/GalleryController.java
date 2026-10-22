@@ -14,6 +14,7 @@ import fi.poltsi.vempain.admin.api.ContentTypeEnum;
 import fi.poltsi.vempain.admin.api.PublishResultEnum;
 import fi.poltsi.vempain.admin.api.QueryDetailEnum;
 import fi.poltsi.vempain.admin.api.request.PublishRequest;
+import fi.poltsi.vempain.admin.api.request.file.GalleryPagedRequest;
 import fi.poltsi.vempain.admin.api.request.file.GalleryPublishRequest;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
 import fi.poltsi.vempain.admin.api.response.DeleteResponse;
@@ -59,7 +60,7 @@ public class GalleryController implements GalleryAPI {
     }
 
     @Override
-    public ResponseEntity<PagedResponse<FileGroupListResponse>> getPagedGalleryList(PagedRequest request) {
+    public ResponseEntity<PagedResponse<FileGroupListResponse>> getPagedGalleryList(GalleryPagedRequest request) {
         return ResponseEntity.ok(galleryService.findPagedGalleryListByUser(request));
     }
 

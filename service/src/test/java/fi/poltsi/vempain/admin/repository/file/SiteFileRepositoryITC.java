@@ -117,6 +117,42 @@ class SiteFileRepositoryITC extends AbstractITCTest {
     }
 
     @Test
+    void modifiedAfterPublishSpecificationKeepsOnlyTheOutdatedFiles() {
+        var userId = testITCTools.generateUser();
+        var released = Instant.parse("2026-01-05T08:00:00Z");
+        var outdated = saveReleaseStateFile(userId, "outdated", released, released.plusSeconds(3600));
+        saveReleaseStateFile(userId, "up-to-date", released, released.minusSeconds(3600));
+        saveReleaseStateFile(userId, "never-released", null, released.plusSeconds(3600));
+        saveReleaseStateFile(userId, "never-modified", released, null);
+
+        var result = siteFileRepository.findAll(SiteFileSpecifications.modifiedAfterPublish(), PageRequest.of(0, 10));
+
+        assertEquals(1, result.getTotalElements());
+        assertEquals(outdated.getId(), result.getContent()
+            .getFirst()
+            .getId());
+    }
+
+    private SiteFile saveReleaseStateFile(long userId, String name, Instant published, Instant modified) {
+        var aclId = testITCTools.generateAcl(userId, null, true, true, true, true);
+        var siteFile = SiteFile.builder()
+            .fileId(siteFileRepository.findMaxFileId() + 1)
+            .aclId(aclId)
+            .filePath("release-state")
+            .fileName(name + ".jpg")
+            .mimeType("image/jpeg")
+            .sha256sum("SHA256-" + name)
+            .fileType(FileTypeEnum.IMAGE)
+            .creator(userId)
+            .created(Instant.parse("2026-01-01T00:00:00Z"))
+            .modifier(modified == null ? null : userId)
+            .modified(modified)
+            .published(published)
+            .build();
+        return siteFileRepository.save(siteFile);
+    }
+
+    @Test
     void findByFileTypeReturnsEmptyWhenNoMatch() {
         var pageable = PageRequest.of(0, 10);
 

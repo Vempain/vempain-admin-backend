@@ -1,0 +1,5 @@
+# Python bytecode and the outputs of a backfill run (review them, do not commit them)
+__pycache__/
+*.pyc
+backfill_release_timestamps.sql
+backfill_release_timestamps_report.csv

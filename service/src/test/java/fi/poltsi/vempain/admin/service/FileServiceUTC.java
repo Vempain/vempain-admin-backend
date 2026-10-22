@@ -490,6 +490,18 @@ class FileServiceUTC {
     }
 
     @Test
+    void findAllSiteFilesAsPageableResponseFiltered_modifiedAfterPublish_staysAclFiltered() {
+        var pageRequest = stubReadableListing(PageRequest.of(0, 10));
+        var request = request(FileTypeEnum.IMAGE, pageRequest, null, null);
+        request.setModifiedAfterPublish(true);
+
+        var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request);
+
+        assertNotNull(result);
+        verifyReadableListing();
+    }
+
+    @Test
     void findAllSiteFilesAsPageableResponseFiltered_everyColumnFilterStaysAclFiltered() {
         for (var column : List.of("filename", "file_name", "FileName", "filepath", "mimetype", "unknownColumn", "size")) {
             org.mockito.Mockito.reset(accessService, siteFileRepository);

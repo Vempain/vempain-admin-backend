@@ -11,6 +11,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import fi.poltsi.vempain.admin.api.site.WebSiteConfigurationTypeEnum;
 import fi.poltsi.vempain.admin.api.site.request.WebSiteConfigurationRequest;
+import fi.poltsi.vempain.admin.service.AccessService;
+import fi.poltsi.vempain.auth.api.response.UserResponse;
+import fi.poltsi.vempain.auth.service.UserService;
 import fi.poltsi.vempain.site.entity.WebSiteConfiguration;
 import fi.poltsi.vempain.site.repository.WebSiteConfigurationRepository;
 
@@ -26,6 +29,10 @@ class WebSiteConfigurationServiceUTC {
 
     @Mock
     private WebSiteConfigurationRepository webSiteConfigurationRepository;
+    @Mock
+    private AccessService accessService;
+    @Mock
+    private UserService userService;
 
     @InjectMocks
     private WebSiteConfigurationService webSiteConfigurationService;
@@ -91,11 +98,20 @@ class WebSiteConfigurationServiceUTC {
         var existing = buildConfig(1L);
         when(webSiteConfigurationRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(webSiteConfigurationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(accessService.getValidUserId()).thenReturn(7L);
+        when(userService.findUserResponseById(7L)).thenReturn(UserResponse.builder()
+            .nick("alice")
+            .build());
 
         var result = webSiteConfigurationService.updateConfiguration(request);
 
         assertNotNull(result);
         assertEquals("NewValue", result.getConfigValue());
+        // The update is attributed to the admin user by nick; the seeded row has no creator
+        assertEquals("alice", result.getModifier());
+        assertNotNull(result.getModified());
+        assertNull(result.getCreator());
+        assertNull(result.getCreated());
     }
 
     @Test

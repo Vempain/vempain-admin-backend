@@ -236,6 +236,9 @@ public class DataService {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, VempainMessages.INTERNAL_ERROR);
         }
 
+        // The site table is in place, record when the data set was last released to the website
+        entity.setPublished(Instant.now());
+        dataRepository.save(entity);
         return entity.toDataResponse();
     }
 

@@ -431,12 +431,17 @@ public class PublishService {
         if (progress != null) {
             progress.message("Updating the site database for gallery " + gallery.getShortname());
         }
+        // The files are on the site server now, the gallery and every file in it are released to the website at this moment
+        var published = Instant.now();
         // Remove any existing gallery data if present, the gallery - file relation is removed by cascade
         webSiteGalleryRepository.deleteByGalleryId(galleryId);
 
         // Add the gallery
         var siteGallery = gallery.getSiteGallery();
         siteGallery.setAclId(webSiteResourceService.getNextWebSiteAcl());
+        // The site names the admin users by nick
+        siteGallery.setCreator(nickOf(gallery.getCreator()));
+        siteGallery.setModifier(nickOf(gallery.getModifier()));
         var newSiteGallery = webSiteGalleryRepository.save(siteGallery);
         var siteGalleryId = newSiteGallery.getId();
 
@@ -448,15 +453,29 @@ public class PublishService {
             log.debug("Deleting potential web site file by file ID: {}", siteFile.getId());
             webSiteFileRepository.deleteByFileId(siteFile.getId());
 
+            // The site rows name the admin users by nick; the publish of a file is attributed to the user who last touched it
+            var fileCreator = nickOf(siteFile.getCreator());
+            var fileModifier = nickOf(siteFile.getModifier());
+            var actor = fileModifier != null ? fileModifier : fileCreator;
+
             // Map / upsert GPS location into site DB (separate persistence unit)
             WebGpsLocation webLocation = null;
 
             if (siteFile.getLocation() != null) {
                 var adminLoc = siteFile.getLocation();
-                webLocation = webGpsLocationRepository.findById(adminLoc.getId())
-                    .orElseGet(() -> WebGpsLocation.builder()
-                        .id(adminLoc.getId())
-                        .build());
+                var existingLocation = webGpsLocationRepository.findById(adminLoc.getId());
+                webLocation = existingLocation.orElseGet(() -> WebGpsLocation.builder()
+                    .id(adminLoc.getId())
+                    .build());
+
+                if (existingLocation.isPresent()) {
+                    webLocation.setModifier(actor);
+                    webLocation.setModified(published);
+                } else {
+                    webLocation.setCreator(actor);
+                    webLocation.setCreated(published);
+                }
+
                 webLocation.setLatitude(adminLoc.getLatitude());
                 webLocation.setLatitudeRef(adminLoc.getLatitudeRef());
                 webLocation.setLongitude(adminLoc.getLongitude());
@@ -475,6 +494,11 @@ public class PublishService {
             // When creating
             var webSiteFile = siteFile.toWebSiteFile();
             webSiteFile.setAclId(webSiteResourceService.getNextWebSiteAcl());
+            // The audit trail of the admin site file, with the users named by nick
+            webSiteFile.setCreator(fileCreator);
+            webSiteFile.setCreated(siteFile.getCreated());
+            webSiteFile.setModifier(fileModifier);
+            webSiteFile.setModified(siteFile.getModified());
             webSiteFile.setFilePath(siteFile.getFileType().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName());
             webSiteFile.setLocation(webLocation);
 
@@ -495,10 +519,29 @@ public class PublishService {
             // Save subject on site-side
             var subjects = subjectService.getSubjectsByFileId(siteFile.getId());
             log.debug("Publishing subjects for site file {}: {}", newWebSiteFile.getId(), toJson(subjects));
-            var siteSubjects = webSiteSubjectService.saveAllFromAdminSubject(subjects);
+            var siteSubjects = webSiteSubjectService.saveAllFromAdminSubject(subjects, actor);
             // Save subject - file relation on site-side
             webSiteSubjectService.saveSiteFileSubject(newWebSiteFile.getId(), siteSubjects);
+            // Record on the admin side when the file was last released to the website
+            siteFile.setPublished(published);
+            siteFileRepository.save(siteFile);
         }
+
+        // Record on the admin side when the gallery was last released to the website
+        gallery.setPublished(published);
+        fileService.saveGallery(gallery);
+    }
+
+    /**
+     * @return the nick of the admin user, null when the ID is null or the user is unknown
+     */
+    private String nickOf(Long userId) {
+        if (userId == null) {
+            return null;
+        }
+
+        var user = userService.findUserResponseById(userId);
+        return user == null ? null : user.getNick();
     }
 
     public Optional<WebSitePage> fetchSitePage(Long pageId) {

@@ -52,9 +52,13 @@ CREATE TABLE data_store
     data_timestamp     TIMESTAMP    NOT NULL,
     csv_data           TEXT         NOT NULL,
     created_at         TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at         TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    published  TIMESTAMP          DEFAULT NULL
 );
 ```
+
+`published` records when the data set was last published to the site database; it is `NULL` until the first publication and is returned
+as `published` in `DataResponse` and `DataSummaryResponse`.
 
 ## Publication Logic
 
@@ -65,6 +69,7 @@ When a data set is published, the following steps are performed:
 2. If the table already exists in the site database, it is dropped (`DROP TABLE IF EXISTS`).
 3. The table is created using the column definition from `create_sql`, but the table name is always forced to `website_data__<identifier>`.
 4. The CSV data is parsed and each row is inserted into the newly created table.
+5. The `published` timestamp of the data set is set to the current time.
 
 ## API Endpoints
 

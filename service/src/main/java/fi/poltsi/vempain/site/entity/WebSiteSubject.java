@@ -1,5 +1,7 @@
 package fi.poltsi.vempain.site.entity;
 
+import java.time.Instant;
+
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -43,4 +45,22 @@ public class WebSiteSubject {
     @Basic
     @Column(name = "subject_se")
     private String subjectNameSe;
+
+    /**
+     * Nick of the admin user who created the row on the site side, null for rows published before the audit columns existed.
+     */
+    @Column(name = "creator", length = 512)
+    private String creator;
+
+    @Column(name = "created")
+    private Instant created;
+
+    /**
+     * Nick of the admin user who last changed the row on the site side.
+     */
+    @Column(name = "modifier", length = 512)
+    private String modifier;
+
+    @Column(name = "modified")
+    private Instant modified;
 }
