@@ -78,13 +78,15 @@ class GalleryRepositoryImplUTC {
 
     @Test
     void sortPropertiesAreMappedToColumnsAndUnknownOnesFallBackToTheId() {
-        var sort = Sort.by(Sort.Order.desc("short_name"), Sort.Order.asc("description"), Sort.Order.asc("creator"), Sort.Order.desc("shortname"));
+        var sort = Sort.by(Sort.Order.desc("short_name"), Sort.Order.asc("description"), Sort.Order.asc("creator"), Sort.Order.desc("shortname"),
+                Sort.Order.desc("published"), Sort.Order.asc("created"), Sort.Order.asc("modified"));
 
         repository.searchGalleries(null, false, PageRequest.of(1, 5, sort));
 
         var sql = ArgumentCaptor.forClass(String.class);
         verify(entityManager).createNativeQuery(sql.capture(), eq(Gallery.class));
-        assertThat(sql.getValue()).contains(" ORDER BY g.shortname DESC, g.description ASC, g.id ASC, g.shortname DESC OFFSET :offset LIMIT :limit");
+        assertThat(sql.getValue()).contains(" ORDER BY g.shortname DESC, g.description ASC, g.id ASC, g.shortname DESC, "
+                + "g.published DESC, g.created ASC, g.modified ASC OFFSET :offset LIMIT :limit");
         verify(dataQuery).setParameter("offset", 5);
         verify(dataQuery).setParameter("limit", 5);
     }

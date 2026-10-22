@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import fi.poltsi.vempain.admin.api.ContentTypeEnum;
 import fi.poltsi.vempain.admin.api.PublishResultEnum;
 import fi.poltsi.vempain.admin.api.request.PublishRequest;
+import fi.poltsi.vempain.admin.api.request.file.GalleryPagedRequest;
 import fi.poltsi.vempain.admin.api.request.file.GalleryPublishRequest;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
 import fi.poltsi.vempain.admin.api.response.PublishScheduleResponse;
@@ -69,7 +70,7 @@ class GalleryControllerUTC {
 
     @Test
     void getPagedGalleryListDelegatesToService() {
-        var request = new PagedRequest();
+        var request = new GalleryPagedRequest();
         var response = PagedResponse.of(java.util.List.<FileGroupListResponse>of(), 0, 25, 0, 0, true, true);
         when(galleryService.findPagedGalleryListByUser(request)).thenReturn(response);
 

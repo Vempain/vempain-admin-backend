@@ -18,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 
 import fi.poltsi.vempain.admin.api.QueryDetailEnum;
+import fi.poltsi.vempain.admin.api.request.file.GalleryPagedRequest;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
 import fi.poltsi.vempain.admin.api.response.file.FileGroupListResponse;
 import fi.poltsi.vempain.admin.api.response.file.GalleryResponse;
@@ -435,6 +436,17 @@ class GalleryServiceUTC {
 
     private PagedRequest request(int size, String sortBy, String direction, String search, boolean caseSensitive) {
         var request = new PagedRequest();
+        fillRequest(request, size, sortBy, direction, search, caseSensitive);
+        return request;
+    }
+
+    private GalleryPagedRequest listRequest(int size, String sortBy, String direction, String search, boolean caseSensitive) {
+        var request = new GalleryPagedRequest();
+        fillRequest(request, size, sortBy, direction, search, caseSensitive);
+        return request;
+    }
+
+    private static void fillRequest(PagedRequest request, int size, String sortBy, String direction, String search, boolean caseSensitive) {
         request.setPage(0);
         request.setSize(size);
         request.setSortBy(sortBy);
@@ -442,7 +454,53 @@ class GalleryServiceUTC {
                 "desc".equalsIgnoreCase(direction) ? org.springframework.data.domain.Sort.Direction.DESC : org.springframework.data.domain.Sort.Direction.ASC);
         request.setSearch(search);
         request.setCaseSensitive(caseSensitive);
-        return request;
+    }
+
+    @Test
+    void findPagedGalleryListByUserKeepsOnlyGalleriesModifiedAfterPublishWhenAsked() {
+        var released = Instant.parse("2026-01-05T08:00:00Z");
+        var outdated = gallery(2L, "outdated", released, released.plusSeconds(3600));
+        var upToDate = gallery(3L, "up-to-date", released, released.minusSeconds(3600));
+        var neverReleased = gallery(4L, "never-released", null, released.plusSeconds(3600));
+        var neverModified = gallery(5L, "never-modified", released, null);
+        when(galleryRepository.searchGalleriesForList(any(), anyBoolean(), any(Pageable.class)))
+            .thenReturn(new PageImpl<>(List.of(outdated, upToDate, neverReleased, neverModified)));
+        when(accessService.hasReadPermission(10L)).thenReturn(true);
+        when(aclService.findAclByAclId(10L)).thenReturn(List.of(Acl.builder()
+            .aclId(10L)
+            .build()));
+        when(galleryFileService.findGalleryFileByGalleryId(2L)).thenReturn(Collections.emptyList());
+
+        var request = listRequest(25, "id", "asc", null, false);
+        request.setModifiedAfterPublish(true);
+        var filtered = galleryService.findPagedGalleryListByUser(request);
+
+        assertEquals(1, filtered.getTotalElements());
+        assertEquals("outdated", filtered.getContent()
+            .getFirst()
+            .getShortName());
+
+        // Without the flag (null or false) every readable gallery is listed
+        for (var flag : java.util.Arrays.asList(null, Boolean.FALSE)) {
+            var unfiltered = listRequest(25, "id", "asc", null, false);
+            unfiltered.setModifiedAfterPublish(flag);
+            when(galleryFileService.findGalleryFileByGalleryId(anyLong())).thenReturn(Collections.emptyList());
+            assertEquals(4, galleryService.findPagedGalleryListByUser(unfiltered)
+                .getTotalElements());
+        }
+    }
+
+    private static Gallery gallery(long id, String shortname, Instant published, Instant modified) {
+        return Gallery.builder()
+            .id(id)
+            .shortname(shortname)
+            .description("Gallery " + shortname)
+            .aclId(10L)
+            .creator(1L)
+            .created(Instant.parse("2026-01-01T00:00:00Z"))
+            .modified(modified)
+            .published(published)
+            .build();
     }
 
     @Test
@@ -525,7 +583,7 @@ class GalleryServiceUTC {
 
     @Test
     void findPagedGalleryListByUserReturnsMetadataAndFileCount() {
-        var request = request(25, "short_name", "asc", null, false);
+        var request = listRequest(25, "short_name", "asc", null, false);
         when(galleryRepository.searchGalleriesForList(any(), anyBoolean(), any(Pageable.class)))
             .thenReturn(new PageImpl<>(List.of(sampleGallery), Pageable.ofSize(25), 1));
         when(accessService.hasReadPermission(10L)).thenReturn(true);
@@ -556,7 +614,7 @@ class GalleryServiceUTC {
 
     @Test
     void findPagedGalleryListByUserFiltersAclBeforePagination() {
-        var request = request(1, "id", "asc", null, false);
+        var request = listRequest(1, "id", "asc", null, false);
         var inaccessibleGallery = Gallery.builder()
             .id(2L)
             .shortname("inaccessible")
@@ -663,7 +721,7 @@ class GalleryServiceUTC {
 
     @Test
     void galleryListSortsByDescriptionAscendingWhenNoDirectionIsGiven() {
-        var request = new PagedRequest();
+        var request = new GalleryPagedRequest();
         request.setPage(0);
         request.setSize(10);
         request.setSortBy("description");

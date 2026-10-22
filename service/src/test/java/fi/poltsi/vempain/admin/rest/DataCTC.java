@@ -91,7 +91,8 @@ class DataCTC {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value("COMPLETED"))
             .andExpect(jsonPath("$.result.identifier").value(IDENTIFIER))
-            .andExpect(jsonPath("$.result.type").value("tabulated"));
+            .andExpect(jsonPath("$.result.type").value("tabulated"))
+            .andExpect(jsonPath("$.result.published").isNotEmpty());
 
         var tableExists = siteJdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = ?", Integer.class, TARGET_TABLE);

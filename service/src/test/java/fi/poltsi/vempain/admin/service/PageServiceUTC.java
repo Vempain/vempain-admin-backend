@@ -216,6 +216,55 @@ class PageServiceUTC {
     }
 
     @Test
+    void findPagedByUserKeepsOnlyPagesModifiedAfterPublishWhenAsked() {
+        var released = Instant.parse("2026-01-05T08:00:00Z");
+        var pages = TestUTCTools.generatePageList(4L);
+        // 1: outdated (modified after the release), 2: up to date, 3: never released, 4: never modified since the release
+        pages.get(0)
+            .setPublished(released);
+        pages.get(0)
+            .setModified(released.plusSeconds(3600));
+        pages.get(1)
+            .setPublished(released);
+        pages.get(1)
+            .setModified(released.minusSeconds(3600));
+        pages.get(2)
+            .setPublished(null);
+        pages.get(2)
+            .setModified(released.plusSeconds(3600));
+        pages.get(3)
+            .setPublished(released);
+        pages.get(3)
+            .setModified(null);
+        when(pageRepository.findAll()).thenReturn(pages);
+        when(accessService.hasReadPermission(anyLong())).thenReturn(true);
+
+        var request = new PagePagedRequest();
+        request.setPage(0);
+        request.setSize(25);
+        request.setModifiedAfterPublish(true);
+
+        var response = pageService.findPagedByUser(request);
+
+        assertEquals(1, response.getTotalElements());
+        assertEquals(pages.get(0)
+            .getId(),
+                response.getContent()
+                    .getFirst()
+                    .getId());
+
+        // Without the flag (null or false) every readable page is listed
+        for (var flag : java.util.Arrays.asList(null, Boolean.FALSE)) {
+            var unfiltered = new PagePagedRequest();
+            unfiltered.setPage(0);
+            unfiltered.setSize(25);
+            unfiltered.setModifiedAfterPublish(flag);
+            assertEquals(4, pageService.findPagedByUser(unfiltered)
+                .getTotalElements());
+        }
+    }
+
+    @Test
     void findPagedByUserAppliesSearch() {
         var pages = TestUTCTools.generatePageList(5L);
         pages.get(2)

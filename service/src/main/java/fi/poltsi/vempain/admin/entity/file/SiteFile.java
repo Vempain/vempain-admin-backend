@@ -104,6 +104,12 @@ public class SiteFile extends AbstractVempainEntity implements Serializable {
     @Column(name = "creator_url", length = 1024)
     private String creatorUrl;
 
+    /**
+     * When the file was last released to the website (as part of a gallery publish), null when it has never been published.
+     */
+    @Column(name = "published")
+    private Instant published;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "location_id")
     private GpsLocation location;
@@ -137,6 +143,7 @@ public class SiteFile extends AbstractVempainEntity implements Serializable {
             .creatorCountry(this.creatorCountry)
             .creatorUrl(this.creatorUrl)
             .location(this.location != null ? this.location.toResponse() : null)
+            .published(this.published)
             .build();
     }
 

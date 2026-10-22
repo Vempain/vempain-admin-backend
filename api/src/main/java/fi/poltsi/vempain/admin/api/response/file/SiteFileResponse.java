@@ -74,6 +74,9 @@ public class SiteFileResponse {
     @Schema(description = "Arbitrary metadata JSON stored with the file", example = "{\"some-field\":\"some value\"}")
     private String metadata;
 
+    @Schema(description = "Date when the file was last published to the website, null if never", example = "2023-10-01T12:00:00Z")
+    private Instant published;
+
     @Schema(description = "Original (source) datetime of the file", example = "2025-08-15T14:30:00Z")
     private Instant originalDateTime;
 

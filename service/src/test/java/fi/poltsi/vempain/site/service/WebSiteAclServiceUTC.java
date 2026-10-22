@@ -163,7 +163,7 @@ class WebSiteAclServiceUTC {
             .galleryId(1L)
             .shortname("my-gallery")
             .description("Test")
-            .creator(1L)
+            .creator("admin")
             .created(Instant.now())
             .build();
         var page = WebSitePage.builder()

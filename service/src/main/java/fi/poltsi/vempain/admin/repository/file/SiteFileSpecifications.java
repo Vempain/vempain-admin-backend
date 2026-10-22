@@ -41,6 +41,15 @@ public final class SiteFileSpecifications {
         return (root, query, criteriaBuilder) -> criteriaBuilder.greaterThan(root.get("modified"), instant);
     }
 
+    /**
+     * Site files whose website copy is outdated: released once ({@code published} set), modified since ({@code modified} set) and the release older than the
+     * modification. The database evaluates the same rule as {@code fi.poltsi.vempain.tools.ReleaseState#isModifiedAfterPublish}.
+     */
+    public static Specification<SiteFile> modifiedAfterPublish() {
+        return (root, query, criteriaBuilder) -> criteriaBuilder.and(criteriaBuilder.isNotNull(root.get("published")),
+                criteriaBuilder.isNotNull(root.get("modified")), criteriaBuilder.lessThan(root.get("published"), root.get("modified")));
+    }
+
     public static Specification<SiteFile> sizeAtLeast(long size) {
         return (root, query, criteriaBuilder) -> criteriaBuilder.greaterThanOrEqualTo(root.get("size"), size);
     }

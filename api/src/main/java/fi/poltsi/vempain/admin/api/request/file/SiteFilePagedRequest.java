@@ -24,4 +24,9 @@ public class SiteFilePagedRequest extends PagedRequest {
 
     @Schema(description = "Site file field used by search", example = "file_name")
     private String filterColumn;
+
+    @Schema(description = "When true, only site files that were modified after their last release to the website are listed: both timestamps are set and "
+            + "the release is older than the modification. Files never released or never modified since are left out.", example = "false",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private Boolean modifiedAfterPublish;
 }

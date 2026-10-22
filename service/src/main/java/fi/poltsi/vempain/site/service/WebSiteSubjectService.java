@@ -1,5 +1,6 @@
 package fi.poltsi.vempain.site.service;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,11 +20,16 @@ public class WebSiteSubjectService {
 
     private final SiteSubjectRepository siteSubjectRepository;
 
-    public List<WebSiteSubject> saveAllFromAdminSubject(List<Subject> subjects) {
+    /**
+     * Publishes the subjects to the site: an unknown subject is created, a known one gets its translations updated.
+     *
+     * @param actor nick of the admin user the publish is attributed to (recorded as creator of a new site subject, modifier of an existing one)
+     */
+    public List<WebSiteSubject> saveAllFromAdminSubject(List<Subject> subjects, String actor) {
         var siteSubjects = new ArrayList<WebSiteSubject>();
 
         for (Subject subject : subjects) {
-            var siteSubject = saveFromAdminSubject(subject);
+            var siteSubject = saveFromAdminSubject(subject, actor);
             log.debug("Saving subject {} with ID {} as site subject ID {}", subject.getSubjectName(), subject.getId(), siteSubject.getId());
             siteSubjects.add(siteSubject);
         }
@@ -31,8 +37,9 @@ public class WebSiteSubjectService {
         return siteSubjects;
     }
 
-    public WebSiteSubject saveFromAdminSubject(Subject subject) {
+    public WebSiteSubject saveFromAdminSubject(Subject subject, String actor) {
         var siteSubject = siteSubjectRepository.findBySubjectName(subject.getSubjectName());
+        var now = Instant.now();
 
         if (siteSubject != null) {
             log.debug("Found existing site subject for subject {}: {}", subject.getSubjectName(), siteSubject.getId());
@@ -42,6 +49,8 @@ public class WebSiteSubjectService {
             siteSubject.setSubjectNameEs(subject.getSubjectNameEs());
             siteSubject.setSubjectNameFi(subject.getSubjectNameFi());
             siteSubject.setSubjectNameSe(subject.getSubjectNameSe());
+            siteSubject.setModifier(actor);
+            siteSubject.setModified(now);
             return siteSubjectRepository.save(siteSubject);
         } else {
             var newSiteSubject = WebSiteSubject.builder()
@@ -51,6 +60,8 @@ public class WebSiteSubjectService {
                 .subjectNameEs(subject.getSubjectNameEs())
                 .subjectNameFi(subject.getSubjectNameFi())
                 .subjectNameSe(subject.getSubjectNameSe())
+                .creator(actor)
+                .created(now)
                 .build();
             var newSiteSubjectSaved = siteSubjectRepository.save(newSiteSubject);
             log.debug("Created new site subject for subject {} with ID {}: {}", subject.getSubjectName(), subject.getId(), newSiteSubjectSaved.getId());

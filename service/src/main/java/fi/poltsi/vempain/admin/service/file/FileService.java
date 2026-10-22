@@ -169,7 +169,7 @@ public class FileService {
     @Transactional(readOnly = true)
     /**
      * Paged site-file listing for the current user. Site files are ACL-linked, so the result contains only the files the user may read; the ACL filter, the
-     * optional column filter and the file type are all evaluated in the database query.
+     * optional column filter, the file type and the optional "modified after publish" filter are all evaluated in the database query.
      */
     public PagedResponse<SiteFileResponse> findAllSiteFilesAsPageableResponseFiltered(SiteFilePagedRequest request) {
         log.debug("Fetching pageable site files with filter '{}' on column '{}' for file type {}", request.getSearch(), request.getFilterColumn(),
@@ -189,6 +189,11 @@ public class FileService {
 
         if (filterSpecification != null) {
             specification = specification.and(filterSpecification);
+        }
+
+        if (Boolean.TRUE.equals(request.getModifiedAfterPublish())) {
+            // Only the files whose website copy is outdated: released once and modified after that release
+            specification = specification.and(SiteFileSpecifications.modifiedAfterPublish());
         }
 
         var siteFiles = siteFileRepository.findAll(specification, pageable);

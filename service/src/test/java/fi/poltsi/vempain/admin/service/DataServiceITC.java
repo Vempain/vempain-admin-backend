@@ -17,6 +17,8 @@ import fi.poltsi.vempain.admin.api.request.DataRequest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DataServiceITC extends AbstractITCTest {
@@ -47,13 +49,16 @@ class DataServiceITC extends AbstractITCTest {
             .csvData("title,artist\nAbbey Road,The Beatles\nOK Computer,Radiohead")
             .build();
 
-        dataService.create(request);
+        var created = dataService.create(request);
+        assertNull(created.getPublished(), "A new data set has not been released to the website");
         dataService.publish("music_data");
 
         var tableExists = siteJdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'website_data__music_data'",
                 Integer.class);
         assertEquals(1, tableExists);
+        assertNotNull(dataService.findByIdentifier("music_data")
+            .getPublished(), "The data set records when it was released to the website");
 
         var wrongTableExists = siteJdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'wrong_table_name'", Integer.class);

@@ -15,6 +15,7 @@ import static fi.poltsi.vempain.admin.api.Constants.ADMIN_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -25,6 +26,8 @@ class PublishServiceITC extends AbstractITCTest {
     @Test
     void publishPageOk() {
         var testPageId = testSetup();
+        assertNull(pageService.findById(testPageId)
+            .getPublished(), "A new page has not been released to the website");
 
         try {
             var sitePageId = publishService.publishPage(testPageId);
@@ -32,6 +35,8 @@ class PublishServiceITC extends AbstractITCTest {
             assertTrue(optionalSitePage.isPresent());
             var sitePage = optionalSitePage.get();
             log.info("Site page: {}", sitePage);
+            assertNotNull(pageService.findById(testPageId)
+                .getPublished(), "The page records when it was released to the website");
         } catch (VempainEntityNotFoundException e) {
             fail("Should not have received VempainEntityNotFoundException when publishing page", e);
         }
@@ -48,7 +53,11 @@ class PublishServiceITC extends AbstractITCTest {
     @Test
     void publishGalleryOk() throws VempainEntityNotFoundException {
         var gallery = fileService.createEmptyGallery("Publish test gallery", "A test gallery", ADMIN_ID);
+        assertNull(gallery.getPublished(), "A new gallery has not been released to the website");
         publishService.publishGallery(gallery.getId());
+        // An empty gallery transfers nothing to the website, so it is still not released
+        assertNull(fileService.findGalleryById(gallery.getId())
+            .getPublished());
     }
 
     @Test

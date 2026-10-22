@@ -1,0 +1,4 @@
+# PostgreSQL driver. On Rocky/RHEL 8 and 9 prefer the distribution package: dnf install python3-psycopg2
+# (the scripts run on the system Python, 3.6 on Rocky 8 and 3.9 on Rocky 9). For a pip environment either driver works:
+psycopg2-binary>=2.7; python_version < "3.8"
+psycopg[binary]>=3.1; python_version >= "3.8"

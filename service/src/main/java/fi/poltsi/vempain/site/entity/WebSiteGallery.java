@@ -25,12 +25,18 @@ public class WebSiteGallery {
 
     @Column(name = "acl_id", nullable = false)
     protected long aclId;
-    @Column(name = "creator", nullable = false)
-    protected Long creator;
+    /**
+     * Nick of the admin user who created the gallery (null for rows published before V1005, until republished).
+     */
+    @Column(name = "creator", length = 512)
+    protected String creator;
     @Column(name = "created", nullable = false)
     protected Instant created;
-    @Column(name = "modifier")
-    protected Long modifier;
+    /**
+     * Nick of the admin user who last modified the gallery.
+     */
+    @Column(name = "modifier", length = 512)
+    protected String modifier;
     @Column(name = "modified")
     protected Instant modified;
     @Id

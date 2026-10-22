@@ -139,6 +139,9 @@ public class GalleryRepositoryImpl implements GalleryRepositoryCustom {
         return switch (property.toLowerCase()) {
             case "short_name", "shortname" -> "g.shortname";
             case "description" -> "g.description";
+            case "created" -> "g.created";
+            case "modified" -> "g.modified";
+            case "published" -> "g.published";
             default -> "g.id";
         };
     }

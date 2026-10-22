@@ -51,4 +51,7 @@ public class DataSummaryResponse {
 
     @Schema(description = "Timestamp when this record was last updated in the admin database")
     private Instant updatedAt;
+
+    @Schema(description = "Timestamp when the data set was last published to the website, null if never", example = "2024-01-15T10:30:00Z")
+    private Instant published;
 }

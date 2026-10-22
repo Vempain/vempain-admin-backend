@@ -1,6 +1,7 @@
 package fi.poltsi.vempain.admin.service;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -830,6 +831,9 @@ class PublishServiceUTC {
             .location(location)
             .metadata("{}")
             .creator(1L)
+            .created(Instant.parse("2026-01-01T10:00:00Z"))
+            .modifier(2L)
+            .modified(Instant.parse("2026-01-02T10:00:00Z"))
             .build();
         var video = SiteFile.builder()
             .id(12L)
@@ -838,12 +842,17 @@ class PublishServiceUTC {
             .filePath("2024/trip")
             .fileName("b.mp4")
             .creator(1L)
+            .created(Instant.parse("2026-01-01T10:00:00Z"))
             .build();
         return Gallery.builder()
             .id(1L)
             .aclId(101L)
             .shortname("trip")
             .description("Trip")
+            .creator(1L)
+            .created(Instant.parse("2026-01-01T09:00:00Z"))
+            .modifier(2L)
+            .modified(Instant.parse("2026-01-03T09:00:00Z"))
             .siteFiles(List.of(image, video))
             .build();
     }
@@ -880,6 +889,9 @@ class PublishServiceUTC {
         assertEquals(1, progress.getCompletedSteps()
             .get());
         verify(jschClient, never()).connect(any(), org.mockito.ArgumentMatchers.anyInt(), any(), any(), any());
+        // Nothing was released, so the gallery keeps its "never published" state
+        assertNull(empty.getPublished());
+        verify(fileService, never()).saveGallery(any());
     }
 
     @Test
@@ -907,13 +919,21 @@ class PublishServiceUTC {
             .when(jschClient)
             .transferFilesToSite(eq(gallery.getSiteFiles()), eq(List.of(thumb)), any());
         when(webSiteResourceService.getNextWebSiteAcl()).thenReturn(1000L, 1001L, 1002L);
+        var savedGalleries = new java.util.ArrayList<WebSiteGallery>();
         when(webSiteGalleryRepository.save(any(WebSiteGallery.class))).thenAnswer(invocation -> {
             var saved = invocation.getArgument(0, WebSiteGallery.class);
             saved.setId(500L);
+            savedGalleries.add(saved);
             return saved;
         });
         when(siteFileRepository.findById(11L)).thenReturn(Optional.of(image));
         when(siteFileRepository.findById(12L)).thenReturn(Optional.of(video));
+        when(userService.findUserResponseById(1L)).thenReturn(UserResponse.builder()
+            .nick("alice")
+            .build());
+        when(userService.findUserResponseById(2L)).thenReturn(UserResponse.builder()
+            .nick("bob")
+            .build());
         when(webGpsLocationRepository.findById(900L)).thenReturn(Optional.empty());
         when(webGpsLocationRepository.save(any(WebGpsLocation.class))).thenAnswer(invocation -> invocation.getArgument(0));
         var savedFiles = new java.util.ArrayList<WebSiteFile>();
@@ -932,8 +952,9 @@ class PublishServiceUTC {
         var siteSubjects = List.of(WebSiteSubject.builder()
             .id(1L)
             .build());
-        when(webSiteSubjectService.saveAllFromAdminSubject(subjects)).thenReturn(siteSubjects);
-        when(webSiteSubjectService.saveAllFromAdminSubject(List.of())).thenReturn(List.of());
+        // The subjects of the image are attributed to its modifier, those of the video (never modified) to its creator
+        when(webSiteSubjectService.saveAllFromAdminSubject(subjects, "bob")).thenReturn(siteSubjects);
+        when(webSiteSubjectService.saveAllFromAdminSubject(List.of(), "alice")).thenReturn(List.of());
         var progress = taskStore.create("PUBLISH_GALLERY", "Publish gallery", 1L, 2);
 
         publishService.publishGalleryAsSystem(1L, progress);
@@ -952,12 +973,41 @@ class PublishServiceUTC {
         assertNotNull(publishedImage.getLocation());
         assertEquals("Helsinki", publishedImage.getLocation()
             .getCity());
+        // The site gallery and file carry the admin audit trail with the users named by nick
+        assertEquals(1, savedGalleries.size());
+        assertEquals("alice", savedGalleries.getFirst()
+            .getCreator());
+        assertEquals("bob", savedGalleries.getFirst()
+            .getModifier());
+        assertEquals(Instant.parse("2026-01-01T09:00:00Z"), savedGalleries.getFirst()
+            .getCreated());
+        assertEquals("alice", publishedImage.getCreator());
+        assertEquals(Instant.parse("2026-01-01T10:00:00Z"), publishedImage.getCreated());
+        assertEquals("bob", publishedImage.getModifier());
+        assertEquals(Instant.parse("2026-01-02T10:00:00Z"), publishedImage.getModified());
+        // A location new to the site is created by the file's actor at publish time
+        assertEquals("bob", publishedImage.getLocation()
+            .getCreator());
+        assertNotNull(publishedImage.getLocation()
+            .getCreated());
+        assertNull(publishedImage.getLocation()
+            .getModifier());
         var publishedVideo = savedFiles.get(1);
         assertNull(publishedVideo.getThumbnailPath());
         assertNull(publishedVideo.getLocation());
+        assertEquals("alice", publishedVideo.getCreator());
+        assertNull(publishedVideo.getModifier());
+        assertNull(publishedVideo.getModified());
         verify(webSiteGalleryRepository).saveGalleryFile(500L, 600L, 0L);
         verify(webSiteGalleryRepository).saveGalleryFile(500L, 601L, 1L);
         verify(webSiteSubjectService).saveSiteFileSubject(600L, siteSubjects);
+        // The release time is recorded on the admin side for the gallery and every file in it
+        assertNotNull(gallery.getPublished());
+        assertEquals(gallery.getPublished(), image.getPublished());
+        assertEquals(gallery.getPublished(), video.getPublished());
+        verify(siteFileRepository).save(image);
+        verify(siteFileRepository).save(video);
+        verify(fileService).saveGallery(gallery);
         verify(webSiteSubjectService).saveSiteFileSubject(601L, List.of());
     }
 

@@ -24,7 +24,9 @@ import fi.poltsi.vempain.admin.api.TaskTypeEnum;
 import fi.poltsi.vempain.admin.api.response.PublishResponse;
 import fi.poltsi.vempain.admin.entity.FormComponent;
 import fi.poltsi.vempain.admin.entity.Page;
+import fi.poltsi.vempain.admin.entity.file.FileThumb;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
+import fi.poltsi.vempain.admin.entity.file.GalleryFile;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.service.file.FileService;
@@ -393,9 +395,38 @@ public class PublishService {
             return;
         }
 
-        // Fetch the common and thumb files
         var fileThumbList = fileService.findAllFileThumbsBySiteFileList(gallery.getSiteFiles());
+        associateThumbnails(gallery, fileThumbList);
+        transferGalleryFiles(gallery, fileThumbList, progress);
 
+        //** Update the site database
+        if (progress != null) {
+            progress.message("Updating the site database for gallery " + gallery.getShortname());
+        }
+        // The files are on the site server now, the gallery and every file in it are released to the website at this moment
+        var published = Instant.now();
+        // Remove any existing gallery data if present, the gallery - file relation is removed by cascade
+        webSiteGalleryRepository.deleteByGalleryId(galleryId);
+
+        // Add the gallery
+        var siteGallery = gallery.getSiteGallery();
+        siteGallery.setAclId(webSiteResourceService.getNextWebSiteAcl());
+        // The site names the admin users by nick
+        siteGallery.setCreator(nickOf(gallery.getCreator()));
+        siteGallery.setModifier(nickOf(gallery.getModifier()));
+        var newSiteGallery = webSiteGalleryRepository.save(siteGallery);
+        var siteGalleryId = newSiteGallery.getId();
+
+        for (var galleryFile : galleryFileList) {
+            publishGalleryFile(galleryFile, siteGalleryId, published);
+        }
+
+        // Record on the admin side when the gallery was last released to the website
+        gallery.setPublished(published);
+        fileService.saveGallery(gallery);
+    }
+
+    private void associateThumbnails(Gallery gallery, List<FileThumb> fileThumbList) throws VempainEntityNotFoundException {
         for (var fileThumb : fileThumbList) {
             fileThumb.setSiteFile(gallery.getSiteFiles()
                 .stream()
@@ -403,8 +434,9 @@ public class PublishService {
                 .findFirst()
                 .orElseThrow(VempainEntityNotFoundException::new));
         }
+    }
 
-        // Transfer the files to the site-server
+    private void transferGalleryFiles(Gallery gallery, List<FileThumb> fileThumbList, TaskProgress progress) {
         try {
             log.debug("Connecting to site-server {}", siteSshAddress);
             log.debug("Connecting to site-server with user {}", siteSshUser);
@@ -426,79 +458,88 @@ public class PublishService {
         } finally {
             jschClient.close();
         }
+    }
 
-        //** Update the site database
-        if (progress != null) {
-            progress.message("Updating the site database for gallery " + gallery.getShortname());
-        }
-        // Remove any existing gallery data if present, the gallery - file relation is removed by cascade
-        webSiteGalleryRepository.deleteByGalleryId(galleryId);
+    private void publishGalleryFile(GalleryFile galleryFile, long siteGalleryId, Instant published) throws VempainEntityNotFoundException {
+        var siteFile = siteFileRepository.findById(galleryFile.getSiteFileId())
+            .orElseThrow(VempainEntityNotFoundException::new);
+        log.debug("Deleting potential web site file by file ID: {}", siteFile.getId());
+        webSiteFileRepository.deleteByFileId(siteFile.getId());
 
-        // Add the gallery
-        var siteGallery = gallery.getSiteGallery();
-        siteGallery.setAclId(webSiteResourceService.getNextWebSiteAcl());
-        var newSiteGallery = webSiteGalleryRepository.save(siteGallery);
-        var siteGalleryId = newSiteGallery.getId();
+        var fileCreator = nickOf(siteFile.getCreator());
+        var fileModifier = nickOf(siteFile.getModifier());
+        var actor = fileModifier != null ? fileModifier : fileCreator;
+        WebGpsLocation webLocation = null;
 
-        // File data
-        for (var galleryFile : galleryFileList) {
-            var siteFile = siteFileRepository.findById(galleryFile.getSiteFileId())
-                .orElseThrow(VempainEntityNotFoundException::new);
-            // Remove the web site file if it exists
-            log.debug("Deleting potential web site file by file ID: {}", siteFile.getId());
-            webSiteFileRepository.deleteByFileId(siteFile.getId());
+        if (siteFile.getLocation() != null) {
+            var adminLoc = siteFile.getLocation();
+            var existingLocation = webGpsLocationRepository.findById(adminLoc.getId());
+            webLocation = existingLocation.orElseGet(() -> WebGpsLocation.builder()
+                .id(adminLoc.getId())
+                .build());
 
-            // Map / upsert GPS location into site DB (separate persistence unit)
-            WebGpsLocation webLocation = null;
-
-            if (siteFile.getLocation() != null) {
-                var adminLoc = siteFile.getLocation();
-                webLocation = webGpsLocationRepository.findById(adminLoc.getId())
-                    .orElseGet(() -> WebGpsLocation.builder()
-                        .id(adminLoc.getId())
-                        .build());
-                webLocation.setLatitude(adminLoc.getLatitude());
-                webLocation.setLatitudeRef(adminLoc.getLatitudeRef());
-                webLocation.setLongitude(adminLoc.getLongitude());
-                webLocation.setLongitudeRef(adminLoc.getLongitudeRef());
-                webLocation.setAltitude(adminLoc.getAltitude());
-                webLocation.setDirection(adminLoc.getDirection());
-                webLocation.setSatelliteCount(adminLoc.getSatelliteCount());
-                webLocation.setCountry(adminLoc.getCountry());
-                webLocation.setState(adminLoc.getState());
-                webLocation.setCity(adminLoc.getCity());
-                webLocation.setStreet(adminLoc.getStreet());
-                webLocation.setSubLocation(adminLoc.getSubLocation());
-                webLocation = webGpsLocationRepository.save(webLocation);
+            if (existingLocation.isPresent()) {
+                webLocation.setModifier(actor);
+                webLocation.setModified(published);
+            } else {
+                webLocation.setCreator(actor);
+                webLocation.setCreated(published);
             }
 
-            // When creating
-            var webSiteFile = siteFile.toWebSiteFile();
-            webSiteFile.setAclId(webSiteResourceService.getNextWebSiteAcl());
-            webSiteFile.setFilePath(siteFile.getFileType().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName());
-            webSiteFile.setLocation(webLocation);
-
-            // Set thumbnail path for image files
-            if (siteFile.getFileType() == FileTypeEnum.IMAGE) {
-                webSiteFile.setThumbnailPath(siteFile.getFileType().shortName + File.separator + siteFile.getFilePath() + File.separator + thumbSubDir
-                        + File.separator + siteFile.getFileName());
-            }
-
-            log.debug("Saving web site file: {} with metadata length {} from siteFile metadata length {}", toJson(webSiteFile), (webSiteFile.getMetadata()
-                    != null ? webSiteFile.getMetadata()
-                        .length() : 0),
-                    (siteFile.getMetadata() != null ? siteFile.getMetadata()
-                        .length() : 0));
-            var newWebSiteFile = webSiteFileRepository.save(webSiteFile);
-            // Add new gallery file relation
-            webSiteGalleryRepository.saveGalleryFile(siteGalleryId, newWebSiteFile.getId(), galleryFile.getSortOrder());
-            // Save subject on site-side
-            var subjects = subjectService.getSubjectsByFileId(siteFile.getId());
-            log.debug("Publishing subjects for site file {}: {}", newWebSiteFile.getId(), toJson(subjects));
-            var siteSubjects = webSiteSubjectService.saveAllFromAdminSubject(subjects);
-            // Save subject - file relation on site-side
-            webSiteSubjectService.saveSiteFileSubject(newWebSiteFile.getId(), siteSubjects);
+            webLocation.setLatitude(adminLoc.getLatitude());
+            webLocation.setLatitudeRef(adminLoc.getLatitudeRef());
+            webLocation.setLongitude(adminLoc.getLongitude());
+            webLocation.setLongitudeRef(adminLoc.getLongitudeRef());
+            webLocation.setAltitude(adminLoc.getAltitude());
+            webLocation.setDirection(adminLoc.getDirection());
+            webLocation.setSatelliteCount(adminLoc.getSatelliteCount());
+            webLocation.setCountry(adminLoc.getCountry());
+            webLocation.setState(adminLoc.getState());
+            webLocation.setCity(adminLoc.getCity());
+            webLocation.setStreet(adminLoc.getStreet());
+            webLocation.setSubLocation(adminLoc.getSubLocation());
+            webLocation = webGpsLocationRepository.save(webLocation);
         }
+
+        var webSiteFile = siteFile.toWebSiteFile();
+        webSiteFile.setAclId(webSiteResourceService.getNextWebSiteAcl());
+        webSiteFile.setCreator(fileCreator);
+        webSiteFile.setCreated(siteFile.getCreated());
+        webSiteFile.setModifier(fileModifier);
+        webSiteFile.setModified(siteFile.getModified());
+        webSiteFile.setFilePath(siteFile.getFileType().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName());
+        webSiteFile.setLocation(webLocation);
+
+        if (siteFile.getFileType() == FileTypeEnum.IMAGE) {
+            webSiteFile.setThumbnailPath(siteFile.getFileType().shortName + File.separator + siteFile.getFilePath() + File.separator + thumbSubDir
+                    + File.separator + siteFile.getFileName());
+        }
+
+        log.debug("Saving web site file: {} with metadata length {} from siteFile metadata length {}", toJson(webSiteFile), (webSiteFile.getMetadata()
+                != null ? webSiteFile.getMetadata()
+                    .length() : 0),
+                (siteFile.getMetadata() != null ? siteFile.getMetadata()
+                    .length() : 0));
+        var newWebSiteFile = webSiteFileRepository.save(webSiteFile);
+        webSiteGalleryRepository.saveGalleryFile(siteGalleryId, newWebSiteFile.getId(), galleryFile.getSortOrder());
+        var subjects = subjectService.getSubjectsByFileId(siteFile.getId());
+        log.debug("Publishing subjects for site file {}: {}", newWebSiteFile.getId(), toJson(subjects));
+        var siteSubjects = webSiteSubjectService.saveAllFromAdminSubject(subjects, actor);
+        webSiteSubjectService.saveSiteFileSubject(newWebSiteFile.getId(), siteSubjects);
+        siteFile.setPublished(published);
+        siteFileRepository.save(siteFile);
+    }
+
+    /**
+     * @return the nick of the admin user, null when the ID is null or the user is unknown
+     */
+    private String nickOf(Long userId) {
+        if (userId == null) {
+            return null;
+        }
+
+        var user = userService.findUserResponseById(userId);
+        return user == null ? null : user.getNick();
     }
 
     public Optional<WebSitePage> fetchSitePage(Long pageId) {

@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import fi.poltsi.vempain.admin.api.QueryDetailEnum;
+import fi.poltsi.vempain.admin.api.request.file.GalleryPagedRequest;
 import fi.poltsi.vempain.admin.api.request.file.GalleryRequest;
 import fi.poltsi.vempain.admin.api.response.file.FileGroupListResponse;
 import fi.poltsi.vempain.admin.api.response.file.GalleryResponse;
@@ -25,6 +26,7 @@ import fi.poltsi.vempain.auth.api.request.PagedRequest;
 import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.exception.VempainAclException;
 import fi.poltsi.vempain.auth.service.AclService;
+import fi.poltsi.vempain.tools.ReleaseState;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -201,15 +203,22 @@ public class GalleryService {
     }
 
     @Transactional(readOnly = true)
-    public PagedResponse<FileGroupListResponse> findPagedGalleryListByUser(PagedRequest request) {
+    public PagedResponse<FileGroupListResponse> findPagedGalleryListByUser(GalleryPagedRequest request) {
         int safePage = request.getPage();
         int safeSize = Math.min(request.getSize(), 200);
         Sort sortSpec = buildSort(request.getSortBy(), request.getDirection());
         Pageable pageable = Pageable.unpaged(sortSpec);
         var pageResult = galleryRepository.searchGalleriesForList(request.getSearch(), Boolean.TRUE.equals(request.getCaseSensitive()), pageable);
+        var onlyModifiedAfterPublish = Boolean.TRUE.equals(request.getModifiedAfterPublish());
         var accessibleGalleries = new ArrayList<Gallery>();
 
         for (var gallery : pageResult.getContent()) {
+            // Only the galleries whose website copy is outdated when the filter is on: released once and modified after that release
+            if (onlyModifiedAfterPublish
+                && !ReleaseState.isModifiedAfterPublish(gallery.getPublished(), gallery.getModified())) {
+                continue;
+            }
+
             if (accessService.hasReadPermission(gallery.getAclId())) {
                 accessibleGalleries.add(gallery);
             }

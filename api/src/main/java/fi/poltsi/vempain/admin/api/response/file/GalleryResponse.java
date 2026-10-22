@@ -1,5 +1,6 @@
 package fi.poltsi.vempain.admin.api.response.file;
 
+import java.time.Instant;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -26,4 +27,6 @@ public class GalleryResponse extends AbstractResponse {
     private String description;
     @Schema(description = "List of file common ID belonging to this gallery", example = "{1, 2, 3, 4}", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<SiteFileResponse> siteFiles;
+    @Schema(description = "Date when the gallery was last published to the website, null if never", example = "2022-05-13T16:03:44Z")
+    private Instant published;
 }
