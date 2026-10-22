@@ -85,8 +85,8 @@ class GalleryRepositoryImplUTC {
 
         var sql = ArgumentCaptor.forClass(String.class);
         verify(entityManager).createNativeQuery(sql.capture(), eq(Gallery.class));
-        assertThat(sql.getValue()).contains(
-                " ORDER BY g.shortname DESC, g.description ASC, g.id ASC, g.shortname DESC, g.published DESC, g.created ASC, g.modified ASC OFFSET :offset LIMIT :limit");
+        assertThat(sql.getValue()).contains(" ORDER BY g.shortname DESC, g.description ASC, g.id ASC, g.shortname DESC, "
+                + "g.published DESC, g.created ASC, g.modified ASC OFFSET :offset LIMIT :limit");
         verify(dataQuery).setParameter("offset", 5);
         verify(dataQuery).setParameter("limit", 5);
     }
