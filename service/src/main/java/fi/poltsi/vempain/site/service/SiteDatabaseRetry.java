@@ -161,28 +161,36 @@ public class SiteDatabaseRetry {
         var seen = 0;
         for (var cause = throwable; cause != null
                                     && seen < 32; cause = cause.getCause() == cause ? null : cause.getCause(), seen++) {
-            if (cause instanceof DataAccessResourceFailureException
-                || cause instanceof TransientDataAccessResourceException
-                || cause instanceof CannotCreateTransactionException
-                || cause instanceof JDBCConnectionException
-                || cause instanceof SQLTransientConnectionException
-                || cause instanceof SQLNonTransientConnectionException
-                || cause instanceof SQLRecoverableException
-                || cause instanceof SocketException
-                || cause instanceof SocketTimeoutException
-                || cause instanceof EOFException) {
-                return true;
-            }
-            if (cause instanceof SQLException sql
-                && sql.getSQLState() != null
-                && (sql.getSQLState()
-                    .startsWith("08")
-                    || sql.getSQLState()
-                        .startsWith("57P"))) {
+            if (isConnectionException(cause)
+                || hasConnectionSqlState(cause)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private static boolean isConnectionException(Throwable cause) {
+        return cause instanceof DataAccessResourceFailureException
+               || cause instanceof TransientDataAccessResourceException
+               || cause instanceof CannotCreateTransactionException
+               || cause instanceof JDBCConnectionException
+               || cause instanceof SQLTransientConnectionException
+               || cause instanceof SQLNonTransientConnectionException
+               || cause instanceof SQLRecoverableException
+               || cause instanceof SocketException
+               || cause instanceof SocketTimeoutException
+               || cause instanceof EOFException;
+    }
+
+    private static boolean hasConnectionSqlState(Throwable cause) {
+        if (!(cause instanceof SQLException sql)
+            || sql.getSQLState() == null) {
+            return false;
+        }
+        return sql.getSQLState()
+            .startsWith("08")
+               || sql.getSQLState()
+                   .startsWith("57P");
     }
 
     private static String rootMessage(Throwable throwable) {
