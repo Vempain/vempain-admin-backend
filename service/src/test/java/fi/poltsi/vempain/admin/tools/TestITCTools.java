@@ -65,6 +65,7 @@ import static fi.poltsi.vempain.admin.api.Constants.ADMIN_ID;
 import static fi.poltsi.vempain.admin.tools.TestUserAccountTools.encryptPassword;
 import static fi.poltsi.vempain.admin.tools.TestUserAccountTools.randomPassword;
 import static fi.poltsi.vempain.common.api.FileTypeEnum.getFileTypeByMimetype;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -360,9 +361,9 @@ public class TestITCTools {
             sortOrder++;
         }
     }
-    /////////////////// Components end
+    /* Components end */
 
-    /// //////////////// Layouts start
+    /* Layouts start */
     public Long generateLayout() {
         var userId = generateUser();
         long aclId = generateAcl(userId, null, true, true, true, true);
@@ -431,9 +432,9 @@ public class TestITCTools {
 
         return false;
     }
-    /////////////////// Layouts end
+    /* Layouts end */
 
-    /// //////////////// Page start
+    /* Page start */
     public Long generatePage() throws VempainAbstractException, VempainComponentException {
         var formId = generateForm();
         var userId = generateUser();
@@ -492,7 +493,9 @@ public class TestITCTools {
         return subjectIdList;
     }
 
-    /// //////////////// Subject end //////////////// FileCommon start
+    /* Subject end */
+
+    /* FileCommon start */
     public SiteFile generateSiteFile(long idx) {
         var aclId = generateAcl(1L, null, true, true, true, true);
         var siteFile = SiteFile.builder()
@@ -603,8 +606,9 @@ public class TestITCTools {
 
         return idList;
     }
+    /* User end */
 
-    /// //////////////// User end //////////////// Unit start
+    /* Unit start */
     public Long generateUnit() {
         var randomString = TestUserAccountTools.randomLongString();
         var userId = generateUser();
@@ -745,5 +749,5 @@ public class TestITCTools {
         return destinationFileList;
     }
 
-    /////////////////// Gallery end //////////////// start //////////////// end
+    /* Gallery end */
 }
