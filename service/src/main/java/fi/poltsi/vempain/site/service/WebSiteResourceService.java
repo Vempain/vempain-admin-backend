@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import fi.poltsi.vempain.admin.api.site.WebSiteResourceEnum;
 import fi.poltsi.vempain.admin.api.site.request.WebSiteResourcePagedRequest;
+import fi.poltsi.vempain.admin.api.site.response.InternalLinkResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteResourceResponse;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.auth.api.response.PagedResponse;
@@ -36,6 +37,8 @@ import lombok.extern.slf4j.Slf4j;
 public class WebSiteResourceService {
 
     private static final List<String> ALLOWED_SORT_FIELDS = List.of("id", "path", "title", "shortname", "description", "aclId", "fileType", "created");
+    /** Most pages and most files one link target query returns. */
+    public static final int MAX_LINK_TARGETS = 50;
     private final WebSiteFileRepository siteFileRepository;
     private final WebSitePageRepository webSitePageRepository;
     private final WebSiteGalleryRepository webSiteGalleryRepository;
@@ -76,6 +79,36 @@ public class WebSiteResourceService {
             case PAGE -> mapPagePage(fetchPages(query, aclId, pageable));
             case SITE_FILE -> mapFilePage(fetchFiles(fileType, query, aclId, pageable));
         };
+    }
+
+    /**
+     * The published pages and files that page content may link to: pages whose title or path contains {@code search}, then files whose path contains it, each
+     * ordered by title or path and limited to {@code limit}. An empty search lists the first pages and files. Everything in the site database is published, so
+     * nothing unpublished can be offered.
+     */
+    public List<InternalLinkResponse> findLinkTargets(String search, int limit) {
+        accessService.checkAuthentication();
+        var size = Math.max(1, Math.min(limit, MAX_LINK_TARGETS));
+        var query = search == null ? "" : search.trim();
+        var pagePageable = PageRequest.of(0, size, Sort.by(Sort.Direction.ASC, "title"));
+        var filePageable = PageRequest.of(0, size, Sort.by(Sort.Direction.ASC, "filePath"));
+
+        var pages = query.isEmpty() ? webSitePageRepository.findAll(pagePageable)
+                : webSitePageRepository.findByTitleContainingIgnoreCaseOrFilePathContainingIgnoreCase(query, query, pagePageable);
+        var files = query.isEmpty() ? siteFileRepository.findAll(filePageable) : siteFileRepository.findByFilePathContainingIgnoreCase(query, filePageable);
+
+        var targets = new ArrayList<InternalLinkResponse>();
+        pages.forEach(page -> targets.add(InternalLinkResponse.builder()
+            .type(WebSiteResourceEnum.PAGE)
+            .title(page.getTitle())
+            .path(page.getFilePath())
+            .build()));
+        files.forEach(file -> targets.add(InternalLinkResponse.builder()
+            .type(WebSiteResourceEnum.SITE_FILE)
+            .title(file.getFilePath())
+            .path(file.getFilePath())
+            .build()));
+        return targets;
     }
 
     private String resolveSortField(WebSiteResourceEnum type, String requested) {

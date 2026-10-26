@@ -12,8 +12,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
+
+import fi.poltsi.vempain.common.metadata.ExifToolService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -28,14 +29,13 @@ class ImageToolsUTC {
     @TempDir
     Path tempDir;
 
-    private MetadataTools metadataTools;
+    private ExifToolService exifToolService;
     private ImageTools imageTools;
 
     @BeforeEach
     void setUp() {
-        metadataTools = mock(MetadataTools.class);
-        imageTools = new ImageTools();
-        ReflectionTestUtils.setField(imageTools, "metadataTools", metadataTools);
+        exifToolService = mock(ExifToolService.class);
+        imageTools = new ImageTools(exifToolService);
     }
 
     private Path image(String name, int width, int height) throws Exception {
@@ -58,7 +58,7 @@ class ImageToolsUTC {
 
         assertEquals(new Dimension(200, 100), dimension);
         assertEquals(new Dimension(200, 100), imageTools.getImageDimensions(target));
-        verify(metadataTools).copyMetadata(source.toFile(), target.toFile());
+        verify(exifToolService).copyAllTags(source.toFile(), target.toFile());
     }
 
     @Test
@@ -92,7 +92,7 @@ class ImageToolsUTC {
         var thrown = assertThrows(ResponseStatusException.class, () -> imageTools.resizeImage(source, target, 100, 0.8f));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, thrown.getStatusCode());
-        verify(metadataTools, never()).copyMetadata(any(), any());
+        verify(exifToolService, never()).copyAllTags(any(), any());
     }
 
     @Test

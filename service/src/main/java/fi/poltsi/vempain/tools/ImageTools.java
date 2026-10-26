@@ -8,11 +8,11 @@ import java.util.Iterator;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
+import fi.poltsi.vempain.common.metadata.ExifToolService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.coobird.thumbnailator.Thumbnails;
@@ -23,8 +23,7 @@ import net.coobird.thumbnailator.Thumbnails;
 public class ImageTools {
 
     private static final String RESPONSE_STATUS_EXCEPTION_MESSAGE = "Unknown error";
-    @Autowired
-    private MetadataTools metadataTools;
+    private final ExifToolService exifToolService;
 
     public Dimension resizeImage(Path sourceFile, Path destinationFile, int imageMinimumSize, float quality) {
         // Get the original dimensions of the source file in order to see whether it should be resized
@@ -56,13 +55,25 @@ public class ImageTools {
                 .useExifOrientation(true)
                 .toFile(destinationFile.toFile());
 
-            metadataTools.copyMetadata(sourceFile.toFile(), destinationFile.toFile());
+            copyMetadata(sourceFile, destinationFile);
         } catch (IOException e) {
             log.error("Failed to copy/convert {} to {}", sourceFile, destinationFile, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, RESPONSE_STATUS_EXCEPTION_MESSAGE);
         }
 
         return targetDimensions;
+    }
+
+    /**
+     * Copies every tag of the source into the resized image; a failure is logged, the image stays usable without metadata.
+     */
+    private void copyMetadata(Path sourceFile, Path destinationFile) {
+        try {
+            exifToolService.copyAllTags(sourceFile.toFile(), destinationFile.toFile());
+            log.debug("Metadata copied successfully from file {} to file {}", sourceFile, destinationFile);
+        } catch (IOException e) {
+            log.error("Failed to copy metadata from file {} to file {}: {}", sourceFile, destinationFile, e.getMessage());
+        }
     }
 
     public Dimension getImageDimensions(Path imageFile) {

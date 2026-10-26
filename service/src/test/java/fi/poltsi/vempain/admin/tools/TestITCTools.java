@@ -56,8 +56,8 @@ import fi.poltsi.vempain.auth.service.AclService;
 import fi.poltsi.vempain.auth.service.UnitService;
 import fi.poltsi.vempain.auth.service.UserService;
 import fi.poltsi.vempain.common.api.FileTypeEnum;
-import fi.poltsi.vempain.tools.JsonTools;
-import fi.poltsi.vempain.tools.MetadataTools;
+import fi.poltsi.vempain.common.metadata.ExifToolService;
+import fi.poltsi.vempain.common.metadata.MetadataJson;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -65,7 +65,6 @@ import static fi.poltsi.vempain.admin.api.Constants.ADMIN_ID;
 import static fi.poltsi.vempain.admin.tools.TestUserAccountTools.encryptPassword;
 import static fi.poltsi.vempain.admin.tools.TestUserAccountTools.randomPassword;
 import static fi.poltsi.vempain.common.api.FileTypeEnum.getFileTypeByMimetype;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -93,13 +92,11 @@ public class TestITCTools {
     private final GalleryRepository galleryRepository;
     @Value("${vempain.admin.file.site-file-directory}")
     private String siteFileDirectory;
-    @Value("${vempain.cmd-line.exiftool}")
-    private String exifToolPath;
 
     @Autowired
     private EntityManager entityManager;
     @Autowired
-    private MetadataTools metadataTools;
+    private ExifToolService exifToolService;
     @Autowired
     private SiteFileRepository siteFileRepository;
 
@@ -707,10 +704,15 @@ public class TestITCTools {
         // The copy the files in fileList to the destinationDir
         for (Path file : fileList) {
             // Get metadata
-            var metadata = metadataTools.getMetadataAsJSON(file.toFile());
+            String metadata;
+            try {
+                metadata = exifToolService.readMetadataJson(file.toFile());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
             var jsonArray = new JSONArray(metadata);
             var jsonObject = jsonArray.getJSONObject(0);
-            var mimetype = JsonTools.extractMimetype(jsonObject);
+            var mimetype = MetadataJson.extractMimetype(jsonObject);
             var fileType = getFileTypeByMimetype(mimetype);
             var destinationFile = Path.of(siteFileDirectory + File.separator + fileType.name()
                 .toLowerCase() + File.separator + randomImagePath + File.separator + file.getFileName());

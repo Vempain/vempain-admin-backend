@@ -5,6 +5,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -15,6 +16,7 @@ import org.springframework.data.domain.Sort;
 
 import fi.poltsi.vempain.admin.api.site.WebSiteResourceEnum;
 import fi.poltsi.vempain.admin.api.site.request.WebSiteResourcePagedRequest;
+import fi.poltsi.vempain.admin.api.site.response.InternalLinkResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteResourceResponse;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.common.api.FileTypeEnum;
@@ -26,12 +28,15 @@ import fi.poltsi.vempain.site.repository.WebSiteGalleryRepository;
 import fi.poltsi.vempain.site.repository.WebSitePageRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -59,6 +64,57 @@ class WebSiteResourceServiceUTC {
         // Allow authentication check to pass silently
         doNothing().when(accessService)
             .checkAuthentication();
+    }
+
+    @Test
+    @DisplayName("Link targets list the matching published pages first, then the files, each limited and sorted")
+    void findLinkTargets_listsPagesThenFiles() {
+        var page = WebSitePage.builder()
+            .id(30L)
+            .title("About us")
+            .filePath("about")
+            .build();
+        var file = WebSiteFile.builder()
+            .id(10L)
+            .filePath("document/2024/about-us.pdf")
+            .fileType(FileTypeEnum.DOCUMENT)
+            .build();
+        when(pageRepo.findByTitleContainingIgnoreCaseOrFilePathContainingIgnoreCase(eq("about"), eq("about"), any(Pageable.class)))
+            .thenReturn(new PageImpl<>(List.of(page)));
+        when(fileRepo.findByFilePathContainingIgnoreCase(eq("about"), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(file)));
+
+        var targets = service.findLinkTargets("  about ", 5);
+
+        assertThat(targets).extracting(InternalLinkResponse::getType, InternalLinkResponse::getTitle, InternalLinkResponse::getPath)
+            .containsExactly(tuple(WebSiteResourceEnum.PAGE, "About us", "about"),
+                    tuple(WebSiteResourceEnum.SITE_FILE, "document/2024/about-us.pdf", "document/2024/about-us.pdf"));
+        var pageable = ArgumentCaptor.forClass(Pageable.class);
+        verify(pageRepo).findByTitleContainingIgnoreCaseOrFilePathContainingIgnoreCase(eq("about"), eq("about"), pageable.capture());
+        assertThat(pageable.getValue()
+            .getPageSize()).isEqualTo(5);
+        assertThat(pageable.getValue()
+            .getSort()).isEqualTo(Sort.by(Sort.Direction.ASC, "title"));
+        var filePageable = ArgumentCaptor.forClass(Pageable.class);
+        verify(fileRepo).findByFilePathContainingIgnoreCase(eq("about"), filePageable.capture());
+        assertThat(filePageable.getValue()
+            .getSort()).isEqualTo(Sort.by(Sort.Direction.ASC, "filePath"));
+        verify(accessService).checkAuthentication();
+    }
+
+    @Test
+    @DisplayName("An empty search lists the first pages and files, and the limit is clamped to 1..50")
+    void findLinkTargets_emptySearchListsTheFirstTargetsWithinTheLimit() {
+        when(pageRepo.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
+        when(fileRepo.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
+
+        assertThat(service.findLinkTargets(null, 500)).isEmpty();
+        assertThat(service.findLinkTargets("   ", 0)).isEmpty();
+
+        var pageables = ArgumentCaptor.forClass(Pageable.class);
+        verify(pageRepo, times(2)).findAll(pageables.capture());
+        assertThat(pageables.getAllValues()).extracting(Pageable::getPageSize)
+            .containsExactly(WebSiteResourceService.MAX_LINK_TARGETS, 1);
+        verify(pageRepo, never()).findByTitleContainingIgnoreCaseOrFilePathContainingIgnoreCase(any(), any(), any(Pageable.class));
     }
 
     @Test

@@ -1,6 +1,7 @@
 package fi.poltsi.vempain.admin.api.response;
 
 import java.time.Instant;
+import java.util.List;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -43,4 +44,6 @@ public class PageResponse extends AbstractResponse {
     @Schema(description = "Date when the page was last published, null if never", example = "2022-05-13T16:03:44Z")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private Instant published;
+    @Schema(description = "Tags (subject names) of the page, in alphabetical order", example = "[\"finland\", \"travel\"]")
+    private List<String> tags;
 }

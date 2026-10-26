@@ -48,7 +48,7 @@ class SetupVerification implements ApplicationContextAware {
         { "vempain.site.ssh.user", TYPE_STRING },
         { "vempain.site.ssh.home-dir", TYPE_STRING }, // This needs to be a string because it is located on the remote
         { "vempain.site.ssh.address", TYPE_STRING },
-        { "vempain.cmd-line.exiftool", TYPE_FILE },
+        { "vempain.exiftool.path", TYPE_FILE },
         // Following are already defined with default values, but we want to make sure they're of the correct type
         { "vempain.app.jwt-expiration-ms", TYPE_NUMBER },
         { "vempain.admin.file.thumbnail-size", TYPE_NUMBER },

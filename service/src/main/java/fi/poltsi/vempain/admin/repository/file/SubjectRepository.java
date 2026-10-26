@@ -30,4 +30,12 @@ public interface SubjectRepository extends PagingAndSortingRepository<Subject, L
             AND   fs.subject_id = s.id
             """, nativeQuery = true)
     List<Subject> getSubjectsByFileId(@Param("siteFileId") Long siteFileId);
+
+    @Query(value = """
+            SELECT s.* FROM subjects s, page_subject ps
+            WHERE ps.page_id = :pageId
+            AND   ps.subject_id = s.id
+            ORDER BY s.subject
+            """, nativeQuery = true)
+    List<Subject> getSubjectsByPageId(@Param("pageId") Long pageId);
 }

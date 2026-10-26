@@ -31,6 +31,17 @@ spring:
     password: override-me
     configuration:
       pool-name: site
+      # The site database may sit behind a WireGuard tunnel that drops idle TCP connections silently. Idle connections are pinged every
+      # 30 s and recycled after 10 min, so a dead one is replaced before a publish borrows it; borrowing and validation give up quickly;
+      # the driver keeps the socket alive and notices a dead peer after socketTimeout seconds instead of waiting for the OS TCP timeout
+      keepalive-time: ${VEMPAIN_SITE_DB_KEEPALIVE_MS:30000}
+      max-lifetime: ${VEMPAIN_SITE_DB_MAX_LIFETIME_MS:600000}
+      connection-timeout: ${VEMPAIN_SITE_DB_CONNECTION_TIMEOUT_MS:10000}
+      validation-timeout: 5000
+      data-source-properties:
+        tcpKeepAlive: true
+        connectTimeout: 10
+        socketTimeout: ${VEMPAIN_SITE_DB_SOCKET_TIMEOUT_SECONDS:120}
   jpa:
     show-sql: false
     open-in-view: false
@@ -189,12 +200,22 @@ vempain:
       home-dir: override-me
       address: override-me
       port: 22
+    database:
+      # The site writes of a publish item run in one site transaction; when the site database connection is lost meanwhile (a dropped
+      # tunnel), the dead connections are evicted and the item is written again after a pause that doubles up to 30 s
+      retry-attempts: ${VEMPAIN_SITE_DB_RETRY_ATTEMPTS:5}
+      retry-backoff-ms: ${VEMPAIN_SITE_DB_RETRY_BACKOFF_MS:2000}
+    # How many publish tasks may transfer files to the site server at the same time, each over an SFTP session of its own; the other
+    # publish tasks wait in the "site-sftp" task lane. 1 serializes the publishing so that one transfer gets the whole upload bandwidth
+    # (also bounded by vempain.tasks.worker-count)
+    sftp-concurrency: ${VEMPAIN_SITE_SFTP_CONCURRENCY:1}
   cors:
     allowed-origins: "${vempain.app.frontend-url}"
     cors-pattern: '/**'
     max-age: 3600
-  cmd-line:
-    exiftool: override-me
+  exiftool:
+    # Path of the exiftool executable the shared metadata runner (vempain-common) starts as persistent processes
+    path: override-me
 
 ---
 ### Local machine ###

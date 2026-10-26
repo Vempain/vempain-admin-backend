@@ -43,6 +43,9 @@ public interface WebSitePageRepository extends PagingAndSortingRepository<WebSit
     @NonNull
     Page<WebSitePage> findByFilePathContainingIgnoreCase(String filePath, @NonNull Pageable pageable);
 
+    /** Pages whose title or path contains the text; the internal link targets of the page editor. */
+    Page<WebSitePage> findByTitleContainingIgnoreCaseOrFilePathContainingIgnoreCase(String title, String filePath, @NonNull Pageable pageable);
+
     @NonNull
     Page<WebSitePage> findByBodyContainingIgnoreCase(String body, @NonNull Pageable pageable);
 

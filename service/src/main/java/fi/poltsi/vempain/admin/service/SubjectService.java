@@ -1,6 +1,9 @@
 package fi.poltsi.vempain.admin.service;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 
 import jakarta.persistence.EntityManager;
 
@@ -143,6 +146,59 @@ public class SubjectService {
 
     public List<Subject> getSubjectsByFileId(long fileCommonId) {
         return subjectRepository.getSubjectsByFileId(fileCommonId);
+    }
+
+    /**
+     * The tags of a page, alphabetically.
+     */
+    public List<Subject> getSubjectsByPageId(long pageId) {
+        return subjectRepository.getSubjectsByPageId(pageId);
+    }
+
+    /**
+     * Replaces the tags of a page: the names are trimmed and deduplicated (case-insensitively, the first spelling wins), blank ones dropped, an unknown tag
+     * becomes a new subject and the page's links are rewritten.
+     */
+    @Transactional(propagation = Propagation.REQUIRED)
+    public List<Subject> replacePageSubjects(long pageId, List<String> tagNames) {
+        entityManager.flush();
+        removeAllSubjectsFromPage(pageId);
+        var subjects = new ArrayList<Subject>();
+        var seen = new HashSet<String>();
+        for (var tagName : tagNames == null ? List.<String>of() : tagNames) {
+            if (tagName == null
+                || tagName.isBlank()
+                || !seen.add(tagName.trim()
+                    .toLowerCase(Locale.ROOT))) {
+                continue;
+            }
+            var subject = findOrCreateSubject(tagName.trim());
+            addSubjectToPage(pageId, subject.getId());
+            subjects.add(subject);
+        }
+        return subjects;
+    }
+
+    private Subject findOrCreateSubject(String tagName) {
+        return subjectRepository.findSubjectBySubjectName(tagName)
+            .orElseGet(() -> subjectRepository.save(Subject.builder()
+                .subjectName(tagName)
+                .build()));
+    }
+
+    @Transactional
+    public void addSubjectToPage(long pageId, long subjectId) {
+        entityManager.createNativeQuery("INSERT INTO page_subject (page_id, subject_id) VALUES (:pageId, :subjectId)")
+            .setParameter("pageId", pageId)
+            .setParameter("subjectId", subjectId)
+            .executeUpdate();
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void removeAllSubjectsFromPage(long pageId) {
+        entityManager.createNativeQuery("DELETE FROM page_subject WHERE page_id = :pageId")
+            .setParameter("pageId", pageId)
+            .executeUpdate();
     }
 
     @Transactional

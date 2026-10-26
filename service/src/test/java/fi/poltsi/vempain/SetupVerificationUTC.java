@@ -115,7 +115,7 @@ class SetupVerificationUTC {
         configuration.put("vempain.site.ssh.user", "vempain-site");
         configuration.put("vempain.site.ssh.home-dir", "/home/vempain-site");
         configuration.put("vempain.site.ssh.address", "site.example");
-        configuration.put("vempain.cmd-line.exiftool", exiftool.toString());
+        configuration.put("vempain.exiftool.path", exiftool.toString());
         configuration.put("vempain.app.jwt-expiration-ms", "86400000");
         configuration.put("vempain.admin.file.thumbnail-size", "250");
         configuration.put("vempain.site.image-size", "800");
@@ -187,19 +187,19 @@ class SetupVerificationUTC {
     @Test
     void checkEssentialConfigurations_closesWhenTheToolIsMissingADirectoryOrNotExecutable() throws Exception {
         var missing = validConfiguration();
-        missing.put("vempain.cmd-line.exiftool", tempDir.resolve("no-such-tool")
+        missing.put("vempain.exiftool.path", tempDir.resolve("no-such-tool")
             .toString());
         assertClosesWith(missing);
 
         var directory = validConfiguration();
-        directory.put("vempain.cmd-line.exiftool", tempDir.toString());
+        directory.put("vempain.exiftool.path", tempDir.toString());
         assertClosesWith(directory);
 
         var notExecutable = validConfiguration();
         var script = tempDir.resolve("not-executable");
         Files.writeString(script, "#!/bin/sh\n");
         Files.setPosixFilePermissions(script, PosixFilePermissions.fromString("rw-r--r--"));
-        notExecutable.put("vempain.cmd-line.exiftool", script.toString());
+        notExecutable.put("vempain.exiftool.path", script.toString());
         assertClosesWith(notExecutable);
     }
 
