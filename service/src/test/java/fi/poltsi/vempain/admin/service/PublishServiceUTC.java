@@ -362,6 +362,7 @@ class PublishServiceUTC {
             .id(1L)
             .formId(2L)
             .body("Page body")
+            .pageStyle(".vps-page-canvas { max-width: 60rem; }")
             .pagePath("/page")
             .title("Page")
             .header("Header")
@@ -409,6 +410,8 @@ class PublishServiceUTC {
         publishService.publishPageAsSystem(1L);
 
         verify(webSitePageRepository).save(argThat(sitePage -> "<main>Page body</main>".equals(sitePage.getBody())));
+        // the custom CSS of the page is published with it, as the website's web_site_page.page_style
+        verify(webSitePageRepository).save(argThat(sitePage -> ".vps-page-canvas { max-width: 60rem; }".equals(sitePage.getPageStyle())));
         verify(webSiteSubjectService).replaceSitePageSubjects(300L, List.of(siteTravel));
     }
 

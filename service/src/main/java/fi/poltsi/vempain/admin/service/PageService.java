@@ -257,6 +257,7 @@ public class PageService {
             .pagePath(request.getPagePath())
             .body(request.getBody()
                 .trim())
+            .pageStyle(normalizePageStyle(request.getPageStyle()))
             .indexList(request.isIndexList())
             .locked(false)
             .secure(request.isSecure())
@@ -376,6 +377,7 @@ public class PageService {
                 .trim());
             page.setHeader(request.getHeader()
                 .trim());
+            page.setPageStyle(normalizePageStyle(request.getPageStyle()));
             page.setIndexList(request.isIndexList());
             page.setFormId(request.getFormId());
             page.setParentId(parentId);
@@ -448,5 +450,17 @@ public class PageService {
             .map(Subject::getSubjectName)
             .toList());
         return response;
+    }
+
+    /**
+     * The custom CSS of a page as stored: trimmed, and null when the request carries none or only whitespace, so the website applies nothing.
+     */
+    static String normalizePageStyle(String pageStyle) {
+        if (pageStyle == null
+            || pageStyle.isBlank()) {
+            return null;
+        }
+
+        return pageStyle.strip();
     }
 }

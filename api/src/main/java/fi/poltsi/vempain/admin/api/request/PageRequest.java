@@ -35,6 +35,10 @@ public class PageRequest extends BaseRequest {
     private String header;
     @Schema(description = "The body text of the page", example = "<H1>Hello world!</H1>")
     private String body;
+    @Schema(description = "Custom CSS of the page, published with it and applied by the website while the page is shown: rules for the page canvas"
+            + " (.vps-page-canvas) and overrides of the site's default style. Null or blank means none",
+            example = ".vps-page-canvas { max-width: 60rem; } :root { --color-surface: #fff; }")
+    private String pageStyle;
     @Schema(description = "IDs of the galleries the page links to, in the order they appear in the body (the gallery and hero carousel embeds)."
             + " Omitted or null leaves the existing links untouched, an empty list removes them", example = "[7, 12]")
     private List<Long> galleryIds;

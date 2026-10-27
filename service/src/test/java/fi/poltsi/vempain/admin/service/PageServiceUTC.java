@@ -33,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
@@ -356,9 +357,29 @@ class PageServiceUTC {
             assertEquals(request.getHeader(), response.getHeader());
             assertEquals(request.getTitle(), response.getTitle());
             assertEquals(request.getBody(), response.getBody());
+            // the custom CSS of the request is stored with the page
+            verify(pageRepository).save(argThat(saved -> request.getPageStyle()
+                .equals(saved.getPageStyle())));
         } catch (Exception e) {
             fail("Should not have received an exception: " + e);
         }
+    }
+
+    @Test
+    void saveFromPageRequestStoresBlankPageStyleAsNull() {
+        Page page = TestUTCTools.generatePage(1L);
+        PageRequest request = TestUTCTools.generatePageRequestFromPage(page);
+        request.setPageStyle("   \n ");
+        when(accessService.getValidUserId()).thenReturn(1L);
+        when(pageRepository.findByPagePath(request.getPagePath())).thenReturn(null);
+        when(aclService.saveNewAclForObject(request.getAcls())).thenReturn(1L);
+        when(pageRepository.save(any())).thenReturn(page);
+
+        pageService.saveFromPageRequest(request);
+
+        verify(pageRepository).save(argThat(saved -> saved.getPageStyle() == null));
+        assertNull(PageService.normalizePageStyle(null));
+        assertEquals(".a { color: red; }", PageService.normalizePageStyle("  .a { color: red; }  "));
     }
 
     @Test
@@ -414,9 +435,28 @@ class PageServiceUTC {
             assertEquals(request.getHeader(), response.getHeader());
             assertEquals(request.getTitle(), response.getTitle());
             assertEquals(request.getBody(), response.getBody());
+            verify(pageRepository).save(argThat(saved -> request.getPageStyle()
+                .equals(saved.getPageStyle())));
         } catch (Exception e) {
             fail("Should not have received an exception: " + e);
         }
+    }
+
+    @Test
+    void updateFromRequestClearsThePageStyle() throws VempainAclException {
+        Page page = TestUTCTools.generatePage(1L);
+        PageRequest request = TestUTCTools.generatePageRequestFromPage(page);
+        request.setPageStyle(null);
+        when(accessService.getValidUserId()).thenReturn(1L);
+        when(pageRepository.findById(request.getId())).thenReturn(page);
+        when(accessService.hasModifyPermission(page.getAclId())).thenReturn(true);
+        doNothing().when(aclService)
+            .updateFromRequestList(request.getAcls());
+        when(pageRepository.save(any())).thenReturn(page);
+
+        pageService.updateFromRequest(request);
+
+        verify(pageRepository).save(argThat(saved -> saved.getPageStyle() == null));
     }
 
     @Test

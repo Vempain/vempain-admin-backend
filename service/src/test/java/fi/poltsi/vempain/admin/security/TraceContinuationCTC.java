@@ -33,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Feign calls) is handled inside that trace, so that the server span and every log line of the request carry the caller's trace id. The tracer is the real
  * OpenTelemetry bridge of the application; only the export is absent (no endpoint is configured in tests).
  */
-@SpringBootTest(properties = { "management.tracing.enabled=true", "management.tracing.export.enabled=true", "management.tracing.sampling.probability=1.0" })
+@SpringBootTest(properties = { "management.tracing.export.enabled=true", "management.tracing.sampling.probability=1.0" })
 @AutoConfigureMockMvc
 class TraceContinuationCTC {
 

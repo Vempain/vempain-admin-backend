@@ -249,10 +249,11 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
 - Distributed tracing: `spring-boot-starter-opentelemetry` (Micrometer Tracing with the OpenTelemetry bridge and the OTLP exporter). An
   incoming W3C `traceparent` (Traefik, the admin SPA, the file backend's Feign calls) is continued; Boot puts `traceId`/`spanId` into the
   MDC and the console pattern, so every log line of a request carries them. `VEMPAIN_TRACING_ENABLED|URL|SAMPLING` map to
-  `vempain.tracing.*` and `management.tracing.enabled` in `application.yaml`; the Tempo endpoint, the basic-auth header, the certificate
+  `vempain.tracing.*` and `management.tracing.export.enabled` in `application.yaml` (the only switch since Boot 4.0;
+  `management.tracing.enabled` is deprecated and must not come back); the Tempo endpoint, the basic-auth header, the certificate
   bundle and the sampling probability (`management.opentelemetry.tracing.export.otlp.*`, `management.tracing.sampling.probability`) are
   set by `vempain-common`'s `MetricsExportEnvironmentPostProcessor`, reusing the metrics credentials, so the `vempain-common` bump above
-  covers tracing too. `management.tracing.export.enabled` is bound to the same switch, because Boot's `LogCorrelationEnvironmentPostProcessor`
+  covers tracing too. The export switch also drives Boot's `LogCorrelationEnvironmentPostProcessor`, which
   adds the `[app,traceId,spanId]` block to the console pattern whenever a `Tracer` is on the classpath and the export is not disabled;
   the block therefore appears only when tracing is on, identically in the three backends. Background tasks run in a span of their own (`task <type>`,
   `vempain-common` `TaskRunner`). Keep tracing off in
@@ -305,6 +306,12 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
   - `./gradlew clean test`
   - `./gradlew :service:bootJar`
   - `./gradlew :service:bootRun --args='...'`
+- javac runs with `-Xlint:deprecation -Xlint:unchecked -Werror` in every module (`tasks.withType(JavaCompile)` in the `build.gradle` files), so a deprecated
+  3rd-party API or an unchecked operation fails the compile: replace the call with the documented successor; a deliberate exception needs `@SuppressWarnings`
+  with a comment explaining why.
+- `ConfigurationPropertyDeprecationUTC` scans `application*.yaml|yml|properties` under `src/main/resources` and `src/test/resources` against the deprecations of
+  the Spring Boot configuration metadata on the class path and fails on any deprecated key, naming the replacement; Boot itself only logs them at startup. The
+  scanner is `fi.poltsi.vempain.common.config.DeprecatedConfigurationProperties` of `vempain-common` (1.0.11 or later).
 - Integration-test environment is unusual: `testSetup.sh --developer-name <login>` must be run as root to create local users, SSH keys, and directories consumed by tests; `testCleanup.sh` removes them.
 
 ## Testing patterns
