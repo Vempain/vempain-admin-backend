@@ -3,6 +3,7 @@ EXPOSE 8080 8081
 
 RUN apk add --no-cache curl exiftool su-exec
 RUN mkdir /vempain_admin
+# The ids are placeholders: container-entrypoint.sh gives the account VEMPAIN_UID:VEMPAIN_GID when the container starts
 RUN adduser -D -h /vempain_admin/vempain -u 6666 -H vempain
 
 ADD service/build/libs/vempain-admin-backend-*.jar /app.jar

@@ -24,6 +24,7 @@ import fi.poltsi.vempain.admin.api.TaskTypeEnum;
 import fi.poltsi.vempain.admin.api.response.PublishResponse;
 import fi.poltsi.vempain.admin.entity.FormComponent;
 import fi.poltsi.vempain.admin.entity.Page;
+import fi.poltsi.vempain.admin.entity.Subject;
 import fi.poltsi.vempain.admin.entity.file.FileThumb;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
 import fi.poltsi.vempain.admin.entity.file.GalleryFile;
@@ -35,6 +36,7 @@ import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.service.UserService;
 import fi.poltsi.vempain.common.api.FileTypeEnum;
 import fi.poltsi.vempain.common.api.response.TaskAcceptedResponse;
+import fi.poltsi.vempain.common.task.TaskLane;
 import fi.poltsi.vempain.common.task.TaskProgress;
 import fi.poltsi.vempain.common.task.TaskRunner;
 import fi.poltsi.vempain.site.entity.WebGpsLocation;
@@ -43,6 +45,7 @@ import fi.poltsi.vempain.site.repository.WebGpsLocationRepository;
 import fi.poltsi.vempain.site.repository.WebSiteFileRepository;
 import fi.poltsi.vempain.site.repository.WebSiteGalleryRepository;
 import fi.poltsi.vempain.site.repository.WebSitePageRepository;
+import fi.poltsi.vempain.site.service.SiteDatabaseRetry;
 import fi.poltsi.vempain.site.service.WebSiteResourceService;
 import fi.poltsi.vempain.site.service.WebSiteSubjectService;
 import fi.poltsi.vempain.tools.JschClient;
@@ -71,8 +74,10 @@ public class PublishService {
     private final SubjectService subjectService;
     private final GalleryFileService galleryFileService;
     private final WebSiteSubjectService webSiteSubjectService;
+    private final TagBlacklistService tagBlacklistService;
     private final PageGalleryService pageGalleryService;
     private final JschClient jschClient;
+    private final SiteDatabaseRetry siteDatabaseRetry;
     private final WebSiteResourceService webSiteResourceService;
     private final AccessService accessService;
     private final TaskRunner taskRunner;
@@ -91,6 +96,20 @@ public class PublishService {
 
     @Value("${vempain.site.thumb-directory}")
     private String thumbSubDir;
+    /** How many publish tasks may hold an SFTP session to the site server at the same time; the rest wait in the {@value #SITE_SFTP_LANE} lane. */
+    @Value("${vempain.site.sftp-concurrency:1}")
+    private int siteSftpConcurrency;
+
+    /** The task lane of every task that transfers files to the site server over SFTP (page and gallery publishing). */
+    static final String SITE_SFTP_LANE = "site-sftp";
+
+    /**
+     * The lane of the publish tasks that transfer files to the site server: at most {@code vempain.site.sftp-concurrency} of them run at the same time, each
+     * with one SFTP session, so an administrator with limited upload bandwidth can trade concurrency for speed per transfer.
+     */
+    TaskLane siteTransferLane() {
+        return TaskLane.of(SITE_SFTP_LANE, Math.max(1, siteSftpConcurrency));
+    }
 
     /// ///////// Pages
 
@@ -239,20 +258,53 @@ public class PublishService {
         // Starting PHP-tag followed by white space and ending PHP-tag
         pageBody = pageBody.replaceAll("<\\?php\\s*\\?>", "");
 
-        var optionalSitePage = webSitePageRepository.findByPageId(pageId);
         var creator = userService.findUserResponseById(page.getCreator())
             .getNick();
-        var modifier = "";
+        var modifier = page.getModifier() == null ? null
+                : userService.findUserResponseById(page.getModifier())
+                    .getNick();
+        var published = Instant.now();
+        // The page's tags follow it to the site, without the blacklisted ones
+        var pageSubjects = tagBlacklistService.snapshot()
+            .filterSubjects(subjectService.getSubjectsByPageId(pageId));
+        var body = pageBody;
 
-        if (page.getModifier() != null) {
-            modifier = userService.findUserResponseById(page.getModifier())
-                .getNick();
-        } else {
-            modifier = null;
+        // The site rows of the page are written in one site transaction, run again if the site database connection is lost meanwhile
+        var savedPageId = siteDatabaseRetry.execute("page " + page.getTitle(), () -> writeSitePage(page, body, creator, modifier, published, pageSubjects));
+        // We update the page setting the published timestamp
+        page.setPublished(published);
+        pageService.save(page);
+
+        if (progress != null) {
+            progress.advance("Published page " + page.getTitle());
         }
 
-        var published = Instant.now();
-        var webSitePage = optionalSitePage.orElseGet(WebSitePage::new);
+        // Check if there are any galleries in the page, if then they should also be published
+        var pageGalleries = pageGalleryService.findPageGalleryByPageId(pageId);
+
+        if (!pageGalleries.isEmpty()) {
+            for (var pageGallery : pageGalleries) {
+                publishGalleryAsSystem(pageGallery.getGalleryId(), progress);
+            }
+        }
+
+        // Finally, we want to reset the cache for the page which includes the Top10 component
+        // Currently hard coded to page ID 10 which is the front page
+        siteDatabaseRetry.execute("front page cache reset", () -> {
+            webSitePageRepository.resetCacheByPageId(10L);
+            return null;
+        });
+        return savedPageId;
+    }
+
+    /**
+     * Writes a page and its subjects to the site: the site part of {@link #publishPageAsSystem}, one unit of work for {@link SiteDatabaseRetry}.
+     *
+     * @return the id of the site page
+     */
+    private long writeSitePage(Page page, String pageBody, String creator, String modifier, Instant published, List<Subject> pageSubjects) {
+        var webSitePage = webSitePageRepository.findByPageId(page.getId())
+            .orElseGet(WebSitePage::new);
 
         if (webSitePage.getAclId() == 0) {
             webSitePage.setAclId(webSiteResourceService.getNextWebSiteAcl());
@@ -274,28 +326,9 @@ public class PublishService {
         webSitePage.setCache(null);
         webSitePage.setPublished(published);
         var savedPage = webSitePageRepository.save(webSitePage);
-
+        var sitePageSubjects = webSiteSubjectService.saveAllFromAdminSubject(pageSubjects, modifier != null ? modifier : creator);
+        webSiteSubjectService.replaceSitePageSubjects(savedPage.getId(), sitePageSubjects);
         log.debug("Published page: {}", savedPage);
-        // We update the page setting the published timestamp
-        page.setPublished(published);
-        pageService.save(page);
-
-        if (progress != null) {
-            progress.advance("Published page " + page.getTitle());
-        }
-
-        // Check if there are any galleries in the page, if then they should also be published
-        var pageGalleries = pageGalleryService.findPageGalleryByPageId(pageId);
-
-        if (!pageGalleries.isEmpty()) {
-            for (var pageGallery : pageGalleries) {
-                publishGalleryAsSystem(pageGallery.getGalleryId(), progress);
-            }
-        }
-
-        // Finally, we want to reset the cache for the page which includes the Top10 component
-        // Currently hard coded to page ID 10 which is the front page
-        webSitePageRepository.resetCacheByPageId(10L);
         return savedPage.getId();
     }
 
@@ -405,21 +438,30 @@ public class PublishService {
         }
         // The files are on the site server now, the gallery and every file in it are released to the website at this moment
         var published = Instant.now();
-        // Remove any existing gallery data if present, the gallery - file relation is removed by cascade
-        webSiteGalleryRepository.deleteByGalleryId(galleryId);
-
-        // Add the gallery
-        var siteGallery = gallery.getSiteGallery();
-        siteGallery.setAclId(webSiteResourceService.getNextWebSiteAcl());
+        // the blacklisted tags are left out of every file of this publish
+        var tagBlacklist = tagBlacklistService.snapshot();
         // The site names the admin users by nick
-        siteGallery.setCreator(nickOf(gallery.getCreator()));
-        siteGallery.setModifier(nickOf(gallery.getModifier()));
-        var newSiteGallery = webSiteGalleryRepository.save(siteGallery);
-        var siteGalleryId = newSiteGallery.getId();
+        var creator = nickOf(gallery.getCreator());
+        var modifier = nickOf(gallery.getModifier());
 
-        for (var galleryFile : galleryFileList) {
-            publishGalleryFile(galleryFile, siteGalleryId, published);
-        }
+        // The site rows of the gallery are written in one site transaction, run again from the start if the site database connection is lost meanwhile
+        siteDatabaseRetry.execute("gallery " + gallery.getShortname(), () -> {
+            // Remove any existing gallery data if present, the gallery - file relation is removed by cascade
+            webSiteGalleryRepository.deleteByGalleryId(galleryId);
+
+            // Add the gallery
+            var siteGallery = gallery.getSiteGallery();
+            siteGallery.setAclId(webSiteResourceService.getNextWebSiteAcl());
+            siteGallery.setCreator(creator);
+            siteGallery.setModifier(modifier);
+            var siteGalleryId = webSiteGalleryRepository.save(siteGallery)
+                .getId();
+
+            for (var galleryFile : galleryFileList) {
+                publishGalleryFile(galleryFile, siteGalleryId, published, tagBlacklist);
+            }
+            return siteGalleryId;
+        });
 
         // Record on the admin side when the gallery was last released to the website
         gallery.setPublished(published);
@@ -436,15 +478,18 @@ public class PublishService {
         }
     }
 
+    /**
+     * Transfers the files of the gallery over an SFTP connection of its own, so that publish tasks running at the same time never share or close each other's
+     * connection; how many of them run at once is bounded by {@link #siteTransferLane()}.
+     */
     private void transferGalleryFiles(Gallery gallery, List<FileThumb> fileThumbList, TaskProgress progress) {
-        try {
-            log.debug("Connecting to site-server {}", siteSshAddress);
-            log.debug("Connecting to site-server with user {}", siteSshUser);
-            log.debug("Using SSH home dir {}", adminSshHomeDir);
-            log.debug("Using SSH private key {}", adminSshPrivateKey);
-            jschClient.connect(siteSshAddress, siteSshPort, siteSshUser, adminSshHomeDir, adminSshPrivateKey);
+        log.debug("Connecting to site-server {}", siteSshAddress);
+        log.debug("Connecting to site-server with user {}", siteSshUser);
+        log.debug("Using SSH home dir {}", adminSshHomeDir);
+        log.debug("Using SSH private key {}", adminSshPrivateKey);
+        try (var connection = jschClient.connect(siteSshAddress, siteSshPort, siteSshUser, adminSshHomeDir, adminSshPrivateKey)) {
             log.debug("Transferring thumb files to site-server: {}", toJson(fileThumbList));
-            jschClient.transferFilesToSite(gallery.getSiteFiles(), fileThumbList, siteFile -> {
+            connection.transferFilesToSite(gallery.getSiteFiles(), fileThumbList, siteFile -> {
                 if (progress != null) {
                     progress.advance("Transferred " + siteFile.getFileName() + " of gallery " + gallery.getShortname());
                 }
@@ -455,12 +500,11 @@ public class PublishService {
         } catch (SftpException e) {
             log.error("Failed to transfer files to site-server: {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to transfer files to site");
-        } finally {
-            jschClient.close();
         }
     }
 
-    private void publishGalleryFile(GalleryFile galleryFile, long siteGalleryId, Instant published) throws VempainEntityNotFoundException {
+    private void publishGalleryFile(GalleryFile galleryFile, long siteGalleryId, Instant published, TagBlacklist tagBlacklist)
+            throws VempainEntityNotFoundException {
         var siteFile = siteFileRepository.findById(galleryFile.getSiteFileId())
             .orElseThrow(VempainEntityNotFoundException::new);
         log.debug("Deleting potential web site file by file ID: {}", siteFile.getId());
@@ -502,6 +546,8 @@ public class PublishService {
         }
 
         var webSiteFile = siteFile.toWebSiteFile();
+        // blacklisted tags never reach the site: not in the keyword lists of the metadata, not as subjects
+        webSiteFile.setMetadata(tagBlacklist.stripMetadata(webSiteFile.getMetadata()));
         webSiteFile.setAclId(webSiteResourceService.getNextWebSiteAcl());
         webSiteFile.setCreator(fileCreator);
         webSiteFile.setCreated(siteFile.getCreated());
@@ -522,7 +568,7 @@ public class PublishService {
                     .length() : 0));
         var newWebSiteFile = webSiteFileRepository.save(webSiteFile);
         webSiteGalleryRepository.saveGalleryFile(siteGalleryId, newWebSiteFile.getId(), galleryFile.getSortOrder());
-        var subjects = subjectService.getSubjectsByFileId(siteFile.getId());
+        var subjects = tagBlacklist.filterSubjects(subjectService.getSubjectsByFileId(siteFile.getId()));
         log.debug("Publishing subjects for site file {}: {}", newWebSiteFile.getId(), toJson(subjects));
         var siteSubjects = webSiteSubjectService.saveAllFromAdminSubject(subjects, actor);
         webSiteSubjectService.saveSiteFileSubject(newWebSiteFile.getId(), siteSubjects);
@@ -617,8 +663,9 @@ public class PublishService {
     public TaskAcceptedResponse publishPageAsTask(long pageId) throws VempainEntityNotFoundException {
         authorizePagePublish(pageId);
         var page = pageService.findById(pageId);
+        // A page publishes its galleries too, so it takes a place in the SFTP lane
         var progress = taskRunner.submitDurable(TaskTypeEnum.PUBLISH_PAGE.name(), "Publish page " + page.getTitle(), pagePublishSteps(pageId),
-                Map.of("page_id", pageId), task -> publishPageNow(pageId, task));
+                Map.of("page_id", pageId), siteTransferLane(), task -> publishPageNow(pageId, task));
         return progress.toAcceptedResponse();
     }
 
@@ -687,7 +734,7 @@ public class PublishService {
             totalSteps += pagePublishSteps(pageId);
         }
         var progress = taskRunner.submitDurable(TaskTypeEnum.PUBLISH_ALL_PAGES.name(), "Publish all pages", totalSteps, Map.of("page_ids", ids),
-                task -> publishPagesNow(ids, task));
+                siteTransferLane(), task -> publishPagesNow(ids, task));
         return progress.toAcceptedResponse();
     }
 
@@ -726,7 +773,7 @@ public class PublishService {
         var gallery = fileService.findGalleryById(galleryId);
         var ids = List.of(galleryId);
         var progress = taskRunner.submitDurable(TaskTypeEnum.PUBLISH_GALLERY.name(), "Publish gallery " + gallery.getShortname(), galleryPublishSteps(gallery),
-                Map.of("gallery_ids", ids, "skipped", 0), task -> publishGalleriesNow(ids, 0, task));
+                Map.of("gallery_ids", ids, "skipped", 0), siteTransferLane(), task -> publishGalleriesNow(ids, 0, task));
         return progress.toAcceptedResponse();
     }
 
@@ -796,7 +843,7 @@ public class PublishService {
      *                   right from the first poll
      */
     private TaskAcceptedResponse submitGalleryPublish(TaskTypeEnum type, String title, List<Long> galleryIds, int skipped, long totalSteps) {
-        var progress = taskRunner.submitDurable(type.name(), title, totalSteps, Map.of("gallery_ids", galleryIds, "skipped", skipped),
+        var progress = taskRunner.submitDurable(type.name(), title, totalSteps, Map.of("gallery_ids", galleryIds, "skipped", skipped), siteTransferLane(),
                 task -> publishGalleriesNow(galleryIds, skipped, task));
         return progress.toAcceptedResponse();
     }

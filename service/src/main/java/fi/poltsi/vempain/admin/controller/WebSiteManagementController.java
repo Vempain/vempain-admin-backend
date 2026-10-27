@@ -9,6 +9,7 @@ import fi.poltsi.vempain.admin.api.site.request.WebSiteAclRequest;
 import fi.poltsi.vempain.admin.api.site.request.WebSiteConfigurationRequest;
 import fi.poltsi.vempain.admin.api.site.request.WebSiteResourcePagedRequest;
 import fi.poltsi.vempain.admin.api.site.request.WebSiteUserRequest;
+import fi.poltsi.vempain.admin.api.site.response.InternalLinkResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteAclResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteAclUsersResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteConfigurationResponse;
@@ -119,6 +120,14 @@ public class WebSiteManagementController implements WebSiteManagementAPI {
     public ResponseEntity<PagedResponse<WebSiteResourceResponse>> getResources(WebSiteResourcePagedRequest request) {
         accessService.checkAdminAccess();
         return ResponseEntity.ok(webSiteResourceService.listResources(request));
+    }
+
+    /**
+     * Any signed-in user who edits pages may look up the link targets; the service checks the authentication.
+     */
+    @Override
+    public ResponseEntity<List<InternalLinkResponse>> findLinkTargets(String search, int limit) {
+        return ResponseEntity.ok(webSiteResourceService.findLinkTargets(search, limit));
     }
 
     // ========== Site configuration Endpoints ==========

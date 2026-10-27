@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 
 import fi.poltsi.vempain.admin.AbstractITCTest;
@@ -14,6 +15,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class PageServiceITC extends AbstractITCTest {
+
+    @Autowired
+    private SubjectService subjectService;
 
     @Test
     void findPagedByUserReturnsModifiedAscendingAcrossPages() throws Exception {
@@ -75,6 +79,23 @@ class PageServiceITC extends AbstractITCTest {
             .setModified(Instant.parse("2026-03-10T13:00:00Z"));
         pages.forEach(pageRepository::save);
         return pages;
+    }
+
+    @Test
+    void tagsAreStoredWithThePageAndReturnedAlphabetically() throws Exception {
+        var pageId = testITCTools.generatePage();
+        var page = pageRepository.findById(pageId)
+            .orElseThrow();
+
+        subjectService.replacePageSubjects(pageId, List.of("Travel", "finland", "travel"));
+        assertEquals(List.of("Travel", "finland"), pageService.populateResponse(page)
+            .getTags());
+
+        subjectService.replacePageSubjects(pageId, List.of("archive"));
+        assertEquals(List.of("archive"), pageService.populateResponse(page)
+            .getTags());
+        assertEquals(1, subjectService.getSubjectsByPageId(pageId)
+            .size());
     }
 
     @Test

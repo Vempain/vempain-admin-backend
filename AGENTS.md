@@ -147,12 +147,25 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
   `fi.poltsi.vempain.admin.api.TaskTypeEnum`: `PUBLISH_PAGE`, `PUBLISH_ALL_PAGES`, `PUBLISH_GALLERY`, `PUBLISH_ALL_GALLERIES`,
   `PUBLISH_SELECTED_GALLERIES` (`PublishService.*AsTask` submit, `publishPageNow`/`publishPagesNow`/`publishGalleriesNow` run through the
   transactional proxy, result `{"published", "skipped"}` or `{"site_page_id"}`). The publish tasks count the smallest items: one step per
-  file transferred to the site server (`JschClient.transferFilesToSite` sends every site file together with its thumbnails and calls back
+  file transferred to the site server (`JschClient.Connection.transferFilesToSite` sends every site file together with its thumbnails and calls back
   after each one, `publishGalleryAsSystem(id, progress)` advances there), one step for a gallery without files, and for a page one step
   for the page itself plus the files of its galleries (`pagePublishSteps`/`galleryPublishSteps`). The totals are computed at submit time
   so that `total_steps` is right from the first poll, and an item that fails as a whole marks its remaining steps as failed (`failRemainingSteps`). Progress
   writes commit in their own transaction (`vempain-common` 1.0.4+), so the steps are visible while the
-  gallery's transaction is still open. `REFRESH_ALL_GALLERY_FILES`
+  gallery's transaction is still open. Every task that transfers files to the site server (the page and gallery publish types) is submitted
+  into the `site-sftp` task lane (`PublishService.siteTransferLane`, `TaskLane` of `vempain-common` 1.0.9+, columns `task_record.lane` and
+  `lane_limit` from `V1010`): at most `vempain.site.sftp-concurrency` (`VEMPAIN_SITE_SFTP_CONCURRENCY`, default 1) of them run at the same
+  time, each over an SFTP connection of its own (`JschClient.connect` returns a `JschClient.Connection` owned and closed by the publish; the
+  bean itself holds no connection state, so publishes may overlap safely), while the other publish tasks wait in submit order and unrelated
+  tasks keep using the remaining workers. The site database may be reached over a WireGuard tunnel that drops now and then, so the site
+  writes of one publish item (the page row and its subjects in `writeSitePage`, the gallery row and its files) run in one site transaction
+  through `site.service.SiteDatabaseRetry` (`execute(what, work)`: `REQUIRES_NEW` on `siteTransactionManager`, retried after a lost
+  connection, recognised by `isConnectionFailure` from the cause chain, with the site pool soft-evicted and a doubling pause,
+  `vempain.site.database.retry-attempts|retry-backoff-ms`); the admin side is only marked published after the site writes succeeded. For
+  that to work the site services that write site tables bind to `@Transactional("siteTransactionManager")`, never to the primary admin
+  manager, so a site failure does not mark the admin transaction rollback-only before the retry. The site Hikari pool pings idle
+  connections (`keepalive-time`), recycles them (`max-lifetime`) and the driver uses `tcpKeepAlive`/`socketTimeout`
+  (`spring.site-datasource.configuration` in `application.yaml`). `REFRESH_ALL_GALLERY_FILES`
   (`FileService.refreshAllGalleryFilesAsTask`, result `RefreshResponse`) and `PUBLISH_DATA_SET` (`DataService.publishAsTask`, result
   `DataResponse`). The immediate publish endpoints answer `202` with the task inside `PublishResponse.task` (`RefreshResponse.task` for the
   refresh, a bare `TaskAcceptedResponse` for data sets); scheduling a publish still answers `200` without a task, and the synchronous
@@ -197,6 +210,42 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
   > use a `SimpleMeterRegistry` (`AdminMetricsUTC`, `AdminInventoryMetricsUTC`, the metric assertions of the filter, schedule and
   > `JschClientUTC` tests).
 
+- Internal links of page content: `GET /admin-management/site/links?search=&limit=` (`WebSiteManagementAPI.findLinkTargets`,
+  `WebSiteResourceService.findLinkTargets`, `InternalLinkResponse` with `type` PAGE|SITE_FILE, `title`, `path`) lists the published pages (title or path
+  contains the text) and then the published files (path contains it), each sorted and limited (1..50). It reads the site
+  schema only, so nothing unpublished can be offered, and needs a signed-in user, not an administrator. The admin SPA maps the targets to
+  website URLs (`/pages/<path>`, `/file/<path>`) and hands them to the rich-text editor's `findInternalLinks` provider.
+- Page tags: a page carries subjects like a site file does (`page_subject`, `V1009`, `SubjectRepository.getSubjectsByPageId`). `PageRequest.tags`
+  (names; null keeps the existing tags, an empty list removes them) is applied by `PageService.saveFromPageRequest`/`updateFromRequest` through
+  `SubjectService.replacePageSubjects` (trimmed, deduplicated case-insensitively, unknown names become new `subjects` rows), and
+  `PageService.populateResponse` returns them alphabetically as `PageResponse.tags`. `PublishService.publishPageAsSystem` publishes them with
+  the page: the tag blacklist is applied, the subjects are upserted on the site (`WebSiteSubjectService.saveAllFromAdminSubject`, attributed to
+  the page's modifier, else creator) and `web_site_page_subject` is rewritten (`replaceSitePageSubjects`). The website backend already serves them
+  as the page's `subjects`. Tests: `PageServiceUTC`, `PageServiceITC`, `SubjectServiceUTC`, `PublishServiceUTC`.
+- Tag blacklist: `TagBlacklistAPI` (`GET|POST /admin-management/tag-blacklist`, `DELETE .../{entry_id}`, administrators only via
+  `accessService.checkAdminAccess()`; `TagBlacklistRequest`/`TagBlacklistResponse`) is backed by `TagBlacklistController`, `TagBlacklistService`,
+  `TagBlacklistRepository` and the `tag_blacklist` table (`V1008`, unique on `LOWER(tag_name)`, no ACL: it is configuration like subjects). A
+  blacklisted tag never reaches the website: `PublishService.publishGalleryAsSystem` takes one `TagBlacklist` snapshot (`TagBlacklistService.snapshot()`) per
+  publish and `publishGalleryFile` applies it to every file, leaving blacklisted subjects out of
+  `WebSiteSubjectService.saveAllFromAdminSubject` (`filterSubjects`) and removing them from the keyword lists of the site file's metadata JSON (`stripMetadata`:
+  `Keywords`, `Subject`, `HierarchicalSubject`, `WeightedFlatSubject`, ... in any group; free text such as captions is never
+  touched). Matching is case-insensitive on the trimmed name and a hierarchical tag (`People|Family`) matches on any level. Pages carry no
+  subjects of their own today; their galleries are cleaned by the same code when the page publish publishes them. Blacklisting changes nothing on
+  the site until a resource is published again. Tests: `TagBlacklistUTC`, `TagBlacklistServiceUTC`, `TagBlacklistControllerUTC`,
+  `TagBlacklistCTC`, the gallery publish case of `PublishServiceUTC`.
+- Resource statistics: `StatisticsAPI` (`GET /admin-management/statistics`, `AdminStatisticsResponse` with `StatisticsCount`,
+  `StatisticsPublishState`, `StatisticsMonthlyCount`, `StatisticsUserCount`) is implemented by `StatisticsController` and `StatisticsService`,
+  which counts pages, galleries, site files, components, forms and layouts with fixed native aggregate queries (`EntityManager`, tables listed in
+  `StatisticsService.RESOURCES`): totals, site files by type, published/not published, created and published per UTC month, creators (joined
+  with `user_account` for the nick), pages per form, forms per layout and component, pages per parent path and site files per path. The numbers
+  are system wide and deliberately not ACL filtered, like the inventory metrics; the admin frontend shows them on its Statistics screen. Tests:
+  `StatisticsServiceUTC` (canned rows), `StatisticsServiceITC` (real schema), `StatisticsControllerUTC`, `StatisticsCTC`.
+
+  > The OTLP push reports itself through `MeteredOtlpMetricsSender.Registrar` (a `BeanPostProcessor` that decorates the
+  > `OtlpMetricsSender` Boot builds, never replaces it) and `MetricsExportMetrics` (`vempain.metrics_export.requests{result=success|rejected|error,status}`,
+  > `.duration{result}`, `.bytes`, the gauges `.last_success.age.seconds` (-1 before the first success) and `.meters`); the file backend carries the same
+  > two classes and the monitoring dashboard `vempain-application.json` shows them in its "Metrics export" row.
+
 - Distributed tracing: `spring-boot-starter-opentelemetry` (Micrometer Tracing with the OpenTelemetry bridge and the OTLP exporter). An
   incoming W3C `traceparent` (Traefik, the admin SPA, the file backend's Feign calls) is continued; Boot puts `traceId`/`spanId` into the
   MDC and the console pattern, so every log line of a request carries them. `VEMPAIN_TRACING_ENABLED|URL|SAMPLING` map to
@@ -237,7 +286,11 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
 - File publishing is a core feature, not an afterthought:
   - `PublishService` orchestrates site-side publishing.
   - `JschClient` pushes converted files + thumbs over SFTP to the remote site root.
-  - `exiftool` must exist; startup will fail fast in `SetupVerification` if required paths/files are missing.
+  - `exiftool` must exist (`vempain.exiftool.path`, an absolute path checked by `SetupVerification`; `ENV_VEMPAIN_ADMIN_EXIFTOOL_PATH` in the
+    cluster `.env`). It runs only through the shared `fi.poltsi.vempain.common.metadata.ExifToolService` of `vempain-common` (persistent
+    `-stay_open` processes): `ImageTools.resizeImage` copies the tags of the source into the thumbnail with `copyAllTags` (a failure is logged, the
+    thumbnail stays usable) and `TestITCTools` reads site files with `readMetadataJson` + `MetadataJson.extractMimetype`. The former local
+    `MetadataTools`/`JsonTools` are gone; never add a `ProcessBuilder("exiftool")` here again.
 - `prod` is the default profile (`spring.profiles.default`). In it `SetupVerification.verifyProductionDatasources` refuses to start unless both
   `spring.admin-datasource.url` and `spring.site-datasource.url` require TLS (`sslmode=require`, `verify-ca` or `verify-full`, or `ssl` without an
   `sslmode`). The tests set `spring.profiles.default=test` in `src/test/resources/application.properties` so Testcontainers URLs are not checked.
@@ -270,6 +323,16 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
   `%`, `_` and `\\`, truncates to 200 characters; `limitTokens` caps a search at 10 tokens) and declares the escape character,
   as in `GalleryRepositoryImpl` (native SQL, `ESCAPE_CLAUSE`) and `SiteFileSpecifications` (Criteria API, `ESCAPE_CHAR`). Request text never acts as wildcard
   syntax (OWASP A05).
+
+## Container image
+
+- `Dockerfile` is runtime-only (the CI-built jar is added as `/app.jar`) and starts `container-entrypoint.sh` as root: it builds the private
+  JVM truststore from the mounted admin certificate, gives the image's `vempain` account the ids `VEMPAIN_UID`/`VEMPAIN_GID` (default
+  `6666`, set per container in the `vempain-cluster` stacks as `ENV_VEMPAIN_UID`/`ENV_VEMPAIN_GID`) by rewriting `/etc/passwd` and
+  `/etc/group`, and runs Java through `su-exec` as those ids; a container started as a non-root user keeps that user. The ids must be the
+  host owner of the mounted `/vempain_admin/site-files` and `/vempain_admin/vempain/.ssh`. The same script, apart from the truststore, is in the website
+  backend; keep the user handling of
+  the three identical.
 
 ## Tag ACL rule
 

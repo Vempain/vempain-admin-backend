@@ -159,7 +159,7 @@ public class WebSiteAclService {
      * @param request The ACL request
      * @return Created ACL response
      */
-    @Transactional
+    @Transactional("siteTransactionManager")
     public WebSiteAclResponse create(WebSiteAclRequest request) {
         var adminUserId = accessService.getValidUserId();
 
@@ -194,7 +194,7 @@ public class WebSiteAclService {
      *
      * @param id The ACL entry ID to delete
      */
-    @Transactional
+    @Transactional("siteTransactionManager")
     public void delete(Long id) {
         var adminUserId = accessService.getValidUserId();
 
@@ -212,7 +212,7 @@ public class WebSiteAclService {
      *
      * @param aclId The ACL ID
      */
-    @Transactional
+    @Transactional("siteTransactionManager")
     public void deleteByAclId(Long aclId) {
         var adminUserId = accessService.getValidUserId();
         webSiteAclRepository.deleteByAclId(aclId);

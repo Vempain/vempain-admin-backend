@@ -27,6 +27,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -34,12 +35,13 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
  * The SFTP transfer of a gallery: every site file is sent together with its thumbnails and reported right after, so that a publish task can count the files
- * while the transfer is still running.
+ * while the transfer is still running. Every {@code connect} opens a connection of its own, so transfers running at the same time do not share one.
  */
 @ExtendWith(MockitoExtension.class)
 class JschClientUTC {
@@ -48,6 +50,7 @@ class JschClientUTC {
     private ChannelSftp channelSftp;
 
     private JschClient jschClient;
+    private JschClient.Connection connection;
 
     private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
 
@@ -55,10 +58,10 @@ class JschClientUTC {
     void setUp() {
         Metrics.addRegistry(registry);
         jschClient = new JschClient();
-        ReflectionTestUtils.setField(jschClient, "channelSftp", channelSftp);
         ReflectionTestUtils.setField(jschClient, "siteWwwRoot", "/www");
         ReflectionTestUtils.setField(jschClient, "siteFileDirectory", "/site-files");
         ReflectionTestUtils.setField(jschClient, "thumbSubDir", ".thumb");
+        connection = jschClient.new Connection(null, channelSftp);
     }
 
     @AfterEach
@@ -97,7 +100,7 @@ class JschClientUTC {
         var reported = new ArrayList<String>();
 
         // lstat answers without throwing: every directory exists already
-        jschClient.transferFilesToSite(List.of(first, second), List.of(orphanThumb, firstThumb), file -> reported.add(file.getFileName()));
+        connection.transferFilesToSite(List.of(first, second), List.of(orphanThumb, firstThumb), file -> reported.add(file.getFileName()));
 
         assertThat(reported).containsExactly("a.jpg", "b.jpg");
         var order = inOrder(channelSftp);
@@ -110,7 +113,7 @@ class JschClientUTC {
         // A thumbnail without a listed site file is still transferred, after the files
         order.verify(channelSftp)
             .put("/site-files/thumbs/orphan.jpeg", "/www/image/2024/trip/.thumb");
-        order.verify(channelSftp, org.mockito.Mockito.never())
+        order.verify(channelSftp, never())
             .put(anyString(), anyString());
         // The transfer is measured on the global registry: two site files, two thumbnails, one successful transfer
         assertThat(registry.get(JschClient.TRANSFER_FILES)
@@ -138,7 +141,7 @@ class JschClientUTC {
         doThrow(new SftpException(ChannelSftp.SSH_FX_PERMISSION_DENIED, "denied")).when(channelSftp)
             .put("/site-files/image/x/a.jpg", "/www/image/x/a.jpg");
 
-        org.junit.jupiter.api.Assertions.assertThrows(SftpException.class, () -> jschClient.transferFilesToSite(List.of(file), List.of()));
+        assertThrows(SftpException.class, () -> connection.transferFilesToSite(List.of(file), List.of()));
 
         assertThat(registry.get(JschClient.TRANSFER_DURATION)
             .tag("result", "failure")
@@ -157,10 +160,9 @@ class JschClientUTC {
             .fileName("a.jpg")
             .build();
 
-        jschClient.transferFilesToSite(List.of(file), List.of());
+        connection.transferFilesToSite(List.of(file), List.of());
 
-        org.mockito.Mockito.verify(channelSftp)
-            .put("/site-files/image/x/a.jpg", "/www/image/x/a.jpg");
+        verify(channelSftp).put("/site-files/image/x/a.jpg", "/www/image/x/a.jpg");
     }
 
     @Test
@@ -172,7 +174,7 @@ class JschClientUTC {
         when(jsch.getSession("vempain-site", "site.example", 2222)).thenReturn(session);
         when(session.openChannel("sftp")).thenReturn(sftp);
 
-        jschClient.connect("site.example", 2222, "vempain-site", "/home/vempain-admin", "/home/vempain-admin/.ssh/id_ed25519");
+        var opened = jschClient.connect("site.example", 2222, "vempain-site", "/home/vempain-admin", "/home/vempain-admin/.ssh/id_ed25519");
 
         var order = inOrder(jsch, session, sftp);
         order.verify(jsch)
@@ -185,11 +187,38 @@ class JschClientUTC {
             .connect(26_000);
         order.verify(sftp)
             .connect(25_000);
-        assertEquals(sftp, ReflectionTestUtils.getField(jschClient, "channelSftp"));
+        assertEquals(sftp, ReflectionTestUtils.getField(opened, "channelSftp"));
 
         when(session.isConnected()).thenReturn(true);
-        jschClient.close();
+        opened.close();
         verify(session).disconnect();
+    }
+
+    @Test
+    void everyConnectOpensAConnectionOfItsOwnAndAddsTheIdentityOnlyOnce() throws Exception {
+        var jsch = mock(JSch.class);
+        var first = mock(Session.class);
+        var second = mock(Session.class);
+        var firstSftp = mock(ChannelSftp.class);
+        var secondSftp = mock(ChannelSftp.class);
+        ReflectionTestUtils.setField(jschClient, "jsch", jsch);
+        when(jsch.getSession("vempain-site", "site.example", 22)).thenReturn(first, second);
+        when(first.openChannel("sftp")).thenReturn(firstSftp);
+        when(second.openChannel("sftp")).thenReturn(secondSftp);
+
+        var one = jschClient.connect("site.example", 22, "vempain-site", "/home/vempain-admin", "/home/vempain-admin/.ssh/id");
+        var two = jschClient.connect("site.example", 22, "vempain-site", "/home/vempain-admin", "/home/vempain-admin/.ssh/id");
+
+        assertNotSame(one, two);
+        assertEquals(firstSftp, ReflectionTestUtils.getField(one, "channelSftp"));
+        assertEquals(secondSftp, ReflectionTestUtils.getField(two, "channelSftp"));
+        verify(jsch, times(1)).addIdentity("/home/vempain-admin/.ssh/id");
+
+        // Closing one connection leaves the other one alone
+        when(first.isConnected()).thenReturn(true);
+        one.close();
+        verify(first).disconnect();
+        verify(second, never()).disconnect();
     }
 
     @Test
@@ -209,6 +238,9 @@ class JschClientUTC {
         assertThat(registry.get(JschClient.CONNECT_FAILURES)
             .counter()
             .count()).isEqualTo(1);
+        // The failed identity is not remembered: the next connect tries to add it again
+        assertThrows(ResponseStatusException.class, () -> jschClient.connect("site.example", 22, "vempain-site", "/home/vempain-admin", "/missing/key"));
+        verify(jsch, times(2)).addIdentity("/missing/key");
     }
 
     @Test
@@ -228,12 +260,32 @@ class JschClientUTC {
     }
 
     @Test
-    void closeLeavesADisconnectedSessionAlone() {
+    void aFailedChannelClosesTheSessionAgain() throws Exception {
+        var jsch = mock(JSch.class);
         var session = mock(Session.class);
-        ReflectionTestUtils.setField(jschClient, "jschSession", session);
+        var sftp = mock(ChannelSftp.class);
+        ReflectionTestUtils.setField(jschClient, "jsch", jsch);
+        when(jsch.getSession(anyString(), anyString(), anyInt())).thenReturn(session);
+        when(session.openChannel("sftp")).thenReturn(sftp);
+        when(session.isConnected()).thenReturn(true);
+        doThrow(new JSchException("channel is not opened")).when(sftp)
+            .connect(anyInt());
+
+        assertThrows(JSchException.class, () -> jschClient.connect("site.example", 22, "vempain-site", "/home/vempain-admin", "/home/vempain-admin/.ssh/id"));
+
+        verify(session).disconnect();
+        assertThat(registry.get(JschClient.CONNECT_FAILURES)
+            .counter()
+            .count()).isEqualTo(1);
+    }
+
+    @Test
+    void closeLeavesADisconnectedOrMissingSessionAlone() {
+        var session = mock(Session.class);
         when(session.isConnected()).thenReturn(false);
 
-        jschClient.close();
+        jschClient.new Connection(session, channelSftp).close();
+        connection.close();
 
         verify(session, never()).disconnect();
     }
@@ -243,7 +295,7 @@ class JschClientUTC {
         doThrow(new SftpException(ChannelSftp.SSH_FX_NO_SUCH_FILE, "no such file")).when(channelSftp)
             .lstat("/www");
 
-        var thrown = assertThrows(ResponseStatusException.class, () -> jschClient.transferFilesToSite(List.of(), List.of(), null));
+        var thrown = assertThrows(ResponseStatusException.class, () -> connection.transferFilesToSite(List.of(), List.of(), null));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, thrown.getStatusCode());
         verify(channelSftp, never()).put(anyString(), anyString());
@@ -271,7 +323,7 @@ class JschClientUTC {
             .when(channelSftp)
             .lstat(anyString());
 
-        jschClient.transferFilesToSite(List.of(file), List.of(), null);
+        connection.transferFilesToSite(List.of(file), List.of(), null);
 
         var order = inOrder(channelSftp);
         order.verify(channelSftp)

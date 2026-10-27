@@ -38,4 +38,7 @@ public class PageRequest extends BaseRequest {
     @Schema(description = "IDs of the galleries the page links to, in the order they appear in the body (the gallery and hero carousel embeds)."
             + " Omitted or null leaves the existing links untouched, an empty list removes them", example = "[7, 12]")
     private List<Long> galleryIds;
+    @Schema(description = "Tags (subject names) of the page, published to the website with it. Omitted or null leaves the existing tags untouched, an "
+            + "empty list removes them", example = "[\"travel\", \"finland\"]")
+    private List<String> tags;
 }

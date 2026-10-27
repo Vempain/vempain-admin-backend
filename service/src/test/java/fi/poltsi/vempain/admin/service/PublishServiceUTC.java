@@ -59,6 +59,7 @@ import fi.poltsi.vempain.site.repository.WebGpsLocationRepository;
 import fi.poltsi.vempain.site.repository.WebSiteFileRepository;
 import fi.poltsi.vempain.site.repository.WebSiteGalleryRepository;
 import fi.poltsi.vempain.site.repository.WebSitePageRepository;
+import fi.poltsi.vempain.site.service.SiteDatabaseRetry;
 import fi.poltsi.vempain.site.service.WebSiteResourceService;
 import fi.poltsi.vempain.site.service.WebSiteSubjectService;
 import fi.poltsi.vempain.tools.JschClient;
@@ -128,6 +129,12 @@ class PublishServiceUTC {
     @Spy
     private TaskRunner taskRunner = new TaskRunner(taskStore, Runnable::run);
 
+    @Mock
+    private TagBlacklistService tagBlacklistService;
+    // Site writes run through the retry helper on a stubbed site transaction manager, without pauses
+    @Spy
+    private SiteDatabaseRetry siteDatabaseRetry = new SiteDatabaseRetry(Mockito.mock(org.springframework.transaction.PlatformTransactionManager.class), null, 3,
+            0, millis -> {});
     @InjectMocks
     private PublishService publishService;
 
@@ -136,6 +143,9 @@ class PublishServiceUTC {
     @BeforeEach
     void setupSpy() {
         publishServiceSpy = Mockito.spy(publishService);
+        Mockito.lenient()
+            .when(tagBlacklistService.snapshot())
+            .thenReturn(TagBlacklist.EMPTY);
     }
 
     @Test
@@ -376,11 +386,30 @@ class PublishServiceUTC {
             .build());
         when(pageGalleryService.findPageGalleryByPageId(1L)).thenReturn(List.of());
         when(webSitePageRepository.findByPageId(1L)).thenReturn(java.util.Optional.empty());
-        when(webSitePageRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(webSitePageRepository.save(any())).thenAnswer(invocation -> {
+            var sitePage = invocation.getArgument(0, WebSitePage.class);
+            sitePage.setId(300L);
+            return sitePage;
+        });
+        // The page carries two tags, one of them blacklisted: only the other one is published, attributed to the page's creator
+        var travel = Subject.builder()
+            .id(1L)
+            .subjectName("travel")
+            .build();
+        when(subjectService.getSubjectsByPageId(1L)).thenReturn(List.of(travel, Subject.builder()
+            .id(2L)
+            .subjectName("private")
+            .build()));
+        when(tagBlacklistService.snapshot()).thenReturn(TagBlacklist.of(List.of("private")));
+        var siteTravel = WebSiteSubject.builder()
+            .id(50L)
+            .build();
+        when(webSiteSubjectService.saveAllFromAdminSubject(List.of(travel), "creator")).thenReturn(List.of(siteTravel));
 
         publishService.publishPageAsSystem(1L);
 
         verify(webSitePageRepository).save(argThat(sitePage -> "<main>Page body</main>".equals(sitePage.getBody())));
+        verify(webSiteSubjectService).replaceSitePageSubjects(300L, List.of(siteTravel));
     }
 
     @Test
@@ -468,7 +497,7 @@ class PublishServiceUTC {
 
         assertThrows(AccessDeniedException.class, () -> publishService.publishPageAsTask(1L));
 
-        verify(taskRunner, never()).submitDurable(any(), any(), anyLong(), any(), any());
+        verify(taskRunner, never()).submitDurable(any(), any(), anyLong(), any(), any(), any());
         assertEquals(0, taskStore.size());
     }
 
@@ -910,13 +939,15 @@ class PublishServiceUTC {
         when(galleryFileService.findGalleryFileByGalleryId(1L)).thenReturn(galleryFilesOf(gallery));
         when(fileService.findAllFileThumbsBySiteFileList(gallery.getSiteFiles())).thenReturn(List.of(thumb));
         ReflectionTestUtils.setField(publishService, "thumbSubDir", ".thumb");
+        var connection = org.mockito.Mockito.mock(JschClient.Connection.class);
+        when(jschClient.connect(any(), org.mockito.ArgumentMatchers.anyInt(), any(), any(), any())).thenReturn(connection);
         Mockito.doAnswer(invocation -> {
             Consumer<SiteFile> callback = invocation.getArgument(2);
             gallery.getSiteFiles()
                 .forEach(callback);
             return null;
         })
-            .when(jschClient)
+            .when(connection)
             .transferFilesToSite(eq(gallery.getSiteFiles()), eq(List.of(thumb)), any());
         when(webSiteResourceService.getNextWebSiteAcl()).thenReturn(1000L, 1001L, 1002L);
         var savedGalleries = new java.util.ArrayList<WebSiteGallery>();
@@ -943,11 +974,18 @@ class PublishServiceUTC {
             savedFiles.add(saved);
             return saved;
         });
-        var subjects = List.of(Subject.builder()
+        var sea = Subject.builder()
             .id(1L)
             .subjectName("sea")
-            .build());
-        when(subjectService.getSubjectsByFileId(11L)).thenReturn(subjects);
+            .build();
+        var subjects = List.of(sea);
+        // The image also carries a blacklisted tag, in its subjects and in the keyword lists of its metadata: neither reaches the site
+        when(tagBlacklistService.snapshot()).thenReturn(TagBlacklist.of(List.of("Private")));
+        image.setMetadata("[{\"Keywords\":[\"sea\",\"private\"],\"XMP-dc\":{\"Subject\":[\"private\"]},\"Make\":\"Canon\"}]");
+        when(subjectService.getSubjectsByFileId(11L)).thenReturn(List.of(sea, Subject.builder()
+            .id(2L)
+            .subjectName("private")
+            .build()));
         when(subjectService.getSubjectsByFileId(12L)).thenReturn(List.of());
         var siteSubjects = List.of(WebSiteSubject.builder()
             .id(1L)
@@ -962,13 +1000,20 @@ class PublishServiceUTC {
         assertEquals(image, thumb.getSiteFile());
         assertEquals(2, progress.getCompletedSteps()
             .get());
-        verify(jschClient).close();
+        // The transfer ran over a connection of its own, closed when it was done
+        verify(connection).close();
         verify(webSiteGalleryRepository).deleteByGalleryId(1L);
         verify(webSiteFileRepository).deleteByFileId(11L);
         verify(webSiteFileRepository).deleteByFileId(12L);
         assertEquals(2, savedFiles.size());
         var publishedImage = savedFiles.getFirst();
         assertEquals("image/2024/trip/a.jpg", publishedImage.getFilePath());
+        var publishedMetadata = new org.json.JSONArray(publishedImage.getMetadata()).getJSONObject(0);
+        assertEquals(List.of("sea"), publishedMetadata.getJSONArray("Keywords")
+            .toList());
+        assertTrue(publishedMetadata.getJSONObject("XMP-dc")
+            .isEmpty());
+        assertEquals("Canon", publishedMetadata.getString("Make"));
         assertEquals("image/2024/trip/.thumb/a.jpg", publishedImage.getThumbnailPath());
         assertNotNull(publishedImage.getLocation());
         assertEquals("Helsinki", publishedImage.getLocation()
@@ -1038,15 +1083,71 @@ class PublishServiceUTC {
         var ssh = assertThrows(ResponseStatusException.class, () -> publishService.publishGalleryAsSystem(1L));
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ssh.getStatusCode());
 
-        doNothing().when(jschClient)
+        var connection = org.mockito.Mockito.mock(JschClient.Connection.class);
+        Mockito.doReturn(connection)
+            .when(jschClient)
             .connect(any(), org.mockito.ArgumentMatchers.anyInt(), any(), any(), any());
-        doThrow(new SftpException(4, "failure")).when(jschClient)
+        doThrow(new SftpException(4, "failure")).when(connection)
             .transferFilesToSite(any(), any(), any());
         var sftp = assertThrows(ResponseStatusException.class, () -> publishService.publishGalleryAsSystem(1L));
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, sftp.getStatusCode());
 
-        verify(jschClient, times(2)).close();
+        // The refused session never produced a connection; the one that failed while transferring is closed anyway
+        verify(connection, times(1)).close();
         verify(webSiteGalleryRepository, never()).deleteByGalleryId(anyLong());
+    }
+
+    @Test
+    void aSiteDatabaseConnectionLostWhileWritingTheGalleryIsRetriedAfterTheTransfer() throws Exception {
+        var gallery = galleryWithFiles();
+        when(fileService.findGalleryById(1L)).thenReturn(gallery);
+        when(galleryFileService.findGalleryFileByGalleryId(1L)).thenReturn(galleryFilesOf(gallery));
+        when(fileService.findAllFileThumbsBySiteFileList(gallery.getSiteFiles())).thenReturn(List.of());
+        var connection = org.mockito.Mockito.mock(JschClient.Connection.class);
+        when(jschClient.connect(any(), org.mockito.ArgumentMatchers.anyInt(), any(), any(), any())).thenReturn(connection);
+        when(tagBlacklistService.snapshot()).thenReturn(TagBlacklist.of(List.of()));
+        when(userService.findUserResponseById(anyLong())).thenReturn(UserResponse.builder()
+            .nick("alice")
+            .build());
+        // The tunnel drops on the first site write; the pooled connection is dead, the second attempt gets a fresh one
+        Mockito
+            .doThrow(new org.springframework.dao.DataAccessResourceFailureException("An I/O error occurred while sending to the backend",
+                    new java.sql.SQLException("I/O error", "08006")))
+            .doNothing()
+            .when(webSiteGalleryRepository)
+            .deleteByGalleryId(1L);
+        when(webSiteResourceService.getNextWebSiteAcl()).thenReturn(1000L, 1001L, 1002L, 1003L);
+        when(webSiteGalleryRepository.save(any(WebSiteGallery.class))).thenAnswer(invocation -> {
+            var saved = invocation.getArgument(0, WebSiteGallery.class);
+            saved.setId(500L);
+            return saved;
+        });
+        when(siteFileRepository.findById(anyLong())).thenAnswer(invocation -> gallery.getSiteFiles()
+            .stream()
+            .filter(file -> file.getId() == invocation.getArgument(0, Long.class))
+            .findFirst());
+        when(webSiteFileRepository.save(any(WebSiteFile.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(subjectService.getSubjectsByFileId(anyLong())).thenReturn(List.of());
+        when(webSiteSubjectService.saveAllFromAdminSubject(any(), any())).thenReturn(List.of());
+
+        publishService.publishGalleryAsSystem(1L);
+
+        // The files were transferred once, the site rows were written on the second attempt, and the gallery is marked published
+        verify(connection, times(1)).transferFilesToSite(any(), any(), any());
+        verify(webSiteGalleryRepository, times(2)).deleteByGalleryId(1L);
+        verify(webSiteGalleryRepository, times(1)).save(any(WebSiteGallery.class));
+        verify(fileService).saveGallery(gallery);
+        assertNotNull(gallery.getPublished());
+    }
+
+    @Test
+    void publishTasksShareTheSiteSftpLaneWithTheConfiguredConcurrency() {
+        // Unset (0 in this test) falls back to one transfer at a time
+        assertEquals(fi.poltsi.vempain.common.task.TaskLane.of("site-sftp", 1), publishService.siteTransferLane());
+
+        ReflectionTestUtils.setField(publishService, "siteSftpConcurrency", 3);
+
+        assertEquals(fi.poltsi.vempain.common.task.TaskLane.of("site-sftp", 3), publishService.siteTransferLane());
     }
 
     @Test

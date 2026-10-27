@@ -56,8 +56,8 @@ import fi.poltsi.vempain.auth.service.AclService;
 import fi.poltsi.vempain.auth.service.UnitService;
 import fi.poltsi.vempain.auth.service.UserService;
 import fi.poltsi.vempain.common.api.FileTypeEnum;
-import fi.poltsi.vempain.tools.JsonTools;
-import fi.poltsi.vempain.tools.MetadataTools;
+import fi.poltsi.vempain.common.metadata.ExifToolService;
+import fi.poltsi.vempain.common.metadata.MetadataJson;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -93,13 +93,11 @@ public class TestITCTools {
     private final GalleryRepository galleryRepository;
     @Value("${vempain.admin.file.site-file-directory}")
     private String siteFileDirectory;
-    @Value("${vempain.cmd-line.exiftool}")
-    private String exifToolPath;
 
     @Autowired
     private EntityManager entityManager;
     @Autowired
-    private MetadataTools metadataTools;
+    private ExifToolService exifToolService;
     @Autowired
     private SiteFileRepository siteFileRepository;
 
@@ -363,9 +361,9 @@ public class TestITCTools {
             sortOrder++;
         }
     }
-    /////////////////// Components end
+    /* Components end */
 
-    /// //////////////// Layouts start
+    /* Layouts start */
     public Long generateLayout() {
         var userId = generateUser();
         long aclId = generateAcl(userId, null, true, true, true, true);
@@ -434,9 +432,9 @@ public class TestITCTools {
 
         return false;
     }
-    /////////////////// Layouts end
+    /* Layouts end */
 
-    /// //////////////// Page start
+    /* Page start */
     public Long generatePage() throws VempainAbstractException, VempainComponentException {
         var formId = generateForm();
         var userId = generateUser();
@@ -495,7 +493,9 @@ public class TestITCTools {
         return subjectIdList;
     }
 
-    /// //////////////// Subject end //////////////// FileCommon start
+    /* Subject end */
+
+    /* FileCommon start */
     public SiteFile generateSiteFile(long idx) {
         var aclId = generateAcl(1L, null, true, true, true, true);
         var siteFile = SiteFile.builder()
@@ -606,8 +606,9 @@ public class TestITCTools {
 
         return idList;
     }
+    /* User end */
 
-    /// //////////////// User end //////////////// Unit start
+    /* Unit start */
     public Long generateUnit() {
         var randomString = TestUserAccountTools.randomLongString();
         var userId = generateUser();
@@ -707,10 +708,15 @@ public class TestITCTools {
         // The copy the files in fileList to the destinationDir
         for (Path file : fileList) {
             // Get metadata
-            var metadata = metadataTools.getMetadataAsJSON(file.toFile());
+            String metadata;
+            try {
+                metadata = exifToolService.readMetadataJson(file.toFile());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
             var jsonArray = new JSONArray(metadata);
             var jsonObject = jsonArray.getJSONObject(0);
-            var mimetype = JsonTools.extractMimetype(jsonObject);
+            var mimetype = MetadataJson.extractMimetype(jsonObject);
             var fileType = getFileTypeByMimetype(mimetype);
             var destinationFile = Path.of(siteFileDirectory + File.separator + fileType.name()
                 .toLowerCase() + File.separator + randomImagePath + File.separator + file.getFileName());
@@ -743,5 +749,5 @@ public class TestITCTools {
         return destinationFileList;
     }
 
-    /////////////////// Gallery end //////////////// start //////////////// end
+    /* Gallery end */
 }

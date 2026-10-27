@@ -28,7 +28,9 @@ import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @Slf4j
@@ -92,6 +94,42 @@ class WebSiteManagementCTC {
             .creator("admin")
             .created(Instant.now())
             .build());
+    }
+
+    @Test
+    @DisplayName("Link targets need a signed-in user")
+    void findLinkTargetsRequiresAuthentication() throws Exception {
+        mockMvc.perform(get("/admin-management/site/links").param("search", "home"))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithUserDetails(value = "admin", userDetailsServiceBeanName = "userDetailsServiceImpl")
+    @DisplayName("Link targets list the published pages first, then the files, matched by title or path")
+    void findLinkTargets() throws Exception {
+        // "home" matches the page by title and path, "alpha" only the file; "images" both files
+        mockMvc.perform(get("/admin-management/site/links").param("search", "home"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].type").value("PAGE"))
+            .andExpect(jsonPath("$[0].title").value("Home Page"))
+            .andExpect(jsonPath("$[0].path").value("/home"));
+        mockMvc.perform(get("/admin-management/site/links").param("search", "ALPHA"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].type").value("SITE_FILE"))
+            .andExpect(jsonPath("$[0].path").value("images/alpha.jpg"));
+        mockMvc.perform(get("/admin-management/site/links").param("search", "images")
+            .param("limit", "1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(jsonPath("$[0].path").value("images/alpha.jpg"));
+        mockMvc.perform(get("/admin-management/site/links"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(3))
+            .andExpect(jsonPath("$[0].type").value("PAGE"))
+            .andExpect(jsonPath("$[1].type").value("SITE_FILE"))
+            .andExpect(jsonPath("$[2].type").value("SITE_FILE"));
     }
 
     @Test

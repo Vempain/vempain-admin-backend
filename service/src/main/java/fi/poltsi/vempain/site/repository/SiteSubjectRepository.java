@@ -19,4 +19,14 @@ public interface SiteSubjectRepository extends ListPagingAndSortingRepository<We
     void saveSiteFileSubject(@Param("fileId") long fileId, @Param("subjectId") long subjectId);
 
     WebSiteSubject findBySubjectName(String subjectName);
+
+    @Transactional
+    @Modifying
+    @Query(value = "INSERT INTO web_site_page_subject (page_id, subject_id) VALUES (:pageId, :subjectId)", nativeQuery = true)
+    void saveSitePageSubject(@Param("pageId") long pageId, @Param("subjectId") long subjectId);
+
+    @Transactional
+    @Modifying
+    @Query(value = "DELETE FROM web_site_page_subject WHERE page_id = :pageId", nativeQuery = true)
+    void deleteSitePageSubjects(@Param("pageId") long pageId);
 }

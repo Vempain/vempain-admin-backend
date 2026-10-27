@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -103,6 +104,51 @@ class SubjectServiceUTC {
 
         // Just verify flush was called (no exception)
         verify(entityManager).flush();
+    }
+
+    // ---- page subjects ----
+
+    @Test
+    void replacePageSubjectsCreatesUnknownTagsDeduplicatesAndRelinksThePage() {
+        var existing = buildSubject(2L, "travel");
+        when(subjectRepository.findSubjectBySubjectName("travel")).thenReturn(Optional.of(existing));
+        when(subjectRepository.findSubjectBySubjectName("Finland")).thenReturn(Optional.empty());
+        when(subjectRepository.save(any(Subject.class))).thenAnswer(invocation -> {
+            var saved = invocation.getArgument(0, Subject.class);
+            saved.setId(9L);
+            return saved;
+        });
+        when(query.executeUpdate()).thenReturn(1);
+
+        var subjects = subjectService.replacePageSubjects(4L, java.util.Arrays.asList(" travel", "Finland", "TRAVEL", " ", null));
+
+        assertEquals(List.of("travel", "Finland"), subjects.stream()
+            .map(Subject::getSubjectName)
+            .toList());
+        assertEquals(9L, subjects.get(1)
+            .getId());
+        verify(entityManager).flush();
+        // one delete of the old links and one insert per kept tag
+        verify(query, org.mockito.Mockito.times(3)).executeUpdate();
+    }
+
+    @Test
+    void replacePageSubjectsWithNothingOnlyRemovesTheLinks() {
+        when(query.executeUpdate()).thenReturn(0);
+
+        assertEquals(List.of(), subjectService.replacePageSubjects(4L, null));
+        assertEquals(List.of(), subjectService.replacePageSubjects(4L, List.of()));
+
+        verify(query, org.mockito.Mockito.times(2)).executeUpdate();
+        verify(subjectRepository, never()).save(any());
+    }
+
+    @Test
+    void getSubjectsByPageIdDelegatesToTheRepository() {
+        when(subjectRepository.getSubjectsByPageId(4L)).thenReturn(List.of(buildSubject(1L, "a")));
+
+        assertEquals(1, subjectService.getSubjectsByPageId(4L)
+            .size());
     }
 
     // ---- addSubjectToFile ----

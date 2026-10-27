@@ -86,9 +86,9 @@
       "description": "Path to website on the remote site-server."
     },
     {
-      "name": "vempain.cmd-line.exiftool",
+      "name": "vempain.exiftool.path",
       "type": "java.lang.String",
-      "description": "Path to the exiftool command line utility, used for reading and writing metadata in files."
+      "description": "Path to the exiftool executable, started as persistent processes by the shared metadata runner of vempain-common."
     }
   ]
 }

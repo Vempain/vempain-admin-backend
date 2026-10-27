@@ -133,7 +133,8 @@ user. The following steps are required:
 
 We need private and public SSH keys so that VAS can connect to the remote site server. You can place the keys in a secure location in the file system and then
 point to the directory with the `ENV_VEMPAIN_ADMIN_SSH_CONFIG_DIR` environment variable. The keys should be named `id_ed25519` and `id_ed25519.pub`.
-You need to also make sure that the files are only readable by the non-existing user ID 6666.
+You need to also make sure that the files are only readable by the user the container runs as: `ENV_VEMPAIN_UID`/`ENV_VEMPAIN_GID` of the
+deployment (default `6666:6666`), best set to an existing host user that then owns the keys and the site file directory.
 
 Choose a secure location for the keys, e.g. `/etc/vempain_admin/.ssh` on the host machine and run the following commands as root:
 
@@ -141,6 +142,7 @@ Choose a secure location for the keys, e.g. `/etc/vempain_admin/.ssh` on the hos
 mkdir -p /etc/vempain_admin/.ssh
 cd /etc/vempain_admin/.ssh
 ssh-keygen -t ed25519 -f id_ed25519 -N "" -a 100
+# the ids of ENV_VEMPAIN_UID:ENV_VEMPAIN_GID; 6666:6666 are the defaults
 chown -R 6666:6666 /etc/vempain_admin/.ssh
 ```
 

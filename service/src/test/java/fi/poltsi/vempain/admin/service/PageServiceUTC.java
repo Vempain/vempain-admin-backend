@@ -33,8 +33,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -50,6 +52,8 @@ class PageServiceUTC {
     AccessService accessService;
     @Mock
     PageGalleryService pageGalleryService;
+    @Mock
+    SubjectService subjectService;
 
     @InjectMocks
     private PageService pageService;
@@ -957,15 +961,63 @@ class PageServiceUTC {
     }
 
     @Test
-    void populateResponseAttachesTheAcls() {
+    void populateResponseAttachesTheAclsAndTheTags() {
         var page = TestUTCTools.generatePage(1L);
         page.setAclId(11L);
         when(aclService.getAclResponses(11L)).thenReturn(TestUTCTools.generateAclResponses(11L, 1L));
+        when(subjectService.getSubjectsByPageId(1L)).thenReturn(List.of(fi.poltsi.vempain.admin.entity.Subject.builder()
+            .id(3L)
+            .subjectName("finland")
+            .build(),
+                fi.poltsi.vempain.admin.entity.Subject.builder()
+                    .id(4L)
+                    .subjectName("travel")
+                    .build()));
 
         var response = pageService.populateResponse(page);
 
         assertEquals(1L, response.getId());
         assertEquals(2, response.getAcls()
             .size());
+        assertEquals(List.of("finland", "travel"), response.getTags());
+    }
+
+    @Test
+    void savingAndUpdatingReplaceTheTagsOnlyWhenTheRequestCarriesThem() throws Exception {
+        var userId = 1L;
+        when(accessService.getValidUserId()).thenReturn(userId);
+        when(pageRepository.findByPagePath("/tagged")).thenReturn(null);
+        when(aclService.saveNewAclForObject(any())).thenReturn(5L);
+        when(pageRepository.save(any(Page.class))).thenAnswer(invocation -> {
+            var saved = invocation.getArgument(0, Page.class);
+            saved.setId(8L);
+            return saved;
+        });
+        var request = PageRequest.builder()
+            .formId(1L)
+            .pagePath("/tagged")
+            .title("Tagged")
+            .header("Tagged")
+            .body("body")
+            .acls(List.of())
+            .tags(List.of("Travel", "finland"))
+            .build();
+
+        pageService.saveFromPageRequest(request);
+        verify(subjectService).replacePageSubjects(8L, List.of("Travel", "finland"));
+
+        var existing = TestUTCTools.generatePage(8L);
+        existing.setPagePath("/tagged");
+        when(pageRepository.findById(8L)).thenReturn(existing);
+        when(accessService.hasModifyPermission(existing.getAclId())).thenReturn(true);
+        request.setId(8L);
+        request.setTags(null);
+        pageService.updateFromRequest(request);
+        // no tags in the update request: the existing tags stay
+        verify(subjectService, times(1)).replacePageSubjects(eq(8L), any());
+
+        request.setTags(List.of());
+        pageService.updateFromRequest(request);
+        verify(subjectService).replacePageSubjects(8L, List.of());
     }
 }

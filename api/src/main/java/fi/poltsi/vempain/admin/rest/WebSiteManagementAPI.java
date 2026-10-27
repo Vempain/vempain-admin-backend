@@ -12,12 +12,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import fi.poltsi.vempain.admin.api.Constants;
 import fi.poltsi.vempain.admin.api.site.request.WebSiteAclRequest;
 import fi.poltsi.vempain.admin.api.site.request.WebSiteConfigurationRequest;
 import fi.poltsi.vempain.admin.api.site.request.WebSiteResourcePagedRequest;
 import fi.poltsi.vempain.admin.api.site.request.WebSiteUserRequest;
+import fi.poltsi.vempain.admin.api.site.response.InternalLinkResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteAclResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteAclUsersResponse;
 import fi.poltsi.vempain.admin.api.site.response.WebSiteConfigurationResponse;
@@ -167,6 +169,22 @@ public interface WebSiteManagementAPI {
         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content) })
     @PostMapping(value = MAIN_PATH + "/resources", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<PagedResponse<WebSiteResourceResponse>> getResources(@Valid @RequestBody WebSiteResourcePagedRequest request);
+
+    @Operation(summary = "Find internal link targets",
+            description = "Returns the published pages (by title or path) and published files (by path) that contain the search text, pages first, for the "
+                    + "internal links of page content. Only what exists on the website is listed.",
+            tags = "WebSiteManagementAPI")
+    @Parameter(name = "search", description = "Text the page title, page path or file path must contain; empty lists the first targets", example = "about")
+    @Parameter(name = "limit", description = "At most this many pages and this many files, 1-50", example = "20")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Matching link targets, pages first",
+                content = @Content(array = @ArraySchema(schema = @Schema(implementation = InternalLinkResponse.class)),
+                        mediaType = MediaType.APPLICATION_JSON_VALUE)),
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content) })
+    @GetMapping(value = MAIN_PATH + "/links", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<List<InternalLinkResponse>> findLinkTargets(@RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "limit", defaultValue = "20") int limit);
 
     // ////////////////////////////// Site Configuration APIs //////////////////////////////
     @Operation(summary = "List all site configuration entries", description = "Returns all configuration assignments", tags = "WebSiteManagementAPI")

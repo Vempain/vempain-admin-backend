@@ -19,6 +19,7 @@ import fi.poltsi.vempain.admin.api.request.PageRequest;
 import fi.poltsi.vempain.admin.api.response.PagePathSuggestionResponse;
 import fi.poltsi.vempain.admin.api.response.PageResponse;
 import fi.poltsi.vempain.admin.entity.Page;
+import fi.poltsi.vempain.admin.entity.Subject;
 import fi.poltsi.vempain.admin.exception.ProcessingFailedException;
 import fi.poltsi.vempain.admin.repository.PageRepository;
 import fi.poltsi.vempain.auth.api.response.PagedResponse;
@@ -39,6 +40,7 @@ public class PageService {
     private final AclService aclService;
     private final AccessService accessService;
     private final PageGalleryService pageGalleryService;
+    private final SubjectService subjectService;
 
     public Iterable<Page> findAll() {
         return pageRepository.findAll();
@@ -266,6 +268,7 @@ public class PageService {
 
         var savedPage = save(page);
         linkGalleries(savedPage.getId(), request.getGalleryIds());
+        linkTags(savedPage.getId(), request.getTags());
         return savedPage;
     }
 
@@ -387,6 +390,7 @@ public class PageService {
         }
 
         linkGalleries(page.getId(), request.getGalleryIds());
+        linkTags(page.getId(), request.getTags());
         return page;
     }
 
@@ -423,9 +427,26 @@ public class PageService {
         }
     }
 
+    /**
+     * Replaces the page's tags with the given names. A null list means the client did not send any and the existing tags are kept; an empty list removes them.
+     * The tags are published to the website with the page.
+     */
+    private void linkTags(long pageId, List<String> tags) {
+        if (tags == null) {
+            return;
+        }
+
+        log.debug("Linking tags {} to page {}", tags, pageId);
+        subjectService.replacePageSubjects(pageId, tags);
+    }
+
     public PageResponse populateResponse(Page page) {
         var response = page.toResponse();
         response.setAcls(aclService.getAclResponses(page.getAclId()));
+        response.setTags(subjectService.getSubjectsByPageId(page.getId())
+            .stream()
+            .map(Subject::getSubjectName)
+            .toList());
         return response;
     }
 }
