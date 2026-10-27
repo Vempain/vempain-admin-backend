@@ -282,6 +282,7 @@ public class TestUTCTools {
             .secure(true)
             .pagePath("/index")
             .body("This is test body")
+            .pageStyle(".vps-page-canvas { max-width: 60rem; }")
             .locked(false)
             .aclId(index)
             .creator(1L)
@@ -313,6 +314,7 @@ public class TestUTCTools {
             .title(page.getTitle())
             .header(page.getHeader())
             .body(page.getBody())
+            .pageStyle(page.getPageStyle())
             .acls(generateAclRequestList(page.getAclId(), 1L))
             .timestamp(LocalDateTime.now())
             .build();

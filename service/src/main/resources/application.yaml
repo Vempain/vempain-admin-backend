@@ -77,10 +77,10 @@ management:
     port: 8081
   tracing:
     # Tracing auto-configuration follows the deployment switch; vempain-common's MetricsExportEnvironmentPostProcessor adds the endpoint,
-    # credentials, certificate bundle and sampling when it is on. The export switch is bound as well: Boot adds the [app,traceId,spanId]
-    # block to the console log pattern whenever a Tracer is on the classpath and the export is not disabled, so the block appears only
-    # when tracing is on (identical in the three backends).
-    enabled: ${vempain.tracing.enabled}
+    # credentials, certificate bundle and sampling when it is on. export.enabled is the only switch since Boot 4.0 (management.tracing.enabled
+    # is deprecated): it turns on the propagators and the exporter, and Boot adds the [app,traceId,spanId] block to the console log pattern
+    # whenever a Tracer is on the classpath and the export is not disabled, so the block appears only when tracing is on (identical in the
+    # three backends).
     export:
       enabled: ${vempain.tracing.enabled}
   endpoints:
