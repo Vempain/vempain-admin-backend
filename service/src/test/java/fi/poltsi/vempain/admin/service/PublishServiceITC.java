@@ -3,12 +3,23 @@ package fi.poltsi.vempain.admin.service;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.sql.DataSource;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.AccessDeniedException;
 
 import fi.poltsi.vempain.admin.AbstractITCTest;
+import fi.poltsi.vempain.admin.service.file.GalleryFileService;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
+import fi.poltsi.vempain.site.repository.WebSiteFileRepository;
+import fi.poltsi.vempain.site.repository.WebSiteGalleryRepository;
+import fi.poltsi.vempain.site.service.SiteDatabaseRetry;
 import lombok.extern.slf4j.Slf4j;
 
 import static fi.poltsi.vempain.admin.api.Constants.ADMIN_ID;
@@ -22,6 +33,18 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @Slf4j
 class PublishServiceITC extends AbstractITCTest {
+
+    @Autowired
+    private GalleryFileService galleryFileService;
+    @Autowired
+    private SiteDatabaseRetry siteDatabaseRetry;
+    @Autowired
+    private WebSiteFileRepository webSiteFileRepository;
+    @Autowired
+    private WebSiteGalleryRepository webSiteGalleryRepository;
+    @Autowired
+    @Qualifier("siteDataSource")
+    private DataSource siteDataSource;
 
     @Test
     void publishPageOk() {
@@ -105,6 +128,61 @@ class PublishServiceITC extends AbstractITCTest {
                        .isPresent());
         assertTrue(webSitePageRepository.findByPageId(deniedPageId)
             .isEmpty());
+    }
+
+    @Test
+    void writingAGalleryToTheSiteAgainUpdatesItsRowsInPlace() throws VempainEntityNotFoundException {
+        var galleryId = testITCTools.generateGalleryFromDirectory(ADMIN_ID);
+        var gallery = fileService.findGalleryById(galleryId);
+        var galleryFiles = galleryFileService.findGalleryFileByGalleryId(galleryId);
+        assertFalse(galleryFiles.isEmpty());
+        var siteJdbc = new JdbcTemplate(siteDataSource);
+
+        // The site part of the publish, run like the publish runs it: in one site transaction of its own
+        var firstSiteGalleryId = siteDatabaseRetry.execute("first",
+                () -> publishService.writeSiteGallery(gallery, galleryFiles, Instant.now(), TagBlacklist.EMPTY, "admin", null));
+        var firstFileRows = siteFileRowsOf(gallery);
+        assertEquals(galleryFiles.size(), firstFileRows.size());
+        assertEquals(galleryFiles.size(), countGalleryFiles(siteJdbc, firstSiteGalleryId));
+
+        // The second write of the same gallery (a republish) finds every row on the site: the image thumbnail paths are unique there
+        var secondSiteGalleryId = siteDatabaseRetry.execute("second",
+                () -> publishService.writeSiteGallery(gallery, galleryFiles, Instant.now(), TagBlacklist.EMPTY, "admin", "admin"));
+
+        assertEquals(firstSiteGalleryId, secondSiteGalleryId, "The site gallery is updated in place");
+        assertEquals(1, webSiteGalleryRepository.findAllByGalleryIdOrderByIdAsc(galleryId)
+            .size());
+        assertEquals("admin", webSiteGalleryRepository.findById(secondSiteGalleryId)
+            .orElseThrow()
+            .getModifier());
+        var secondFileRows = siteFileRowsOf(gallery);
+        assertEquals(firstFileRows.keySet(), secondFileRows.keySet(), "Every file keeps its site id");
+        for (var siteFile : gallery.getSiteFiles()) {
+            var rows = webSiteFileRepository.findByFileIdOrFilePathOrThumbnailPathOrderByIdAsc(siteFile.getId(), null, null);
+            assertEquals(1, rows.size(), "One site row per file");
+            assertEquals(firstFileRows.get(rows.getFirst()
+                .getId()), rows.getFirst()
+                    .getAclId(), "The site ACL of the file is kept");
+        }
+        assertEquals(galleryFiles.size(), countGalleryFiles(siteJdbc, secondSiteGalleryId), "The file relations are written once");
+    }
+
+    /**
+     * @return the site ACL by site file id of every file of the gallery
+     */
+    private Map<Long, Long> siteFileRowsOf(fi.poltsi.vempain.admin.entity.file.Gallery gallery) {
+        var rows = new HashMap<Long, Long>();
+        for (var siteFile : gallery.getSiteFiles()) {
+            for (var row : webSiteFileRepository.findByFileIdOrFilePathOrThumbnailPathOrderByIdAsc(siteFile.getId(), null, null)) {
+                rows.put(row.getId(), row.getAclId());
+            }
+        }
+        return rows;
+    }
+
+    private static long countGalleryFiles(JdbcTemplate siteJdbc, long siteGalleryId) {
+        var count = siteJdbc.queryForObject("SELECT count(*) FROM web_site_gallery_file WHERE gallery_id = ?", Long.class, siteGalleryId);
+        return count == null ? 0 : count;
     }
 
     @Test

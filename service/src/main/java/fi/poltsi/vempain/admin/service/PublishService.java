@@ -9,6 +9,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ import fi.poltsi.vempain.admin.entity.Subject;
 import fi.poltsi.vempain.admin.entity.file.FileThumb;
 import fi.poltsi.vempain.admin.entity.file.Gallery;
 import fi.poltsi.vempain.admin.entity.file.GalleryFile;
+import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.service.file.FileService;
@@ -40,6 +42,7 @@ import fi.poltsi.vempain.common.task.TaskLane;
 import fi.poltsi.vempain.common.task.TaskProgress;
 import fi.poltsi.vempain.common.task.TaskRunner;
 import fi.poltsi.vempain.site.entity.WebGpsLocation;
+import fi.poltsi.vempain.site.entity.WebSiteFile;
 import fi.poltsi.vempain.site.entity.WebSitePage;
 import fi.poltsi.vempain.site.repository.WebGpsLocationRepository;
 import fi.poltsi.vempain.site.repository.WebSiteFileRepository;
@@ -429,8 +432,8 @@ public class PublishService {
         }
 
         var fileThumbList = fileService.findAllFileThumbsBySiteFileList(gallery.getSiteFiles());
-        associateThumbnails(gallery, fileThumbList);
-        transferGalleryFiles(gallery, fileThumbList, progress);
+        associateThumbnails(gallery.getSiteFiles(), fileThumbList);
+        transferFilesToSite(gallery.getSiteFiles(), fileThumbList, progress, "gallery " + gallery.getShortname());
 
         //** Update the site database
         if (progress != null) {
@@ -445,33 +448,68 @@ public class PublishService {
         var modifier = nickOf(gallery.getModifier());
 
         // The site rows of the gallery are written in one site transaction, run again from the start if the site database connection is lost meanwhile
-        siteDatabaseRetry.execute("gallery " + gallery.getShortname(), () -> {
-            // Remove any existing gallery data if present, the gallery - file relation is removed by cascade
-            webSiteGalleryRepository.deleteByGalleryId(galleryId);
-
-            // Add the gallery
-            var siteGallery = gallery.getSiteGallery();
-            siteGallery.setAclId(webSiteResourceService.getNextWebSiteAcl());
-            siteGallery.setCreator(creator);
-            siteGallery.setModifier(modifier);
-            var siteGalleryId = webSiteGalleryRepository.save(siteGallery)
-                .getId();
-
-            for (var galleryFile : galleryFileList) {
-                publishGalleryFile(galleryFile, siteGalleryId, published, tagBlacklist);
-            }
-            return siteGalleryId;
-        });
+        siteDatabaseRetry.execute("gallery " + gallery.getShortname(),
+                () -> writeSiteGallery(gallery, galleryFileList, published, tagBlacklist, creator, modifier));
 
         // Record on the admin side when the gallery was last released to the website
         gallery.setPublished(published);
         fileService.saveGallery(gallery);
     }
 
-    private void associateThumbnails(Gallery gallery, List<FileThumb> fileThumbList) throws VempainEntityNotFoundException {
+    /**
+     * Writes a gallery and its files to the site: the site part of {@link #publishGalleryAsSystem}, one unit of work for {@link SiteDatabaseRetry} that must
+     * run in a site transaction. A gallery or file that is already on the site is updated in place, keeping its site id and ACL, so that a republish never
+     * inserts a second row for the same file (the thumbnail path is unique on the site, and a Hibernate session flushes the insert of a new row before the
+     * delete of the old one). Stale duplicates of a row are removed before the row is written.
+     *
+     * @param creator  nick of the admin user who created the gallery
+     * @param modifier nick of the admin user who last modified the gallery
+     * @return the id of the site gallery
+     */
+    long writeSiteGallery(Gallery gallery, List<GalleryFile> galleryFileList, Instant published, TagBlacklist tagBlacklist, String creator, String modifier)
+            throws VempainEntityNotFoundException {
+        var siteGallery = gallery.getSiteGallery();
+        var existingGalleries = webSiteGalleryRepository.findAllByGalleryIdOrderByIdAsc(gallery.getId());
+
+        if (existingGalleries.isEmpty()) {
+            siteGallery.setAclId(webSiteResourceService.getNextWebSiteAcl());
+        } else {
+            var existing = existingGalleries.getFirst();
+            siteGallery.setId(existing.getId());
+            siteGallery.setAclId(existing.getAclId());
+            removeStaleRows(existingGalleries, webSiteGalleryRepository);
+        }
+
+        siteGallery.setCreator(creator);
+        siteGallery.setModifier(modifier);
+        var siteGalleryId = webSiteGalleryRepository.save(siteGallery)
+            .getId();
+        // The file relations are written again from the current gallery content
+        webSiteGalleryRepository.deleteGalleryFiles(siteGalleryId);
+
+        for (var galleryFile : galleryFileList) {
+            publishGalleryFile(galleryFile, siteGalleryId, published, tagBlacklist);
+        }
+        return siteGalleryId;
+    }
+
+    /**
+     * Deletes every row but the first and flushes the deletes, so that the first row can take over the unique values of the removed ones.
+     */
+    private static <T> void removeStaleRows(List<T> rows, JpaRepository<T, Long> repository) {
+        if (rows.size() < 2) {
+            return;
+        }
+
+        var stale = rows.subList(1, rows.size());
+        log.warn("Removing {} stale site rows of {}", stale.size(), rows.getFirst());
+        repository.deleteAll(stale);
+        repository.flush();
+    }
+
+    private static void associateThumbnails(List<SiteFile> siteFiles, List<FileThumb> fileThumbList) throws VempainEntityNotFoundException {
         for (var fileThumb : fileThumbList) {
-            fileThumb.setSiteFile(gallery.getSiteFiles()
-                .stream()
+            fileThumb.setSiteFile(siteFiles.stream()
                 .filter(fileCommon -> fileCommon.getId() == fileThumb.getParentId())
                 .findFirst()
                 .orElseThrow(VempainEntityNotFoundException::new));
@@ -479,19 +517,21 @@ public class PublishService {
     }
 
     /**
-     * Transfers the files of the gallery over an SFTP connection of its own, so that publish tasks running at the same time never share or close each other's
-     * connection; how many of them run at once is bounded by {@link #siteTransferLane()}.
+     * Transfers the site files and their thumbnails over an SFTP connection of its own, so that publish tasks running at the same time never share or close
+     * each other's connection; how many of them run at once is bounded by {@link #siteTransferLane()}.
+     *
+     * @param what the item being published, for the step messages ("gallery x", "file y")
      */
-    private void transferGalleryFiles(Gallery gallery, List<FileThumb> fileThumbList, TaskProgress progress) {
+    private void transferFilesToSite(List<SiteFile> siteFiles, List<FileThumb> fileThumbList, TaskProgress progress, String what) {
         log.debug("Connecting to site-server {}", siteSshAddress);
         log.debug("Connecting to site-server with user {}", siteSshUser);
         log.debug("Using SSH home dir {}", adminSshHomeDir);
         log.debug("Using SSH private key {}", adminSshPrivateKey);
         try (var connection = jschClient.connect(siteSshAddress, siteSshPort, siteSshUser, adminSshHomeDir, adminSshPrivateKey)) {
             log.debug("Transferring thumb files to site-server: {}", toJson(fileThumbList));
-            connection.transferFilesToSite(gallery.getSiteFiles(), fileThumbList, siteFile -> {
+            connection.transferFilesToSite(siteFiles, fileThumbList, siteFile -> {
                 if (progress != null) {
-                    progress.advance("Transferred " + siteFile.getFileName() + " of gallery " + gallery.getShortname());
+                    progress.advance("Transferred " + siteFile.getFileName() + " of " + what);
                 }
             });
         } catch (JSchException e) {
@@ -503,13 +543,24 @@ public class PublishService {
         }
     }
 
+    /**
+     * Writes one file of a gallery to the site, updating the site row of the file in place when it is already there, and links it to the site gallery.
+     */
     private void publishGalleryFile(GalleryFile galleryFile, long siteGalleryId, Instant published, TagBlacklist tagBlacklist)
             throws VempainEntityNotFoundException {
         var siteFile = siteFileRepository.findById(galleryFile.getSiteFileId())
             .orElseThrow(VempainEntityNotFoundException::new);
-        log.debug("Deleting potential web site file by file ID: {}", siteFile.getId());
-        webSiteFileRepository.deleteByFileId(siteFile.getId());
+        var savedWebSiteFile = writeSiteFile(siteFile, published, tagBlacklist);
+        webSiteGalleryRepository.saveGalleryFile(siteGalleryId, savedWebSiteFile.getId(), galleryFile.getSortOrder());
+    }
 
+    /**
+     * Writes a site file to the site: the site file row (updated in place when the file is already there, see {@link #writeSiteGallery}), its GPS location and
+     * its subjects, and records the release time on the admin side. Must run in a site transaction, the file itself must already be on the site server.
+     *
+     * @return the site row of the file
+     */
+    WebSiteFile writeSiteFile(SiteFile siteFile, Instant published, TagBlacklist tagBlacklist) {
         var fileCreator = nickOf(siteFile.getCreator());
         var fileModifier = nickOf(siteFile.getModifier());
         var actor = fileModifier != null ? fileModifier : fileCreator;
@@ -548,7 +599,6 @@ public class PublishService {
         var webSiteFile = siteFile.toWebSiteFile();
         // blacklisted tags never reach the site: not in the keyword lists of the metadata, not as subjects
         webSiteFile.setMetadata(tagBlacklist.stripMetadata(webSiteFile.getMetadata()));
-        webSiteFile.setAclId(webSiteResourceService.getNextWebSiteAcl());
         webSiteFile.setCreator(fileCreator);
         webSiteFile.setCreated(siteFile.getCreated());
         webSiteFile.setModifier(fileModifier);
@@ -561,19 +611,158 @@ public class PublishService {
                     + File.separator + siteFile.getFileName());
         }
 
+        // The site row of the file, when it has been published before: by the admin file id, or by its paths when the file was ingested again under a new id
+        var existingFiles = webSiteFileRepository.findByFileIdOrFilePathOrThumbnailPathOrderByIdAsc(siteFile.getId(), webSiteFile.getFilePath(),
+                webSiteFile.getThumbnailPath());
+
+        if (existingFiles.isEmpty()) {
+            webSiteFile.setAclId(webSiteResourceService.getNextWebSiteAcl());
+        } else {
+            var existing = existingFiles.getFirst();
+            log.debug("Updating the site file {} of file {} in place", existing.getId(), siteFile.getId());
+            webSiteFile.setId(existing.getId());
+            webSiteFile.setAclId(existing.getAclId());
+            removeStaleRows(existingFiles, webSiteFileRepository);
+        }
+
         log.debug("Saving web site file: {} with metadata length {} from siteFile metadata length {}", toJson(webSiteFile), (webSiteFile.getMetadata()
                 != null ? webSiteFile.getMetadata()
                     .length() : 0),
                 (siteFile.getMetadata() != null ? siteFile.getMetadata()
                     .length() : 0));
-        var newWebSiteFile = webSiteFileRepository.save(webSiteFile);
-        webSiteGalleryRepository.saveGalleryFile(siteGalleryId, newWebSiteFile.getId(), galleryFile.getSortOrder());
+        var savedWebSiteFile = webSiteFileRepository.save(webSiteFile);
         var subjects = tagBlacklist.filterSubjects(subjectService.getSubjectsByFileId(siteFile.getId()));
-        log.debug("Publishing subjects for site file {}: {}", newWebSiteFile.getId(), toJson(subjects));
+        log.debug("Publishing subjects for site file {}: {}", savedWebSiteFile.getId(), toJson(subjects));
         var siteSubjects = webSiteSubjectService.saveAllFromAdminSubject(subjects, actor);
-        webSiteSubjectService.saveSiteFileSubject(newWebSiteFile.getId(), siteSubjects);
+        webSiteSubjectService.replaceSiteFileSubjects(savedWebSiteFile.getId(), siteSubjects);
         siteFile.setPublished(published);
         siteFileRepository.save(siteFile);
+        return savedWebSiteFile;
+    }
+
+    /// ///////// Site files
+
+    /**
+     * @return {@code true} when the current user holds the modify privilege on the site file, which releasing it to the website requires
+     */
+    public boolean canPublishFile(SiteFile siteFile) {
+        return siteFile != null
+               && accessService.hasModifyPermission(siteFile.getAclId());
+    }
+
+    /**
+     * Starts a background task that publishes the selected site files the current user may publish, one step per file. Invalid, missing and unauthorized files
+     * are skipped at submit time and counted in the task result.
+     */
+    public TaskAcceptedResponse publishSelectedFilesAsTask(List<Long> requestedIds) {
+        if (requestedIds == null
+            || requestedIds.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File ID list cannot be empty");
+        }
+
+        var fileIds = new ArrayList<Long>();
+
+        for (var fileId : requestedIds) {
+            if (fileId == null
+                || fileId < 1) {
+                log.warn("Skipping invalid site file ID in publishSelectedFilesAsTask: {}", fileId);
+                continue;
+            }
+
+            var siteFile = fileService.findSiteFileById(fileId)
+                .orElse(null);
+
+            if (siteFile == null) {
+                log.warn("Skipping publish for site file {} because it does not exist", fileId);
+                continue;
+            }
+
+            if (!canPublishFile(siteFile)) {
+                log.warn("Skipping publish for site file {} because the user lacks the modify permission on it", fileId);
+                continue;
+            }
+
+            fileIds.add(fileId);
+        }
+
+        var ids = List.copyOf(fileIds);
+        var skipped = requestedIds.size() - ids.size();
+        var progress = taskRunner.submitDurable(TaskTypeEnum.PUBLISH_SELECTED_FILES.name(), "Publish " + ids.size() + " selected files", ids.size(),
+                Map.of("file_ids", ids, "skipped", skipped), siteTransferLane(), task -> publishFilesNow(ids, skipped, task));
+        return progress.toAcceptedResponse();
+    }
+
+    /**
+     * Task body of {@link TaskTypeEnum#PUBLISH_SELECTED_FILES}: one step per file transferred to the site; a missing file fails its step without failing the
+     * task.
+     *
+     * @param skippedBeforeStart files that were left out when the task was submitted, reported in the result
+     */
+    public Map<String, Object> publishFilesNow(List<Long> fileIds, int skippedBeforeStart, TaskProgress progress) {
+        var published = 0L;
+
+        for (var fileId : fileIds) {
+            progress.checkpoint();
+            var completedBefore = progress.getCompletedSteps()
+                .get();
+
+            try {
+                publishServiceProxy().publishFileAsSystem(fileId, progress);
+                published++;
+            } catch (VempainEntityNotFoundException e) {
+                log.warn("Failed to publish site file {}: {}", fileId, e.getMessage());
+                failRemainingSteps(progress, 1, completedBefore, "File " + fileId + " could not be published: " + e.getMessage());
+            }
+        }
+
+        return publishCounts(published, fileIds.size() - published + skippedBeforeStart);
+    }
+
+    /**
+     * Publishes one site file without any gallery and without checking the caller's privileges: transfers the file and its thumbnails to the site server (one
+     * step of {@code progress}) and writes its site rows in one site transaction. A file that is on the site already is updated in place.
+     *
+     * @param progress the task to report to, or null when the publish is not part of a task
+     */
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void publishFileAsSystem(long siteFileId, TaskProgress progress) throws VempainEntityNotFoundException {
+        var siteFile = fileService.findSiteFileById(siteFileId)
+            .orElse(null);
+
+        if (siteFile == null) {
+            log.error("Failed to publish a non-existing site file by ID: {}", siteFileId);
+            throw new VempainEntityNotFoundException();
+        }
+
+        var siteFiles = List.of(siteFile);
+        var fileThumbList = fileService.findAllFileThumbsBySiteFileList(siteFiles);
+        associateThumbnails(siteFiles, fileThumbList);
+        transferFilesToSite(siteFiles, fileThumbList, progress, "file " + siteFile.getFileName());
+
+        if (progress != null) {
+            progress.message("Updating the site database for file " + siteFile.getFileName());
+        }
+        // The file is on the site server now, it is released to the website at this moment
+        var published = Instant.now();
+        var tagBlacklist = tagBlacklistService.snapshot();
+        siteDatabaseRetry.execute("file " + siteFile.getFileName(), () -> writeSiteFile(siteFile, published, tagBlacklist));
+    }
+
+    /**
+     * Removes the site rows of a site file from the website, in one site transaction: its gallery links, its subjects (by cascade) and the file row itself; the
+     * file on the site server is left in place. Nothing happens for a file that is not on the site.
+     */
+    public void removeFileFromSite(SiteFile siteFile) throws VempainEntityNotFoundException {
+        var filePath = siteFile.getFileType().shortName + File.separator + siteFile.getFilePath() + File.separator + siteFile.getFileName();
+        siteDatabaseRetry.execute("removal of file " + siteFile.getFileName(), () -> {
+            var rows = webSiteFileRepository.findByFileIdOrFilePathOrThumbnailPathOrderByIdAsc(siteFile.getId(), filePath, null);
+            for (var row : rows) {
+                log.info("Removing site file {} ({}) of admin site file {} from the website", row.getId(), row.getFilePath(), siteFile.getId());
+                webSiteGalleryRepository.deleteGalleryFilesByFileId(row.getId());
+            }
+            webSiteFileRepository.deleteAll(rows);
+            return rows.size();
+        });
     }
 
     /**

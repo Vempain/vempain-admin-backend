@@ -74,6 +74,16 @@ class AdminTaskCommandExecutorUTC {
     }
 
     @Test
+    void executesTheFilePublishCommandWithTheSkippedCount() throws Exception {
+        var files = task("PUBLISH_SELECTED_FILES", Map.of("file_ids", List.of(5L, 6L), "skipped", 1));
+        when(applicationContext.getBean(PublishService.class)).thenReturn(publishService);
+
+        executor.execute(files);
+
+        verify(publishService).publishFilesNow(List.of(5L, 6L), 1, files);
+    }
+
+    @Test
     void executesRefreshAndDataSetCommands() throws Exception {
         var refresh = task("REFRESH_ALL_GALLERY_FILES", Map.of("gallery_ids", List.of(5L)));
         var data = task("PUBLISH_DATA_SET", Map.of("identifier", "music_library"));

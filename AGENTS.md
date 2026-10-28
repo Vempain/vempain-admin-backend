@@ -64,6 +64,16 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
   actor)`); `WebSiteConfigurationService.updateConfiguration` sets modifier/modified to the calling administrator's nick and now.
   Rows published before the columns existed keep NULL until republished; never backfill them with made-up values. The website backend
   maps the fields read-only. Tests: `PublishServiceUTC`, `WebSiteSubjectServiceUTC`, `WebSiteConfigurationServiceUTC`.
+- A republish updates the site rows in place, never delete-and-insert: `PublishService.writeSiteGallery` (the `SiteDatabaseRetry` unit of
+  the gallery publish) looks the site gallery up by `gallery_id` and every file by `file_id` or by its site file/thumbnail path
+  (`WebSiteFileRepository.findByFileIdOrFilePathOrThumbnailPathOrderByIdAsc`), keeps the site id and ACL of a row that exists, allocates a
+  site ACL only for a new row, rewrites the `web_site_gallery_file` relations (`deleteGalleryFiles`, a native delete) and replaces the
+  file subjects (`WebSiteSubjectService.replaceSiteFileSubjects`); stale duplicate rows are deleted and flushed before the kept row is
+  written. The reason: `web_site_file.thumbnail_path` is unique (`ux_web_site_file_thumbnail_path`) and the whole site write runs in one
+  Hibernate session, where a derived `deleteBy...` is deferred to the flush while the identity insert of the replacement row runs at
+  once, so delete-and-insert fails with a duplicate key. Never reintroduce a derived delete followed by a save of the same unique
+  values inside a site transaction. Tests: `PublishServiceUTC` (`republishingAGalleryUpdatesTheSiteRowsInPlace...`), `PublishServiceITC`
+  (`writingAGalleryToTheSiteAgainUpdatesItsRowsInPlace`, two site writes of one gallery against the site container).
 - `fi.poltsi.vempain.admin.service.DataService` is the bridge between Admin-managed dataset metadata and the site datasource tables. GPS embed discovery depends on `findAll(type, identifierPrefix, search)` returning `time_series` rows found by `search=gps`, including legacy unprefixed identifiers.
 - When Admin publishes CSV into the site datasource, column coercion is schema-driven. Timestamp/date/time columns now accept ISO text inputs and fail with `400 BAD_REQUEST` when parsing is invalid; preserve that behavior when changing publish/import logic.
 
@@ -137,6 +147,17 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
   it matches readable pages with `PageRepository.findByPagePathPrefix(LikePatterns.prefix(prefix))` (escaped LIKE, explicit `ESCAPE`),
   drops the last part of every matching path and answers the common leading parts (`commonParentPath`, null when none). Tests:
   `PageServiceUTC`, `PageServiceITC` (ACL-denied pages excluded, wildcards literal), `PageControllerUTC`.
+- Single site files are published and deleted from the typed file lists of the admin SPA, without any gallery (`FileAPI`, `FileController`):
+  `POST /content-management/file/site-files/publish-selected` (`SiteFilePublishRequest.file_ids`, 202 `PublishResponse` with the task) starts
+  the `PUBLISH_SELECTED_FILES` task through `PublishService.publishSelectedFilesAsTask` (files that do not exist or that the caller may not
+  publish, i.e. lacks the modify privilege on, `canPublishFile`, are skipped at submit time and counted in the result); its body
+  `publishFilesNow` runs `publishFileAsSystem(id, progress)` per file through the transactional proxy: the file and its thumbnails are
+  transferred over an SFTP connection of its own (one step) and `writeSiteFile` (shared with the gallery publish) writes the site file
+  row, GPS location and subjects in one `SiteDatabaseRetry` transaction. `DELETE /content-management/file/site-files/{id}` (200
+  `DeleteResponse`, 404, 403 without the delete privilege on the file) is `DeleteService.deleteSiteFileById`: `PublishService.removeFileFromSite`
+  first (site file rows found by file id or site path, their `web_site_gallery_file` links by `deleteGalleryFilesByFileId`, the subjects by
+  cascade; the file on the site server is left in place because `JschClient` only uploads) and then `FileIngestService.deleteIngestedSiteFile`
+  for the admin side. Tests: `PublishServiceUTC`, `DeleteServiceUTC`, `FileControllerUTC`, `AdminTaskCommandExecutorUTC`.
 - Service-to-service undo endpoints used by the file backend to revert cancelled background tasks: `DELETE /content-management/file/site-file/{id}`
   (`FileIngestService.deleteIngestedSiteFile`: stored file, gallery links, subjects, thumbnail row, ACL and the `SiteFile`) and
   `DELETE /content-management/data/{identifier}` (`DataService.delete`: drops the published site table and the data set). Both require the
@@ -145,7 +166,7 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
   `TaskRunner`, `TaskProgressStore`, `TaskController` = `TaskAPI` at `/api/tasks`, `202 TaskAcceptedResponse` + polled
   `TaskProgressResponse`, cooperative cancel). This service hosts it with `fi.poltsi.vempain.admin.task.AdminTaskCommandExecutor` and
   `fi.poltsi.vempain.admin.api.TaskTypeEnum`: `PUBLISH_PAGE`, `PUBLISH_ALL_PAGES`, `PUBLISH_GALLERY`, `PUBLISH_ALL_GALLERIES`,
-  `PUBLISH_SELECTED_GALLERIES` (`PublishService.*AsTask` submit, `publishPageNow`/`publishPagesNow`/`publishGalleriesNow` run through the
+  `PUBLISH_SELECTED_GALLERIES`, `PUBLISH_SELECTED_FILES` (`PublishService.*AsTask` submit, `publishPageNow`/`publishPagesNow`/`publishGalleriesNow`/`publishFilesNow` run through the
   transactional proxy, result `{"published", "skipped"}` or `{"site_page_id"}`). The publish tasks count the smallest items: one step per
   file transferred to the site server (`JschClient.Connection.transferFilesToSite` sends every site file together with its thumbnails and calls back
   after each one, `publishGalleryAsSystem(id, progress)` advances there), one step for a gallery without files, and for a page one step
@@ -345,3 +366,15 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
 
 Tags are metadata, not ACL-bearing resources. Tag entities have no ACL information, so tag list, search, and mutation endpoints must not perform ACL checks on
 tags. ACL checks apply only to resources that explicitly carry an ACL.
+
+## Gradle configuration cache
+
+`org.gradle.configuration-cache=true` in `gradle.properties` stores the configured task graph and reuses it when the build inputs are
+unchanged ("Reusing configuration cache"), so the build scripts must stay compatible with it: no `Project`, `Configuration` or other live
+build model inside a task action (`doLast`/`doFirst`), only task inputs, properties and providers captured while configuring (see
+`verifyBuildConstraints` in `gradle/team-convention.gradle`, which collects the `rootComponent` providers of the classpaths and walks the
+resolved graphs at execution instead of resolving configurations there). Gradle reports a violation as "problem was found storing the
+configuration cache" and fails the build; `--no-configuration-cache` only hides it for one run, fix the script instead. The cache lives in
+`.gradle/configuration-cache/` (ignored). Because the cache also runs the tasks of one invocation in parallel, `gradle/team-convention.gradle`
+orders every Spotless task after every `clean` task (Spotless closes its formatter classloaders in `clean`, diffplug/spotless#3067);
+without that `./gradlew clean build` intermittently fails `spotlessFlexmarkCheck` with a `LINE_UNDEFINED flexmark-java(NoClassDefFoundError)` lint.

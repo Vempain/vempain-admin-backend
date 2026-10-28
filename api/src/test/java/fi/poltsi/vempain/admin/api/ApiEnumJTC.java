@@ -22,7 +22,7 @@ class ApiEnumJTC {
     @Test
     void taskTypesArePinned() throws Exception {
         assertEquals(List.of("PUBLISH_PAGE", "PUBLISH_ALL_PAGES", "PUBLISH_GALLERY", "PUBLISH_ALL_GALLERIES", "PUBLISH_SELECTED_GALLERIES",
-                "REFRESH_ALL_GALLERY_FILES", "PUBLISH_DATA_SET"), names(TaskTypeEnum.values()));
+                "PUBLISH_SELECTED_FILES", "REFRESH_ALL_GALLERY_FILES", "PUBLISH_DATA_SET"), names(TaskTypeEnum.values()));
         assertRoundTrip(TaskTypeEnum.class, TaskTypeEnum.PUBLISH_SELECTED_GALLERIES);
         assertEquals(TaskTypeEnum.PUBLISH_DATA_SET, TaskTypeEnum.valueOf("PUBLISH_DATA_SET"));
     }

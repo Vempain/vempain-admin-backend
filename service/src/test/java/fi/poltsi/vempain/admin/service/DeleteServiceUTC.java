@@ -17,16 +17,21 @@ import fi.poltsi.vempain.admin.entity.Form;
 import fi.poltsi.vempain.admin.entity.FormComponent;
 import fi.poltsi.vempain.admin.entity.Layout;
 import fi.poltsi.vempain.admin.entity.Page;
+import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.repository.ComponentRepository;
 import fi.poltsi.vempain.admin.repository.FormRepository;
 import fi.poltsi.vempain.admin.repository.LayoutRepository;
 import fi.poltsi.vempain.admin.repository.PageRepository;
+import fi.poltsi.vempain.admin.service.file.FileIngestService;
+import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.admin.tools.TestUTCTools;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.repository.AclRepository;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
@@ -50,9 +55,51 @@ class DeleteServiceUTC {
     private LayoutRepository layoutRepository;
     @Mock
     private AccessService accessService;
+    @Mock
+    private FileService fileService;
+    @Mock
+    private FileIngestService fileIngestService;
+    @Mock
+    private PublishService publishService;
 
     @InjectMocks
     private DeleteService deleteService;
+
+    @Test
+    void deleteSiteFileByIdRemovesTheFileFromTheSiteAndThenFromTheAdminSide() throws Exception {
+        var siteFile = SiteFile.builder()
+            .id(21L)
+            .aclId(210L)
+            .fileName("a.jpg")
+            .build();
+        when(fileService.findSiteFileById(21L)).thenReturn(Optional.of(siteFile));
+        when(accessService.hasDeletePermission(210L)).thenReturn(true);
+
+        assertEquals(siteFile, deleteService.deleteSiteFileById(21L));
+
+        var order = org.mockito.Mockito.inOrder(publishService, fileIngestService);
+        order.verify(publishService)
+            .removeFileFromSite(siteFile);
+        order.verify(fileIngestService)
+            .deleteIngestedSiteFile(21L);
+    }
+
+    @Test
+    void deleteSiteFileByIdRejectsAMissingFileAndAUserWithoutTheDeletePrivilege() throws Exception {
+        when(fileService.findSiteFileById(22L)).thenReturn(Optional.empty());
+        assertThrows(VempainEntityNotFoundException.class, () -> deleteService.deleteSiteFileById(22L));
+
+        var siteFile = SiteFile.builder()
+            .id(23L)
+            .aclId(230L)
+            .build();
+        when(fileService.findSiteFileById(23L)).thenReturn(Optional.of(siteFile));
+        when(accessService.hasDeletePermission(230L)).thenReturn(false);
+        assertThrows(AccessDeniedException.class, () -> deleteService.deleteSiteFileById(23L));
+
+        verify(publishService, never()).removeFileFromSite(any());
+        verify(fileIngestService, never()).deleteIngestedSiteFile(anyLong());
+    }
 
     @BeforeEach
     void setUp() {

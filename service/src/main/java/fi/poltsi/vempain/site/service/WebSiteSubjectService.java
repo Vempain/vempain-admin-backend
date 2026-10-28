@@ -80,8 +80,12 @@ public class WebSiteSubjectService {
         }
     }
 
+    /**
+     * Replaces the subjects of a site file with the given ones.
+     */
     @Transactional("siteTransactionManager")
-    public void saveSiteFileSubject(long fileId, List<WebSiteSubject> webSiteSubjects) {
+    public void replaceSiteFileSubjects(long fileId, List<WebSiteSubject> webSiteSubjects) {
+        siteSubjectRepository.deleteSiteFileSubjects(fileId);
         for (var siteSubject : webSiteSubjects) {
             siteSubjectRepository.saveSiteFileSubject(fileId, siteSubject.getId());
         }

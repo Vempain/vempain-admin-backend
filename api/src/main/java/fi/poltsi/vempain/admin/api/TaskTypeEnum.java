@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
             "PUBLISH_GALLERY",
             "PUBLISH_ALL_GALLERIES",
             "PUBLISH_SELECTED_GALLERIES",
+            "PUBLISH_SELECTED_FILES",
             "REFRESH_ALL_GALLERY_FILES",
             "PUBLISH_DATA_SET" })
 public enum TaskTypeEnum {
@@ -37,6 +38,11 @@ public enum TaskTypeEnum {
      * Publishes the selected galleries the caller may publish, one step per gallery. Result payload: {@code {"published": n, "skipped": m}}.
      */
     PUBLISH_SELECTED_GALLERIES,
+    /**
+     * Transfers the selected site files (the caller may publish) with their thumbnails to the site server and publishes their metadata without any gallery, one
+     * step per file. Result payload: {@code {"published": n, "skipped": m}}.
+     */
+    PUBLISH_SELECTED_FILES,
     /**
      * Regenerates the derived files of every gallery, one step per gallery. Result payload: {@code RefreshResponse}.
      */
