@@ -127,22 +127,25 @@ class WebSiteSubjectServiceUTC {
     }
 
     @Test
-    void saveSiteFileSubjectOk() {
+    void replaceSiteFileSubjectsRemovesTheOldOnesAndSavesTheGivenOnes() {
         var subject1 = buildSiteSubject(10L, "nature");
         var subject2 = buildSiteSubject(11L, "travel");
 
         doNothing().when(siteSubjectRepository)
             .saveSiteFileSubject(anyLong(), anyLong());
 
-        webSiteSubjectService.saveSiteFileSubject(100L, List.of(subject1, subject2));
+        webSiteSubjectService.replaceSiteFileSubjects(100L, List.of(subject1, subject2));
 
-        verify(siteSubjectRepository, times(2)).saveSiteFileSubject(anyLong(), anyLong());
+        verify(siteSubjectRepository).deleteSiteFileSubjects(100L);
+        verify(siteSubjectRepository).saveSiteFileSubject(100L, 10L);
+        verify(siteSubjectRepository).saveSiteFileSubject(100L, 11L);
     }
 
     @Test
-    void saveSiteFileSubjectEmptyListOk() {
-        webSiteSubjectService.saveSiteFileSubject(100L, List.of());
+    void replaceSiteFileSubjectsWithAnEmptyListOnlyRemovesTheOldOnes() {
+        webSiteSubjectService.replaceSiteFileSubjects(100L, List.of());
 
+        verify(siteSubjectRepository).deleteSiteFileSubjects(100L);
         verify(siteSubjectRepository, times(0)).saveSiteFileSubject(anyLong(), anyLong());
     }
 }

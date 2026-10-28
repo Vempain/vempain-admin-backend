@@ -620,6 +620,155 @@ class PublishServiceUTC {
     }
 
     @Test
+    void publishSelectedFilesAsTaskSkipsInvalidMissingAndUnauthorizedFilesAtSubmitTime() throws Exception {
+        var allowed = SiteFile.builder()
+            .id(5L)
+            .aclId(105L)
+            .build();
+        var denied = SiteFile.builder()
+            .id(6L)
+            .aclId(106L)
+            .build();
+        when(fileService.findSiteFileById(5L)).thenReturn(Optional.of(allowed));
+        when(fileService.findSiteFileById(6L)).thenReturn(Optional.of(denied));
+        when(fileService.findSiteFileById(7L)).thenReturn(Optional.empty());
+        when(accessService.hasModifyPermission(105L)).thenReturn(true);
+        when(accessService.hasModifyPermission(106L)).thenReturn(false);
+        Mockito.doAnswer(invocation -> {
+            invocation.getArgument(1, TaskProgress.class)
+                .advance("Transferred a.jpg of file a.jpg");
+            return null;
+        })
+            .when(publishServiceSpy)
+            .publishFileAsSystem(eq(5L), any());
+        when(applicationContext.getBean(PublishService.class)).thenReturn(publishServiceSpy);
+
+        var accepted = publishServiceSpy.publishSelectedFilesAsTask(List.of(5L, 6L, 7L, 0L));
+
+        assertEquals("PUBLISH_SELECTED_FILES", accepted.getType());
+        assertEquals(1, accepted.getTotalSteps());
+        var task = taskStore.find(accepted.getTaskId())
+            .orElseThrow();
+        assertEquals(TaskStatusEnum.COMPLETED, task.getStatus());
+        assertEquals(Map.of("published", 1L, "skipped", 3L), task.getResult());
+        verify(publishServiceSpy).publishFileAsSystem(eq(5L), any());
+        verify(publishServiceSpy, never()).publishFileAsSystem(eq(6L), any());
+        verify(taskRunner).submitDurable(eq("PUBLISH_SELECTED_FILES"), eq("Publish 1 selected files"), eq(1L),
+                eq(Map.of("file_ids", List.of(5L), "skipped", 3)), eq(publishService.siteTransferLane()), any());
+    }
+
+    @Test
+    void publishSelectedFilesAsTaskRejectsAnEmptyList() {
+        assertThrows(ResponseStatusException.class, () -> publishService.publishSelectedFilesAsTask(List.of()));
+        assertEquals(0, taskStore.size());
+    }
+
+    @Test
+    void publishFilesNowFailsTheStepOfAMissingFileWithoutFailingTheTask() throws Exception {
+        Mockito.doAnswer(invocation -> {
+            invocation.getArgument(1, TaskProgress.class)
+                .advance("Transferred a.jpg of file a.jpg");
+            return null;
+        })
+            .when(publishServiceSpy)
+            .publishFileAsSystem(eq(1L), any());
+        doThrow(new VempainEntityNotFoundException()).when(publishServiceSpy)
+            .publishFileAsSystem(eq(2L), any());
+        when(applicationContext.getBean(PublishService.class)).thenReturn(publishServiceSpy);
+        var progress = taskStore.create("PUBLISH_SELECTED_FILES", "Publish 2 selected files", 1L, 2);
+
+        var result = publishServiceSpy.publishFilesNow(List.of(1L, 2L), 1, progress);
+
+        assertEquals(Map.of("published", 1L, "skipped", 2L), result);
+        assertEquals(2, progress.getCompletedSteps()
+            .get());
+        assertEquals(1, progress.getFailedSteps()
+            .get());
+    }
+
+    @Test
+    void publishFileAsSystemTransfersTheFileWithItsThumbnailAndWritesItsSiteRowWithoutAGallery() throws Exception {
+        var image = galleryWithFiles().getSiteFiles()
+            .getFirst();
+        var thumb = FileThumb.builder()
+            .id(5L)
+            .parentId(11L)
+            .parentType(FileTypeEnum.IMAGE)
+            .build();
+        when(fileService.findSiteFileById(11L)).thenReturn(Optional.of(image));
+        when(fileService.findAllFileThumbsBySiteFileList(List.of(image))).thenReturn(List.of(thumb));
+        ReflectionTestUtils.setField(publishService, "thumbSubDir", ".thumb");
+        var connection = org.mockito.Mockito.mock(JschClient.Connection.class);
+        when(jschClient.connect(any(), org.mockito.ArgumentMatchers.anyInt(), any(), any(), any())).thenReturn(connection);
+        Mockito.doAnswer(invocation -> {
+            Consumer<SiteFile> callback = invocation.getArgument(2);
+            callback.accept(image);
+            return null;
+        })
+            .when(connection)
+            .transferFilesToSite(eq(List.of(image)), eq(List.of(thumb)), any());
+        when(userService.findUserResponseById(anyLong())).thenReturn(UserResponse.builder()
+            .nick("alice")
+            .build());
+        when(webGpsLocationRepository.findById(900L)).thenReturn(Optional.empty());
+        when(webGpsLocationRepository.save(any(WebGpsLocation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(webSiteResourceService.getNextWebSiteAcl()).thenReturn(1000L);
+        when(webSiteFileRepository.save(any(WebSiteFile.class))).thenAnswer(invocation -> {
+            var saved = invocation.getArgument(0, WebSiteFile.class);
+            saved.setId(600L);
+            return saved;
+        });
+        when(subjectService.getSubjectsByFileId(11L)).thenReturn(List.of());
+        when(webSiteSubjectService.saveAllFromAdminSubject(List.of(), "alice")).thenReturn(List.of());
+        var progress = taskStore.create("PUBLISH_SELECTED_FILES", "Publish 1 selected files", 1L, 1);
+
+        publishService.publishFileAsSystem(11L, progress);
+
+        assertEquals(image, thumb.getSiteFile());
+        assertEquals(1, progress.getCompletedSteps()
+            .get());
+        verify(connection).close();
+        var savedFile = org.mockito.ArgumentCaptor.forClass(WebSiteFile.class);
+        verify(webSiteFileRepository).save(savedFile.capture());
+        assertEquals("image/2024/trip/a.jpg", savedFile.getValue()
+            .getFilePath());
+        assertEquals("image/2024/trip/.thumb/a.jpg", savedFile.getValue()
+            .getThumbnailPath());
+        assertEquals(1000L, savedFile.getValue()
+            .getAclId());
+        verify(webSiteSubjectService).replaceSiteFileSubjects(600L, List.of());
+        // No gallery is involved: no site gallery is written and the file is linked to none
+        verify(webSiteGalleryRepository, never()).save(any(WebSiteGallery.class));
+        verify(webSiteGalleryRepository, never()).saveGalleryFile(anyLong(), anyLong(), anyLong());
+        assertNotNull(image.getPublished());
+        verify(siteFileRepository).save(image);
+    }
+
+    @Test
+    void publishFileAsSystemRejectsAMissingFile() throws Exception {
+        when(fileService.findSiteFileById(99L)).thenReturn(Optional.empty());
+        assertThrows(VempainEntityNotFoundException.class, () -> publishService.publishFileAsSystem(99L, null));
+        verify(jschClient, never()).connect(any(), org.mockito.ArgumentMatchers.anyInt(), any(), any(), any());
+    }
+
+    @Test
+    void removeFileFromSiteDeletesTheSiteRowsOfTheFileAndTheirGalleryLinks() throws Exception {
+        var image = galleryWithFiles().getSiteFiles()
+            .getFirst();
+        var siteImage = WebSiteFile.builder()
+            .id(600L)
+            .fileId(11L)
+            .filePath("image/2024/trip/a.jpg")
+            .build();
+        when(webSiteFileRepository.findByFileIdOrFilePathOrThumbnailPathOrderByIdAsc(11L, "image/2024/trip/a.jpg", null)).thenReturn(List.of(siteImage));
+
+        publishService.removeFileFromSite(image);
+
+        verify(webSiteGalleryRepository).deleteGalleryFilesByFileId(600L);
+        verify(webSiteFileRepository).deleteAll(List.of(siteImage));
+    }
+
+    @Test
     void publishSelectedGalleriesAsTaskRejectsAnEmptyList() {
         assertThrows(ResponseStatusException.class, () -> publishService.publishSelectedGalleriesAsTask(List.of()));
         assertEquals(0, taskStore.size());
@@ -1005,9 +1154,15 @@ class PublishServiceUTC {
             .get());
         // The transfer ran over a connection of its own, closed when it was done
         verify(connection).close();
-        verify(webSiteGalleryRepository).deleteByGalleryId(1L);
-        verify(webSiteFileRepository).deleteByFileId(11L);
-        verify(webSiteFileRepository).deleteByFileId(12L);
+        // Nothing of the gallery was on the site yet: every row is new, with a site ACL of its own
+        verify(webSiteGalleryRepository).findAllByGalleryIdOrderByIdAsc(1L);
+        verify(webSiteGalleryRepository).deleteGalleryFiles(500L);
+        verify(webSiteFileRepository).findByFileIdOrFilePathOrThumbnailPathOrderByIdAsc(11L, "image/2024/trip/a.jpg", "image/2024/trip/.thumb/a.jpg");
+        verify(webSiteFileRepository).findByFileIdOrFilePathOrThumbnailPathOrderByIdAsc(12L, "video/2024/trip/b.mp4", null);
+        verify(webSiteGalleryRepository, never()).deleteAll(any());
+        verify(webSiteFileRepository, never()).deleteAll(any());
+        assertEquals(1000L, savedGalleries.getFirst()
+            .getAclId());
         assertEquals(2, savedFiles.size());
         var publishedImage = savedFiles.getFirst();
         assertEquals("image/2024/trip/a.jpg", publishedImage.getFilePath());
@@ -1048,7 +1203,8 @@ class PublishServiceUTC {
         assertNull(publishedVideo.getModified());
         verify(webSiteGalleryRepository).saveGalleryFile(500L, 600L, 0L);
         verify(webSiteGalleryRepository).saveGalleryFile(500L, 601L, 1L);
-        verify(webSiteSubjectService).saveSiteFileSubject(600L, siteSubjects);
+        assertEquals(1001L, publishedImage.getAclId());
+        verify(webSiteSubjectService).replaceSiteFileSubjects(600L, siteSubjects);
         // The release time is recorded on the admin side for the gallery and every file in it
         assertNotNull(gallery.getPublished());
         assertEquals(gallery.getPublished(), image.getPublished());
@@ -1056,7 +1212,101 @@ class PublishServiceUTC {
         verify(siteFileRepository).save(image);
         verify(siteFileRepository).save(video);
         verify(fileService).saveGallery(gallery);
-        verify(webSiteSubjectService).saveSiteFileSubject(601L, List.of());
+        verify(webSiteSubjectService).replaceSiteFileSubjects(601L, List.of());
+    }
+
+    @Test
+    void republishingAGalleryUpdatesTheSiteRowsInPlaceAndRemovesStaleDuplicates() throws Exception {
+        var gallery = galleryWithFiles();
+        var image = gallery.getSiteFiles()
+            .getFirst();
+        var video = gallery.getSiteFiles()
+            .get(1);
+        when(fileService.findGalleryById(1L)).thenReturn(gallery);
+        when(galleryFileService.findGalleryFileByGalleryId(1L)).thenReturn(galleryFilesOf(gallery));
+        when(fileService.findAllFileThumbsBySiteFileList(gallery.getSiteFiles())).thenReturn(List.of());
+        ReflectionTestUtils.setField(publishService, "thumbSubDir", ".thumb");
+        var connection = org.mockito.Mockito.mock(JschClient.Connection.class);
+        when(jschClient.connect(any(), org.mockito.ArgumentMatchers.anyInt(), any(), any(), any())).thenReturn(connection);
+        when(siteFileRepository.findById(11L)).thenReturn(Optional.of(image));
+        when(siteFileRepository.findById(12L)).thenReturn(Optional.of(video));
+        when(userService.findUserResponseById(anyLong())).thenReturn(UserResponse.builder()
+            .nick("alice")
+            .build());
+        when(webGpsLocationRepository.findById(900L)).thenReturn(Optional.empty());
+        when(webGpsLocationRepository.save(any(WebGpsLocation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(subjectService.getSubjectsByFileId(anyLong())).thenReturn(List.of());
+        when(webSiteSubjectService.saveAllFromAdminSubject(any(), any())).thenReturn(List.of());
+        // The gallery was published before, twice by mistake: the first site row is kept, the stale one goes
+        var siteGallery = WebSiteGallery.builder()
+            .id(500L)
+            .galleryId(1L)
+            .aclId(70L)
+            .shortname("old name")
+            .build();
+        var staleGallery = WebSiteGallery.builder()
+            .id(501L)
+            .galleryId(1L)
+            .aclId(72L)
+            .build();
+        when(webSiteGalleryRepository.findAllByGalleryIdOrderByIdAsc(1L)).thenReturn(List.of(siteGallery, staleGallery));
+        when(webSiteGalleryRepository.save(any(WebSiteGallery.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        // The image is on the site already (its thumbnail path is unique there); the video is new to the site
+        var siteImage = WebSiteFile.builder()
+            .id(600L)
+            .fileId(11L)
+            .aclId(71L)
+            .filePath("image/2024/trip/a.jpg")
+            .thumbnailPath("image/2024/trip/.thumb/a.jpg")
+            .build();
+        when(webSiteFileRepository.findByFileIdOrFilePathOrThumbnailPathOrderByIdAsc(11L, "image/2024/trip/a.jpg", "image/2024/trip/.thumb/a.jpg"))
+            .thenReturn(List.of(siteImage));
+        when(webSiteFileRepository.findByFileIdOrFilePathOrThumbnailPathOrderByIdAsc(12L, "video/2024/trip/b.mp4", null)).thenReturn(List.of());
+        when(webSiteResourceService.getNextWebSiteAcl()).thenReturn(1000L);
+        var savedFiles = new java.util.ArrayList<WebSiteFile>();
+        when(webSiteFileRepository.save(any(WebSiteFile.class))).thenAnswer(invocation -> {
+            var saved = invocation.getArgument(0, WebSiteFile.class);
+            if (saved.getId() == 0) {
+                saved.setId(601L);
+            }
+            savedFiles.add(saved);
+            return saved;
+        });
+
+        publishService.publishGalleryAsSystem(1L);
+
+        // The gallery keeps its site id and ACL, gets the current name, and its file relations are written again
+        var savedGallery = org.mockito.ArgumentCaptor.forClass(WebSiteGallery.class);
+        verify(webSiteGalleryRepository).save(savedGallery.capture());
+        assertEquals(500L, savedGallery.getValue()
+            .getId());
+        assertEquals(70L, savedGallery.getValue()
+            .getAclId());
+        assertEquals("trip", savedGallery.getValue()
+            .getShortname());
+        verify(webSiteGalleryRepository).deleteAll(List.of(staleGallery));
+        verify(webSiteGalleryRepository).flush();
+        verify(webSiteGalleryRepository).deleteGalleryFiles(500L);
+        // The image row is updated in place, the video row is created with the only new site ACL
+        assertEquals(2, savedFiles.size());
+        var publishedImage = savedFiles.getFirst();
+        assertEquals(600L, publishedImage.getId());
+        assertEquals(71L, publishedImage.getAclId());
+        assertEquals("image/2024/trip/.thumb/a.jpg", publishedImage.getThumbnailPath());
+        assertEquals("Helsinki", publishedImage.getLocation()
+            .getCity());
+        var publishedVideo = savedFiles.get(1);
+        assertEquals(601L, publishedVideo.getId());
+        assertEquals(1000L, publishedVideo.getAclId());
+        verify(webSiteResourceService, times(1)).getNextWebSiteAcl();
+        verify(webSiteFileRepository, never()).deleteAll(any());
+        verify(webSiteGalleryRepository).saveGalleryFile(500L, 600L, 0L);
+        verify(webSiteGalleryRepository).saveGalleryFile(500L, 601L, 1L);
+        verify(webSiteSubjectService).replaceSiteFileSubjects(600L, List.of());
+        verify(webSiteSubjectService).replaceSiteFileSubjects(601L, List.of());
+        assertNotNull(gallery.getPublished());
+        assertEquals(gallery.getPublished(), image.getPublished());
+        assertEquals(gallery.getPublished(), video.getPublished());
     }
 
     @Test
@@ -1097,7 +1347,7 @@ class PublishServiceUTC {
 
         // The refused session never produced a connection; the one that failed while transferring is closed anyway
         verify(connection, times(1)).close();
-        verify(webSiteGalleryRepository, never()).deleteByGalleryId(anyLong());
+        verify(webSiteGalleryRepository, never()).save(any(WebSiteGallery.class));
     }
 
     @Test
@@ -1113,12 +1363,10 @@ class PublishServiceUTC {
             .nick("alice")
             .build());
         // The tunnel drops on the first site write; the pooled connection is dead, the second attempt gets a fresh one
-        Mockito
-            .doThrow(new org.springframework.dao.DataAccessResourceFailureException("An I/O error occurred while sending to the backend",
+        when(webSiteGalleryRepository.findAllByGalleryIdOrderByIdAsc(1L))
+            .thenThrow(new org.springframework.dao.DataAccessResourceFailureException("An I/O error occurred while sending to the backend",
                     new java.sql.SQLException("I/O error", "08006")))
-            .doNothing()
-            .when(webSiteGalleryRepository)
-            .deleteByGalleryId(1L);
+            .thenReturn(List.of());
         when(webSiteResourceService.getNextWebSiteAcl()).thenReturn(1000L, 1001L, 1002L, 1003L);
         when(webSiteGalleryRepository.save(any(WebSiteGallery.class))).thenAnswer(invocation -> {
             var saved = invocation.getArgument(0, WebSiteGallery.class);
@@ -1137,7 +1385,7 @@ class PublishServiceUTC {
 
         // The files were transferred once, the site rows were written on the second attempt, and the gallery is marked published
         verify(connection, times(1)).transferFilesToSite(any(), any(), any());
-        verify(webSiteGalleryRepository, times(2)).deleteByGalleryId(1L);
+        verify(webSiteGalleryRepository, times(2)).findAllByGalleryIdOrderByIdAsc(1L);
         verify(webSiteGalleryRepository, times(1)).save(any(WebSiteGallery.class));
         verify(fileService).saveGallery(gallery);
         assertNotNull(gallery.getPublished());

@@ -43,6 +43,8 @@ public class AdminTaskCommandExecutor implements TaskCommandExecutor {
             case PUBLISH_GALLERY, PUBLISH_ALL_GALLERIES, PUBLISH_SELECTED_GALLERIES ->
                 publishService().publishGalleriesNow(ids(payload.path("gallery_ids")), payload.path("skipped")
                     .asInt(0), progress);
+            case PUBLISH_SELECTED_FILES -> publishService().publishFilesNow(ids(payload.path("file_ids")), payload.path("skipped")
+                .asInt(0), progress);
             case REFRESH_ALL_GALLERY_FILES -> applicationContext.getBean(FileService.class)
                 .refreshAllGalleryFilesNow(ids(payload.path("gallery_ids")), progress);
             case PUBLISH_DATA_SET -> applicationContext.getBean(DataService.class)

@@ -1,12 +1,16 @@
 package fi.poltsi.vempain.admin.service;
 
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import fi.poltsi.vempain.admin.entity.file.SiteFile;
 import fi.poltsi.vempain.admin.repository.ComponentRepository;
 import fi.poltsi.vempain.admin.repository.FormRepository;
 import fi.poltsi.vempain.admin.repository.LayoutRepository;
 import fi.poltsi.vempain.admin.repository.PageRepository;
+import fi.poltsi.vempain.admin.service.file.FileIngestService;
+import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import fi.poltsi.vempain.auth.repository.AclRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +33,32 @@ public class DeleteService {
     private final FormRepository formRepository;
     private final LayoutRepository layoutRepository;
     private final AccessService accessService;
+    private final FileService fileService;
+    private final FileIngestService fileIngestService;
+    private final PublishService publishService;
+
+    /**
+     * Deletes a site file the current user may delete: its rows on the website first ({@link PublishService#removeFileFromSite}, the file on the site server is
+     * left in place), then the admin side (stored file, thumbnails, gallery links, subjects, ACL and the site file itself, see
+     * {@link FileIngestService#deleteIngestedSiteFile}).
+     *
+     * @return the deleted site file
+     * @throws VempainEntityNotFoundException when the site file does not exist
+     * @throws AccessDeniedException          when the current user lacks the delete privilege on the site file
+     */
+    @Transactional
+    public SiteFile deleteSiteFileById(long siteFileId) throws VempainEntityNotFoundException {
+        var siteFile = fileService.findSiteFileById(siteFileId)
+            .orElseThrow(VempainEntityNotFoundException::new);
+
+        if (!accessService.hasDeletePermission(siteFile.getAclId())) {
+            throw new AccessDeniedException("User does not have permission to delete site file " + siteFileId);
+        }
+
+        publishService.removeFileFromSite(siteFile);
+        fileIngestService.deleteIngestedSiteFile(siteFileId);
+        return siteFile;
+    }
 
     /**
      * Delete a layout as well as any forms and pages that are associated with the layout
