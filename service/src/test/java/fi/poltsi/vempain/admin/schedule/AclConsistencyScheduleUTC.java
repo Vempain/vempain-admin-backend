@@ -20,6 +20,7 @@ import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.exception.VempainLayoutException;
 import fi.poltsi.vempain.admin.metrics.AdminMetrics;
 import fi.poltsi.vempain.admin.service.ComponentService;
+import fi.poltsi.vempain.admin.service.DataService;
 import fi.poltsi.vempain.admin.service.FormService;
 import fi.poltsi.vempain.admin.service.LayoutService;
 import fi.poltsi.vempain.admin.service.PageService;
@@ -65,6 +66,8 @@ class AclConsistencyScheduleUTC {
     private UserService userService;
     @Mock
     private FileService fileService;
+    @Mock
+    private DataService dataService;
 
     @Spy
     private AdminMetrics adminMetrics = new AdminMetrics(new SimpleMeterRegistry());

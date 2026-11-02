@@ -93,7 +93,13 @@ public class GalleryController implements GalleryAPI {
 
     @Override
     public ResponseEntity<GalleryResponse> getGalleryById(long galleryId) {
-        return ResponseEntity.ok(galleryService.findById(galleryId));
+        // A gallery that does not exist, or that the caller may not read, is 404 as the contract says, never a 200 with an empty body
+        var gallery = galleryService.findById(galleryId);
+        if (gallery == null) {
+            return ResponseEntity.notFound()
+                .build();
+        }
+        return ResponseEntity.ok(gallery);
     }
 
     @Override

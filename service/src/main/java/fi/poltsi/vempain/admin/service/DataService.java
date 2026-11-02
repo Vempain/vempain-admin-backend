@@ -11,6 +11,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -29,14 +30,20 @@ import org.springframework.web.server.ResponseStatusException;
 
 import fi.poltsi.vempain.admin.VempainMessages;
 import fi.poltsi.vempain.admin.api.TaskTypeEnum;
+import fi.poltsi.vempain.admin.api.request.DataPagedRequest;
 import fi.poltsi.vempain.admin.api.request.DataRequest;
 import fi.poltsi.vempain.admin.api.response.DataResponse;
+import fi.poltsi.vempain.admin.api.response.DataSetAclResponse;
 import fi.poltsi.vempain.admin.api.response.DataSummaryResponse;
 import fi.poltsi.vempain.admin.entity.DataEntity;
 import fi.poltsi.vempain.admin.repository.DataRepository;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
+import fi.poltsi.vempain.auth.exception.VempainAclException;
+import fi.poltsi.vempain.auth.service.AclService;
 import fi.poltsi.vempain.common.api.response.TaskAcceptedResponse;
 import fi.poltsi.vempain.common.task.TaskProgress;
 import fi.poltsi.vempain.common.task.TaskRunner;
+import fi.poltsi.vempain.tools.ReleaseState;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -52,25 +59,27 @@ public class DataService {
     private final JdbcTemplate siteJdbcTemplate;
     private final TaskRunner taskRunner;
     private final ApplicationContext applicationContext;
+    private final AccessService accessService;
+    private final AclService aclService;
+    private final AclGranteeService aclGranteeService;
 
     public DataService(DataRepository dataRepository, @Qualifier("siteDataSource") DataSource siteDataSource, TaskRunner taskRunner,
-            ApplicationContext applicationContext) {
+            ApplicationContext applicationContext, AccessService accessService, AclService aclService, AclGranteeService aclGranteeService) {
         this.dataRepository = dataRepository;
         this.siteJdbcTemplate = new JdbcTemplate(siteDataSource);
         this.taskRunner = taskRunner;
         this.applicationContext = applicationContext;
+        this.accessService = accessService;
+        this.aclService = aclService;
+        this.aclGranteeService = aclGranteeService;
     }
 
     /**
-     * Starts a background task that publishes the data set to the site database. The data set must exist; the publish itself runs through the transactional
-     * proxy on a worker thread and the finished task carries the {@link DataResponse}.
+     * Starts a background task that publishes the data set to the site database. The data set must exist and the caller needs the modify privilege on it; the
+     * publish itself runs through the transactional proxy on a worker thread and the finished task carries the {@link DataResponse}.
      */
     public TaskAcceptedResponse publishAsTask(String identifier) {
-        if (dataRepository.findByIdentifier(identifier)
-            .isEmpty()) {
-            log.error("Data set with identifier '{}' not found for publishing", identifier);
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND);
-        }
+        requireModify(findEntity(identifier));
 
         var progress = taskRunner.submitDurable(TaskTypeEnum.PUBLISH_DATA_SET.name(), "Publish data set " + identifier, 1, Map.of("identifier", identifier),
                 task -> publishNow(identifier, task));
@@ -94,14 +103,106 @@ public class DataService {
         var normalizedIdentifierPrefix = normalizeFilter(identifierPrefix);
         var normalizedSearch = normalizeFilter(search);
 
+        // Only the data sets the caller may read are listed, like every other ACL-bearing resource
         for (DataEntity entity : dataRepository.findAll()) {
-            if (!matchesFilters(entity, normalizedType, normalizedIdentifierPrefix, normalizedSearch)) {
+            if (!matchesFilters(entity, normalizedType, normalizedIdentifierPrefix, normalizedSearch)
+                || !accessService.hasReadPermission(entity.getAclId())) {
                 continue;
             }
-            summaries.add(entity.toDataSummaryResponse());
+            summaries.add(withAcls(entity).toDataSummaryResponse());
         }
 
         return summaries;
+    }
+
+    /**
+     * The readable data sets as a page, for the data set table of the admin SPA: filtered by the optional type, the modified-after-publish rule
+     * ({@link ReleaseState}) and the search text (over identifier, type and description, or the one {@code filter_column}), sorted by {@code sort_by}
+     * (identifier by default) and cut to the requested page.
+     */
+    public PagedResponse<DataSummaryResponse> findPaged(DataPagedRequest request) {
+        var normalizedType = normalizeFilter(request.getType());
+        var onlyModifiedAfterPublish = Boolean.TRUE.equals(request.getModifiedAfterPublish());
+        var caseSensitive = Boolean.TRUE.equals(request.getCaseSensitive());
+        var search = request.getSearch() == null
+                     || request.getSearch()
+                         .isBlank() ? null
+                                 : (caseSensitive ? request.getSearch()
+                                     .trim() : normalizeFilter(request.getSearch()));
+        var filterColumn = normalizeFilter(request.getFilterColumn());
+
+        var entities = new ArrayList<DataEntity>();
+        for (DataEntity entity : dataRepository.findAll()) {
+            if (!accessService.hasReadPermission(entity.getAclId())
+                || (normalizedType != null
+                    && !normalizedType.equals(normalizeFilter(entity.getType())))
+                || (onlyModifiedAfterPublish
+                    && !ReleaseState.isModifiedAfterPublish(entity.getPublished(), entity.getModified()))
+                || (search != null
+                    && !matchesSearch(entity, search, filterColumn, caseSensitive))) {
+                continue;
+            }
+            entities.add(entity);
+        }
+
+        var comparator = dataSetComparator(request.getSortBy());
+        if (request.getDirection() == org.springframework.data.domain.Sort.Direction.DESC) {
+            comparator = comparator.reversed();
+        }
+        entities.sort(comparator);
+
+        var summaries = entities.stream()
+            .map(entity -> withAcls(entity).toDataSummaryResponse())
+            .toList();
+        return PagedResponseService.create(summaries, request);
+    }
+
+    /** The search text against identifier, type and description, or against the one column the request names */
+    private static boolean matchesSearch(DataEntity entity, String search, String filterColumn, boolean caseSensitive) {
+        var candidates = switch (filterColumn == null ? "" : filterColumn) {
+            case "identifier" -> List.of(entity.getIdentifier());
+            case "type" -> List.of(entity.getType());
+            case "description" -> java.util.Collections.singletonList(entity.getDescription());
+            default -> java.util.Arrays.asList(entity.getIdentifier(), entity.getType(), entity.getDescription());
+        };
+        for (var candidate : candidates) {
+            if (candidate == null) {
+                continue;
+            }
+            var value = caseSensitive ? candidate : candidate.toLowerCase();
+            if (value.contains(search)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static Comparator<DataEntity> dataSetComparator(String sortBy) {
+        Comparator<Instant> instants = Comparator.nullsFirst(Comparator.naturalOrder());
+        Comparator<Long> longs = Comparator.nullsFirst(Comparator.naturalOrder());
+        return switch (sortBy == null ? "identifier" : sortBy) {
+            case "id" -> Comparator.comparing(DataEntity::getId, longs);
+            case "acl_id" -> Comparator.comparingLong(DataEntity::getAclId);
+            case "type" -> Comparator.comparing(DataEntity::getType, String.CASE_INSENSITIVE_ORDER);
+            case "description" -> Comparator.comparing(DataEntity::getDescription, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER));
+            case "generated" -> Comparator.comparing(DataEntity::getGenerated, instants);
+            case "published" -> Comparator.comparing(DataEntity::getPublished, instants);
+            case "created" -> Comparator.comparing(DataEntity::getCreated, instants);
+            case "modified" -> Comparator.comparing(DataEntity::getModified, instants);
+            case "creator" -> Comparator.comparing(DataEntity::getCreator, longs);
+            case "modifier" -> Comparator.comparing(DataEntity::getModifier, longs);
+            default -> Comparator.comparing(DataEntity::getIdentifier, String.CASE_INSENSITIVE_ORDER);
+        };
+    }
+
+    /** Every data set, unfiltered, for the ACL consistency repair */
+    public Iterable<DataEntity> findAllEntities() {
+        return dataRepository.findAll();
+    }
+
+    /** Stores a repaired data set (the ACL consistency schedule) */
+    public DataEntity save(DataEntity entity) {
+        return dataRepository.save(entity);
     }
 
     private boolean matchesFilters(DataEntity entity, String normalizedType, String normalizedIdentifierPrefix, String normalizedSearch) {
@@ -134,29 +235,59 @@ public class DataService {
         return normalized.isEmpty() ? null : normalized;
     }
 
+    /**
+     * The data set with its ACL rows; the caller needs the read privilege.
+     *
+     * @throws ResponseStatusException 404 when the data set does not exist, 403 when the caller may not read it
+     */
     public DataResponse findByIdentifier(String identifier) {
-        var optional = dataRepository.findByIdentifier(identifier);
-
-        if (optional.isEmpty()) {
-            log.error("Data set not found for identifier: {}", identifier);
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND);
-        }
-
-        return optional.get()
-            .toDataResponse();
+        var entity = findEntity(identifier);
+        requireRead(entity);
+        return withAcls(entity).toDataResponse();
     }
 
+    /**
+     * The additional grantees of a data set in request shape (the creating account's own row is left out), for the service that created the set to show and
+     * resend; the caller needs the read privilege.
+     */
+    public DataSetAclResponse getAcls(String identifier) {
+        var entity = findEntity(identifier);
+        requireRead(entity);
+        return DataSetAclResponse.builder()
+            .identifier(entity.getIdentifier())
+            .aclId(entity.getAclId())
+            .acls(aclGranteeService.additionalGrantees(entity.getAclId(), accessService.getValidUserId()))
+            .build();
+    }
+
+    /**
+     * Creates a data set owned by the caller: a new ACL grants the caller every privilege and the request's additional grantees are added next to it.
+     *
+     * @throws ResponseStatusException 400 for an invalid request or grantee list, 409 when the identifier exists
+     */
     @Transactional
     public DataResponse create(DataRequest request) {
         validateRequest(request);
+        validateAcls(request.getAcls());
 
         if (dataRepository.existsByIdentifier(request.getIdentifier())) {
             log.error("Data set with identifier '{}' already exists", request.getIdentifier());
             throw new ResponseStatusException(HttpStatus.CONFLICT, VempainMessages.OBJECT_NAME_ALREADY_EXISTS);
         }
 
+        var userId = accessService.getValidUserId();
         var now = Instant.now();
+        long aclId;
+        try {
+            aclId = aclService.createNewAcl(userId, null, true, true, true, true);
+        } catch (VempainAclException e) {
+            log.error("Failed to create the ACL of data set '{}'", request.getIdentifier(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, VempainMessages.INTERNAL_ERROR);
+        }
         var entity = DataEntity.builder()
+            .aclId(aclId)
+            .creator(userId)
+            .created(now)
             .identifier(request.getIdentifier())
             .type(request.getType())
             .description(request.getDescription())
@@ -166,27 +297,29 @@ public class DataService {
             .fetchSubsetSql(request.getFetchSubsetSql())
             .generated(request.getGenerated() != null ? request.getGenerated() : now)
             .csvData(request.getCsvData())
-            .createdAt(now)
-            .updatedAt(now)
             .build();
 
         var saved = dataRepository.save(entity);
-        log.info("Created data set with identifier '{}'", saved.getIdentifier());
-        return saved.toDataResponse();
+        aclGranteeService.grant(aclId, request.getAcls(), userId);
+        log.info("Created data set with identifier '{}' owned by user {} (ACL {})", saved.getIdentifier(), userId, aclId);
+        return withAcls(saved).toDataResponse();
     }
 
+    /**
+     * Replaces the content of a data set; the caller needs the modify privilege. A non-null grantee list becomes the complete set of additional grantees (an
+     * empty list removes them), null keeps the current ones.
+     *
+     * @throws ResponseStatusException 400 for an invalid request or grantee list, 403 without the modify privilege, 404 for an unknown identifier
+     */
     @Transactional
     public DataResponse update(DataRequest request) {
         validateRequest(request);
+        validateAcls(request.getAcls());
 
-        var optional = dataRepository.findByIdentifier(request.getIdentifier());
+        var entity = findEntity(request.getIdentifier());
+        requireModify(entity);
 
-        if (optional.isEmpty()) {
-            log.error("Data set with identifier '{}' not found for update", request.getIdentifier());
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND);
-        }
-
-        var entity = optional.get();
+        var userId = accessService.getValidUserId();
         entity.setType(request.getType());
         entity.setDescription(request.getDescription());
         entity.setColumnDefinitions(request.getColumnDefinitions());
@@ -195,23 +328,22 @@ public class DataService {
         entity.setFetchSubsetSql(request.getFetchSubsetSql());
         entity.setGenerated(request.getGenerated() != null ? request.getGenerated() : entity.getGenerated());
         entity.setCsvData(request.getCsvData());
-        entity.setUpdatedAt(Instant.now());
+        entity.setModifier(userId);
+        entity.setModified(Instant.now());
 
         var saved = dataRepository.save(entity);
+        aclGranteeService.replace(saved.getAclId(), request.getAcls(), entity.getCreator() != null ? entity.getCreator() : userId);
         log.info("Updated data set with identifier '{}'", saved.getIdentifier());
-        return saved.toDataResponse();
+        return withAcls(saved).toDataResponse();
     }
 
+    /**
+     * Creates or replaces the site table of the data set and imports its CSV content. Runs as the body of the publish task and from the schedule; the
+     * authorization happened when the task was submitted.
+     */
     @Transactional
     public DataResponse publish(String identifier) {
-        var optional = dataRepository.findByIdentifier(identifier);
-
-        if (optional.isEmpty()) {
-            log.error("Data set with identifier '{}' not found for publishing", identifier);
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND);
-        }
-
-        var entity = optional.get();
+        var entity = findEntity(identifier);
         validateCreateSql(entity.getCreateSql());
 
         // The identifier has already been validated at creation/update time using IDENTIFIER_PATTERN,
@@ -239,22 +371,20 @@ public class DataService {
         // The site table is in place, record when the data set was last released to the website
         entity.setPublished(Instant.now());
         dataRepository.save(entity);
-        return entity.toDataResponse();
+        return withAcls(entity).toDataResponse();
     }
 
     /**
-     * Deletes a data set and drops its published table from the site database, if any.
+     * Deletes a data set, its ACL and its published table in the site database, if any; the caller needs the delete privilege.
      */
     @Transactional
     public void delete(String identifier) {
-        var optional = dataRepository.findByIdentifier(identifier);
-
-        if (optional.isEmpty()) {
-            log.error("Data set with identifier '{}' not found for deletion", identifier);
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND);
+        var entity = findEntity(identifier);
+        if (!accessService.hasDeletePermission(entity.getAclId())) {
+            log.warn("User {} may not delete data set '{}'", accessService.getValidUserId(), identifier);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, VempainMessages.UNAUTHORIZED_ACCESS);
         }
 
-        var entity = optional.get();
         var quotedTableName = "\"" + TABLE_PREFIX + entity.getIdentifier() + "\"";
 
         try {
@@ -266,7 +396,53 @@ public class DataService {
         }
 
         dataRepository.delete(entity);
+        try {
+            aclService.deleteByAclId(entity.getAclId());
+        } catch (fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException e) {
+            log.warn("ACL {} of deleted data set '{}' was already missing", entity.getAclId(), identifier);
+        }
         log.info("Deleted data set with identifier '{}'", identifier);
+    }
+
+    private DataEntity findEntity(String identifier) {
+        var optional = dataRepository.findByIdentifier(identifier);
+
+        if (optional.isEmpty()) {
+            log.error("Data set not found for identifier: {}", identifier);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, VempainMessages.OBJECT_NOT_FOUND);
+        }
+
+        return optional.get();
+    }
+
+    private void requireRead(DataEntity entity) {
+        if (!accessService.hasReadPermission(entity.getAclId())) {
+            log.warn("User {} may not read data set '{}'", accessService.getValidUserId(), entity.getIdentifier());
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, VempainMessages.UNAUTHORIZED_ACCESS);
+        }
+    }
+
+    private void requireModify(DataEntity entity) {
+        if (!accessService.hasModifyPermission(entity.getAclId())) {
+            log.warn("User {} may not modify data set '{}'", accessService.getValidUserId(), entity.getIdentifier());
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, VempainMessages.UNAUTHORIZED_ACCESS);
+        }
+    }
+
+    /** Attaches the ACL rows of the data set for its responses */
+    private DataEntity withAcls(DataEntity entity) {
+        entity.setAcls(entity.getAclId() > 0 ? aclService.findAclByAclId(entity.getAclId()) : List.of());
+        return entity;
+    }
+
+    /** The additional grantees of a request must be valid before anything is stored; an invalid list is a 400 */
+    private void validateAcls(List<fi.poltsi.vempain.admin.api.request.file.FileIngestAclRequest> acls) {
+        try {
+            aclGranteeService.validate(acls);
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid ACL grantees in data request: {}", e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
     }
 
     private String buildCreateSqlForTable(String createSql, String quotedTableName) {

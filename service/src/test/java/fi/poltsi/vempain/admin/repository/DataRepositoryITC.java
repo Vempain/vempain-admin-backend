@@ -37,9 +37,11 @@ class DataRepositoryITC extends AbstractITCTest {
         assertEquals("Test description", found.get()
             .getDescription());
         assertNotNull(found.get()
-            .getCreatedAt());
-        assertNotNull(found.get()
-            .getUpdatedAt());
+            .getCreated());
+        assertEquals(1L, found.get()
+            .getCreator());
+        assertTrue(found.get()
+            .getAclId() > 0);
     }
 
     @Test
@@ -103,7 +105,7 @@ class DataRepositoryITC extends AbstractITCTest {
 
         saved.setDescription("Updated description");
         saved.setType("time_series");
-        saved.setUpdatedAt(Instant.now());
+        saved.setModified(Instant.now());
         var updated = dataRepository.save(saved);
 
         assertEquals("Updated description", updated.getDescription());
@@ -112,7 +114,11 @@ class DataRepositoryITC extends AbstractITCTest {
 
     private DataEntity buildDataEntity(String identifier) {
         var now = Instant.now();
+        // every data set has an ACL of its own (acl_id is unique)
         return DataEntity.builder()
+            .aclId(testITCTools.generateAcl(1L, null, true, true, true, true))
+            .creator(1L)
+            .created(now)
             .identifier(identifier)
             .type("tabulated")
             .description("Test description")
@@ -122,8 +128,6 @@ class DataRepositoryITC extends AbstractITCTest {
             .fetchSubsetSql("SELECT * FROM website_data__" + identifier + " WHERE year = :year")
             .generated(now)
             .csvData("title,year\nTest Album,2024")
-            .createdAt(now)
-            .updatedAt(now)
             .build();
     }
 }

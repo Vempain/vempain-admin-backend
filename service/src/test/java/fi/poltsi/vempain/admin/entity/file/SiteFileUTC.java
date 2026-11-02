@@ -106,4 +106,21 @@ class SiteFileUTC {
         assertNull(sample(null, 1, 1).toResponse()
             .getLocation());
     }
+
+    @Test
+    void toResponseCarriesTheAclIdForTheBulkPermissionUpdate() {
+        var response = SiteFile.builder()
+            .id(5L)
+            .aclId(50L)
+            .fileId(500L)
+            .fileName("photo.jpg")
+            .fileType(FileTypeEnum.IMAGE)
+            .creator(1L)
+            .build()
+            .toResponse();
+
+        assertEquals(5L, response.getId());
+        assertEquals(50L, response.getAclId());
+        assertEquals(500L, response.getFileId());
+    }
 }

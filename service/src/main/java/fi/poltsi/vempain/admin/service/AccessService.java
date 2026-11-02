@@ -26,6 +26,7 @@ import fi.poltsi.vempain.auth.entity.UserAccount;
 import fi.poltsi.vempain.auth.service.AclService;
 import fi.poltsi.vempain.auth.service.UserDetailsImpl;
 import fi.poltsi.vempain.auth.service.UserService;
+import fi.poltsi.vempain.common.map.MapPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -98,6 +99,24 @@ public class AccessService {
 
             return criteriaBuilder.and(criteriaBuilder.greaterThan(root.get("aclId"), 0L), criteriaBuilder.exists(accessibleAclIds));
         };
+    }
+
+    /**
+     * The caller as the shared map query of {@code vempain-common-core} needs it: the user id and the ids of the units the user belongs to, so that the
+     * clustering SQL keeps the site files whose ACL grants the read privilege to one of them. An anonymous caller sees nothing.
+     */
+    public MapPrincipal mapPrincipal() {
+        var user = getUser();
+        if (user == null) {
+            return MapPrincipal.anonymous();
+        }
+        var unitIds = user.getUnits() == null ? Set.<Long>of()
+                : user.getUnits()
+                    .stream()
+                    .map(Unit::getId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+        return new MapPrincipal(user.getId(), unitIds);
     }
 
     public Long getUserId() {

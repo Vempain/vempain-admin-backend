@@ -2,24 +2,34 @@ package fi.poltsi.vempain.admin.api.response;
 
 import java.time.Instant;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+import fi.poltsi.vempain.auth.api.response.AbstractResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.annotation.JsonNaming;
 
+/**
+ * A data set without its CSV content. Data sets are ACL-bearing resources: the inherited {@code acls}, {@code creator}, {@code created}, {@code modifier} and
+ * {@code modified} describe who owns and last changed the set in the admin backend; {@code acl_id} names its ACL.
+ */
 @Data
-@Builder
+@EqualsAndHashCode(callSuper = true)
+@SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Schema(description = "Summary response for a CSV data set without the raw CSV data")
-public class DataSummaryResponse {
+public class DataSummaryResponse extends AbstractResponse {
 
-    @Schema(description = "Internal database ID", example = "1")
-    private Long id;
+    @Schema(description = "ID of the ACL protecting the data set", example = "42")
+    private long aclId;
 
     @Schema(description = "Unique identifier for the data set", example = "cd_collection")
     private String identifier;
@@ -45,12 +55,6 @@ public class DataSummaryResponse {
 
     @Schema(description = "Timestamp indicating when the data was generated", example = "2024-01-15T10:30:00Z")
     private Instant generated;
-
-    @Schema(description = "Timestamp when this record was created in the admin database")
-    private Instant createdAt;
-
-    @Schema(description = "Timestamp when this record was last updated in the admin database")
-    private Instant updatedAt;
 
     @Schema(description = "Timestamp when the data set was last published to the website, null if never", example = "2024-01-15T10:30:00Z")
     private Instant published;
