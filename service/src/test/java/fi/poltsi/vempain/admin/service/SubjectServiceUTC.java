@@ -144,6 +144,44 @@ class SubjectServiceUTC {
     }
 
     @Test
+    void searchTagsEscapesTheTextLowersItAndClampsTheLimit() {
+        var captor = org.mockito.ArgumentCaptor.forClass(String.class);
+        var pageable = org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+        when(subjectRepository.searchBySubjectName(anyString(), any())).thenReturn(List.of(Subject.builder()
+            .id(4L)
+            .subjectName("Summer 100%")
+            .build()));
+
+        var tags = subjectService.searchTags("  Sum 100%_ ", 500);
+
+        verify(subjectRepository).searchBySubjectName(captor.capture(), pageable.capture());
+        assertEquals("%sum 100\\%\\_%", captor.getValue(), "trimmed, lower-cased, LIKE characters escaped, wrapped in wildcards");
+        assertEquals(50, pageable.getValue()
+            .getPageSize(), "the limit is clamped to the maximum");
+        assertEquals(1, tags.size());
+        assertEquals(4L, tags.getFirst()
+            .getId());
+        assertEquals("Summer 100%", tags.getFirst()
+            .getTagName());
+    }
+
+    @Test
+    void searchTagsWithoutTextOrLimitListsTheFirstTags() {
+        var pageable = org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+        when(subjectRepository.searchBySubjectName(anyString(), any())).thenReturn(List.of());
+
+        subjectService.searchTags(null, null);
+        verify(subjectRepository).searchBySubjectName(org.mockito.ArgumentMatchers.eq("%%"), pageable.capture());
+        assertEquals(20, pageable.getValue()
+            .getPageSize());
+
+        subjectService.searchTags("", 0);
+        verify(subjectRepository, org.mockito.Mockito.times(2)).searchBySubjectName(org.mockito.ArgumentMatchers.eq("%%"), pageable.capture());
+        assertEquals(1, pageable.getValue()
+            .getPageSize(), "a limit below one becomes one");
+    }
+
+    @Test
     void getSubjectsByPageIdDelegatesToTheRepository() {
         when(subjectRepository.getSubjectsByPageId(4L)).thenReturn(List.of(buildSubject(1L, "a")));
 

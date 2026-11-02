@@ -2,6 +2,7 @@ package fi.poltsi.vempain.admin.rest.file;
 
 import jakarta.validation.Valid;
 
+import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -75,6 +76,20 @@ public interface FileAPI {
     @SecurityRequirement(name = "Bearer Authentication")
     @DeleteMapping(value = MAIN_PATH + "/site-files/{site_file_id}", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<DeleteResponse> deleteSiteFile(@PathVariable(name = "site_file_id") long siteFileId);
+
+    @Operation(summary = "Thumbnail of a site file",
+            description = "The thumbnail image of the site file (the one the admin backend generated for an image, otherwise the image itself when the site "
+                    + "file is an image), for the previews of the admin SPA such as the map. Requires the read privilege on the site file.",
+            tags = "FileAPI")
+    @Parameter(name = "site_file_id", example = "123", description = "ID of the site file", required = true)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "The thumbnail image", content = @Content(mediaType = MediaType.IMAGE_JPEG_VALUE)),
+        @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+        @ApiResponse(responseCode = "403", description = "No read privilege on the site file", content = @Content),
+        @ApiResponse(responseCode = "404", description = "Site file not found, or it has no thumbnail and is not an image", content = @Content) })
+    @SecurityRequirement(name = "Bearer Authentication")
+    @GetMapping(value = MAIN_PATH + "/site-files/{site_file_id}/thumbnail")
+    ResponseEntity<Resource> getSiteFileThumbnail(@PathVariable("site_file_id") long siteFileId);
 
     @Operation(summary = "Refresh the file information of a gallery", description = "Reload all the file data of the files belonging to a gallery",
             tags = "FileAPI")

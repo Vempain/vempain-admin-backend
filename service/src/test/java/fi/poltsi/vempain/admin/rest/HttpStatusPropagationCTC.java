@@ -18,6 +18,7 @@ import fi.poltsi.vempain.admin.entity.DataEntity;
 import fi.poltsi.vempain.admin.repository.DataRepository;
 import fi.poltsi.vempain.admin.service.DataService;
 import fi.poltsi.vempain.auth.security.jwt.JwtUtils;
+import fi.poltsi.vempain.auth.service.AclService;
 
 import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -33,14 +34,20 @@ class HttpStatusPropagationCTC {
     @Autowired
     private DataRepository dataRepository;
     @Autowired
+    private AclService aclService;
+    @Autowired
     private JwtUtils jwtUtils;
     @MockitoSpyBean
     private DataService dataService;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         dataRepository.deleteAll();
+        var aclId = aclService.createNewAcl(1L, null, true, true, true, true);
         dataRepository.save(DataEntity.builder()
+            .aclId(aclId)
+            .creator(1L)
+            .created(Instant.now())
             .identifier("existing_dataset")
             .type("tabulated")
             .description("Existing data set")
@@ -50,8 +57,6 @@ class HttpStatusPropagationCTC {
             .fetchSubsetSql("SELECT value FROM website_data__existing_dataset WHERE value = :value")
             .generated(Instant.now())
             .csvData("value\nhello")
-            .createdAt(Instant.now())
-            .updatedAt(Instant.now())
             .build());
     }
 

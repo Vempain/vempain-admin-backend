@@ -37,13 +37,17 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
   - Site migrations: `service/src/main/resources/db/migration/site`
   - Auth migrations (`db/migration/auth`) are also loaded on the admin Flyway; they come from the `vempain-auth-core` jar on the classpath, not from this repo,
     so their versions must never collide with `db/migration/admin`.
+- `web_site_jwt_token` (site tree) belongs to the website backend's cookie sessions; `V1005__web_site_jwt_token_unique.sql` removed the
+  duplicate and expired rows an earlier per-request refresh had left and made `token` unique (plus an index on `expires`). The admin
+  backend never writes that table.
 - When you add a persisted field, expect to update **migration + entity + request/response DTO + service mapping + tests**. Example of a recent site-field addition: `global_permission` in `V1002__add_global_permission_on_user.sql` and `WebSiteUser`.
 - Every resource that is released to the website records the time of its last release in a nullable `published` column of the admin
   schema (`NULL` = never released): `page.published` (set by `PublishService.publishPageAsSystem`), `gallery.published` and
   `site_file.published` (`V1007__website_release_timestamps.sql`, set by `publishGalleryAsSystem` once the files are on the site server
   and the site rows are rewritten; an empty gallery transfers nothing and stays unpublished) and `data_store.published` (set by
   `DataService.publish` after the site table is created and filled). The DTOs expose it as `published` (`PageResponse`,
-  `GalleryResponse`, `FileGroupListResponse`, `SiteFileResponse`, `DataResponse`/`DataSummaryResponse`) and the gallery list sorts
+  `GalleryResponse`, `FileGroupListResponse`, `SiteFileResponse` (which also carries `acl_id`, the handle of the admin SPA's bulk
+  permission update of selected files), `DataResponse`/`DataSummaryResponse`) and the gallery list sorts
   by it (`GalleryRepositoryImpl.mapSort`). Never set it on create, update or re-ingest. Tests: `PublishServiceUTC/ITC`,
   `DataServiceUTC/ITC`, `DataCTC`, `GalleryRepositoryImplUTC`.
 - The page, gallery list and site file listings take the optional `modified_after_publish` flag (`PagePagedRequest`,
@@ -74,7 +78,29 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
   once, so delete-and-insert fails with a duplicate key. Never reintroduce a derived delete followed by a save of the same unique
   values inside a site transaction. Tests: `PublishServiceUTC` (`republishingAGalleryUpdatesTheSiteRowsInPlace...`), `PublishServiceITC`
   (`writingAGalleryToTheSiteAgainUpdatesItsRowsInPlace`, two site writes of one gallery against the site container).
+- The clustered map of the GPS-tagged site files (`MapAPI` of `vempain-common-api` at `/map`, `controller.file.MapController` ->
+  `service.file.MapService`): the shared `MapClusterQuery` of `vempain-common-core` over `site_file` + `gps_location`, `file_subject`/`subjects`
+  as the tags and `file_thumb` as the thumbnails (`MapService.SCHEMA`), restricted to the site files whose ACL grants read to the caller
+  (`AccessService.mapPrincipal`). `GET /content-management/file/site-files/{id}/thumbnail` (`SiteFileThumbnailService`: the generated thumbnail
+  under `<site-file-directory>/<file_thumb.filepath>/<filename>`, else the image itself, 403 without read, 404 for nothing to show) delivers the
+  previews of the admin SPA's map, which otherwise never shows file content. Tested in `MapCTC`.
 - `fi.poltsi.vempain.admin.service.DataService` is the bridge between Admin-managed dataset metadata and the site datasource tables. GPS embed discovery depends on `findAll(type, identifierPrefix, search)` returning `time_series` rows found by `search=gps`, including legacy unprefixed identifiers.
+  Data sets are ACL-bearing since `V1011__data_store_acl.sql` (`DataEntity extends AbstractVempainEntity`: `acl_id`, `locked`, `creator`,
+  `created`, `modifier`, `modified`; the former `created_at`/`updated_at` became `created`/`modified`, every existing set got an ACL owned by
+  the administrator). `create` (administrator ACL, the data set is owned by the caller through a new ACL) and `update` (modify privilege)
+  take `DataRequest.acls` (`FileIngestAclRequest` entries validated by `AclGranteeService.validate` before anything is stored): on an
+  update a non-null list is the complete set of additional grantees (`AclGranteeService.replace`: unlisted users and units are removed, the
+  owner's row stays, an empty list removes every additional grantee), null leaves them untouched. `findAll` lists only the readable sets,
+  `findByIdentifier`/`getAcls` need read, `publishAsTask` modify, `delete` delete (and removes the ACL). `GET
+  /content-management/data/{identifier}/acls` (`DataSetAclResponse`, allowed for API tokens) answers the additional grantees in request
+  shape for the file backend's data set dialog. `POST /content-management/data/paged` (`DataPagedRequest`: `PagedRequest` + `type`,
+  `filter_column` = identifier|type|description, `modified_after_publish`; `DataService.findPaged`, in memory like the page and layout
+  listings, sort columns identifier (default), type, description, generated, published, created, modified, creator, modifier, acl_id, id)
+  feeds the server-paged data set table of the admin SPA; the unpaged `GET` listing stays for the GPS embed discovery. `AclConsistencySchedule`
+  repairs data sets like the other ACL-bearing entities
+  (`DataService.findAllEntities`/`save`). `AclGranteeService` (`admin.service`) is the one implementation of grantee validation, additive
+  grant (file ingest) and replacing grant (data sets) plus the request-shaped read-back; `FileIngestService` delegates to it. Tests:
+  `AclGranteeServiceUTC`, `DataServiceUTC`/`ITC` (granted, denied and replaced cases), `DataCTC`, `ApiTokenAuthenticationFilterUTC`.
 - When Admin publishes CSV into the site datasource, column coercion is schema-driven. Timestamp/date/time columns now accept ISO text inputs and fail with `400 BAD_REQUEST` when parsing is invalid; preserve that behavior when changing publish/import logic.
 
 ## Project-specific conventions
@@ -89,16 +115,18 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
 - Preserve request parameter normalization already present in services instead of moving it into controllers. Example: `FileService.findAllSiteFilesAsPageableResponseFiltered()` normalizes filter columns and remaps sort properties in `sanitizePageable()`.
 - Security is mostly delegated to the external `vempain-auth` packages, but local controllers still explicitly call `accessService.checkAuthentication()` and write paths use `accessService.getValidUserId()` for audit fields.
 - Authorization is resource-based ACL authorization, never role-based. The ACL-linked resources are the entities extending
-  `AbstractVempainEntity`: `Component`, `Form`, `Layout`, `Page`, `Gallery`, `SiteFile` (plus `UserAccount`/`Unit` from `vempain-auth`).
+  `AbstractVempainEntity`: `Component`, `Form`, `Layout`, `Page`, `Gallery`, `SiteFile`, `DataEntity` (plus `UserAccount`/`Unit` from `vempain-auth`).
   Services check the caller's user/unit ACL rows through `AccessService` (`hasRead/Modify/Create/DeletePermission`, `readableSpecification()`
-  for paged listings). Entities without an ACL link (`DataEntity`, `Subject`, `Language`, `PublishSchedule`, `ScanQueueSchedule`, `FileThumb`,
+  for paged listings). Entities without an ACL link (`Subject`, `Language`, `PublishSchedule`, `ScanQueueSchedule`, `FileThumb`,
   `GpsLocation`, the `site.*` publishing tables) must not be ACL-checked; administration endpoints for them use `accessService.checkAdminAccess()`,
   which is the modify privilege on the reserved administrator ACL (`Constants.ADMIN_ID`), not a role. Do not add `hasRole`/`ROLE_*`/
   `@PreAuthorize("hasRole(...)")` rules.
 - `AccessService` has no test-mode bypass (the former `vempain.test` flag is gone). Checks fail closed: an `acl_id` that is not positive or has
   no ACL rows is denied. `AclConsistencySchedule` repairs such entities by creating an ACL with all privileges for the entity's `creator`.
 - `SiteFile` has its own ACL: site-file listings use `AccessService.readableSpecification()` and `GalleryService` attaches only the files the
-  user may read, even inside a readable gallery.
+  user may read, even inside a readable gallery. `GET /content-management/galleries/{id}` answers 404 for a gallery that does not exist or
+  that the caller may not read (`GalleryService.findById` answers null for both); never a 200 with an empty body, which the admin SPA's page
+  editor cannot tell from a nameless gallery.
 - Page-gallery links (`page_gallery`, `PageGalleryService`) are derived data, not edited by hand: the admin frontend takes the `gallery`
   and hero `carousel` embeds the rich-text editor reports and sends their gallery IDs as `PageRequest.gallery_ids` (body order; null keeps
   the existing links, an empty list clears them). `PageService.saveFromPageRequest`/`updateFromRequest` store them in the same transaction
@@ -160,8 +188,8 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
   for the admin side. Tests: `PublishServiceUTC`, `DeleteServiceUTC`, `FileControllerUTC`, `AdminTaskCommandExecutorUTC`.
 - Service-to-service undo endpoints used by the file backend to revert cancelled background tasks: `DELETE /content-management/file/site-file/{id}`
   (`FileIngestService.deleteIngestedSiteFile`: stored file, gallery links, subjects, thumbnail row, ACL and the `SiteFile`) and
-  `DELETE /content-management/data/{identifier}` (`DataService.delete`: drops the published site table and the data set). Both require the
-  administrator ACL like the ingest endpoint.
+  `DELETE /content-management/data/{identifier}` (`DataService.delete`: drops the published site table, the data set and its ACL). The former
+  requires the administrator ACL like the ingest endpoint, the latter the delete privilege on the data set.
 - Long-running actions run as background tasks of the shared durable task facility (`vempain-common-core`, `fi.poltsi.vempain.common.task`:
   `TaskRunner`, `TaskProgressStore`, `TaskController` = `TaskAPI` at `/api/tasks`, `202 TaskAcceptedResponse` + polled
   `TaskProgressResponse`, cooperative cancel). This service hosts it with `fi.poltsi.vempain.admin.task.AdminTaskCommandExecutor` and
@@ -205,7 +233,7 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
   hook, before the JWT filter) reads `Constants.API_TOKEN_HEADER` (`X-Vempain-Api-Token`), checks hash, expiry and the request's
   remote address against the network (Tomcat's `forward-headers-strategy: native` resolves it behind Traefik), authenticates the
   request as the owner with the extra `API_TOKEN` authority, and only for the service endpoints in its `ALLOWED` list (site file
-  ingest/delete/users, paged site files, data set CRUD); anything else answers 403, an invalid token 401. The network of a new token is
+  ingest/delete/users, paged site files, data set CRUD, the paged data set listing and the data set grantee lookup); anything else answers 403, an invalid token 401. The network of a new token is
   proposed by `GET /admin-management/api-tokens/default-network` (`ApiTokenService.defaultNetwork`): with
   `vempain.admin.api-token.private-network=true` (compose/swarm `ENV_VEMPAIN_PRIVATE_NETWORK`) `PrivateNetworkDetector` lists the
   private networks of this process's own interfaces (the shared bridge/overlay networks) and the first one is pre-filled, every one is
@@ -243,6 +271,12 @@ review and update of `vempain-cli`. Keep the CLI's commands and tests aligned wi
   the page: the tag blacklist is applied, the subjects are upserted on the site (`WebSiteSubjectService.saveAllFromAdminSubject`, attributed to
   the page's modifier, else creator) and `web_site_page_subject` is rewritten (`replaceSitePageSubjects`). The website backend already serves them
   as the page's `subjects`. Tests: `PageServiceUTC`, `PageServiceITC`, `SubjectServiceUTC`, `PublishServiceUTC`.
+- Tag suggestions: `TagAPI` (`GET /content-management/tags?search=&limit=`, any signed-in user, `TagResponse` = `id` + `tag_name`) lists the
+  `subjects` rows whose name contains the text, case-insensitively and alphabetically, 1..50 of them (`SubjectService.searchTags`,
+  `SubjectRepository.searchBySubjectName` with a `LikePatterns.containsIgnoreCase` pattern). The `subjects` table is the union of the tags
+  the file backend sends with every published file and the tags given to pages, so the page editor of the admin SPA offers both; the
+  endpoint creates nothing, a new page tag still becomes a subject when the page is saved. The admin backend never calls the file backend,
+  so a tag typed for a page is not created in the file backend. Tests: `SubjectServiceUTC`, `TagControllerUTC`, `TagCTC`, `TagContractJTC`.
 - Tag blacklist: `TagBlacklistAPI` (`GET|POST /admin-management/tag-blacklist`, `DELETE .../{entry_id}`, administrators only via
   `accessService.checkAdminAccess()`; `TagBlacklistRequest`/`TagBlacklistResponse`) is backed by `TagBlacklistController`, `TagBlacklistService`,
   `TagBlacklistRepository` and the `tag_blacklist` table (`V1008`, unique on `LOWER(tag_name)`, no ACL: it is configuration like subjects). A

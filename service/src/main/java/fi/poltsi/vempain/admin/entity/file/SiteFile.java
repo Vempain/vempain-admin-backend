@@ -118,6 +118,7 @@ public class SiteFile extends AbstractVempainEntity implements Serializable {
         return SiteFileResponse.builder()
             .id(this.id)
             .fileId(this.fileId)
+            .aclId(this.aclId)
             .fileName(this.fileName)
             .filePath(this.filePath)
             .fileType(this.fileType)

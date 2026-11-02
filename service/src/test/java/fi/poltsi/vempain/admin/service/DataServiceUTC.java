@@ -22,11 +22,16 @@ import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.web.server.ResponseStatusException;
 
+import fi.poltsi.vempain.admin.api.request.DataPagedRequest;
 import fi.poltsi.vempain.admin.api.request.DataRequest;
+import fi.poltsi.vempain.admin.api.request.file.FileIngestAclRequest;
 import fi.poltsi.vempain.admin.api.response.DataResponse;
 import fi.poltsi.vempain.admin.api.response.DataSummaryResponse;
+import fi.poltsi.vempain.admin.api.response.file.FileIngestAclResponse;
 import fi.poltsi.vempain.admin.entity.DataEntity;
 import fi.poltsi.vempain.admin.repository.DataRepository;
+import fi.poltsi.vempain.auth.entity.Acl;
+import fi.poltsi.vempain.auth.service.AclService;
 import fi.poltsi.vempain.common.api.TaskStatusEnum;
 import fi.poltsi.vempain.common.task.TaskProgressStore;
 import fi.poltsi.vempain.common.task.TaskRunner;
@@ -35,11 +40,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -53,14 +64,31 @@ class DataServiceUTC {
 
     @Mock
     private DataRepository dataRepository;
+    @Mock
+    private AccessService accessService;
+    @Mock
+    private AclService aclService;
+    @Mock
+    private AclGranteeService aclGranteeService;
 
     private DataService dataService;
     private JdbcTemplate mockJdbcTemplate;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         var mockDataSource = mock(DataSource.class);
-        dataService = new DataService(dataRepository, mockDataSource, null, null);
+        dataService = new DataService(dataRepository, mockDataSource, null, null, accessService, aclService, aclGranteeService);
+        // Most tests run as the administrator (user 1) holding every privilege on the ACL 10 of the test entity; the denial tests override these
+        lenient().when(accessService.getValidUserId())
+            .thenReturn(1L);
+        lenient().when(accessService.hasReadPermission(anyLong()))
+            .thenReturn(true);
+        lenient().when(accessService.hasModifyPermission(anyLong()))
+            .thenReturn(true);
+        lenient().when(accessService.hasDeletePermission(anyLong()))
+            .thenReturn(true);
+        lenient().when(aclService.createNewAcl(eq(1L), isNull(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean()))
+            .thenReturn(10L);
 
         mockJdbcTemplate = mock(JdbcTemplate.class);
         // Inject the mock JdbcTemplate via reflection to control site DB interaction
@@ -438,8 +466,9 @@ class DataServiceUTC {
             .fetchSubsetSql("SELECT * FROM website_data__test_data WHERE title = :title")
             .generated(now)
             .csvData("title\nTest Album")
-            .createdAt(now)
-            .updatedAt(now)
+            .aclId(10L)
+            .creator(1L)
+            .created(now)
             .build();
     }
 
@@ -458,8 +487,9 @@ class DataServiceUTC {
                 .fetchSubsetSql("SELECT * FROM website_data__data_set_" + i + " WHERE value = :value")
                 .generated(now)
                 .csvData("value\ntest")
-                .createdAt(now)
-                .updatedAt(now)
+                .aclId(10L + i)
+                .creator(1L)
+                .created(now)
                 .build());
         }
         return entities;
@@ -528,7 +558,8 @@ class DataServiceUTC {
     void publishAsTaskRejectsAnUnknownDataSetAndOtherwisePublishesThroughTheProxy() {
         var applicationContext = mock(ApplicationContext.class);
         var taskStore = new TaskProgressStore();
-        var taskService = new DataService(dataRepository, mock(DataSource.class), new TaskRunner(taskStore, Runnable::run), applicationContext);
+        var taskService = new DataService(dataRepository, mock(DataSource.class), new TaskRunner(taskStore, Runnable::run), applicationContext, accessService,
+                aclService, aclGranteeService);
         when(dataRepository.findByIdentifier("missing")).thenReturn(Optional.empty());
         assertThrows(ResponseStatusException.class, () -> taskService.publishAsTask("missing"));
 
@@ -645,5 +676,245 @@ class DataServiceUTC {
         assertPublishBadRequest("moment", "noon", Types.TIME);
         assertPublishBadRequest("stamp", "2024-06-01 10:15", Types.TIMESTAMP);
         assertPublishBadRequest("whole", "1.5", Types.INTEGER);
+    }
+
+    // ACL: data sets are ACL-bearing resources
+
+    @Test
+    void createOwnsTheDataSetAndGrantsTheAdditionalGrantees() {
+        var grantee = FileIngestAclRequest.builder()
+            .userId(5L)
+            .readPrivilege(true)
+            .build();
+        var request = buildValidRequest();
+        request.setAcls(List.of(grantee));
+        when(dataRepository.existsByIdentifier(TEST_IDENTIFIER)).thenReturn(false);
+        when(dataRepository.save(any(DataEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(aclService.findAclByAclId(10L)).thenReturn(List.of(Acl.builder()
+            .aclId(10L)
+            .userId(1L)
+            .readPrivilege(true)
+            .build()));
+
+        var response = dataService.create(request);
+
+        // the caller owns the new ACL, the grantees are validated first and added next to the owner, the rows come back in the response
+        verify(aclGranteeService).validate(List.of(grantee));
+        verify(aclGranteeService).grant(10L, List.of(grantee), 1L);
+        assertEquals(10L, response.getAclId());
+        assertEquals(1L, response.getCreator());
+        assertNotNull(response.getCreated());
+        assertEquals(1, response.getAcls()
+            .size());
+    }
+
+    @Test
+    void createRejectsInvalidGranteesBeforeAnythingIsStored() {
+        var request = buildValidRequest();
+        request.setAcls(List.of(FileIngestAclRequest.builder()
+            .userId(404L)
+            .readPrivilege(true)
+            .build()));
+        doThrow(new IllegalArgumentException("ACL entry refers to an unknown or inactive user 404")).when(aclGranteeService)
+            .validate(any());
+
+        var exception = assertThrows(ResponseStatusException.class, () -> dataService.create(request));
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        verify(dataRepository, never()).save(any());
+    }
+
+    @Test
+    void updateStampsTheModifierAndReplacesTheGrantees() {
+        var request = buildValidRequest();
+        request.setAcls(List.of());
+        var entity = buildEntity(1L);
+        when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+        when(dataRepository.save(any(DataEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        var response = dataService.update(request);
+
+        assertEquals(1L, response.getModifier());
+        assertNotNull(response.getModified());
+        // an empty list removes every additional grantee; the owner of the set keeps its row
+        verify(aclGranteeService).replace(10L, List.of(), 1L);
+    }
+
+    @Test
+    void updateWithoutGranteesLeavesTheAclUntouched() {
+        var request = buildValidRequest();
+        var entity = buildEntity(1L);
+        when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+        when(dataRepository.save(any(DataEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        dataService.update(request);
+
+        verify(aclGranteeService).replace(10L, null, 1L);
+    }
+
+    @Test
+    void readModifyAndDeleteAreDeniedWithoutThePrivilege() {
+        var entity = buildEntity(1L);
+        when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+        when(accessService.hasReadPermission(10L)).thenReturn(false);
+        when(accessService.hasModifyPermission(10L)).thenReturn(false);
+        when(accessService.hasDeletePermission(10L)).thenReturn(false);
+
+        assertEquals(HttpStatus.FORBIDDEN, assertThrows(ResponseStatusException.class, () -> dataService.findByIdentifier(TEST_IDENTIFIER)).getStatusCode());
+        assertEquals(HttpStatus.FORBIDDEN, assertThrows(ResponseStatusException.class, () -> dataService.getAcls(TEST_IDENTIFIER)).getStatusCode());
+        assertEquals(HttpStatus.FORBIDDEN, assertThrows(ResponseStatusException.class, () -> dataService.update(buildValidRequest())).getStatusCode());
+        assertEquals(HttpStatus.FORBIDDEN, assertThrows(ResponseStatusException.class, () -> dataService.publishAsTask(TEST_IDENTIFIER)).getStatusCode());
+        assertEquals(HttpStatus.FORBIDDEN, assertThrows(ResponseStatusException.class, () -> dataService.delete(TEST_IDENTIFIER)).getStatusCode());
+        verify(dataRepository, never()).save(any());
+        verify(dataRepository, never()).delete(any());
+    }
+
+    @Test
+    void findAllListsOnlyTheReadableDataSets() {
+        var entities = buildEntityList(3);
+        when(dataRepository.findAll()).thenReturn(entities);
+        when(accessService.hasReadPermission(11L)).thenReturn(false);
+
+        var result = dataService.findAll(null, null, null);
+
+        assertEquals(List.of("data_set_0", "data_set_2"), result.stream()
+            .map(DataSummaryResponse::getIdentifier)
+            .toList());
+    }
+
+    @Test
+    void getAclsAnswersTheAdditionalGranteesInRequestShape() {
+        var entity = buildEntity(1L);
+        when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+        var grantee = FileIngestAclResponse.builder()
+            .unitId(3L)
+            .readPrivilege(true)
+            .build();
+        when(aclGranteeService.additionalGrantees(10L, 1L)).thenReturn(List.of(grantee));
+
+        var response = dataService.getAcls(TEST_IDENTIFIER);
+
+        assertEquals(TEST_IDENTIFIER, response.getIdentifier());
+        assertEquals(10L, response.getAclId());
+        assertEquals(List.of(grantee), response.getAcls());
+    }
+
+    @Test
+    void deleteRemovesTheAclOfTheDataSet() throws Exception {
+        var entity = buildEntity(1L);
+        when(dataRepository.findByIdentifier(TEST_IDENTIFIER)).thenReturn(Optional.of(entity));
+
+        dataService.delete(TEST_IDENTIFIER);
+
+        verify(dataRepository).delete(entity);
+        verify(aclService).deleteByAclId(10L);
+        assertTrue(true);
+    }
+
+    // paged listing
+
+    private static DataPagedRequest pagedRequest(int page, int size, String sortBy, org.springframework.data.domain.Sort.Direction direction) {
+        var request = new DataPagedRequest();
+        request.setPage(page);
+        request.setSize(size);
+        request.setSortBy(sortBy);
+        request.setDirection(direction);
+        return request;
+    }
+
+    private List<DataEntity> pagedFixture() {
+        var now = Instant.parse("2026-01-10T10:00:00Z");
+        var music = buildEntity(1L);
+        music.setIdentifier("music_library");
+        music.setType("tabulated");
+        music.setDescription("Music library");
+        music.setCreated(now.minusSeconds(3000));
+        music.setPublished(now.minusSeconds(2000));
+        music.setModified(now.minusSeconds(1000));
+        var trip = buildEntity(2L);
+        trip.setAclId(11L);
+        trip.setIdentifier("gps_timeseries_trip");
+        trip.setType("time_series");
+        trip.setDescription("GPS time-series for the trip");
+        trip.setCreated(now.minusSeconds(500));
+        trip.setPublished(now.minusSeconds(100));
+        var weather = buildEntity(3L);
+        weather.setAclId(12L);
+        weather.setIdentifier("weather");
+        weather.setType("time_series");
+        weather.setDescription(null);
+        weather.setCreated(now);
+        return List.of(music, trip, weather);
+    }
+
+    private static List<String> identifiers(fi.poltsi.vempain.auth.api.response.PagedResponse<DataSummaryResponse> response) {
+        return response.getContent()
+            .stream()
+            .map(DataSummaryResponse::getIdentifier)
+            .toList();
+    }
+
+    @Test
+    void findPagedSortsByIdentifierByDefaultAndByTheRequestedColumnOtherwise() {
+        when(dataRepository.findAll()).thenReturn(pagedFixture());
+
+        assertEquals(List.of("gps_timeseries_trip", "music_library", "weather"), identifiers(dataService.findPaged(pagedRequest(0, 10, null, null))));
+        assertEquals(List.of("weather", "music_library", "gps_timeseries_trip"),
+                identifiers(dataService.findPaged(pagedRequest(0, 10, "identifier", org.springframework.data.domain.Sort.Direction.DESC))));
+        assertEquals(List.of("music_library", "gps_timeseries_trip", "weather"),
+                identifiers(dataService.findPaged(pagedRequest(0, 10, "created", org.springframework.data.domain.Sort.Direction.ASC))));
+        // null timestamps sort first ascending: weather (never published), then the older release
+        assertEquals(List.of("weather", "music_library", "gps_timeseries_trip"),
+                identifiers(dataService.findPaged(pagedRequest(0, 10, "published", org.springframework.data.domain.Sort.Direction.ASC))));
+        assertEquals(List.of("music_library", "gps_timeseries_trip", "weather"),
+                identifiers(dataService.findPaged(pagedRequest(0, 10, "type", org.springframework.data.domain.Sort.Direction.ASC))));
+    }
+
+    @Test
+    void findPagedCutsThePageAndReportsTheTotals() {
+        when(dataRepository.findAll()).thenReturn(pagedFixture());
+
+        var page = dataService.findPaged(pagedRequest(1, 2, null, null));
+
+        assertEquals(List.of("weather"), identifiers(page));
+        assertEquals(3, page.getTotalElements());
+        assertEquals(2, page.getTotalPages());
+        assertEquals(1, page.getPage());
+        assertTrue(page.isLast());
+    }
+
+    @Test
+    void findPagedFiltersByTypeSearchColumnReleaseStateAndReadPermission() {
+        when(dataRepository.findAll()).thenReturn(pagedFixture());
+
+        var byType = pagedRequest(0, 10, null, null);
+        byType.setType("TIME_SERIES");
+        assertEquals(List.of("gps_timeseries_trip", "weather"), identifiers(dataService.findPaged(byType)));
+
+        // the search covers identifier, type and description, case insensitively unless asked otherwise
+        var search = pagedRequest(0, 10, null, null);
+        search.setSearch("GPS");
+        assertEquals(List.of("gps_timeseries_trip"), identifiers(dataService.findPaged(search)));
+        search.setCaseSensitive(true);
+        assertTrue(identifiers(dataService.findPaged(search)).contains("gps_timeseries_trip"), "the description carries the upper-case GPS");
+        search.setSearch("Trip");
+        assertTrue(identifiers(dataService.findPaged(search)).isEmpty(), "case sensitive: the identifier is lower case");
+
+        // filter_column restricts the search to one field; a data set without a description does not match on it
+        var column = pagedRequest(0, 10, null, null);
+        column.setSearch("series");
+        column.setFilterColumn("description");
+        assertEquals(List.of("gps_timeseries_trip"), identifiers(dataService.findPaged(column)));
+        column.setFilterColumn("type");
+        assertEquals(List.of("gps_timeseries_trip", "weather"), identifiers(dataService.findPaged(column)));
+
+        // only the sets released once and modified after that release
+        var outdated = pagedRequest(0, 10, null, null);
+        outdated.setModifiedAfterPublish(true);
+        assertEquals(List.of("music_library"), identifiers(dataService.findPaged(outdated)));
+
+        // unreadable sets are never listed
+        when(accessService.hasReadPermission(12L)).thenReturn(false);
+        assertEquals(List.of("gps_timeseries_trip", "music_library"), identifiers(dataService.findPaged(pagedRequest(0, 10, null, null))));
     }
 }

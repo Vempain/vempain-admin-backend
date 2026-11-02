@@ -14,9 +14,12 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import fi.poltsi.vempain.admin.api.request.DataPagedRequest;
 import fi.poltsi.vempain.admin.api.request.DataRequest;
 import fi.poltsi.vempain.admin.api.response.DataResponse;
+import fi.poltsi.vempain.admin.api.response.DataSetAclResponse;
 import fi.poltsi.vempain.admin.api.response.DataSummaryResponse;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.common.api.response.TaskAcceptedResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -47,6 +50,21 @@ public interface DataAPI {
             @RequestParam(name = "identifier_prefix", required = false) String identifierPrefix,
             @RequestParam(name = "search", required = false) String search);
 
+    @Operation(summary = "List data sets page by page",
+            description = "The data sets the caller may read, without their CSV data, filtered, sorted and paged by the backend: search over identifier, "
+                    + "type and description (or the one filter_column), an optional type, the modified-after-publish filter, and sort_by one of "
+                    + "identifier, type, description, generated, published, created, modified, creator, modifier, acl_id or id",
+            tags = "DataAPI")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "A page of data sets",
+                content = { @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PagedResponse.class)) }),
+        @ApiResponse(responseCode = "400", description = "Invalid paging parameters", content = @Content),
+        @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content) })
+    @SecurityRequirement(name = "Bearer Authentication")
+    @PostMapping(value = MAIN_PATH + "/paged", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<PagedResponse<DataSummaryResponse>> getPagedDataSets(@Valid @RequestBody DataPagedRequest request);
+
     @Operation(summary = "Get a data set by identifier", description = "Returns the metadata and CSV data for the requested data set", tags = "DataAPI")
     @Parameter(name = "identifier", example = "cd_collection", description = "Unique identifier of the data set", required = true)
     @ApiResponses(value = {
@@ -54,13 +72,34 @@ public interface DataAPI {
                 content = { @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = DataResponse.class)) }),
         @ApiResponse(responseCode = "400", description = "Invalid request issued", content = @Content),
         @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+        @ApiResponse(responseCode = "403", description = "The caller may not read the data set", content = @Content),
         @ApiResponse(responseCode = "404", description = "No data set found for the given identifier", content = @Content),
         @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content) })
     @SecurityRequirement(name = "Bearer Authentication")
     @GetMapping(value = MAIN_PATH + "/{identifier}", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<DataResponse> getDataSetByIdentifier(@PathVariable(name = "identifier") String identifier);
 
-    @Operation(summary = "Create a new data set", description = "Stores the provided metadata and CSV data as a new data set", tags = "DataAPI")
+    @Operation(summary = "Current ACL grantees of a data set",
+            description = "Answers the admin users and units that hold privileges on the data set next to the calling account, in the shape of the acls list "
+                    + "of the create and update requests, so that the service that created the set can show and resend them. Requires the read privilege "
+                    + "on the data set.",
+            tags = "DataAPI")
+    @Parameter(name = "identifier", example = "music_library", description = "Unique identifier of the data set", required = true)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "The grantees of the data set",
+                content = { @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = DataSetAclResponse.class)) }),
+        @ApiResponse(responseCode = "401", description = "Unauthorized access", content = @Content),
+        @ApiResponse(responseCode = "403", description = "The caller may not read the data set", content = @Content),
+        @ApiResponse(responseCode = "404", description = "No data set found for the given identifier", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content) })
+    @SecurityRequirement(name = "Bearer Authentication")
+    @GetMapping(value = MAIN_PATH + "/{identifier}/acls", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<DataSetAclResponse> getDataSetAcls(@PathVariable(name = "identifier") String identifier);
+
+    @Operation(summary = "Create a new data set",
+            description = "Stores the provided metadata and CSV data as a new data set owned by the caller; the optional acls grant other admin users "
+                    + "and units privileges on it",
+            tags = "DataAPI")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Data set metadata and CSV content", required = true)
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Data set created",
@@ -73,7 +112,10 @@ public interface DataAPI {
     @PostMapping(value = MAIN_PATH, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<DataResponse> createDataSet(@Valid @RequestBody DataRequest dataRequest);
 
-    @Operation(summary = "Update an existing data set", description = "Replaces the metadata and CSV data of an existing data set", tags = "DataAPI")
+    @Operation(summary = "Update an existing data set",
+            description = "Replaces the metadata and CSV data of an existing data set; requires the modify privilege. A non-null acls list replaces the "
+                    + "additional grantees of the set",
+            tags = "DataAPI")
     @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Updated data set metadata and CSV content", required = true)
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Data set updated",

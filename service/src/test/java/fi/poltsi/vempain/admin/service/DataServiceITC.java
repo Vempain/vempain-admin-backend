@@ -14,12 +14,14 @@ import org.springframework.web.server.ResponseStatusException;
 
 import fi.poltsi.vempain.admin.AbstractITCTest;
 import fi.poltsi.vempain.admin.api.request.DataRequest;
+import fi.poltsi.vempain.admin.api.request.file.FileIngestAclRequest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DataServiceITC extends AbstractITCTest {
 
@@ -245,5 +247,126 @@ class DataServiceITC extends AbstractITCTest {
             .map(result -> result.getIdentifier())
             .sorted()
             .toList());
+    }
+
+    // Data sets are ACL-bearing resources (V1011): owned by their creator, readable and modifiable through real ACL rows
+
+    @Test
+    void createdDataSetIsOwnedByTheCallerAndGrantsTheNamedUsers() {
+        var grantee = testITCTools.generateUser();
+        var request = aclRequest("owned_set", List.of(FileIngestAclRequest.builder()
+            .userId(grantee)
+            .readPrivilege(true)
+            .build()));
+
+        var created = dataService.create(request);
+
+        assertEquals(1L, created.getCreator());
+        assertNotNull(created.getCreated());
+        assertTrue(created.getAclId() > 0);
+        // the owner's row and the grantee's row
+        assertEquals(2, created.getAcls()
+            .size());
+
+        var acls = dataService.getAcls("owned_set");
+        assertEquals(created.getAclId(), acls.getAclId());
+        assertEquals(1, acls.getAcls()
+            .size());
+        assertEquals(grantee, acls.getAcls()
+            .get(0)
+            .getUserId());
+        assertTrue(acls.getAcls()
+            .get(0)
+            .isReadPrivilege());
+        assertFalse(acls.getAcls()
+            .get(0)
+            .isModifyPrivilege());
+
+        // the grantee may read the set but not change it; a user without any row sees nothing
+        authenticateAs(grantee);
+        assertEquals("owned_set", dataService.findByIdentifier("owned_set")
+            .getIdentifier());
+        assertEquals(1, dataService.findAll(null, "owned_", null)
+            .size());
+        assertEquals(HttpStatus.FORBIDDEN, assertThrows(ResponseStatusException.class, () -> dataService.update(request)).getStatusCode());
+        assertEquals(HttpStatus.FORBIDDEN, assertThrows(ResponseStatusException.class, () -> dataService.delete("owned_set")).getStatusCode());
+
+        authenticateAs(testITCTools.generateUser());
+        assertEquals(HttpStatus.FORBIDDEN, assertThrows(ResponseStatusException.class, () -> dataService.findByIdentifier("owned_set")).getStatusCode());
+        assertTrue(dataService.findAll(null, "owned_", null)
+            .isEmpty());
+    }
+
+    @Test
+    void updateReplacesTheGranteesAndRecordsTheModifier() {
+        var first = testITCTools.generateUser();
+        var second = testITCTools.generateUser();
+        dataService.create(aclRequest("regranted_set", List.of(FileIngestAclRequest.builder()
+            .userId(first)
+            .readPrivilege(true)
+            .build())));
+
+        // null keeps the grantees, a list replaces them
+        var untouched = dataService.update(aclRequest("regranted_set", null));
+        assertEquals(1L, untouched.getModifier());
+        assertNotNull(untouched.getModified());
+        assertEquals(first, dataService.getAcls("regranted_set")
+            .getAcls()
+            .get(0)
+            .getUserId());
+
+        dataService.update(aclRequest("regranted_set", List.of(FileIngestAclRequest.builder()
+            .userId(second)
+            .readPrivilege(true)
+            .modifyPrivilege(true)
+            .build())));
+        var grantees = dataService.getAcls("regranted_set")
+            .getAcls();
+        assertEquals(1, grantees.size());
+        assertEquals(second, grantees.get(0)
+            .getUserId());
+        assertTrue(grantees.get(0)
+            .isModifyPrivilege());
+
+        // an empty list removes every additional grantee, the owner keeps the set
+        dataService.update(aclRequest("regranted_set", List.of()));
+        assertTrue(dataService.getAcls("regranted_set")
+            .getAcls()
+            .isEmpty());
+        assertEquals("regranted_set", dataService.findByIdentifier("regranted_set")
+            .getIdentifier());
+    }
+
+    @Test
+    void createRejectsUnknownGranteesAndDeleteRemovesTheAcl() {
+        var invalid = aclRequest("rejected_set", List.of(FileIngestAclRequest.builder()
+            .userId(987654L)
+            .readPrivilege(true)
+            .build()));
+        assertEquals(HttpStatus.BAD_REQUEST, assertThrows(ResponseStatusException.class, () -> dataService.create(invalid)).getStatusCode());
+        assertEquals(HttpStatus.NOT_FOUND, assertThrows(ResponseStatusException.class, () -> dataService.findByIdentifier("rejected_set")).getStatusCode());
+
+        var created = dataService.create(aclRequest("deleted_set", null));
+        assertFalse(aclService.findAclByAclId(created.getAclId())
+            .isEmpty());
+
+        dataService.delete("deleted_set");
+
+        assertTrue(aclService.findAclByAclId(created.getAclId())
+            .isEmpty(), "the ACL goes with the data set");
+    }
+
+    private static DataRequest aclRequest(String identifier, List<FileIngestAclRequest> acls) {
+        return DataRequest.builder()
+            .identifier(identifier)
+            .type("tabulated")
+            .description("ACL test data set")
+            .columnDefinitions("[{\"name\":\"title\",\"type\":\"string\"}]")
+            .createSql("CREATE TABLE any_name (title TEXT)")
+            .fetchAllSql("SELECT title FROM website_data__" + identifier)
+            .fetchSubsetSql("SELECT title FROM website_data__" + identifier + " WHERE title = :title")
+            .csvData("title\nAbbey Road")
+            .acls(acls)
+            .build();
     }
 }

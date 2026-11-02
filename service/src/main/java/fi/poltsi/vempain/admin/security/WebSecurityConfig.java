@@ -37,7 +37,8 @@ public class WebSecurityConfig extends fi.poltsi.vempain.auth.security.WebSecuri
     @Override
     protected void configureApplicationAuthorization(ApplicationAuthorizationConfigurer authorization) {
         // /tasks is the progress API of the shared background task facility (fi.poltsi.vempain.common.task)
-        authorization.authenticated(REST_CONTENT_PREFIX + "/**", REST_FILE_PREFIX + "/**", REST_SCHEDULE_PREFIX + "/**", REST_ADMIN_PREFIX + "/**",
-                "/tasks/**");
+        // /map is the clustered map of the GPS-tagged site files (MapAPI of vempain-common)
+        authorization.authenticated(REST_CONTENT_PREFIX + "/**", REST_FILE_PREFIX + "/**", REST_SCHEDULE_PREFIX + "/**", REST_ADMIN_PREFIX + "/**", "/tasks/**",
+                "/map/**");
     }
 }

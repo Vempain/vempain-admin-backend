@@ -7,13 +7,17 @@ import java.util.Locale;
 
 import jakarta.persistence.EntityManager;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import fi.poltsi.vempain.admin.api.response.TagResponse;
 import fi.poltsi.vempain.admin.entity.Subject;
 import fi.poltsi.vempain.admin.repository.file.SubjectRepository;
+import fi.poltsi.vempain.admin.rest.TagAPI;
 import fi.poltsi.vempain.common.api.request.TagRequest;
+import fi.poltsi.vempain.tools.LikePatterns;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -146,6 +150,22 @@ public class SubjectService {
 
     public List<Subject> getSubjectsByFileId(long fileCommonId) {
         return subjectRepository.getSubjectsByFileId(fileCommonId);
+    }
+
+    /**
+     * The tags whose name contains the search text, case-insensitively and alphabetically, at most {@code limit} (clamped to 1..{@link TagAPI#MAX_LIMIT}); a
+     * blank search lists the first tags. Used by the tag suggestions of the page editor; the search text is escaped as a LIKE pattern.
+     */
+    public List<TagResponse> searchTags(String search, Integer limit) {
+        var size = Math.clamp(limit == null ? TagAPI.DEFAULT_LIMIT : limit, 1, TagAPI.MAX_LIMIT);
+        var pattern = LikePatterns.containsIgnoreCase(search == null ? "" : search.trim());
+        return subjectRepository.searchBySubjectName(pattern, PageRequest.of(0, size))
+            .stream()
+            .map(subject -> TagResponse.builder()
+                .id(subject.getId())
+                .tagName(subject.getSubjectName())
+                .build())
+            .toList();
     }
 
     /**

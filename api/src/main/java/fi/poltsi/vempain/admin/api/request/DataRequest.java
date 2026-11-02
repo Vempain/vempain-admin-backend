@@ -1,9 +1,13 @@
 package fi.poltsi.vempain.admin.api.request;
 
 import java.time.Instant;
+import java.util.List;
+
+import jakarta.validation.Valid;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import fi.poltsi.vempain.admin.api.request.file.FileIngestAclRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -52,4 +56,11 @@ public class DataRequest {
 
     @Schema(description = "Raw CSV data including a header row", example = "title,year\nAbbey Road,1969\nOk Computer,1997")
     private String csvData;
+
+    @Schema(description = "Admin users and units granted privileges on the data set next to the creating account, which always holds every privilege. "
+            + "On an update the list replaces the earlier grantees (an empty list removes them all); null leaves them untouched. Validated "
+            + "(existing active users or units, no duplicates, at least one privilege each) before anything is stored.",
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @Valid
+    private List<FileIngestAclRequest> acls;
 }

@@ -12,6 +12,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import fi.poltsi.vempain.admin.entity.Component;
+import fi.poltsi.vempain.admin.entity.DataEntity;
 import fi.poltsi.vempain.admin.entity.Form;
 import fi.poltsi.vempain.admin.entity.Layout;
 import fi.poltsi.vempain.admin.entity.Page;
@@ -21,6 +22,7 @@ import fi.poltsi.vempain.admin.exception.VempainComponentException;
 import fi.poltsi.vempain.admin.exception.VempainLayoutException;
 import fi.poltsi.vempain.admin.metrics.AdminMetrics;
 import fi.poltsi.vempain.admin.service.ComponentService;
+import fi.poltsi.vempain.admin.service.DataService;
 import fi.poltsi.vempain.admin.service.FormService;
 import fi.poltsi.vempain.admin.service.LayoutService;
 import fi.poltsi.vempain.admin.service.PageService;
@@ -55,6 +57,7 @@ public class AclConsistencySchedule {
     private final UnitService unitService;
     private final UserService userService;
     private final FileService fileService;
+    private final DataService dataService;
     private final AdminMetrics adminMetrics;
     private final Set<Long> missingAcls = new HashSet<>();
     private final Map<Long, Long> missingAclCreators = new HashMap<>();
@@ -296,6 +299,7 @@ public class AclConsistencySchedule {
                 case Form inst -> formService.save(inst);
                 case Gallery inst -> fileService.saveGallery(inst);
                 case SiteFile inst -> fileService.saveSiteFile(inst);
+                case DataEntity inst -> dataService.save(inst);
                 case Layout inst -> layoutService.save(inst);
                 case Page inst -> pageService.save(inst);
                 case Unit inst -> unitService.save(inst);
@@ -381,6 +385,7 @@ public class AclConsistencySchedule {
         acls.addAll(getAclsFromObject(userService.findAll(), "user"));
         acls.addAll(getAclsFromObject(fileService.findAllGalleries(), "gallery"));
         acls.addAll(getAclsFromObject(fileService.findAllSiteFiles(), "site-file"));
+        acls.addAll(getAclsFromObject(dataService.findAllEntities(), "data-set"));
         return acls;
     }
 }

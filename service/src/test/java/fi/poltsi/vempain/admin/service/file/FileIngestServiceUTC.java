@@ -33,6 +33,7 @@ import fi.poltsi.vempain.admin.metrics.AdminMetrics;
 import fi.poltsi.vempain.admin.repository.file.GalleryRepository;
 import fi.poltsi.vempain.admin.repository.file.SiteFileRepository;
 import fi.poltsi.vempain.admin.service.AccessService;
+import fi.poltsi.vempain.admin.service.AclGranteeService;
 import fi.poltsi.vempain.admin.service.SubjectService;
 import fi.poltsi.vempain.auth.api.AccountStatus;
 import fi.poltsi.vempain.auth.entity.Acl;
@@ -105,6 +106,8 @@ class FileIngestServiceUTC {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(fileIngestService, "siteFileDirectory", tempDir.toString());
+        // The grantee handling lives in AclGranteeService (shared with the data sets); wire the real one over this test's mocks
+        ReflectionTestUtils.setField(fileIngestService, "aclGranteeService", new AclGranteeService(aclService, userService, unitService));
     }
 
     // ─── ingestInternal happy path ──────────────────────────────────────────────

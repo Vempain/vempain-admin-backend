@@ -44,7 +44,7 @@ public class ApiTokenAuthenticationFilter extends OncePerRequestFilter {
 
     /**
      * Method + path (relative to the context path) patterns a token may call: file ingest, undo of an ingest, the grantable users and units, the current
-     * grantees of an ingested site file or gallery, the paged site file listing used by the refresh schedule and data set management. Never the token
+     * grantees of an ingested site file, gallery or data set, the paged site file listing used by the refresh schedule and data set management. Never the token
      * management or anything else.
      */
     static final List<AllowedCall> ALLOWED = List.of(new AllowedCall(HttpMethod.POST, Constants.REST_FILE_PREFIX + "/site-file"),
@@ -55,7 +55,8 @@ public class ApiTokenAuthenticationFilter extends OncePerRequestFilter {
             new AllowedCall(HttpMethod.GET, Constants.REST_FILE_PREFIX + "/site-file/by-file-id/*/acls"),
             new AllowedCall(HttpMethod.GET, Constants.REST_FILE_PREFIX + "/gallery/*/acls"),
             new AllowedCall(HttpMethod.POST, Constants.REST_FILE_PREFIX + "/site-files/paged"),
-            new AllowedCall(HttpMethod.GET, Constants.REST_DATA_PREFIX + "/*"), new AllowedCall(HttpMethod.POST, Constants.REST_DATA_PREFIX),
+            new AllowedCall(HttpMethod.GET, Constants.REST_DATA_PREFIX + "/*"), new AllowedCall(HttpMethod.GET, Constants.REST_DATA_PREFIX + "/*/acls"),
+            new AllowedCall(HttpMethod.POST, Constants.REST_DATA_PREFIX), new AllowedCall(HttpMethod.POST, Constants.REST_DATA_PREFIX + "/paged"),
             new AllowedCall(HttpMethod.PUT, Constants.REST_DATA_PREFIX), new AllowedCall(HttpMethod.DELETE, Constants.REST_DATA_PREFIX + "/*"));
 
     private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();

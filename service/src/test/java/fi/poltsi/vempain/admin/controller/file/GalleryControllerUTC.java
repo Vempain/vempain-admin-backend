@@ -135,6 +135,17 @@ class GalleryControllerUTC {
     }
 
     @Test
+    void getGalleryByIdAnswersNotFoundForAMissingOrUnreadableGallery() {
+        // the service answers null for both; a 200 with an empty body made the page editor retry the lookup endlessly
+        when(galleryService.findById(404L)).thenReturn(null);
+
+        var response = galleryController.getGalleryById(404L);
+
+        assertEquals(org.springframework.http.HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertSame(null, response.getBody());
+    }
+
+    @Test
     void publishesImmediatelyAndReturnsDeleteResponse() {
         var gallery = GalleryResponse.builder()
             .id(7L)

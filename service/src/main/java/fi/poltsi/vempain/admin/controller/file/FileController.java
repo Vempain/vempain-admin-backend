@@ -3,7 +3,9 @@ package fi.poltsi.vempain.admin.controller.file;
 import java.time.Instant;
 import java.util.List;
 
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,6 +23,7 @@ import fi.poltsi.vempain.admin.service.DeleteService;
 import fi.poltsi.vempain.admin.service.PublishService;
 import fi.poltsi.vempain.admin.service.file.FileService;
 import fi.poltsi.vempain.admin.service.file.GalleryService;
+import fi.poltsi.vempain.admin.service.file.SiteFileThumbnailService;
 import fi.poltsi.vempain.auth.api.response.PagedResponse;
 import fi.poltsi.vempain.auth.exception.VempainEntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +39,7 @@ public class FileController implements FileAPI {
     private final AccessService accessService;
     private final PublishService publishService;
     private final DeleteService deleteService;
+    private final SiteFileThumbnailService siteFileThumbnailService;
 
     @Override
     public ResponseEntity<PagedResponse<SiteFileResponse>> getPageableSiteFiles(SiteFilePagedRequest request) {
@@ -54,6 +58,14 @@ public class FileController implements FileAPI {
             .build();
         return ResponseEntity.accepted()
             .body(response);
+    }
+
+    @Override
+    public ResponseEntity<Resource> getSiteFileThumbnail(long siteFileId) {
+        var thumbnail = siteFileThumbnailService.thumbnailOf(siteFileId);
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType(thumbnail.mimeType()))
+            .body(thumbnail.resource());
     }
 
     @Override

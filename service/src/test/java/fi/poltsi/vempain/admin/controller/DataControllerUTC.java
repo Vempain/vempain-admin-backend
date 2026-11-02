@@ -15,11 +15,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
 
 import fi.poltsi.vempain.admin.VempainMessages;
+import fi.poltsi.vempain.admin.api.request.DataPagedRequest;
 import fi.poltsi.vempain.admin.api.request.DataRequest;
 import fi.poltsi.vempain.admin.api.response.DataResponse;
+import fi.poltsi.vempain.admin.api.response.DataSetAclResponse;
 import fi.poltsi.vempain.admin.api.response.DataSummaryResponse;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.DataService;
+import fi.poltsi.vempain.auth.api.response.PagedResponse;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -247,7 +250,8 @@ class DataControllerUTC {
         ResponseEntity<Void> response = dataController.deleteDataSet(TEST_IDENTIFIER);
 
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-        verify(accessService).checkAdminAccess();
+        // the delete privilege on the data set is checked by the service; the controller only requires a session
+        verify(accessService).checkAuthentication();
         verify(dataService).delete(TEST_IDENTIFIER);
     }
 
@@ -292,8 +296,9 @@ class DataControllerUTC {
             .fetchSubsetSql("SELECT * FROM website_data__test_data WHERE year = :year")
             .generated(Instant.now())
             .csvData("title,year\nTest Album,2024")
-            .createdAt(Instant.now())
-            .updatedAt(Instant.now())
+            .aclId(10L)
+            .creator(1L)
+            .created(Instant.now())
             .build();
     }
 
@@ -308,8 +313,53 @@ class DataControllerUTC {
             .fetchAllSql("SELECT * FROM website_data__test_data")
             .fetchSubsetSql("SELECT * FROM website_data__test_data WHERE year = :year")
             .generated(Instant.now())
-            .createdAt(Instant.now())
-            .updatedAt(Instant.now())
+            .aclId(10L)
+            .creator(1L)
+            .created(Instant.now())
             .build();
+    }
+
+    // GET acls
+
+    @Test
+    void getDataSetAclsOk() {
+        var acls = DataSetAclResponse.builder()
+            .identifier(TEST_IDENTIFIER)
+            .aclId(10L)
+            .acls(List.of())
+            .build();
+        when(dataService.getAcls(TEST_IDENTIFIER)).thenReturn(acls);
+
+        var response = dataController.getDataSetAcls(TEST_IDENTIFIER);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(acls, response.getBody());
+        verify(accessService).checkAuthentication();
+    }
+
+    @Test
+    void createDataSetRequiresTheAdministratorAcl() {
+        when(dataService.create(validRequest)).thenReturn(dataResponse);
+
+        dataController.createDataSet(validRequest);
+
+        verify(accessService).checkAdminAccess();
+    }
+
+    // POST paged
+
+    @Test
+    void getPagedDataSetsOk() {
+        var request = new DataPagedRequest();
+        request.setPage(0);
+        request.setSize(10);
+        var page = PagedResponse.of(List.of(summaryResponse), 0, 10, 1, 1, true, true);
+        when(dataService.findPaged(request)).thenReturn(page);
+
+        var response = dataController.getPagedDataSets(request);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(page, response.getBody());
+        verify(accessService).checkAuthentication();
     }
 }

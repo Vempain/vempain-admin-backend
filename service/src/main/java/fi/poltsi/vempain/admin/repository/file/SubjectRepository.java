@@ -3,6 +3,7 @@ package fi.poltsi.vempain.admin.repository.file;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.ListCrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
@@ -30,6 +31,13 @@ public interface SubjectRepository extends PagingAndSortingRepository<Subject, L
             AND   fs.subject_id = s.id
             """, nativeQuery = true)
     List<Subject> getSubjectsByFileId(@Param("siteFileId") Long siteFileId);
+
+    /**
+     * Subjects whose name contains the given LIKE pattern, case-insensitively and alphabetically; the pattern must come from
+     * {@code LikePatterns.containsIgnoreCase} so that request text is escaped (OWASP A05).
+     */
+    @Query("SELECT s FROM Subject s WHERE LOWER(s.subjectName) LIKE :pattern ESCAPE '\\' ORDER BY s.subjectName")
+    List<Subject> searchBySubjectName(@Param("pattern") String pattern, Pageable pageable);
 
     @Query(value = """
             SELECT s.* FROM subjects s, page_subject ps
