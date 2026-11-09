@@ -545,16 +545,16 @@ class AccessServiceUTC {
 
         // This is the user-specific ACL
         acls.getFirst()
-            .setReadPrivilege(userPermissions.get(0));
+            .setReadPrivilege(userPermissions.getFirst());
         acls.getFirst()
             .setModifyPrivilege(userPermissions.get(1));
-        acls.get(0)
+        acls.getFirst()
             .setCreatePrivilege(userPermissions.get(2));
-        acls.get(0)
+        acls.getFirst()
             .setDeletePrivilege(userPermissions.get(3));
         // This is the unit-specific ACL
         acls.get(1)
-            .setReadPrivilege(groupPermissions.get(0));
+            .setReadPrivilege(groupPermissions.getFirst());
         acls.get(1)
             .setModifyPrivilege(groupPermissions.get(1));
         acls.get(1)

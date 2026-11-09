@@ -53,7 +53,7 @@ class PageServiceITC extends AbstractITCTest {
 
         var response = pageService.findPagedByUser(request);
 
-        assertEquals(List.of(pages.get(0)
+        assertEquals(List.of(pages.getFirst()
             .getId(),
                 pages.get(2)
                     .getId(),
@@ -71,7 +71,7 @@ class PageServiceITC extends AbstractITCTest {
             .map(pageRepository::findById)
             .map(java.util.Optional::orElseThrow)
             .toList();
-        pages.get(0)
+        pages.getFirst()
             .setModified(Instant.parse("2026-03-10T14:00:00Z"));
         pages.get(1)
             .setModified(Instant.parse("2026-03-10T12:00:00Z"));

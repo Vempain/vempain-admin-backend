@@ -211,7 +211,7 @@ public class AccessService {
     }
 
     protected boolean hasPermissions(Acl acl, List<Boolean> mask) {
-        var result = !mask.get(0)
+        var result = !mask.getFirst()
                      || (acl.isReadPrivilege());
         result &= !mask.get(1)
                   || (acl.isModifyPrivilege());

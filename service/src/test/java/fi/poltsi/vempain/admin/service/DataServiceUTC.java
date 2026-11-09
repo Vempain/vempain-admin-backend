@@ -138,7 +138,7 @@ class DataServiceUTC {
         List<DataSummaryResponse> result = dataService.findAll("time_series", "gps_timeseries_", null);
 
         assertEquals(1, result.size());
-        assertEquals("gps_timeseries_holidays", result.get(0)
+        assertEquals("gps_timeseries_holidays", result.getFirst()
             .getIdentifier());
     }
 
@@ -156,7 +156,7 @@ class DataServiceUTC {
         List<DataSummaryResponse> result = dataService.findAll(null, null, "trip");
 
         assertEquals(1, result.size());
-        assertEquals("gps_timeseries_holidays", result.get(0)
+        assertEquals("gps_timeseries_holidays", result.getFirst()
             .getIdentifier());
     }
 
