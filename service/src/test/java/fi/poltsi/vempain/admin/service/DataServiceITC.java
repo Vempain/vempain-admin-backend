@@ -109,7 +109,7 @@ class DataServiceITC extends AbstractITCTest {
         var importedDevices = siteJdbcTemplate.queryForList("SELECT device FROM \"website_data__gps_tracks\"", String.class);
         assertEquals(1, importedDevices.size());
         assertFalse(importedDevices.contains("tracker-1"));
-        assertEquals("tracker-3", importedDevices.get(0));
+        assertEquals("tracker-3", importedDevices.getFirst());
     }
 
     @Test
@@ -132,11 +132,11 @@ class DataServiceITC extends AbstractITCTest {
         var imported = siteJdbcTemplate.queryForList("SELECT artist, year, duration_seconds FROM \"website_data__music_library\" ORDER BY year ASC");
 
         assertEquals(2, imported.size());
-        assertEquals("Miles Davis", imported.get(0)
+        assertEquals("Miles Davis", imported.getFirst()
             .get("artist"));
-        assertEquals(1959, imported.get(0)
+        assertEquals(1959, imported.getFirst()
             .get("year"));
-        assertEquals(328, imported.get(0)
+        assertEquals(328, imported.getFirst()
             .get("duration_seconds"));
         assertEquals("Nirvana", imported.get(1)
             .get("artist"));
@@ -273,13 +273,13 @@ class DataServiceITC extends AbstractITCTest {
         assertEquals(1, acls.getAcls()
             .size());
         assertEquals(grantee, acls.getAcls()
-            .get(0)
+            .getFirst()
             .getUserId());
         assertTrue(acls.getAcls()
-            .get(0)
+            .getFirst()
             .isReadPrivilege());
         assertFalse(acls.getAcls()
-            .get(0)
+            .getFirst()
             .isModifyPrivilege());
 
         // the grantee may read the set but not change it; a user without any row sees nothing
@@ -312,7 +312,7 @@ class DataServiceITC extends AbstractITCTest {
         assertNotNull(untouched.getModified());
         assertEquals(first, dataService.getAcls("regranted_set")
             .getAcls()
-            .get(0)
+            .getFirst()
             .getUserId());
 
         dataService.update(aclRequest("regranted_set", List.of(FileIngestAclRequest.builder()
@@ -323,9 +323,9 @@ class DataServiceITC extends AbstractITCTest {
         var grantees = dataService.getAcls("regranted_set")
             .getAcls();
         assertEquals(1, grantees.size());
-        assertEquals(second, grantees.get(0)
+        assertEquals(second, grantees.getFirst()
             .getUserId());
-        assertTrue(grantees.get(0)
+        assertTrue(grantees.getFirst()
             .isModifyPrivilege());
 
         // an empty list removes every additional grantee, the owner keeps the set

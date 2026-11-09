@@ -93,9 +93,9 @@ class AclGranteeServiceUTC {
         var grantees = service.additionalGrantees(ACL_ID, OWNER);
 
         assertEquals(2, grantees.size());
-        assertEquals(5L, grantees.get(0)
+        assertEquals(5L, grantees.getFirst()
             .getUserId());
-        assertTrue(grantees.get(0)
+        assertTrue(grantees.getFirst()
             .isModifyPrivilege());
         assertEquals(3L, grantees.get(1)
             .getUnitId());

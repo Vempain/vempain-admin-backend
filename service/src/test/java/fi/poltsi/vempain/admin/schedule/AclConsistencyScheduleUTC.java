@@ -139,7 +139,7 @@ class AclConsistencyScheduleUTC {
     void getAclSetFromServicesFormAclFail() {
         setupSingleObjects();
         List<Form> forms = TestUTCTools.generateFormList(2L);
-        forms.get(0)
+        forms.getFirst()
             .setAclId(2L);
         forms.get(1)
             .setAclId(2L);
@@ -156,7 +156,7 @@ class AclConsistencyScheduleUTC {
     void getAclSetFromServicesLayoutAclFail() {
         setupSingleObjects();
         List<Layout> layouts = TestUTCTools.generateLayoutList(2L);
-        layouts.get(0)
+        layouts.getFirst()
             .setAclId(3L);
         layouts.get(1)
             .setAclId(3L);
@@ -173,7 +173,7 @@ class AclConsistencyScheduleUTC {
     void getAclSetFromServicesPageAclFail() {
         setupSingleObjects();
         List<Page> pages = TestUTCTools.generatePageList(2L);
-        pages.get(0)
+        pages.getFirst()
             .setAclId(4L);
         pages.get(1)
             .setAclId(4L);
@@ -190,7 +190,7 @@ class AclConsistencyScheduleUTC {
     void getAclSetFromServicesUnitAclFail() {
         setupSingleObjects();
         List<Unit> units = TestUTCTools.generateUnitList(2L);
-        units.get(0)
+        units.getFirst()
             .setAclId(5L);
         units.get(1)
             .setAclId(5L);
@@ -207,7 +207,7 @@ class AclConsistencyScheduleUTC {
     void getAclSetFromServicesUserAclFail() {
         setupSingleObjects();
         List<UserAccount> users = TestUTCTools.generateUserList(2L);
-        users.get(0)
+        users.getFirst()
             .setAclId(6L);
         users.get(1)
             .setAclId(6L);

@@ -190,14 +190,14 @@ class PageServiceUTC {
         assertEquals(2, response.getContent()
             .size());
         assertEquals(3L, response.getContent()
-            .get(0)
+            .getFirst()
             .getId());
     }
 
     @Test
     void findPagedByUserSortsByModified() {
         var pages = TestUTCTools.generatePageList(3L);
-        pages.get(0)
+        pages.getFirst()
             .setModified(Instant.parse("2026-03-10T14:00:00Z"));
         pages.get(1)
             .setModified(Instant.parse("2026-03-10T12:00:00Z"));
@@ -225,9 +225,9 @@ class PageServiceUTC {
         var released = Instant.parse("2026-01-05T08:00:00Z");
         var pages = TestUTCTools.generatePageList(4L);
         // 1: outdated (modified after the release), 2: up to date, 3: never released, 4: never modified since the release
-        pages.get(0)
+        pages.getFirst()
             .setPublished(released);
-        pages.get(0)
+        pages.getFirst()
             .setModified(released.plusSeconds(3600));
         pages.get(1)
             .setPublished(released);
@@ -252,7 +252,7 @@ class PageServiceUTC {
         var response = pageService.findPagedByUser(request);
 
         assertEquals(1, response.getTotalElements());
-        assertEquals(pages.get(0)
+        assertEquals(pages.getFirst()
             .getId(),
                 response.getContent()
                     .getFirst()
@@ -286,7 +286,7 @@ class PageServiceUTC {
 
         assertEquals(1, response.getTotalElements());
         assertEquals("/page/3", response.getContent()
-            .get(0)
+            .getFirst()
             .getPagePath());
     }
 
