@@ -13,10 +13,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import fi.poltsi.vempain.admin.api.Constants;
-import fi.poltsi.vempain.admin.api.request.ApiTokenRequest;
-import fi.poltsi.vempain.admin.api.response.ApiTokenCreatedResponse;
-import fi.poltsi.vempain.admin.api.response.ApiTokenNetworkResponse;
-import fi.poltsi.vempain.admin.api.response.ApiTokenResponse;
+import fi.poltsi.vempain.common.api.request.ApiTokenRequest;
+import fi.poltsi.vempain.common.api.response.ApiTokenCreatedResponse;
+import fi.poltsi.vempain.common.api.response.ApiTokenNetworkResponse;
+import fi.poltsi.vempain.common.api.response.ApiTokenResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;

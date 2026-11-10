@@ -5,13 +5,13 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
-import fi.poltsi.vempain.admin.api.request.ApiTokenRequest;
-import fi.poltsi.vempain.admin.api.response.ApiTokenCreatedResponse;
-import fi.poltsi.vempain.admin.api.response.ApiTokenNetworkResponse;
-import fi.poltsi.vempain.admin.api.response.ApiTokenResponse;
 import fi.poltsi.vempain.admin.rest.ApiTokenAPI;
 import fi.poltsi.vempain.admin.service.AccessService;
 import fi.poltsi.vempain.admin.service.ApiTokenService;
+import fi.poltsi.vempain.common.api.request.ApiTokenRequest;
+import fi.poltsi.vempain.common.api.response.ApiTokenCreatedResponse;
+import fi.poltsi.vempain.common.api.response.ApiTokenNetworkResponse;
+import fi.poltsi.vempain.common.api.response.ApiTokenResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.ListCrudRepository;
+import org.springframework.data.repository.ListPagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,7 +14,7 @@ import fi.poltsi.vempain.admin.api.PublishStatusEnum;
 import fi.poltsi.vempain.admin.entity.PublishSchedule;
 
 @Repository
-public interface PublishScheduleRepository extends ListCrudRepository<PublishSchedule, Long> {
+public interface PublishScheduleRepository extends ListPagingAndSortingRepository<PublishSchedule, Long>, ListCrudRepository<PublishSchedule, Long> {
 
     @Query("SELECT ps FROM PublishSchedule ps WHERE ps.publishTime > CURRENT_TIMESTAMP AND ps.publishStatus = ?1 ORDER BY ps.publishTime ASC")
     List<PublishSchedule> findAllUpcomingSchedulesByPublishStatus(PublishStatusEnum PublishStatusEnum);
