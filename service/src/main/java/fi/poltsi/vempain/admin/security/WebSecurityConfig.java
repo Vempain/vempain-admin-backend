@@ -11,6 +11,7 @@ import fi.poltsi.vempain.auth.service.UserDetailsServiceImpl;
 import static fi.poltsi.vempain.admin.api.Constants.REST_ADMIN_PREFIX;
 import static fi.poltsi.vempain.admin.api.Constants.REST_CONTENT_PREFIX;
 import static fi.poltsi.vempain.admin.api.Constants.REST_FILE_PREFIX;
+import static fi.poltsi.vempain.admin.api.Constants.REST_MCP_PREFIX;
 import static fi.poltsi.vempain.admin.api.Constants.REST_SCHEDULE_PREFIX;
 
 @Configuration
@@ -38,7 +39,7 @@ public class WebSecurityConfig extends fi.poltsi.vempain.auth.security.WebSecuri
     protected void configureApplicationAuthorization(ApplicationAuthorizationConfigurer authorization) {
         // /tasks is the progress API of the shared background task facility (fi.poltsi.vempain.common.task)
         // /map is the clustered map of the GPS-tagged site files (MapAPI of vempain-common)
-        authorization.authenticated(REST_CONTENT_PREFIX + "/**", REST_FILE_PREFIX + "/**", REST_SCHEDULE_PREFIX + "/**", REST_ADMIN_PREFIX + "/**", "/tasks/**",
-                "/map/**");
+        authorization.authenticated(REST_CONTENT_PREFIX + "/**", REST_FILE_PREFIX + "/**", REST_SCHEDULE_PREFIX + "/**", REST_ADMIN_PREFIX + "/**",
+                REST_MCP_PREFIX + "/**", "/tasks/**", "/map/**");
     }
 }

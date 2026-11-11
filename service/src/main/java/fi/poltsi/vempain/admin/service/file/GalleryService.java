@@ -194,12 +194,12 @@ public class GalleryService {
 
     @Transactional(readOnly = true)
     public PagedResponse<GalleryResponse> findPagedByUser(PagedRequest request) {
-        return findPagedByUser(request, true);
+        return findPagedByUserInternal(request, true);
     }
 
     @Transactional(readOnly = true)
     public PagedResponse<GalleryResponse> findPagedByUserWithoutFiles(PagedRequest request) {
-        return findPagedByUser(request, false);
+        return findPagedByUserInternal(request, false);
     }
 
     @Transactional(readOnly = true)
@@ -254,7 +254,7 @@ public class GalleryService {
             .size());
     }
 
-    private PagedResponse<GalleryResponse> findPagedByUser(PagedRequest request, boolean includeFiles) {
+    private PagedResponse<GalleryResponse> findPagedByUserInternal(PagedRequest request, boolean includeFiles) {
         int safePage = request.getPage();
         int safeSize = Math.min(request.getSize(), 200);
         Sort sortSpec = buildSort(request.getSortBy(), request.getDirection());

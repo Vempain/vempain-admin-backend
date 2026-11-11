@@ -59,6 +59,7 @@ import fi.poltsi.vempain.common.api.FileTypeEnum;
 import fi.poltsi.vempain.common.metadata.ExifToolService;
 import fi.poltsi.vempain.common.metadata.MetadataJson;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import static fi.poltsi.vempain.admin.api.Constants.ADMIN_ID;
@@ -73,6 +74,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @Slf4j
 @Getter
+@RequiredArgsConstructor
 @org.springframework.stereotype.Component
 public class TestITCTools {
 
@@ -100,28 +102,6 @@ public class TestITCTools {
     private ExifToolService exifToolService;
     @Autowired
     private SiteFileRepository siteFileRepository;
-
-    @Autowired
-    public TestITCTools(AclService aclService, FormService formService, ComponentService componentService, LayoutService layoutService, FileService fileService,
-            FormComponentService formComponentService, AclRepository aclRepository, FormRepository formRepository, ComponentRepository componentRepository,
-            LayoutRepository layoutRepository, UserService userService, UnitService unitService, UserAccountRepository userAccountRepository,
-            PageRepository pageRepository, GalleryRepository galleryRepository) {
-        this.aclService = aclService;
-        this.formService = formService;
-        this.componentService = componentService;
-        this.layoutService = layoutService;
-        this.fileService = fileService;
-        this.formComponentService = formComponentService;
-        this.aclRepository = aclRepository;
-        this.formRepository = formRepository;
-        this.componentRepository = componentRepository;
-        this.layoutRepository = layoutRepository;
-        this.userService = userService;
-        this.unitService = unitService;
-        this.userAccountRepository = userAccountRepository;
-        this.pageRepository = pageRepository;
-        this.galleryRepository = galleryRepository;
-    }
 
     /// //////////////// Acls start
 
@@ -399,38 +379,18 @@ public class TestITCTools {
     }
 
     public boolean compareLayouts(LayoutResponse layout1, LayoutResponse layout2) {
-        if (layout1.getId() == layout2.getId()) {
-            log.info("LayoutId matches");
-            if (layout1.getLayoutName()
-                .equals(layout2.getLayoutName())) {
-                log.info("Layout name matches");
-                if (layout1.getAcls() == layout2.getAcls()) {
-                    log.info("AclId matches");
-                    if (layout1.getStructure()
-                        .equals(layout2.getStructure())) {
-                        log.info("Structure matches");
-                        if (layout1.getCreator()
-                            .equals(layout2.getCreator())) {
-                            log.info("Creator matches");
-                            if (layout1.getModifier()
-                                .equals(layout2.getModifier())) {
-                                log.info("Modifier matches");
-                                if (ChronoUnit.SECONDS.between(layout1.getCreated(), layout2.getCreated()) < 2) {
-                                    log.info("Created tolerance ok {} {}", layout1.getCreated(), layout2.getCreated());
-                                    return ChronoUnit.SECONDS.between(layout1.getModified(), layout2.getModified()) < 2;
-                                }
-                            } else {
-                                log.info("Modifier differs {} -> {}", layout1.getModifier(), layout2.getModifier());
-                            }
-                        }
-                    } else {
-                        log.warn("Structure did not match:\n{}\n{}", layout1.getStructure(), layout2.getStructure());
-                    }
-                }
-            }
-        }
-
-        return false;
+        return layout1.getId() == layout2.getId()
+               && layout1.getLayoutName()
+                   .equals(layout2.getLayoutName())
+               && layout1.getAcls() == layout2.getAcls()
+               && layout1.getStructure()
+                   .equals(layout2.getStructure())
+               && layout1.getCreator()
+                   .equals(layout2.getCreator())
+               && layout1.getModifier()
+                   .equals(layout2.getModifier())
+               && ChronoUnit.SECONDS.between(layout1.getCreated(), layout2.getCreated()) < 2
+               && ChronoUnit.SECONDS.between(layout1.getModified(), layout2.getModified()) < 2;
     }
     /* Layouts end */
 

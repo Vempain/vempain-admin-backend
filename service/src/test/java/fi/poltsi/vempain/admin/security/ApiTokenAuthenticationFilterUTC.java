@@ -25,6 +25,7 @@ import fi.poltsi.vempain.auth.entity.UserAccount;
 import fi.poltsi.vempain.auth.service.UserDetailsImpl;
 import fi.poltsi.vempain.auth.service.UserDetailsServiceImpl;
 import fi.poltsi.vempain.auth.service.UserService;
+import fi.poltsi.vempain.common.api.ApiTokenScopeEnum;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -100,6 +101,57 @@ class ApiTokenAuthenticationFilterUTC {
         verify(apiTokenService, never()).authenticate(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString());
         assertNull(SecurityContextHolder.getContext()
             .getAuthentication());
+    }
+
+    @Test
+    void mcpPathWithoutAnApiTokenIsForbiddenBeforeJwtAuthentication() throws Exception {
+        var request = new MockHttpServletRequest("GET", "/api/mcp/pages");
+        request.setContextPath("/api");
+        var response = new MockHttpServletResponse();
+
+        filter().doFilterInternal(request, response, filterChain);
+
+        assertEquals(403, response.getStatus());
+        verify(filterChain, never()).doFilter(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void aMcpReadTokenMayOnlyGetMcpEndpointsAndCarriesTheMcpAuthority() throws Exception {
+        var mcpToken = token(5L);
+        mcpToken.setScope(ApiTokenScopeEnum.MCP_READ);
+        when(apiTokenService.authenticate("vat_secret", "10.0.9.5")).thenReturn(Optional.of(mcpToken));
+        when(userService.findById(5L)).thenReturn(Optional.of(UserAccount.builder()
+            .id(5L)
+            .loginName("file-backend")
+            .locked(false)
+            .build()));
+        when(userDetailsService.loadUserByUsername("file-backend"))
+            .thenReturn(new UserDetailsImpl(5L, "file-backend", "File backend", "file@nohost.nodomain", "secret", Set.of(), List.of()));
+        var request = request("GET", "/api/mcp/pages");
+        var response = new MockHttpServletResponse();
+
+        filter().doFilterInternal(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+        assertTrue(SecurityContextHolder.getContext()
+            .getAuthentication()
+            .getAuthorities()
+            .stream()
+            .map(GrantedAuthority::getAuthority)
+            .anyMatch(ApiTokenAuthenticationFilter.API_TOKEN_MCP_READ_AUTHORITY::equals));
+    }
+
+    @Test
+    void anMcpReadTokenCannotCallAWriteOrFileServiceEndpoint() throws Exception {
+        var mcpToken = token(5L);
+        mcpToken.setScope(ApiTokenScopeEnum.MCP_READ);
+        when(apiTokenService.authenticate("vat_secret", "10.0.9.5")).thenReturn(Optional.of(mcpToken));
+        var response = new MockHttpServletResponse();
+
+        filter().doFilterInternal(request("POST", "/api/mcp/pages"), response, filterChain);
+
+        assertEquals(403, response.getStatus());
+        verify(userService, never()).findById(org.mockito.ArgumentMatchers.anyLong());
     }
 
     @Test
@@ -220,5 +272,9 @@ class ApiTokenAuthenticationFilterUTC {
         assertFalse(ApiTokenAuthenticationFilter.isAllowed("GET", "/content-management/file/gallery/7"));
         assertFalse(ApiTokenAuthenticationFilter.isAllowed("GET", "/content-management/file/site-file"));
         assertFalse(ApiTokenAuthenticationFilter.isAllowed("GET", "/content-management/pages"));
+        assertTrue(ApiTokenAuthenticationFilter.isAllowed(ApiTokenScopeEnum.MCP_READ, "GET", "/mcp/pages"));
+        assertFalse(ApiTokenAuthenticationFilter.isAllowed(ApiTokenScopeEnum.MCP_READ, "POST", "/mcp/pages"));
+        assertFalse(ApiTokenAuthenticationFilter.isAllowed(ApiTokenScopeEnum.MCP_READ, "GET", "/content-management/pages"));
+        assertFalse(ApiTokenAuthenticationFilter.isAllowed(ApiTokenScopeEnum.FILE_SERVICE, "GET", "/mcp/pages"));
     }
 }

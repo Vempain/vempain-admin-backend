@@ -14,11 +14,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Slf4j
 /**
  * The user, unit and ACL management endpoints come from {@code vempain-auth-core} ({@code fi.poltsi.vempain.auth.controller}); this verifies that they are
  * hosted by the admin backend and work against its datasource.
  */
+@Slf4j
 class HostedManagementITC extends AbstractITCTest {
 
     private final long initCount = 10;

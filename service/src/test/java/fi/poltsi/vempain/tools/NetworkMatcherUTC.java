@@ -2,6 +2,8 @@ package fi.poltsi.vempain.tools;
 
 import org.junit.jupiter.api.Test;
 
+import fi.poltsi.vempain.common.security.NetworkMatcher;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;

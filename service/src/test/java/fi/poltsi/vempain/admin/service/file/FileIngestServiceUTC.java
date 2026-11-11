@@ -113,7 +113,7 @@ class FileIngestServiceUTC {
     // ─── ingestInternal happy path ──────────────────────────────────────────────
 
     @Test
-    void ingestInternal_newFile_createsAndReturnsResponse() throws Exception {
+    void ingestInternalNewFileCreatesAndReturnsResponse() throws Exception {
         when(storageDirectoryConfiguration.storageLocations()).thenReturn(Map.of("image", tempDir.toString()));
         when(siteFileRepository.findByFilePathAndFileName(any(), any())).thenReturn(Optional.empty());
         when(accessService.getUserId()).thenReturn(1L);
@@ -152,7 +152,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void ingestInternal_missingFileId_throwsVempainIngestException() {
+    void ingestInternalMissingFileIdThrowsVempainIngestException() {
         var multipartFile = new MockMultipartFile("file", "test.jpg", "image/jpeg", FILE_CONTENT);
         var request = FileIngestRequest.builder()
             .fileName("test.jpg")
@@ -167,7 +167,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void ingestInternal_nonPositiveFileId_throwsVempainIngestException() {
+    void ingestInternalNonPositiveFileIdThrowsVempainIngestException() {
         var multipartFile = new MockMultipartFile("file", "test.jpg", "image/jpeg", FILE_CONTENT);
         var request = FileIngestRequest.builder()
             .fileId(0L)
@@ -183,7 +183,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void ingestInternal_existingFile_updatesAndReturnsResponse() throws VempainIngestException {
+    void ingestInternalExistingFileUpdatesAndReturnsResponse() throws VempainIngestException {
         when(storageDirectoryConfiguration.storageLocations()).thenReturn(Map.of("image", tempDir.toString()));
 
         var existingFile = SiteFile.builder()
@@ -228,7 +228,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void ingestInternal_blankMetadata_rejectsRequestBeforeSaving() {
+    void ingestInternalBlankMetadataRejectsRequestBeforeSaving() {
         when(storageDirectoryConfiguration.storageLocations()).thenReturn(Map.of("image", tempDir.toString()));
         when(siteFileRepository.findByFilePathAndFileName(any(), any())).thenReturn(Optional.empty());
         when(accessService.getUserId()).thenReturn(1L);
@@ -253,7 +253,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void ingestInternal_fileAlreadyInGallery_doesNotAddDuplicate() throws VempainIngestException {
+    void ingestInternalFileAlreadyInGalleryDoesNotAddDuplicate() throws VempainIngestException {
         when(storageDirectoryConfiguration.storageLocations()).thenReturn(Map.of("image", tempDir.toString()));
 
         var existingFile = SiteFile.builder()
@@ -304,7 +304,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void ingestInternal_sha256Mismatch_throwsVempainIngestException() {
+    void ingestInternalSha256MismatchThrowsVempainIngestException() {
         when(storageDirectoryConfiguration.storageLocations()).thenReturn(Map.of("image", tempDir.toString()));
 
         var multipartFile = new MockMultipartFile("file", "test.jpg", "image/jpeg", FILE_CONTENT);
@@ -322,7 +322,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void ingestInternal_unauthorizedUser_throwsVempainIngestException() {
+    void ingestInternalUnauthorizedUserThrowsVempainIngestException() {
         when(storageDirectoryConfiguration.storageLocations()).thenReturn(Map.of("image", tempDir.toString()));
         when(accessService.getUserId()).thenReturn(null);
 
@@ -343,13 +343,13 @@ class FileIngestServiceUTC {
     // ─── validation ─────────────────────────────────────────────────────────────
 
     @Test
-    void ingestInternal_nullRequest_throwsVempainIngestException() {
+    void ingestInternalNullRequestThrowsVempainIngestException() {
         var multipartFile = new MockMultipartFile("file", "test.jpg", "image/jpeg", FILE_CONTENT);
         assertThrows(VempainIngestException.class, () -> fileIngestService.ingestInternal(null, multipartFile));
     }
 
     @Test
-    void ingestInternal_missingFileName_throwsVempainIngestException() {
+    void ingestInternalMissingFileNameThrowsVempainIngestException() {
         var multipartFile = new MockMultipartFile("file", "test.jpg", "image/jpeg", FILE_CONTENT);
         var request = FileIngestRequest.builder()
             .mimeType("image/jpeg")
@@ -362,7 +362,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void ingestInternal_invalidMimetype_throwsVempainIngestException() {
+    void ingestInternalInvalidMimetypeThrowsVempainIngestException() {
         var multipartFile = new MockMultipartFile("file", "test.jpg", "image/jpeg", FILE_CONTENT);
         var request = FileIngestRequest.builder()
             .fileName("test.jpg")
@@ -376,7 +376,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void ingestInternal_missingSha256_throwsVempainIngestException() {
+    void ingestInternalMissingSha256ThrowsVempainIngestException() {
         var multipartFile = new MockMultipartFile("file", "test.jpg", "image/jpeg", FILE_CONTENT);
         var request = FileIngestRequest.builder()
             .fileName("test.jpg")
@@ -390,7 +390,7 @@ class FileIngestServiceUTC {
     // ─── upsertGallery ──────────────────────────────────────────────────────────
 
     @Test
-    void upsertGallery_galleryIdFound_returnsExistingGallery() {
+    void upsertGalleryGalleryIdFoundReturnsExistingGallery() {
         var gallery = Gallery.builder()
             .id(1L)
             .shortname("Old")
@@ -408,7 +408,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void upsertGallery_galleryIdFoundNameChanged_savesUpdatedGallery() {
+    void upsertGalleryGalleryIdFoundNameChangedSavesUpdatedGallery() {
         var gallery = Gallery.builder()
             .id(1L)
             .shortname("Old")
@@ -430,7 +430,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void upsertGallery_galleryNameProvided_createsNewGallery() throws Exception {
+    void upsertGalleryGalleryNameProvidedCreatesNewGallery() throws Exception {
         when(galleryRepository.findByShortname("NewGallery")).thenReturn(Optional.empty());
         when(aclService.createNewAcl(anyLong(), isNull(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean())).thenReturn(20L);
         var saved = Gallery.builder()
@@ -450,7 +450,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void upsertGallery_noGalleryInfo_returnsNull() {
+    void upsertGalleryNoGalleryInfoReturnsNull() {
         var request = FileIngestRequest.builder()
             .build();
         var result = fileIngestService.upsertGallery(request, 1L);
@@ -458,7 +458,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void upsertGallery_aclCreationFails_returnsNull() throws Exception {
+    void upsertGalleryAclCreationFailsReturnsNull() throws Exception {
         when(galleryRepository.findByShortname("FailGallery")).thenReturn(Optional.empty());
         when(aclService.createNewAcl(anyLong(), isNull(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean()))
             .thenThrow(new RuntimeException("ACL failure"));
@@ -474,7 +474,7 @@ class FileIngestServiceUTC {
     // ─── ingest (public wrapper) ─────────────────────────────────────────────────
 
     @Test
-    void ingest_onVempainIngestException_rethrowsCause() {
+    void ingestOnVempainIngestExceptionRethrowsCause() {
         when(storageDirectoryConfiguration.storageLocations()).thenReturn(Map.of("image", tempDir.toString()));
         when(accessService.getUserId()).thenReturn(0L);
 
@@ -493,7 +493,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void ingest_storageNotConfigured_throwsException() {
+    void ingestStorageNotConfiguredThrowsException() {
         when(storageDirectoryConfiguration.storageLocations()).thenReturn(Map.of());
 
         var multipartFile = new MockMultipartFile("file", "test.jpg", "image/jpeg", FILE_CONTENT);
@@ -511,7 +511,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void ingestInternal_unsupportedMimetypeFallsToOtherKey_ok() throws Exception {
+    void ingestInternalUnsupportedMimetypeFallsToOtherKeyOk() throws Exception {
         // "audio/mp3" is not in the map but "other" is - should use "other" fallback
         when(storageDirectoryConfiguration.storageLocations()).thenReturn(Map.of("other", tempDir.toString()));
         when(siteFileRepository.findByFilePathAndFileName(any(), any())).thenReturn(Optional.empty());
@@ -540,7 +540,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void ingestInternal_unsupportedMimetypeNoOtherKey_throwsVempainIngestException() {
+    void ingestInternalUnsupportedMimetypeNoOtherKeyThrowsVempainIngestException() {
         // "audio/mp3" is not in the map and there is no "other" either
         when(storageDirectoryConfiguration.storageLocations()).thenReturn(Map.of("image", tempDir.toString()));
 
@@ -559,7 +559,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void ingestInternal_dotDotInFileName_throwsVempainIngestException() {
+    void ingestInternalDotDotInFileNameThrowsVempainIngestException() {
         when(storageDirectoryConfiguration.storageLocations()).thenReturn(Map.of("image", tempDir.toString()));
 
         var multipartFile = new MockMultipartFile("file", "evil..jpg", "image/jpeg", FILE_CONTENT);
@@ -577,7 +577,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void ingestInternal_dotDotInRelativePath_throwsVempainIngestException() {
+    void ingestInternalDotDotInRelativePathThrowsVempainIngestException() {
         when(storageDirectoryConfiguration.storageLocations()).thenReturn(Map.of("image", tempDir.toString()));
 
         var multipartFile = new MockMultipartFile("file", "test.jpg", "image/jpeg", FILE_CONTENT);
@@ -598,7 +598,7 @@ class FileIngestServiceUTC {
     // ─── deleteIngestedSiteFile ─────────────────────────────────────────────────
 
     @Test
-    void deleteIngestedSiteFile_removesStoredFileLinksSubjectsThumbAndAcl() throws Exception {
+    void deleteIngestedSiteFileRemovesStoredFileLinksSubjectsThumbAndAcl() throws Exception {
         var imageDir = Files.createDirectories(tempDir.resolve("images/trip"));
         var stored = Files.write(imageDir.resolve("photo.jpg"), FILE_CONTENT);
         when(storageDirectoryConfiguration.storageLocations()).thenReturn(Map.of("image", tempDir.resolve("images")
@@ -625,7 +625,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void deleteIngestedSiteFile_toleratesMissingStoredFileAndMissingAcl() throws Exception {
+    void deleteIngestedSiteFileToleratesMissingStoredFileAndMissingAcl() throws Exception {
         when(storageDirectoryConfiguration.storageLocations()).thenReturn(Map.of("image", tempDir.toString()));
         var siteFile = SiteFile.builder()
             .fileName("gone.jpg")
@@ -645,7 +645,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void deleteIngestedSiteFile_unknownIdIsNotFound() {
+    void deleteIngestedSiteFileUnknownIdIsNotFound() {
         when(fileService.findSiteFileById(99L)).thenReturn(Optional.empty());
 
         var exception = assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> fileIngestService.deleteIngestedSiteFile(99L));
@@ -677,7 +677,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void ingestInternal_withAcls_grantsThemOnTheNewSiteFileAndTheNewGallery() throws Exception {
+    void ingestInternalWithAclsGrantsThemOnTheNewSiteFileAndTheNewGallery() throws Exception {
         when(storageDirectoryConfiguration.storageLocations()).thenReturn(Map.of("image", tempDir.toString()));
         when(siteFileRepository.findByFilePathAndFileName(any(), any())).thenReturn(Optional.empty());
         when(accessService.getUserId()).thenReturn(1L);
@@ -737,7 +737,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void ingestInternal_existingFile_mergesAclsIntoTheExistingAcl() throws Exception {
+    void ingestInternalExistingFileMergesAclsIntoTheExistingAcl() throws Exception {
         when(storageDirectoryConfiguration.storageLocations()).thenReturn(Map.of("image", tempDir.toString()));
         var existingFile = SiteFile.builder()
             .build();
@@ -800,7 +800,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void ingestInternal_unknownAclUser_isRejectedBeforeTheFileIsStored() throws Exception {
+    void ingestInternalUnknownAclUserIsRejectedBeforeTheFileIsStored() throws Exception {
         when(userService.findById(404L)).thenReturn(Optional.empty());
 
         var multipartFile = new MockMultipartFile("file", "test.jpg", "image/jpeg", FILE_CONTENT);
@@ -828,7 +828,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void validateAcls_inactiveLockedDuplicateAndPrivilegelessEntriesAreRejected() {
+    void validateAclsInactiveLockedDuplicateAndPrivilegelessEntriesAreRejected() {
         var disabled = activeUser(8L, "Eight");
         disabled.setStatus(AccountStatus.DISABLED);
         when(userService.findById(8L)).thenReturn(Optional.of(disabled));
@@ -872,7 +872,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void validateAcls_unitEntriesMustNameAnExistingUnitExactlyOnceAndNeverAUserAsWell() {
+    void validateAclsUnitEntriesMustNameAnExistingUnitExactlyOnceAndNeverAUserAsWell() {
         when(unitService.findAll()).thenReturn(List.of(unit(3L, "Editors")));
         when(userService.findById(5L)).thenReturn(Optional.of(activeUser(5L, "Five")));
 
@@ -896,7 +896,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void grantAdditionalAcls_addsUnitRowsAndMergesIntoAnExistingUnitRow() throws Exception {
+    void grantAdditionalAclsAddsUnitRowsAndMergesIntoAnExistingUnitRow() throws Exception {
         var existingUnitRow = Acl.builder()
             .aclId(10L)
             .unitId(3L)
@@ -927,7 +927,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void listIngestUnits_returnsEveryUnitSortedByNameWithReducedFields() {
+    void listIngestUnitsReturnsEveryUnitSortedByNameWithReducedFields() {
         when(unitService.findAll()).thenReturn(List.of(unit(3L, "Zoo"), unit(4L, "editors")));
 
         var units = fileIngestService.listIngestUnits();
@@ -942,7 +942,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void grantAdditionalAcls_skipsTheIngestingAccountAndEmptyInput() throws Exception {
+    void grantAdditionalAclsSkipsTheIngestingAccountAndEmptyInput() throws Exception {
         fileIngestService.grantAdditionalAcls(10L, List.of(aclFor(1L, true, true, true, true)), 1L);
         fileIngestService.grantAdditionalAcls(10L, List.of(), 1L);
         fileIngestService.grantAdditionalAcls(0L, List.of(aclFor(5L, true, false, false, false)), 1L);
@@ -952,7 +952,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void listIngestUsers_returnsActiveUnlockedUsersSortedByNameWithReducedFields() {
+    void listIngestUsersReturnsActiveUnlockedUsersSortedByNameWithReducedFields() {
         var zed = activeUser(3L, "Zed");
         zed.setEmail("zed@nohost.nodomain");
         var amy = activeUser(4L, "amy");
@@ -1009,7 +1009,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void ingestInternal_copiesTheCopyrightFieldsToTheSiteFile() throws Exception {
+    void ingestInternalCopiesTheCopyrightFieldsToTheSiteFile() throws Exception {
         when(storageDirectoryConfiguration.storageLocations()).thenReturn(Map.of("image", tempDir.toString()));
         when(siteFileRepository.findByFilePathAndFileName(any(), any())).thenReturn(Optional.empty());
         when(accessService.getUserId()).thenReturn(1L);
@@ -1059,7 +1059,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void deleteIngestedSiteFile_skipsTheStoredFileWhenTheTypeIsUnknownOrThePathEscapesTheStorage() {
+    void deleteIngestedSiteFileSkipsTheStoredFileWhenTheTypeIsUnknownOrThePathEscapesTheStorage() {
         var untyped = SiteFile.builder()
             .fileName("photo.jpg")
             .filePath("trip")
@@ -1085,7 +1085,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void grantAdditionalAcls_reportsAnAclRowThatCannotBeStored() throws Exception {
+    void grantAdditionalAclsReportsAnAclRowThatCannotBeStored() throws Exception {
         when(aclService.findAclByAclId(10L)).thenReturn(List.of());
         when(aclService.save(any())).thenThrow(new VempainAclException("cannot save"));
 
@@ -1093,7 +1093,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void upsertGallery_descriptionOnly_createsANewGallery() throws Exception {
+    void upsertGalleryDescriptionOnlyCreatesANewGallery() throws Exception {
         when(aclService.createNewAcl(anyLong(), isNull(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean())).thenReturn(20L);
         var saved = Gallery.builder()
             .id(98L)
@@ -1139,7 +1139,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void getSiteFileAcls_answersTheGranteesWithoutTheIngestingAccountsOwnRow() {
+    void getSiteFileAclsAnswersTheGranteesWithoutTheIngestingAccountsOwnRow() {
         var siteFile = SiteFile.builder()
             .build();
         siteFile.setId(42L);
@@ -1173,7 +1173,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void getSiteFileAcls_unknownSiteFileIsNotFound() {
+    void getSiteFileAclsUnknownSiteFileIsNotFound() {
         when(siteFileRepository.findById(404L)).thenReturn(Optional.empty());
 
         var exception = assertThrows(ResponseStatusException.class, () -> fileIngestService.getSiteFileAcls(404L));
@@ -1184,7 +1184,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void getSiteFileAclsByFileId_findsTheSiteFileOfTheSourceFileOrIsNotFound() {
+    void getSiteFileAclsByFileIdFindsTheSiteFileOfTheSourceFileOrIsNotFound() {
         var siteFile = SiteFile.builder()
             .build();
         siteFile.setId(44L);
@@ -1208,7 +1208,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void getSiteFileAcls_withoutAnAclAnswersNoGrantees() {
+    void getSiteFileAclsWithoutAnAclAnswersNoGrantees() {
         var siteFile = SiteFile.builder()
             .build();
         siteFile.setId(43L);
@@ -1223,7 +1223,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void getGalleryAcls_answersTheLinkedSiteFilesInOrderAndTheGrantees() {
+    void getGalleryAclsAnswersTheLinkedSiteFilesInOrderAndTheGrantees() {
         var gallery = Gallery.builder()
             .id(100L)
             .shortname("Summer")
@@ -1259,7 +1259,7 @@ class FileIngestServiceUTC {
     }
 
     @Test
-    void getGalleryAcls_unknownGalleryIsNotFound() {
+    void getGalleryAclsUnknownGalleryIsNotFound() {
         when(galleryRepository.findById(404L)).thenReturn(Optional.empty());
 
         var exception = assertThrows(ResponseStatusException.class, () -> fileIngestService.getGalleryAcls(404L));

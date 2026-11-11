@@ -6,10 +6,12 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
-import fi.poltsi.vempain.admin.api.request.ApiTokenRequest;
-import fi.poltsi.vempain.admin.api.response.ApiTokenCreatedResponse;
-import fi.poltsi.vempain.admin.api.response.ApiTokenResponse;
 import fi.poltsi.vempain.admin.rest.ApiTokenAPI;
+import fi.poltsi.vempain.common.api.ApiTokenScopeEnum;
+import fi.poltsi.vempain.common.api.request.ApiTokenRequest;
+import fi.poltsi.vempain.common.api.response.ApiTokenCreatedResponse;
+import fi.poltsi.vempain.common.api.response.ApiTokenNetworkResponse;
+import fi.poltsi.vempain.common.api.response.ApiTokenResponse;
 import tools.jackson.databind.ObjectMapper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -29,15 +31,18 @@ class ApiTokenContractJTC {
 
     @Test
     void requestAndResponsesAreSnakeCase() throws Exception {
-        var request = objectMapper.readValue("{\"description\": \"d\", \"network\": \"10.0.0.0/8\", \"expires_at\": \"2027-01-01T00:00:00Z\"}",
+        var request = objectMapper.readValue(
+                "{\"description\": \"d\", \"network\": \"10.0.0.0/8\", \"expires_at\": \"2027-01-01T00:00:00Z\", " + "\"scope\": \"MCP_READ\"}",
                 ApiTokenRequest.class);
         assertEquals("10.0.0.0/8", request.getNetwork());
         assertEquals(Instant.parse("2027-01-01T00:00:00Z"), request.getExpiresAt());
+        assertEquals(ApiTokenScopeEnum.MCP_READ, request.getScope());
 
         var response = ApiTokenResponse.builder()
             .id(1)
             .tokenPrefix("vat_abc")
             .description("d")
+            .scope(ApiTokenScopeEnum.FILE_SERVICE)
             .network("10.0.0.0/8")
             .expiresAt(Instant.parse("2027-01-01T00:00:00Z"))
             .ownerUserId(1)
@@ -45,7 +50,7 @@ class ApiTokenContractJTC {
             .build();
         var keys = new HashSet<>(objectMapper.readTree(objectMapper.writeValueAsString(response))
             .propertyNames());
-        assertEquals(Set.of("id", "token_prefix", "description", "network", "expires_at", "owner_user_id", "created", "last_used", "expired"), keys);
+        assertEquals(Set.of("id", "token_prefix", "description", "scope", "network", "expires_at", "owner_user_id", "created", "last_used", "expired"), keys);
 
         var created = ApiTokenCreatedResponse.builder()
             .token("vat_secret")
@@ -58,10 +63,10 @@ class ApiTokenContractJTC {
 
     @Test
     void networkSuggestionIsSnakeCase() throws Exception {
-        var response = fi.poltsi.vempain.admin.api.response.ApiTokenNetworkResponse.builder()
+        var response = ApiTokenNetworkResponse.builder()
             .network("10.0.9.0/24")
-            .source(fi.poltsi.vempain.admin.api.response.ApiTokenNetworkResponse.Source.PRIVATE_NETWORK)
-            .candidates(java.util.List.of(fi.poltsi.vempain.admin.api.response.ApiTokenNetworkResponse.Candidate.builder()
+            .source(ApiTokenNetworkResponse.Source.PRIVATE_NETWORK)
+            .candidates(java.util.List.of(ApiTokenNetworkResponse.Candidate.builder()
                 .network("10.0.9.0/24")
                 .interfaceName("eth1")
                 .address("10.0.9.5")

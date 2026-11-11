@@ -1,13 +1,7 @@
 package fi.poltsi.vempain.admin.service;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,15 +11,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import fi.poltsi.vempain.admin.api.request.ApiTokenRequest;
-import fi.poltsi.vempain.admin.api.response.ApiTokenCreatedResponse;
-import fi.poltsi.vempain.admin.api.response.ApiTokenNetworkResponse;
-import fi.poltsi.vempain.admin.api.response.ApiTokenResponse;
 import fi.poltsi.vempain.admin.entity.ApiToken;
 import fi.poltsi.vempain.admin.metrics.AdminMetrics;
 import fi.poltsi.vempain.admin.repository.ApiTokenRepository;
-import fi.poltsi.vempain.tools.NetworkMatcher;
-import fi.poltsi.vempain.tools.PrivateNetworkDetector;
+import fi.poltsi.vempain.common.api.ApiTokenScopeEnum;
+import fi.poltsi.vempain.common.api.request.ApiTokenRequest;
+import fi.poltsi.vempain.common.api.response.ApiTokenCreatedResponse;
+import fi.poltsi.vempain.common.api.response.ApiTokenNetworkResponse;
+import fi.poltsi.vempain.common.api.response.ApiTokenResponse;
+import fi.poltsi.vempain.common.security.ApiTokenCrypto;
+import fi.poltsi.vempain.common.security.NetworkMatcher;
+import fi.poltsi.vempain.common.security.PrivateNetworkDetector;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,14 +36,11 @@ import lombok.extern.slf4j.Slf4j;
 public class ApiTokenService {
 
     public static final String TOKEN_PREFIX = "vat_";
-    private static final int TOKEN_BYTES = 32;
     private static final int VISIBLE_PREFIX = 8;
     private static final Duration LAST_USED_INTERVAL = Duration.ofMinutes(1);
 
     private final ApiTokenRepository apiTokenRepository;
     private final AdminMetrics adminMetrics;
-    private final SecureRandom secureRandom = new SecureRandom();
-
     /**
      * True when the services run on a private Docker/Swarm network together: the token network is then pre-filled with the private network the admin backend
      * itself is attached to.
@@ -136,12 +129,13 @@ public class ApiTokenService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid network: " + e.getMessage());
         }
 
-        var token = generateToken();
+        var token = ApiTokenCrypto.generate(TOKEN_PREFIX);
         var entity = apiTokenRepository.save(ApiToken.builder()
-            .tokenHash(hash(token))
+            .tokenHash(ApiTokenCrypto.hash(token))
             .tokenPrefix(token.substring(0, TOKEN_PREFIX.length() + VISIBLE_PREFIX))
             .description(request.getDescription()
                 .trim())
+            .scope(request.getScope() == null ? ApiTokenScopeEnum.FILE_SERVICE : request.getScope())
             .network(network)
             .expiresAt(request.getExpiresAt())
             .ownerUserId(creatorUserId)
@@ -182,7 +176,7 @@ public class ApiTokenService {
             return Optional.empty();
         }
 
-        var optionalToken = apiTokenRepository.findByTokenHash(hash(presentedToken.trim()));
+        var optionalToken = apiTokenRepository.findByTokenHash(ApiTokenCrypto.hash(presentedToken.trim()));
         if (optionalToken.isEmpty()) {
             log.warn("Unknown API token presented from {}", clientAddress);
             adminMetrics.apiTokenRequest("unknown");
@@ -213,24 +207,7 @@ public class ApiTokenService {
         return Optional.of(token);
     }
 
-    private String generateToken() {
-        var bytes = new byte[TOKEN_BYTES];
-        secureRandom.nextBytes(bytes);
-        return TOKEN_PREFIX + Base64.getUrlEncoder()
-            .withoutPadding()
-            .encodeToString(bytes);
-    }
-
-    /**
-     * SHA-256 hex of the token string; the only form in which a token is stored or looked up.
-     */
     public static String hash(String token) {
-        try {
-            var digest = MessageDigest.getInstance("SHA-256");
-            return HexFormat.of()
-                .formatHex(digest.digest(token.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 is not available", e);
-        }
+        return ApiTokenCrypto.hash(token);
     }
 }

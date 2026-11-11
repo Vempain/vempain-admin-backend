@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class LayoutCTC {
 
-    final static private String payload = """
+    private static final String PAYLOAD = """
             {
               "id": 0,
               "layout_name": "New layout-111",
@@ -61,7 +61,7 @@ class LayoutCTC {
     @Test
     void addLayout() throws Exception {
         MvcResult result = mockMvc.perform(post("/content-management/layouts").contentType(MediaType.APPLICATION_JSON)
-            .content(payload))
+            .content(PAYLOAD))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andReturn();

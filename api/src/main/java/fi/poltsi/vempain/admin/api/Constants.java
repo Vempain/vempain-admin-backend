@@ -6,6 +6,7 @@ public class Constants {
     public static final String REST_CONTENT_PREFIX = "/content-management";
     public static final String REST_FILE_PREFIX = REST_CONTENT_PREFIX + "/file";
     public static final String REST_DATA_PREFIX = REST_CONTENT_PREFIX + "/data";
+    public static final String REST_MCP_PREFIX = "/mcp";
     public static final String REST_SCHEDULE_PREFIX = "/schedule-management";
     public static final String REST_ADMIN_PREFIX = "/admin-management";
     public static final String LOGIN_PATH = "/login";

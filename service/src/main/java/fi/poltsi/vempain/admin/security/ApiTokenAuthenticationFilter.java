@@ -25,6 +25,7 @@ import fi.poltsi.vempain.admin.service.ApiTokenService;
 import fi.poltsi.vempain.auth.service.UserDetailsImpl;
 import fi.poltsi.vempain.auth.service.UserDetailsServiceImpl;
 import fi.poltsi.vempain.auth.service.UserService;
+import fi.poltsi.vempain.common.api.ApiTokenScopeEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,6 +42,8 @@ public class ApiTokenAuthenticationFilter extends OncePerRequestFilter {
      * Authority marking a token authenticated request, for logging and tests.
      */
     public static final String API_TOKEN_AUTHORITY = "API_TOKEN";
+
+    public static final String API_TOKEN_MCP_READ_AUTHORITY = "API_TOKEN_MCP_READ";
 
     /**
      * Method + path (relative to the context path) patterns a token may call: file ingest, undo of an ingest, the grantable users and units, the current
@@ -70,14 +73,19 @@ public class ApiTokenAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
             throws ServletException, IOException {
         var presented = request.getHeader(Constants.API_TOKEN_HEADER);
+        var path = requestPath(request);
 
         if (presented == null
             || presented.isBlank()) {
+            if (isMcpPath(path)) {
+                adminMetrics.apiTokenRequest("forbidden_endpoint");
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "MCP_READ API token required");
+                return;
+            }
             filterChain.doFilter(request, response);
             return;
         }
 
-        var path = requestPath(request);
         var token = apiTokenService.authenticate(presented, request.getRemoteAddr());
 
         if (token.isEmpty()) {
@@ -86,7 +94,8 @@ public class ApiTokenAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (!isAllowed(request.getMethod(), path)) {
+        if (!isAllowed(token.get()
+            .getScope(), request.getMethod(), path)) {
             log.warn("API token {} used on {} {}, which tokens may not call", token.get()
                 .getTokenPrefix(), request.getMethod(), path);
             adminMetrics.apiTokenRequest("forbidden_endpoint");
@@ -112,6 +121,10 @@ public class ApiTokenAuthenticationFilter extends OncePerRequestFilter {
             .getLoginName());
         var authorities = new ArrayList<GrantedAuthority>(principal.getAuthorities());
         authorities.add(new SimpleGrantedAuthority(API_TOKEN_AUTHORITY));
+        if (token.get()
+            .getScope() == ApiTokenScopeEnum.MCP_READ) {
+            authorities.add(new SimpleGrantedAuthority(API_TOKEN_MCP_READ_AUTHORITY));
+        }
         var authentication = new UsernamePasswordAuthenticationToken(principal, null, authorities);
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext()
@@ -125,6 +138,20 @@ public class ApiTokenAuthenticationFilter extends OncePerRequestFilter {
             .anyMatch(call -> call.method()
                 .matches(method)
                               && PATH_MATCHER.match(call.pattern(), path));
+    }
+
+    public static boolean isAllowed(ApiTokenScopeEnum scope, String method, String path) {
+        if (scope == ApiTokenScopeEnum.MCP_READ) {
+            return org.springframework.http.HttpMethod.GET.matches(method)
+                   && isMcpPath(path);
+        }
+        return scope == ApiTokenScopeEnum.FILE_SERVICE
+               && isAllowed(method, path);
+    }
+
+    private static boolean isMcpPath(String path) {
+        return Constants.REST_MCP_PREFIX.equals(path)
+               || PATH_MATCHER.match(Constants.REST_MCP_PREFIX + "/**", path);
     }
 
     private static String requestPath(HttpServletRequest request) {

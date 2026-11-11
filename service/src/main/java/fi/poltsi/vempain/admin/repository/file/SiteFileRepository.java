@@ -49,13 +49,13 @@ public interface SiteFileRepository extends ListPagingAndSortingRepository<SiteF
     // Subject-name search (native) + class (bind enum ordinal to match numeric column)
     @Query(value = """
             SELECT s.* FROM site_file s
-            	JOIN file_subject sf ON s.id = sf.site_file_id
+            JOIN file_subject sf ON s.id = sf.site_file_id
             JOIN subjects su ON su.id = sf.subject_id
             WHERE LOWER(su.name) LIKE LOWER(CONCAT('%', :subjectName, '%'))
               AND s.file_type = :fileType
             """, countQuery = """
             SELECT COUNT(*) FROM site_file s
-            	JOIN file_subject sf ON s.id = sf.site_file_id
+            JOIN file_subject sf ON s.id = sf.site_file_id
             JOIN subjects su ON su.id = sf.subject_id
             WHERE LOWER(su.name) LIKE LOWER(CONCAT('%', :subjectName, '%'))
               AND s.file_type = :fileType
@@ -82,7 +82,7 @@ public interface SiteFileRepository extends ListPagingAndSortingRepository<SiteF
      */
     @Query(value = """
             SELECT DISTINCT fs.site_file_id FROM file_subject fs
-            	JOIN subjects su ON su.id = fs.subject_id
+                JOIN subjects su ON su.id = fs.subject_id
             WHERE LOWER(su.subject) LIKE LOWER(CONCAT('%', :subjectName, '%'))
             """, nativeQuery = true)
     List<Long> findSiteFileIdsBySubjectNameContaining(@Param("subjectName") String subjectName);

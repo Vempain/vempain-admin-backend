@@ -41,7 +41,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ComponentServiceUTC {
 
-    private final static int itemCount = 10;
+    private static final int ITEM_COUNT = 10;
     @Mock
     private ComponentRepository componentRepository;
     @Mock
@@ -56,7 +56,7 @@ class ComponentServiceUTC {
     void findAllOk() {
         List<Component> inputComponents = new ArrayList<>();
 
-        for (int i = 0; i < itemCount; i++) {
+        for (int i = 0; i < ITEM_COUNT; i++) {
             Component component = Component.builder()
                 .id(1L)
                 .compName("Test component " + i)
@@ -75,7 +75,7 @@ class ComponentServiceUTC {
 
         List<Component> components = componentService.findAll();
         assertNotNull(components);
-        assertEquals(itemCount, components.size());
+        assertEquals(ITEM_COUNT, components.size());
 
         for (Component component : components) {
             assertComponent(component);
@@ -95,7 +95,7 @@ class ComponentServiceUTC {
     void findAllByUserOk() {
         List<Component> inputComponents = new ArrayList<>();
 
-        for (int i = 0; i < itemCount; i++) {
+        for (int i = 0; i < ITEM_COUNT; i++) {
             Component component = Component.builder()
                 .id(1L)
                 .compName("Test component " + i)
@@ -116,7 +116,7 @@ class ComponentServiceUTC {
         List<Component> components = componentService.findAllByUser();
 
         assertNotNull(components);
-        assertEquals(itemCount, components.size());
+        assertEquals(ITEM_COUNT, components.size());
     }
 
     @Test

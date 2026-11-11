@@ -38,7 +38,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class FormControllerUTC {
 
-    static final long count = 10L;
+    static final long COUNT = 10L;
 
     @Mock
     private FormService formService;
@@ -50,13 +50,13 @@ class FormControllerUTC {
 
     @Test
     void getForms() throws VempainComponentException {
-        MockServiceTools.formServiceFindAllAsResponsesForUserOk(formService, count);
+        MockServiceTools.formServiceFindAllAsResponsesForUserOk(formService, COUNT);
 
         ResponseEntity<List<FormResponse>> formResponse = formController.getForms(QueryDetailEnum.FULL);
         assertNotNull(formResponse);
         List<FormResponse> formResponses = formResponse.getBody();
         assertNotNull(formResponses);
-        assertEquals(count, formResponses.size());
+        assertEquals(COUNT, formResponses.size());
     }
 
     @Test

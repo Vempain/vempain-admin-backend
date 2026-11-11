@@ -16,7 +16,6 @@
           $PROJECT_DIR$/.config/checkstyle.xml
           <option name="properties">
             <map>
-              <entry key="checkstyle.legacy.suppressions.file" value="${config_loc}/checkstyle-legacy-suppressions.xml" />
               <entry key="checkstyle.suppressions.file" value="${config_loc}/checkstyle-suppressions.xml" />
             </map>
           </option>

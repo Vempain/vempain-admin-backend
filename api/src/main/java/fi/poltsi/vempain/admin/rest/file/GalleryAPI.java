@@ -199,8 +199,9 @@ public interface GalleryAPI {
     ResponseEntity<PagedResponse<GalleryResponse>> getPagedGalleriesWithoutFiles(@Valid @RequestBody PagedRequest request);
 
     @Operation(summary = "Get a lightweight page of galleries",
-            description = "Filter and paginate galleries without loading associated file details. The response contains gallery metadata and file_count for list and selector use. "
-                    + "With modified_after_publish=true only the galleries modified after their last release to the website are returned.",
+            description = "Filter and paginate galleries without loading associated file details. The response contains gallery metadata and "
+                    + "file_count for list and selector use. With modified_after_publish=true only the galleries modified after their last release "
+                    + "to the website are returned.",
             tags = "GalleryAPI")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Paged lightweight gallery result",

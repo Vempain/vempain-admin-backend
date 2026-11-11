@@ -42,7 +42,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class FileThumbServiceUTC {
 
-    private final String TEST_STORAGE_DIR = "/var/tmp/vempain-test-storage";
+    private final String testStorageDir = "/var/tmp/vempain-test-storage";
 
     @Mock
     private FileThumbPageableRepository fileThumbPageableRepository;
@@ -56,9 +56,9 @@ class FileThumbServiceUTC {
 
     @BeforeEach
     void setUp() {
-        removeDirectory(TEST_STORAGE_DIR);
-        createAndVerifyDirectory(Path.of(TEST_STORAGE_DIR));
-        fileThumbService.setSiteFileDirectory(TEST_STORAGE_DIR);
+        removeDirectory(testStorageDir);
+        createAndVerifyDirectory(Path.of(testStorageDir));
+        fileThumbService.setSiteFileDirectory(testStorageDir);
         fileThumbService.setImageFormat("jpeg");
         fileThumbService.setThumbnailSize(250);
     }
@@ -66,7 +66,7 @@ class FileThumbServiceUTC {
     @Test
     void generateThumbFileOk() {
         var siteFileId = 1L;
-        var siteFile = TestUTCTools.generateImageSiteFile(siteFileId, TEST_STORAGE_DIR);
+        var siteFile = TestUTCTools.generateImageSiteFile(siteFileId, testStorageDir);
         assertNotNull(siteFile);
         when(siteFileRepository.findById(siteFileId)).thenReturn(Optional.of(siteFile));
 
@@ -105,7 +105,7 @@ class FileThumbServiceUTC {
     // ---- invalid ids, existing thumb rows, existing thumb files, unsupported file types ----
 
     private SiteFile storedSiteFile(long id, FileTypeEnum fileType) throws Exception {
-        var directory = Files.createDirectories(Path.of(TEST_STORAGE_DIR, fileType.shortName, "2024"));
+        var directory = Files.createDirectories(Path.of(testStorageDir, fileType.shortName, "2024"));
         Files.writeString(directory.resolve("a.jpg"), "source bytes");
         return SiteFile.builder()
             .id(id)
@@ -128,7 +128,7 @@ class FileThumbServiceUTC {
     @Test
     void anExistingThumbRowIsUpdatedAndAnExistingThumbFileIsReplaced() throws Exception {
         var siteFile = storedSiteFile(1L, FileTypeEnum.IMAGE);
-        var existingThumbFile = Files.createDirectories(Path.of(TEST_STORAGE_DIR, "thumb", "image", "2024"))
+        var existingThumbFile = Files.createDirectories(Path.of(testStorageDir, "thumb", "image", "2024"))
             .resolve("a.jpeg");
         Files.writeString(existingThumbFile, "old thumb");
         var existingRow = FileThumb.builder()
@@ -157,7 +157,7 @@ class FileThumbServiceUTC {
     void aThumbFileThatCannotBeRemovedIsAnInternalError() throws Exception {
         var siteFile = storedSiteFile(1L, FileTypeEnum.IMAGE);
         // A non-empty directory in the place of the thumb file can not be deleted as a file
-        var blocking = Files.createDirectories(Path.of(TEST_STORAGE_DIR, "thumb", "image", "2024", "a.jpeg"));
+        var blocking = Files.createDirectories(Path.of(testStorageDir, "thumb", "image", "2024", "a.jpeg"));
         Files.writeString(blocking.resolve("child"), "x");
         when(siteFileRepository.findById(1L)).thenReturn(Optional.of(siteFile));
 

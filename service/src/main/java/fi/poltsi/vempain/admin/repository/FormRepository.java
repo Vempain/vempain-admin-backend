@@ -3,13 +3,14 @@ package fi.poltsi.vempain.admin.repository;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.ListCrudRepository;
+import org.springframework.data.repository.ListPagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 
 import fi.poltsi.vempain.admin.entity.Form;
 
 @Repository
-public interface FormRepository extends CrudRepository<Form, Long> {
+public interface FormRepository extends ListPagingAndSortingRepository<Form, Long>, ListCrudRepository<Form, Long> {
 
     Form findByFormName(String formName);
 

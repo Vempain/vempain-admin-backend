@@ -4,12 +4,15 @@ import java.time.Instant;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-import fi.poltsi.vempain.admin.api.response.ApiTokenResponse;
+import fi.poltsi.vempain.common.api.ApiTokenScopeEnum;
+import fi.poltsi.vempain.common.api.response.ApiTokenResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -41,6 +44,11 @@ public class ApiToken {
     @Column(name = "description", nullable = false)
     private String description;
 
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "scope", nullable = false, length = 32)
+    private ApiTokenScopeEnum scope = ApiTokenScopeEnum.FILE_SERVICE;
+
     @Column(name = "network", nullable = false, length = 64)
     private String network;
 
@@ -64,6 +72,7 @@ public class ApiToken {
             .id(id)
             .tokenPrefix(tokenPrefix)
             .description(description)
+            .scope(scope)
             .network(network)
             .expiresAt(expiresAt)
             .ownerUserId(ownerUserId)

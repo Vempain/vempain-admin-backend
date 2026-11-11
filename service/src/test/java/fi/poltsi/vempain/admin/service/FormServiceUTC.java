@@ -54,7 +54,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class FormServiceUTC {
 
-    private final static long itemCount = 10L;
+    private static final long ITEM_COUNT = 10L;
 
     @Mock
     private AclService aclService;
@@ -72,13 +72,13 @@ class FormServiceUTC {
 
     @Test
     void findAllOk() {
-        List<Form> forms = TestUTCTools.generateFormList(itemCount);
+        List<Form> forms = TestUTCTools.generateFormList(ITEM_COUNT);
         when(formRepository.findAll()).thenReturn(forms);
 
         try {
             Iterable<Form> formList = formService.findAll();
             assertNotNull(formList);
-            assertEquals(itemCount, StreamSupport.stream(formList.spliterator(), false)
+            assertEquals(ITEM_COUNT, StreamSupport.stream(formList.spliterator(), false)
                 .count());
         } catch (Exception e) {
             fail("We should not have received an exception when retrieving all forms: " + e.getMessage());
@@ -113,14 +113,14 @@ class FormServiceUTC {
 
     @Test
     void findAllAsResponsesForUserOk() {
-        List<Form> forms = TestUTCTools.generateFormList(itemCount);
+        List<Form> forms = TestUTCTools.generateFormList(ITEM_COUNT);
         when(formRepository.findAll()).thenReturn(forms);
         when(accessService.hasReadPermission(anyLong())).thenReturn(true);
 
         try {
             List<FormResponse> responses = formService.findAllAsResponsesForUser(QueryDetailEnum.FULL);
             assertNotNull(responses);
-            assertEquals(itemCount, responses.size());
+            assertEquals(ITEM_COUNT, responses.size());
         } catch (Exception e) {
             fail("We should not have received an exception when retrieving all forms as FormResponses: " + e.getMessage());
         }
@@ -128,7 +128,7 @@ class FormServiceUTC {
 
     @Test
     void findAllAsResponsesForUserNoAccessOk() {
-        List<Form> forms = TestUTCTools.generateFormList(itemCount);
+        List<Form> forms = TestUTCTools.generateFormList(ITEM_COUNT);
         when(formRepository.findAll()).thenReturn(forms);
         when(accessService.hasReadPermission(anyLong())).thenReturn(false);
 

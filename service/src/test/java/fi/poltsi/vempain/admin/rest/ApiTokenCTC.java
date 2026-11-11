@@ -13,10 +13,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import fi.poltsi.vempain.admin.api.Constants;
-import fi.poltsi.vempain.admin.api.request.ApiTokenRequest;
 import fi.poltsi.vempain.admin.repository.ApiTokenRepository;
 import fi.poltsi.vempain.admin.security.ApiTokenAuthenticationFilter;
 import fi.poltsi.vempain.auth.security.jwt.JwtUtils;
+import fi.poltsi.vempain.common.api.request.ApiTokenRequest;
 import tools.jackson.databind.ObjectMapper;
 
 import static org.hamcrest.Matchers.hasSize;
