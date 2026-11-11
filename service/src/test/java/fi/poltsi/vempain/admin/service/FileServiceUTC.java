@@ -470,7 +470,7 @@ class FileServiceUTC {
     }
 
     @Test
-    void findAllSiteFilesAsPageableResponseFiltered_nullFilterColumn_usesAclFilteredQuery() {
+    void findAllSiteFilesAsPageableResponseFilteredNullFilterColumnUsesAclFilteredQuery() {
         var pageRequest = stubReadableListing(PageRequest.of(0, 10));
 
         var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "test", null));
@@ -480,7 +480,7 @@ class FileServiceUTC {
     }
 
     @Test
-    void findAllSiteFilesAsPageableResponseFiltered_blankFilter_usesAclFilteredQuery() {
+    void findAllSiteFilesAsPageableResponseFilteredBlankFilterUsesAclFilteredQuery() {
         var pageRequest = stubReadableListing(PageRequest.of(0, 10));
 
         var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "  ", "filename"));
@@ -490,7 +490,7 @@ class FileServiceUTC {
     }
 
     @Test
-    void findAllSiteFilesAsPageableResponseFiltered_modifiedAfterPublish_staysAclFiltered() {
+    void findAllSiteFilesAsPageableResponseFilteredModifiedAfterPublishStaysAclFiltered() {
         var pageRequest = stubReadableListing(PageRequest.of(0, 10));
         var request = request(FileTypeEnum.IMAGE, pageRequest, null, null);
         request.setModifiedAfterPublish(true);
@@ -502,7 +502,7 @@ class FileServiceUTC {
     }
 
     @Test
-    void findAllSiteFilesAsPageableResponseFiltered_everyColumnFilterStaysAclFiltered() {
+    void findAllSiteFilesAsPageableResponseFilteredEveryColumnFilterStaysAclFiltered() {
         for (var column : List.of("filename", "file_name", "FileName", "filepath", "mimetype", "unknownColumn", "size")) {
             org.mockito.Mockito.reset(accessService, siteFileRepository);
             var pageRequest = stubReadableListing(PageRequest.of(0, 10));
@@ -515,7 +515,7 @@ class FileServiceUTC {
     }
 
     @Test
-    void findAllSiteFilesAsPageableResponseFiltered_temporalColumns_parseIsoInstant() {
+    void findAllSiteFilesAsPageableResponseFilteredTemporalColumnsParseIsoInstant() {
         for (var column : List.of("created", "modified")) {
             org.mockito.Mockito.reset(accessService, siteFileRepository);
             var pageRequest = stubReadableListing(PageRequest.of(0, 10));
@@ -528,7 +528,7 @@ class FileServiceUTC {
     }
 
     @Test
-    void findAllSiteFilesAsPageableResponseFiltered_subjectColumn_resolvesSiteFileIdsBySubject() {
+    void findAllSiteFilesAsPageableResponseFilteredSubjectColumnResolvesSiteFileIdsBySubject() {
         var pageRequest = stubReadableListing(PageRequest.of(0, 10));
         when(siteFileRepository.findSiteFileIdsBySubjectNameContaining("test")).thenReturn(List.of(5L, 6L));
 
@@ -540,7 +540,7 @@ class FileServiceUTC {
     }
 
     @Test
-    void findAllSiteFilesAsPageableResponseFiltered_invalidSizeColumn_fallsBackToClassOnlyListing() {
+    void findAllSiteFilesAsPageableResponseFilteredInvalidSizeColumnFallsBackToClassOnlyListing() {
         var pageRequest = stubReadableListing(PageRequest.of(0, 10));
 
         var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, "notANumber", "size"));
@@ -550,7 +550,7 @@ class FileServiceUTC {
     }
 
     @Test
-    void findAllSiteFilesAsPageableResponseFiltered_returnsOnlyRowsFromTheAclFilteredPage() {
+    void findAllSiteFilesAsPageableResponseFilteredReturnsOnlyRowsFromTheAclFilteredPage() {
         var pageRequest = PageRequest.of(0, 10);
         var readable = SiteFile.builder()
             .id(1L)
@@ -579,7 +579,7 @@ class FileServiceUTC {
     }
 
     @Test
-    void findAllSiteFilesAsPageableResponseFiltered_sortByCreatedAt_remapped() {
+    void findAllSiteFilesAsPageableResponseFilteredSortByCreatedAtRemapped() {
         var pageRequest = stubReadableListing(PageRequest.of(0, 10, Sort.by("createdAt")));
 
         var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, null, null));
@@ -593,7 +593,7 @@ class FileServiceUTC {
     }
 
     @Test
-    void findAllSiteFilesAsPageableResponseFiltered_sortByModifiedAt_remapped() {
+    void findAllSiteFilesAsPageableResponseFilteredSortByModifiedAtRemapped() {
         var pageRequest = stubReadableListing(PageRequest.of(0, 10, Sort.by("modifiedAt")));
 
         var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, null, null));
@@ -607,7 +607,7 @@ class FileServiceUTC {
     }
 
     @Test
-    void findAllSiteFilesAsPageableResponseFiltered_sortBySnakeCaseFileName_remapped() {
+    void findAllSiteFilesAsPageableResponseFilteredSortBySnakeCaseFileNameRemapped() {
         var pageRequest = stubReadableListing(PageRequest.of(0, 10, Sort.by("file_name")));
 
         var result = fileService.findAllSiteFilesAsPageableResponseFiltered(request(FileTypeEnum.IMAGE, pageRequest, null, null));

@@ -139,7 +139,7 @@ public class FileIngestService {
         List<Long> gallerySiteFileIds = null;
 
         try {
-            ValidateFileIngestRequest(fileIngestRequest, multipartFile);
+            validateFileIngestRequest(fileIngestRequest, multipartFile);
 
             // Determine main class directory by mimetype (fallback to "other" if configured)
             final var fileTypeByMimetype = FileTypeEnum.getFileTypeByMimetype(fileIngestRequest.getMimeType());
@@ -408,7 +408,7 @@ public class FileIngestService {
         }
     }
 
-    private void ValidateFileIngestRequest(FileIngestRequest fileIngestRequest, MultipartFile multipartFile) {
+    private void validateFileIngestRequest(FileIngestRequest fileIngestRequest, MultipartFile multipartFile) {
         if (fileIngestRequest == null
             || multipartFile == null
             || multipartFile.isEmpty()) {

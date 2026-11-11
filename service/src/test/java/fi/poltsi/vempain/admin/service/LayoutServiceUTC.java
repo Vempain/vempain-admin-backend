@@ -44,7 +44,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class LayoutServiceUTC {
 
-    private final static long count = 10;
+    private static final long COUNT = 10;
 
     @Mock
     private LayoutRepository layoutRepository;
@@ -58,11 +58,11 @@ class LayoutServiceUTC {
 
     @Test
     void findAllOk() {
-        MockRepositoryTools.layoutRepositoryFindAllOk(layoutRepository, count);
+        MockRepositoryTools.layoutRepositoryFindAllOk(layoutRepository, COUNT);
 
         Iterable<Layout> layouts = layoutService.findAll();
         assertNotNull(layouts);
-        assertEquals(count, StreamSupport.stream(layouts.spliterator(), false)
+        assertEquals(COUNT, StreamSupport.stream(layouts.spliterator(), false)
             .count());
     }
 
@@ -78,12 +78,12 @@ class LayoutServiceUTC {
 
     @Test
     void findAllByUserOk() {
-        MockRepositoryTools.layoutRepositoryFindAllOk(layoutRepository, count);
+        MockRepositoryTools.layoutRepositoryFindAllOk(layoutRepository, COUNT);
         when(accessService.hasReadPermission(1L)).thenReturn(true);
 
         List<LayoutResponse> layoutResponses = layoutService.findAllByUser();
         assertNotNull(layoutResponses);
-        assertEquals(count, layoutResponses.size());
+        assertEquals(COUNT, layoutResponses.size());
     }
 
     @Test
@@ -97,7 +97,7 @@ class LayoutServiceUTC {
 
     @Test
     void findAllByUserNoPermissionOk() {
-        MockRepositoryTools.layoutRepositoryFindAllOk(layoutRepository, count);
+        MockRepositoryTools.layoutRepositoryFindAllOk(layoutRepository, COUNT);
         when(accessService.hasReadPermission(1L)).thenReturn(false);
 
         List<LayoutResponse> layoutResponses = layoutService.findAllByUser();
@@ -107,12 +107,12 @@ class LayoutServiceUTC {
 
     @Test
     void findByIdOk() {
-        MockRepositoryTools.layoutRepositoryfindByIdOk(layoutRepository, count);
+        MockRepositoryTools.layoutRepositoryfindByIdOk(layoutRepository, COUNT);
 
         try {
-            Layout layout = layoutService.findById(count);
+            Layout layout = layoutService.findById(COUNT);
             assertNotNull(layout);
-            assertEquals(count, layout.getId());
+            assertEquals(COUNT, layout.getId());
         } catch (VempainEntityNotFoundException e) {
             fail("Should have received a layout as response");
         }
@@ -120,10 +120,10 @@ class LayoutServiceUTC {
 
     @Test
     void findByIdNoneFoundOk() {
-        when(layoutRepository.findById(count)).thenReturn(Optional.empty());
+        when(layoutRepository.findById(COUNT)).thenReturn(Optional.empty());
 
         try {
-            layoutService.findById(count);
+            layoutService.findById(COUNT);
             fail("Should have thrown an exception when the ID does not exist");
         } catch (VempainEntityNotFoundException e) {
             assertEquals("Failed to find layout by ID", e.getMessage());
@@ -132,14 +132,14 @@ class LayoutServiceUTC {
 
     @Test
     void findByIdByUserOk() {
-        MockRepositoryTools.layoutRepositoryfindByIdOk(layoutRepository, count);
+        MockRepositoryTools.layoutRepositoryfindByIdOk(layoutRepository, COUNT);
         when(accessService.getValidUserId()).thenReturn(1L);
         when(accessService.hasReadPermission(anyLong())).thenReturn(true);
 
         try {
-            Layout layout = layoutService.findByIdByUser(count);
+            Layout layout = layoutService.findByIdByUser(COUNT);
             assertNotNull(layout);
-            assertEquals(count, layout.getId());
+            assertEquals(COUNT, layout.getId());
         } catch (VempainEntityNotFoundException e) {
             fail("Should have received a layout as response");
         }
@@ -151,7 +151,7 @@ class LayoutServiceUTC {
             .getValidUserId();
 
         try {
-            layoutService.findByIdByUser(count);
+            layoutService.findByIdByUser(COUNT);
             fail("Searching by id and user without session should have triggered an exception");
         } catch (ResponseStatusException e) {
             assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
@@ -163,11 +163,11 @@ class LayoutServiceUTC {
 
     @Test
     void findByIdByUserNoPermissionFail() {
-        MockRepositoryTools.layoutRepositoryfindByIdOk(layoutRepository, count);
+        MockRepositoryTools.layoutRepositoryfindByIdOk(layoutRepository, COUNT);
         when(accessService.hasReadPermission(anyLong())).thenReturn(false);
 
         try {
-            layoutService.findByIdByUser(count);
+            layoutService.findByIdByUser(COUNT);
             fail("Searching by id and user without permission should have triggered an exception");
         } catch (ResponseStatusException e) {
             assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());

@@ -33,32 +33,32 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 class SetupVerification implements ApplicationContextAware {
 
-    private final String TYPE_STRING = "string";
-    private final String TYPE_NUMBER = "number";
-    private final String TYPE_PATH = "path";
-    private final String TYPE_FILE = "file";
+    private final String typeString = "string";
+    private final String typeNumber = "number";
+    private final String typePath = "path";
+    private final String typeFile = "file";
 
     private final String[][] requiredKeys = {
-        { "vempain.app.frontend-url", TYPE_STRING },
-        { "vempain.app.jwt-secret", TYPE_STRING },
-        { "vempain.admin.file.site-file-directory", TYPE_PATH },
-        { "vempain.admin.ssh.user", TYPE_STRING },
-        { "vempain.admin.ssh.home-dir", TYPE_PATH },
-        { "vempain.site.www-root", TYPE_STRING },
-        { "vempain.site.ssh.user", TYPE_STRING },
-        { "vempain.site.ssh.home-dir", TYPE_STRING }, // This needs to be a string because it is located on the remote
-        { "vempain.site.ssh.address", TYPE_STRING },
-        { "vempain.exiftool.path", TYPE_FILE },
+        { "vempain.app.frontend-url", typeString },
+        { "vempain.app.jwt-secret", typeString },
+        { "vempain.admin.file.site-file-directory", typePath },
+        { "vempain.admin.ssh.user", typeString },
+        { "vempain.admin.ssh.home-dir", typePath },
+        { "vempain.site.www-root", typeString },
+        { "vempain.site.ssh.user", typeString },
+        { "vempain.site.ssh.home-dir", typeString }, // This needs to be a string because it is located on the remote
+        { "vempain.site.ssh.address", typeString },
+        { "vempain.exiftool.path", typeFile },
         // Following are already defined with default values, but we want to make sure they're of the correct type
-        { "vempain.app.jwt-expiration-ms", TYPE_NUMBER },
-        { "vempain.admin.file.thumbnail-size", TYPE_NUMBER },
-        { "vempain.site.image-size", TYPE_NUMBER },
-        { "vempain.site.ssh.port", TYPE_NUMBER },
-        { "vempain.cors.max-age", TYPE_NUMBER },
-        { "spring.admin-datasource.url", TYPE_STRING },
-        { "spring.admin-datasource.username", TYPE_STRING },
-        { "spring.site-datasource.url", TYPE_STRING },
-        { "spring.site-datasource.username", TYPE_STRING } };
+        { "vempain.app.jwt-expiration-ms", typeNumber },
+        { "vempain.admin.file.thumbnail-size", typeNumber },
+        { "vempain.site.image-size", typeNumber },
+        { "vempain.site.ssh.port", typeNumber },
+        { "vempain.cors.max-age", typeNumber },
+        { "spring.admin-datasource.url", typeString },
+        { "spring.admin-datasource.username", typeString },
+        { "spring.site-datasource.url", typeString },
+        { "spring.site-datasource.username", typeString } };
 
     private static final Set<String> TLS_SSL_MODES = Set.of("require", "verify-ca", "verify-full");
     private static final List<String> PRODUCTION_DATASOURCE_URL_KEYS = List.of("spring.admin-datasource.url", "spring.site-datasource.url");
@@ -81,19 +81,19 @@ class SetupVerification implements ApplicationContextAware {
                 closeApplication("Configuration value for key " + keyPair[0] + " is still set to default value");
             } else {
                 switch (keyPair[1]) {
-                    case TYPE_NUMBER:
+                    case typeNumber:
                         if (!NumberUtils.isCreatable(value)) {
                             closeApplication("Failed to parse number from configuration " + keyPair[0] + " value " + value);
                         }
 
                         break;
-                    case TYPE_PATH:
+                    case typePath:
                         var path = Paths.get(value);
                         if (!Files.exists(path)) {
                             closeApplication("Path from configuration " + keyPair[0] + " pointing to " + value + " does not exist");
                         }
                         break;
-                    case TYPE_FILE:
+                    case typeFile:
                         var file = Paths.get(value);
                         if (!Files.exists(file)) {
                             closeApplication("File from configuration " + keyPair[0] + " pointing to " + value + " does not exist");
@@ -107,7 +107,7 @@ class SetupVerification implements ApplicationContextAware {
                             closeApplication("File from configuration " + keyPair[0] + " pointing to " + value + " is not executable");
                         }
                         break;
-                    case TYPE_STRING:
+                    case typeString:
                         // For now we don't do any verification, might split this further to other types
                         break;
                     default :

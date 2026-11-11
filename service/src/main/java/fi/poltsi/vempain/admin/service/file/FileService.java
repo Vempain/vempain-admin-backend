@@ -100,7 +100,7 @@ public class FileService {
     }
 
     @Transactional
-    public Gallery createGallery(String shortName, String description, long userId, List<SiteFile> SiteFileList) {
+    public Gallery createGallery(String shortName, String description, long userId, List<SiteFile> siteFileList) {
         long aclId;
 
         try {
@@ -123,7 +123,7 @@ public class FileService {
 
         long sortOrder = 0;
 
-        for (var siteFile : SiteFileList) {
+        for (var siteFile : siteFileList) {
             galleryFileService.addGalleryFile(newGallery.getId(), siteFile.getId(), sortOrder);
             sortOrder++;
         }
@@ -165,12 +165,12 @@ public class FileService {
         return new HashSet<>(siteFileIdList);
     }
 
-    // FileAudio
-    @Transactional(readOnly = true)
     /**
      * Paged site-file listing for the current user. Site files are ACL-linked, so the result contains only the files the user may read; the ACL filter, the
      * optional column filter, the file type and the optional "modified after publish" filter are all evaluated in the database query.
      */
+    // FileAudio
+    @Transactional(readOnly = true)
     public PagedResponse<SiteFileResponse> findAllSiteFilesAsPageableResponseFiltered(SiteFilePagedRequest request) {
         log.debug("Fetching pageable site files with filter '{}' on column '{}' for file type {}", request.getSearch(), request.getFilterColumn(),
                 request.getFileType());

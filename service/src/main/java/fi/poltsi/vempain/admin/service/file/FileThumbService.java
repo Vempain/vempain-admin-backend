@@ -66,10 +66,10 @@ public class FileThumbService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED)
-    protected void generateThumbFile(long commonId, Path sourceFile, Path destination, FileTypeEnum FileTypeEnum) {
+    protected void generateThumbFile(long commonId, Path sourceFile, Path destination, FileTypeEnum fileTypeEnum) {
         // We add the thumb class to the beginning of the relative path
         var relativeDestinationPath = Path
-            .of(fi.poltsi.vempain.common.api.FileTypeEnum.THUMB.shortName + File.separator + FileTypeEnum.shortName + File.separator + destination);
+            .of(fi.poltsi.vempain.common.api.FileTypeEnum.THUMB.shortName + File.separator + fileTypeEnum.shortName + File.separator + destination);
         var absoluteDestinationPath = Path.of(siteFileDirectory + File.separator + relativeDestinationPath);
         log.debug("Relative thumb path: {}", relativeDestinationPath);
         log.debug("Absolute thumb path: {}", absoluteDestinationPath);
@@ -92,10 +92,10 @@ public class FileThumbService {
         }
 
         // Generate thumb, for now we only handle images
-        if (FileTypeEnum.equals(fi.poltsi.vempain.common.api.FileTypeEnum.IMAGE)) {
+        if (fileTypeEnum.equals(fi.poltsi.vempain.common.api.FileTypeEnum.IMAGE)) {
             imageTools.resizeImage(sourceFile, destinationFile, (thumbnailSize != 0 ? thumbnailSize : 250), 0.5F);
         } else {
-            log.info("Unsupported file class {}", FileTypeEnum.shortName);
+            log.info("Unsupported file class {}", fileTypeEnum.shortName);
         }
 
         var dimensions = imageTools.getImageDimensions(destinationFile);
@@ -127,7 +127,7 @@ public class FileThumbService {
                 .filename(thumbDestinationFilename)
                 .filesize(filesize)
                 .parentId(commonId)
-                .parentType(FileTypeEnum)
+                .parentType(fileTypeEnum)
                 .height(dimensions.height)
                 .width(dimensions.width)
                 .sha1sum(sha1sum)

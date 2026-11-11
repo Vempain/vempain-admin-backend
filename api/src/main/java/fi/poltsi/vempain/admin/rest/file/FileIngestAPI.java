@@ -40,8 +40,7 @@ public interface FileIngestAPI {
             tags = "FileIngestApi")
     @SecurityRequirement(name = "Bearer Authentication")
     @PostMapping(value = MAIN_PATH + "/site-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<FileIngestResponse> ingest(@RequestPart("request") final String fileIngestRequestJSON,
-            @RequestPart(value = "site_file") final MultipartFile siteFile);
+    ResponseEntity<FileIngestResponse> ingest(@RequestPart("request") String fileIngestRequestJSON, @RequestPart(value = "site_file") MultipartFile siteFile);
 
     @Operation(summary = "Delete an ingested site file",
             description = "Service-to-service endpoint. Removes a site file created by the ingest endpoint together with its stored file, gallery links, "

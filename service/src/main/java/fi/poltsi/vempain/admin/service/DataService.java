@@ -715,45 +715,18 @@ public class DataService {
                     "Identifier must start with a letter and contain only lowercase letters, numbers, and underscores");
         }
 
-        if (request.getType() == null
-            || request.getType()
-                .isBlank()) {
-            log.error("Missing type in data request");
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST);
-        }
+        validateRequired(request.getType(), "type");
+        validateRequired(request.getColumnDefinitions(), "column definitions");
+        validateRequired(request.getCreateSql(), "create SQL");
+        validateRequired(request.getFetchAllSql(), "fetch-all SQL");
+        validateRequired(request.getFetchSubsetSql(), "fetch-subset SQL");
+        validateRequired(request.getCsvData(), "CSV data");
+    }
 
-        if (request.getColumnDefinitions() == null
-            || request.getColumnDefinitions()
-                .isBlank()) {
-            log.error("Missing column definitions in data request");
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST);
-        }
-
-        if (request.getCreateSql() == null
-            || request.getCreateSql()
-                .isBlank()) {
-            log.error("Missing create SQL in data request");
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST);
-        }
-
-        if (request.getFetchAllSql() == null
-            || request.getFetchAllSql()
-                .isBlank()) {
-            log.error("Missing fetch-all SQL in data request");
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST);
-        }
-
-        if (request.getFetchSubsetSql() == null
-            || request.getFetchSubsetSql()
-                .isBlank()) {
-            log.error("Missing fetch-subset SQL in data request");
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST);
-        }
-
-        if (request.getCsvData() == null
-            || request.getCsvData()
-                .isBlank()) {
-            log.error("Missing CSV data in data request");
+    private void validateRequired(String value, String fieldName) {
+        if (value == null
+            || value.isBlank()) {
+            log.error("Missing {} in data request", fieldName);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, VempainMessages.MALFORMED_OBJECT_IN_REQUEST);
         }
     }

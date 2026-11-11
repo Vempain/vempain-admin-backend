@@ -68,7 +68,7 @@ class WebSiteResourceServiceUTC {
 
     @Test
     @DisplayName("Link targets list the matching published pages first, then the files, each limited and sorted")
-    void findLinkTargets_listsPagesThenFiles() {
+    void findLinkTargetsListsPagesThenFiles() {
         var page = WebSitePage.builder()
             .id(30L)
             .title("About us")
@@ -103,7 +103,7 @@ class WebSiteResourceServiceUTC {
 
     @Test
     @DisplayName("An empty search lists the first pages and files, and the limit is clamped to 1..50")
-    void findLinkTargets_emptySearchListsTheFirstTargetsWithinTheLimit() {
+    void findLinkTargetsEmptySearchListsTheFirstTargetsWithinTheLimit() {
         when(pageRepo.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
         when(fileRepo.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
 
@@ -119,7 +119,7 @@ class WebSiteResourceServiceUTC {
 
     @Test
     @DisplayName("Null type lists all resource kinds and sorts by id")
-    void listResources_defaultsToAllTypesWhenTypeNull() {
+    void listResourcesDefaultsToAllTypesWhenTypeNull() {
         var file = WebSiteFile.builder()
             .id(10L)
             .aclId(5L)
@@ -152,7 +152,7 @@ class WebSiteResourceServiceUTC {
 
     @Test
     @DisplayName("Unsupported sort field falls back to id")
-    void listResources_invalidSortFallsBackToId() {
+    void listResourcesInvalidSortFallsBackToId() {
         var file = WebSiteFile.builder()
             .id(2L)
             .aclId(5L)
@@ -171,7 +171,7 @@ class WebSiteResourceServiceUTC {
 
     @Test
     @DisplayName("ACL + fileType + query precedence for SITE_FILE")
-    void listResources_aclFilteringFileTypeAndQuery() {
+    void listResourcesAclFilteringFileTypeAndQuery() {
         var file = WebSiteFile.builder()
             .id(3L)
             .aclId(99L)
@@ -191,7 +191,7 @@ class WebSiteResourceServiceUTC {
 
     @Test
     @DisplayName("Page title fallback to path when title search empty")
-    void listResources_pageTitleFallbackPath() {
+    void listResourcesPageTitleFallbackPath() {
         when(pageRepo.findByAclIdAndTitleContainingIgnoreCase(anyLong(), anyString(), any())).thenReturn(new PageImpl<>(List.of())); // empty title match
         var pageEntity = WebSitePage.builder()
             .id(7L)
@@ -211,7 +211,7 @@ class WebSiteResourceServiceUTC {
 
     @Test
     @DisplayName("Gallery shortname fallback to description when shortname search empty")
-    void listResources_galleryShortnameFallbackDescription() {
+    void listResourcesGalleryShortnameFallbackDescription() {
         when(galleryRepo.findByAclIdAndShortnameContainingIgnoreCase(anyLong(), anyString(), any())).thenReturn(new PageImpl<>(List.of()));
         var gallery = WebSiteGallery.builder()
             .id(4L)

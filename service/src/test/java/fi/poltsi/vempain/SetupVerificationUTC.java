@@ -34,7 +34,7 @@ class SetupVerificationUTC {
         "jdbc:postgresql://db:5432/vempain?sslmode=VERIFY-FULL&currentSchema=vempain",
         "jdbc:postgresql://db:5432/vempain?ssl=true",
         "jdbc:postgresql://db:5432/vempain?ssl" })
-    void requiresTls_acceptsUrlsThatInsistOnTls(String url) {
+    void requiresTlsAcceptsUrlsThatInsistOnTls(String url) {
         assertTrue(SetupVerification.requiresTls(url));
     }
 
@@ -49,12 +49,12 @@ class SetupVerificationUTC {
         "jdbc:postgresql://db:5432/vempain?ssl=false",
         "jdbc:postgresql://db:5432/vempain?useSSL=true",
         "jdbc:postgresql://db:5432/vempain?sslmode=disable&ssl=true" })
-    void requiresTls_rejectsUrlsThatAllowPlaintext(String url) {
+    void requiresTlsRejectsUrlsThatAllowPlaintext(String url) {
         assertFalse(SetupVerification.requiresTls(url));
     }
 
     @Test
-    void verifyProductionDatasources_acceptsTlsOnBothDatasourcesInProd() {
+    void verifyProductionDatasourcesAcceptsTlsOnBothDatasourcesInProd() {
         var context = contextWith("prod", TLS_ADMIN_URL, TLS_SITE_URL);
 
         new SetupVerification(context).verifyProductionDatasources(new ContextRefreshedEvent(context));
@@ -63,7 +63,7 @@ class SetupVerificationUTC {
     }
 
     @Test
-    void verifyProductionDatasources_closesApplicationWhenTheAdminDatasourceAllowsPlaintext() {
+    void verifyProductionDatasourcesClosesApplicationWhenTheAdminDatasourceAllowsPlaintext() {
         var context = contextWith("prod", "jdbc:postgresql://admin-db:5432/vempain_admin?currentSchema=vempain_admin", TLS_SITE_URL);
 
         new SetupVerification(context).verifyProductionDatasources(new ContextRefreshedEvent(context));
@@ -72,7 +72,7 @@ class SetupVerificationUTC {
     }
 
     @Test
-    void verifyProductionDatasources_closesApplicationWhenTheSiteDatasourceAllowsPlaintext() {
+    void verifyProductionDatasourcesClosesApplicationWhenTheSiteDatasourceAllowsPlaintext() {
         var context = contextWith("prod", TLS_ADMIN_URL, "jdbc:postgresql://site-db:5432/vempain_site?sslmode=disable");
 
         new SetupVerification(context).verifyProductionDatasources(new ContextRefreshedEvent(context));
@@ -81,7 +81,7 @@ class SetupVerificationUTC {
     }
 
     @Test
-    void verifyProductionDatasources_ignoresOtherProfiles() {
+    void verifyProductionDatasourcesIgnoresOtherProfiles() {
         var context = contextWith("test", "jdbc:tc:postgresql:18-alpine:///vempain_admin", "jdbc:tc:postgresql:18-alpine:///vempain_site");
 
         new SetupVerification(context).verifyProductionDatasources(new ContextRefreshedEvent(context));
@@ -128,7 +128,7 @@ class SetupVerificationUTC {
         return configuration;
     }
 
-    private static ConfigurableApplicationContext contextWith(Map<String, String> configuration) {
+    private static ConfigurableApplicationContext contextWithConfiguration(Map<String, String> configuration) {
         var environment = new MockEnvironment();
         configuration.forEach(environment::setProperty);
         var context = mock(ConfigurableApplicationContext.class);
@@ -137,7 +137,7 @@ class SetupVerificationUTC {
     }
 
     private void assertClosesWith(Map<String, String> configuration) {
-        var context = contextWith(configuration);
+        var context = contextWithConfiguration(configuration);
 
         new SetupVerification(context).checkEssentialConfigurations(new ContextRefreshedEvent(context));
 
@@ -146,8 +146,8 @@ class SetupVerificationUTC {
     }
 
     @Test
-    void checkEssentialConfigurations_acceptsACompleteConfiguration() throws Exception {
-        var context = contextWith(validConfiguration());
+    void checkEssentialConfigurationsAcceptsACompleteConfiguration() throws Exception {
+        var context = contextWithConfiguration(validConfiguration());
 
         new SetupVerification(context).checkEssentialConfigurations(new ContextRefreshedEvent(context));
 
@@ -155,7 +155,7 @@ class SetupVerificationUTC {
     }
 
     @Test
-    void checkEssentialConfigurations_closesOnAMissingOrDefaultValue() throws Exception {
+    void checkEssentialConfigurationsClosesOnAMissingOrDefaultValue() throws Exception {
         var missing = validConfiguration();
         missing.remove("vempain.app.jwt-secret");
         assertClosesWith(missing);
@@ -170,14 +170,14 @@ class SetupVerificationUTC {
     }
 
     @Test
-    void checkEssentialConfigurations_closesOnANumberThatDoesNotParse() throws Exception {
+    void checkEssentialConfigurationsClosesOnANumberThatDoesNotParse() throws Exception {
         var configuration = validConfiguration();
         configuration.put("vempain.site.ssh.port", "twenty-two");
         assertClosesWith(configuration);
     }
 
     @Test
-    void checkEssentialConfigurations_closesOnAMissingPath() throws Exception {
+    void checkEssentialConfigurationsClosesOnAMissingPath() throws Exception {
         var configuration = validConfiguration();
         configuration.put("vempain.admin.ssh.home-dir", tempDir.resolve("missing")
             .toString());
@@ -185,7 +185,7 @@ class SetupVerificationUTC {
     }
 
     @Test
-    void checkEssentialConfigurations_closesWhenTheToolIsMissingADirectoryOrNotExecutable() throws Exception {
+    void checkEssentialConfigurationsClosesWhenTheToolIsMissingADirectoryOrNotExecutable() throws Exception {
         var missing = validConfiguration();
         missing.put("vempain.exiftool.path", tempDir.resolve("no-such-tool")
             .toString());
@@ -204,7 +204,7 @@ class SetupVerificationUTC {
     }
 
     @Test
-    void printAllConfiguration_hidesSensitiveKeysAndSurvivesUnreadableValues() {
+    void printAllConfigurationHidesSensitiveKeysAndSurvivesUnreadableValues() {
         var environment = new MockEnvironment().withProperty("vempain.app.jwt-secret", "hidden")
             .withProperty("vempain.site.ssh.address", "site.example");
         var context = mock(ConfigurableApplicationContext.class);

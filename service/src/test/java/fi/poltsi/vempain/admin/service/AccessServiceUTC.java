@@ -390,6 +390,8 @@ class AccessServiceUTC {
                 case 3:
                     acl.setDeletePrivilege(true);
                     break;
+                default :
+                    throw new AssertionError("Unexpected permission index: " + i);
             }
 
             assertTrue(accessService.hasPermissions(acl, mask));

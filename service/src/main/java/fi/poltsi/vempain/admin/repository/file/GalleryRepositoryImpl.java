@@ -28,20 +28,20 @@ public class GalleryRepositoryImpl implements GalleryRepositoryCustom {
 
     @Override
     public Page<Gallery> searchGalleries(String searchTerm, boolean caseSensitive, Pageable pageable) {
-        return searchGalleries(searchTerm, caseSensitive, pageable, true);
+        return searchGalleriesInternal(searchTerm, caseSensitive, pageable, true);
     }
 
     @Override
     public Page<Gallery> searchGalleriesWithoutFiles(String searchTerm, boolean caseSensitive, Pageable pageable) {
-        return searchGalleries(searchTerm, caseSensitive, pageable, false);
+        return searchGalleriesInternal(searchTerm, caseSensitive, pageable, false);
     }
 
     @Override
     public Page<Gallery> searchGalleriesForList(String searchTerm, boolean caseSensitive, Pageable pageable) {
-        return searchGalleries(searchTerm, caseSensitive, pageable, false);
+        return searchGalleriesInternal(searchTerm, caseSensitive, pageable, false);
     }
 
-    private Page<Gallery> searchGalleries(String searchTerm, boolean caseSensitive, Pageable pageable, boolean includeFiles) {
+    private Page<Gallery> searchGalleriesInternal(String searchTerm, boolean caseSensitive, Pageable pageable, boolean includeFiles) {
         List<String> tokens = tokenize(searchTerm);
         String base = includeFiles ? """
                 FROM gallery g
