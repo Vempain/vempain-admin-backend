@@ -1,6 +1,6 @@
 services:
   vempain-admin-backend:
-    image: "ghcr.io/vempain/vempain/vempain-admin-backend:${ENV_VEMPAIN_ADMIN_VERSION}"
+    image: "ghcr.io/vempain/vempain-admin-backend:${ENV_VEMPAIN_ADMIN_VERSION}"
     container_name: "${ENV_VEMPAIN_TYPE}_vempain_admin_app"
     ports:
       - "8888:8080"
